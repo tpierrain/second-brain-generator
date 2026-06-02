@@ -1,0 +1,55 @@
+# ═══════════════════════════════════════════════════════════════════
+# Second Brain Starter — .gitignore
+# Secrets et fichiers OS ne doivent JAMAIS être versionnés.
+# ═══════════════════════════════════════════════════════════════════
+
+# ── Secrets & credentials ──────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*_token
+*_secret
+credentials.json
+secrets.json
+.netrc
+
+# ── macOS ──────────────────────────────────────────────────────────
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# ── Éditeurs ───────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Obsidian ───────────────────────────────────────────────────────
+vault/.obsidian/
+
+# ── Claude Code — fichiers locaux non portables ────────────────────
+.claude/settings.local.json
+
+# ── Fichiers générés par bootstrap.sh (contiennent un chemin absolu, ────
+#    propres à chaque machine → régénérés à chaque clone, jamais versionnés)
+.mcp.json
+.claude/settings.json
+# NB : CLAUDE.md est généré par bootstrap mais NE contient pas de chemin absolu.
+# Volontairement laissé versionnable : c'est ta constitution, elle doit voyager
+# entre tes machines. (Dans CE repo-template il n'y a que CLAUDE.md.template.)
+
+# ── Node / RAG ─────────────────────────────────────────────────────
+node_modules/
+rag/.cache/
+rag/dist/
+
+# ── Divers ─────────────────────────────────────────────────────────
+*.log
+.cache/
+tmp/

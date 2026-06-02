@@ -1,0 +1,35 @@
+import { config } from "dotenv";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+import { existsSync } from "fs";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const projectRoot = resolve(__dirname, "../../..");
+
+const envPath = resolve(projectRoot, ".env");
+if (existsSync(envPath)) {
+  config({ path: envPath });
+}
+
+export const VAULT_DIR = resolve(projectRoot, "vault");
+export const CACHE_DIR = resolve(__dirname, "../../.cache");
+export const DB_PATH = resolve(CACHE_DIR, "vault.db");
+export const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY ?? "";
+export const EMBEDDING_MODEL = "gemini-embedding-001";
+export const CHUNK_MAX_CHARS = 8000;
+export const SEARCH_DEFAULT_LIMIT = 5;
+
+// Garde-fou A : plafond dur de requêtes d'embedding par jour (réinit. minuit Pacifique).
+// Depuis le passage au tier PAYANT Gemini (2026-06-01), ce n'est plus aligné sur les
+// 1000/jour du free tier : c'est désormais un simple filet anti-emballement (boucle folle,
+// ré-index redondant), et c'est lui la vraie contrainte (plus de mur Google à 1000).
+// Défaut 7600 (×4 de l'ancien 1900). Surchargeable via .env.
+export const MAX_EMBED_REQUESTS_PER_DAY = Number(
+  process.env.MAX_EMBED_REQUESTS_PER_DAY ?? 7600
+);
+
+// Réserve de quota dédiée aux requêtes de recherche : l'indexation s'arrête à
+// MAX_EMBED_REQUESTS_PER_DAY − QUERY_RESERVE, garantissant que « parler » (search)
+// n'est jamais bloqué par un gros jour d'indexation. Surchargeable via .env.
+export const QUERY_RESERVE = Number(process.env.QUERY_RESERVE ?? 50);

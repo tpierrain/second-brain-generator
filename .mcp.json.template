@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "vault-rag": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["tsx", "rag/src/index.ts"],
+      "cwd": "{{PROJECT_ROOT}}",
+      "env": {}
+    }
+  }
+}

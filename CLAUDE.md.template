@@ -1,0 +1,211 @@
+# CLAUDE.md — Règles projet `{{PROJECT_NAME}}`
+
+> Second cerveau de **{{OWNER_NAME}}** ({{OWNER_CONTEXT}}).
+> Ces règles s'appliquent à toute session Claude Code ouverte depuis ce repo.
+> Pour l'installation : voir [SETUP.md](SETUP.md). Pour l'idée générale : voir [README.md](README.md).
+>
+> ⚠️ Ce fichier est un **template adapté à ton usage** — édite-le librement. C'est ta
+> constitution : Claude le relit à chaque session. Plus il est juste, mieux Claude t'aide.
+
+---
+
+## 1. Confidentialité — règles non négociables
+
+Ce repo contient tes notes professionnelles. Traite le contenu comme **confidentiel**.
+
+**À ne JAMAIS versionner :**
+- Secrets, tokens, credentials, clés API, mots de passe (déjà couverts par `.gitignore`, mais reste vigilant).
+- Données ultra-sensibles : données client, PII, données bancaires.
+- Contenu sous NDA explicite.
+- Copier-coller brut de messages privés de tiers — préférer la reformulation.
+
+**À versionner avec prudence (synthétiser, pas copier brut) :**
+- Décisions stratégiques.
+- Notes sur des collègues : factuel et professionnel uniquement, jamais de jugement personnel lisible hors contexte.
+- Échanges Slack/mails : reformuler le fond, citer la source, ne pas coller l'intégralité.
+
+**Réflexe** : avant tout commit de contenu sensible, se demander « si ce repo fuitait demain, est-ce que ça me gênerait ? ». Si oui → reformuler ou omettre.
+
+> 🔧 **À adapter** : si ton repo est public, durcis cette section. S'il est privé et purement perso, tu peux l'alléger.
+
+## 2. Format des notes
+
+Toutes les notes du vault sont en **Markdown**, compatibles Obsidian.
+
+### Conventions de nommage
+
+| Dossier | Format | Exemple |
+|---|---|---|
+| `vault/daily/` | `YYYY-MM-DD.md` | `2026-04-16.md` |
+| `vault/people/` | `prenom-nom.md` (kebab-case, sans accents) | `jane-doe.md` |
+| `vault/topics/` | `sujet-en-kebab.md` | `capacity-management.md` |
+| `vault/decisions/` | `YYYY-MM-DD-titre-court.md` | `2026-04-16-choix-archi.md` |
+| `vault/meetings/` | `YYYY-MM-DD-titre.md` | `2026-04-16-comite.md` |
+| `vault/backlog/` | `sujet.md` ou `personne.md` | `perso.md` |
+
+> 🔧 **À adapter** : ajoute/retire des dossiers selon tes usages (ex: `prep-1-1/`, `initiatives/`, `coaching/`...).
+
+### Structure minimale d'une note
+
+```markdown
+---
+type: daily | person | topic | decision | meeting
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+tags: [tag1, tag2]
+---
+
+# Titre
+
+Contenu en Markdown.
+```
+
+### Backlinks Obsidian
+
+Référencer d'autres notes avec `[[chemin/relatif/sans-extension]]` :
+- `[[people/jane-doe]]`
+- `[[daily/2026-04-15#Section]]` (lien vers une section)
+- `[[topics/capacity-management]]`
+
+### Append-only pour les dailies
+
+Une daily note, une fois écrite, n'est **jamais éditée rétroactivement** — on ajoute une nouvelle daily le lendemain. Les corrections passent par des notes de topics ou des décisions. Les fiches `people/` et `topics/` sont au contraire **vivantes** : on y append des sections datées.
+
+## 3. Ton
+
+- **Factuel, concis, direct.** Pas de jargon vide.
+- Écrire pour soi dans 6 mois : assez de contexte pour se rappeler, pas de fioriture.
+- Langue par défaut : **{{LANGUAGE}}**. Termes techniques anglais tolérés quand c'est naturel.
+- Quand Claude génère une note : reprendre **mon** vocabulaire, pas le sien. Pas d'emojis sauf si je les ai utilisés.
+
+## 4. Routage — quel outil pour quoi
+
+### Vault — RAG sémantique (cœur du système)
+
+Le RAG (`rag/`) découpe chaque fichier Markdown en **chunks** (un par section `#`/`##`/`###`), transforme chaque chunk en vecteur (embedding Gemini) et les stocke. Une recherche embedde la question et remonte les chunks les plus proches par similarité de sens.
+
+> **Le fichier est l'unité que tu écris ; le chunk est l'unité que le moteur embedde, stocke et retrouve.**
+
+| Opération | Outil |
+|---|---|
+| **Question sémantique / transversale** (« qu'est-ce qu'on sait sur X ? ») | `mcp__vault-rag__search_vault` |
+| **Lire un doc complet** retrouvé par search | `mcp__vault-rag__get_document` |
+| **Lister les documents indexés** | `mcp__vault-rag__list_documents` |
+| **Stats / état de l'index** | `mcp__vault-rag__vault_stats` |
+| **Navigation directe** (chemin exact, date précise) | `Read` (pas de RAG) |
+| **Recherche exacte** (nom, identifiant, mot-clé précis) | `grep` / `Glob` (pas de RAG) |
+
+**Règles de retrieval :**
+- Questions ouvertes / transversales → `search_vault` d'abord, grep en complément.
+- Navigation structurelle (fichier connu) → `Read` directement, pas de RAG.
+- `search_vault` est rapide et peu coûteux — ne pas hésiter quand la question est sémantique.
+- L'index se reconstruit automatiquement, incrémental (seuls les fichiers modifiés sont ré-indexés). Pas de maintenance manuelle. Rebuild forcé : `cd rag && npm run reindex`.
+
+### Sources externes (optionnel — à activer selon tes outils)
+
+> 🔧 **À adapter** : ce starter ne fournit que le moteur RAG. Si tu veux brancher Slack,
+> Google Drive, Gmail, Notion, Calendar, etc., ajoute les MCP servers correspondants dans
+> `.mcp.json` (voir [SETUP.md](SETUP.md) § connecteurs) et documente ici quel outil pour quoi.
+>
+> Exemple de table à remplir :
+>
+> | Source | Outil MCP | Quand l'utiliser |
+> |---|---|---|
+> | {{SOURCE_1}} | … | … |
+
+## 5. Comportements Claude Code attendus
+
+### Posture de conseil sur le harnais
+
+Claude doit **challenger les demandes de modification du harnais** (CLAUDE.md, `.claude/`, skills, hooks). Avant d'implémenter un changement de harnais :
+- Éviter les usines à gaz — toujours se demander « est-ce que ça vaut la complexité ajoutée ? »
+- Proposer la solution la plus simple qui résout le problème réel.
+- Signaler quand une demande risque de créer de la dette (règles contradictoires, mécanismes jamais utilisés, sur-ingénierie).
+- Dire « attention » quand un ajout complexifie sans bénéfice clair.
+
+**Réflexe déterminisme** : pour un comportement **critique + répétable + mécanique**, se demander d'abord *« peut-on le rendre déterministe (hook / code / test) ? »* plutôt que d'en faire une simple règle que Claude peut oublier. Le déterminisme là où ça compte ; l'intelligence pour le jugement. Sans sur-rigidifier.
+
+### Délégation aux sous-agents — limiter le context rot
+
+Le contexte de la session principale est une **ressource rare et qualitative**. La qualité d'attention se dégrade bien avant la limite nominale (*lost in the middle*). Objectif : garder la session principale **dense et pertinente**, en ne ramenant que des signaux pré-digérés.
+
+**Déléguer (Agent / Explore) quand :**
+- Recherche large / fan-out (balayer beaucoup de fichiers/sources) sans savoir où est la réponse.
+- Lecture d'un **gros document** dont on ne veut que la synthèse.
+- Plusieurs lectures indépendantes → les **paralléliser**, un sous-agent par source, retour ~500 tokens.
+
+**Lire directement (Read / grep) quand :** fichier connu, chemin exact, taille raisonnable ; recherche exacte ; besoin du contenu fidèle, pas d'un résumé.
+
+**Règle d'or** : un sous-agent ne renvoie que des signaux pré-digérés (~500 tokens), jamais des dumps de fichiers.
+
+### Règles générales
+
+- **Horodatage obligatoire.** Avant toute analyse de sources ou rédaction datée, exécuter `date` en bash pour ancrer la date/heure courante. Ne jamais deviner. Toute date dérivée (« demain », « jeudi dernier ») doit être calculée via `date -v+Nd` / `date -v-Nd` (macOS), jamais de tête.
+- **Ne pas créer de fichiers** hors de la structure définie sans demander.
+- **Ne jamais éditer une daily note passée** (sauf correction de typo flagrante signalée).
+- Si on touche au harnais (`.claude/`), commit séparé avec message clair (`harness: …`).
+
+### Flux principal — question directe + sync sources transparent
+
+C'est **LE** mode de fonctionnement. Question posée → réponse. Pas de commande de synchronisation à déclencher.
+
+```
+Question
+   │
+   ▼  PHASE 1 — Réponse immédiate depuis le vault (RAG + Read)
+   │
+   ├──▶ PHASE 2 — (optionnel) Sync sources externes en background
+   │            ne récupère que le DELTA, sous-agents //, ~500 tokens chacun
+   │
+   ▼  PHASE 3 — Amender la réponse si le delta apporte du neuf
+   │
+   ▼  PHASE 4 — Persistance : tout ce qui est produit → vault + commit (hook)
+```
+
+**Phase 1** — Retrieval itératif : `search_vault` → lire les 3-5 notes les plus pertinentes → drill-down si besoin. Toujours citer les sources (backlinks) et leur date de fraîcheur.
+
+**Phase 2** *(si tu as branché des sources externes)* — Si la réponse pourrait être affectée par des événements récents, lancer des sous-agents en parallèle pour récupérer le delta. Ne pas attendre leur retour pour répondre. Max 3 agents background par question.
+
+**Phase 3** — Compléter la réponse uniquement si le delta apporte du nouveau. Être transparent : « Mise à jour : … ».
+
+**Phase 4** — Tout ce qui est récupéré ou produit en session est sauvegardé dans le vault. Rien ne reste uniquement en mémoire de conversation.
+
+**Règle** : ne pas lancer de sync sources si la question porte sur de l'historique — le vault suffit.
+
+### Backlogs (`vault/backlog/`)
+
+À chaque ingestion de données externes, croiser avec `vault/backlog/*.md` :
+1. **Nouvelles actions** (engagement pris, demande reçue) → ajouter avec `— source: [origine] [date]`.
+2. **Actions complétées** (trace d'exécution) → cocher `[x]` avec date.
+3. **Actions obsolètes** → marquer `[~]` avec note.
+
+Ne jamais présenter une action comme « à faire » sans avoir vérifié qu'elle n'a pas déjà été réalisée. Les actions cochées restent dans le fichier (registre de suivi, pas de suppression).
+
+### Persistance & commit automatiques
+
+**La persistance est gérée par un hook** (`.claude/settings.json`), pas par Claude : `git add` + `commit` (+ `push` si un remote existe) à chaque modification de fichier — d'où les commits `auto: …`.
+
+**Conséquence : ne PAS lancer `git add` / `commit` / `push` soi-même** quand le hook tourne (un commit manuel court après le hook et brouille la sortie). Les commandes git en lecture (`status`, `log`, `diff`) restent OK.
+
+### Observation passive — frictions en fin de session
+
+En fin de session (signal explicite de l'utilisateur **ET** 10+ échanges), avant le dernier message : scanner la session pour détecter workarounds répétés, questions sans réponse du vault, skills ratés, recherches longues. Si friction → ajouter une ligne à `vault/backlog/harnais.md` :
+```
+- [ ] [observation] Description courte de la friction — YYYY-MM-DD
+```
+Puis afficher un encart de fin de session (frictions ajoutées / tips / RAS).
+
+> 🔧 **À adapter** : ce bloc est optionnel — retire-le si tu ne veux pas d'auto-analyse.
+
+## 6. Conventions de commit
+
+- `sync: YYYY-MM-DD` — sources ingérées
+- `note: …` — création/update de note (people, topic, decision…)
+- `harness: …` — modifs de `.claude/`, `scripts/`, `rag/`
+- `docs: …` — README, CLAUDE.md, SETUP.md
+
+## 7. À toi de jouer
+
+Ce fichier est un **point de départ**. Les sections marquées 🔧 sont à adapter à ton rôle,
+tes outils et tes habitudes. Plus ton CLAUDE.md reflète ta réalité, plus le second cerveau
+devient *le tien*. Itère dessus au fil des sessions.

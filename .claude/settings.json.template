@@ -1,0 +1,65 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "Agent",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git rebase:*)",
+      "Bash(git stash:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(which:*)",
+      "Bash(mkdir:*)",
+      "Bash(grep:*)",
+      "Bash(node --import tsx --test:*)",
+      "Bash(npm test:*)",
+      "mcp__vault-rag__search_vault",
+      "mcp__vault-rag__get_document",
+      "mcp__vault-rag__list_documents",
+      "mcp__vault-rag__vault_stats"
+    ],
+    "deny": [],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd {{PROJECT_ROOT}} && CHANGED=$(git status --porcelain 2>/dev/null | head -20); if [ -n \"$CHANGED\" ]; then git add . && git commit -m \"auto: vault/claude sync\" >/dev/null 2>&1; if git remote 2>/dev/null | grep -q .; then git push >/dev/null 2>&1 || { sleep 3 && git push >/dev/null 2>&1 || { echo ''; echo '⚠️  PUSH ÉCHOUÉ — commit local OK mais non poussé. Vérifie le réseau puis: git push'; }; }; fi; fi",
+            "timeout": 30000
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{PROJECT_ROOT}}/scripts/session-status.sh",
+            "timeout": 20000
+          }
+        ]
+      }
+    ]
+  }
+}
