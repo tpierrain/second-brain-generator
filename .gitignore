@@ -35,6 +35,10 @@ vault/.obsidian/
 
 # ── Claude Code — fichiers locaux non portables ────────────────────
 .claude/settings.local.json
+# Instructions locales auto-chargées par Claude Code (override perso, non versionné).
+# Dans CE repo on s'en sert pour le contexte de DEV (un @DEVELOPING.md), qui ne doit
+# donc PAS partir avec le « Use this template ».
+CLAUDE.local.md
 
 # ── Fichiers générés par bootstrap.sh (contiennent un chemin absolu, ────
 #    propres à chaque machine → régénérés à chaque clone, jamais versionnés)
