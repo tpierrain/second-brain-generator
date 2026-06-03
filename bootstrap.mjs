@@ -23,6 +23,8 @@ import { tmpdir } from "node:os";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { smokeTestMcp } from "./scripts/lib/mcp-smoke.mjs";
+import { CONNECTORS } from "./scripts/lib/connectors-catalog.mjs";
+import { applyConnectorFiles } from "./scripts/lib/connectors-apply.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
 process.chdir(ROOT);
@@ -70,7 +72,7 @@ function run(cmd, args, opts = {}) {
 }
 
 // ── 1. Prérequis ────────────────────────────────────────────────────────────
-step("1/7 · Vérification des prérequis");
+step("1/8 · Vérification des prérequis");
 let missing = false;
 
 // Node : on tourne déjà dedans, version lisible directement.
@@ -102,7 +104,7 @@ if (missing) {
 }
 
 // ── 2. Personnalisation ─────────────────────────────────────────────────────
-step("2/7 · Personnalisation du harnais");
+step("2/8 · Personnalisation du harnais");
 const interactive = stdin.isTTY;
 const rl = interactive ? createInterface({ input: stdin, output: stdout }) : null;
 
@@ -131,7 +133,7 @@ if (interactive) {
 }
 
 // ── 3. Clé Gemini ───────────────────────────────────────────────────────────
-step("3/7 · Clé API Google Gemini (pour le RAG)");
+step("3/8 · Clé API Google Gemini (pour le RAG)");
 let geminiKey = "";
 const envPath = join(ROOT, ".env");
 const envHasKey =
@@ -144,7 +146,7 @@ if (envHasKey) {
 }
 
 // ── 4. Génération des fichiers ──────────────────────────────────────────────
-step("4/7 · Génération des fichiers personnalisés");
+step("4/8 · Génération des fichiers personnalisés");
 const replacements = {
   "{{PROJECT_ROOT}}": toPosix(ROOT),
   "{{PROJECT_NAME}}": projectName,
@@ -182,10 +184,41 @@ if (geminiKey) {
   ok("clé Gemini enregistrée dans .env");
 }
 
+// ── 5. Connecteurs externes (optionnel) ─────────────────────────────────────
+// Propose de brancher des sources externes (Drive/Notion/Slack/Calendar…).
+// Esprit « starter » : guidé mais pas magique. Pour les connecteurs MCP, on
+// fusionne le bloc serveur dans .mcp.json + les permissions dans settings.json
+// (idempotent — relançable sans doublon). Pour les natifs claude.ai, on ne
+// touche à rien : on pointe juste vers les *Connectors* du compte.
+// Non interactif (CI / stdin non-TTY) → étape entièrement ignorée.
+step("5/8 · Brancher des sources externes (optionnel)");
+if (interactive) {
+  const want = await ask("Brancher des sources externes maintenant ? [o/N]", "N");
+  if (/^o/i.test(want)) {
+    const mcpPath = join(ROOT, ".mcp.json");
+    const settingsPath = join(ROOT, ".claude", "settings.json");
+    for (const conn of CONNECTORS) {
+      const pick = await ask(`  • ${conn.label} ? [o/N]`, "N");
+      if (!/^o/i.test(pick)) continue;
+      if (conn.kind === "mcp") {
+        applyConnectorFiles(conn, { mcpPath, settingsPath });
+        ok(`${conn.id} branché → .mcp.json + permissions settings.json`);
+      } else {
+        warn(`${conn.id} : connecteur natif claude.ai — rien à écrire dans .mcp.json.`);
+      }
+      console.log(`    ${c.C}↳ ${conn.credentialsHint}${c.X}`);
+    }
+  } else {
+    warn("Aucun connecteur branché — tu pourras le faire plus tard (SETUP §6).");
+  }
+} else {
+  warn("Entrée non interactive — étape connecteurs ignorée.");
+}
+
 if (rl) rl.close();
 
-// ── 5. Installation du moteur RAG ───────────────────────────────────────────
-step("5/7 · Installation du moteur RAG (npm install)");
+// ── 6. Installation du moteur RAG ───────────────────────────────────────────
+step("6/8 · Installation du moteur RAG (npm install)");
 const rag = join(ROOT, "rag");
 const install = run(NPM, ["install", "--silent"], { cwd: rag, stdio: "inherit" });
 if (install.ok) ok("dépendances RAG installées");
@@ -194,8 +227,8 @@ else {
   process.exit(1);
 }
 
-// ── 6. Indexation initiale (si clé présente) ────────────────────────────────
-step("6/7 · Indexation initiale du vault d'exemple");
+// ── 7. Indexation initiale (si clé présente) ────────────────────────────────
+step("7/8 · Indexation initiale du vault d'exemple");
 const keyReady =
   existsSync(envPath) && /^GOOGLE_GEMINI_API_KEY=.+/m.test(readFileSync(envPath, "utf8"));
 if (keyReady) {
@@ -206,12 +239,12 @@ if (keyReady) {
   warn("Pas de clé Gemini → indexation reportée. Ajoute la clé dans .env puis : cd rag && npm run index");
 }
 
-// ── 7. Vérification de la connexion MCP ──────────────────────────────────────
+// ── 8. Vérification de la connexion MCP ──────────────────────────────────────
 // Confirme que Claude Code pourra réellement parler au serveur `vault-rag`
 // (handshake stdio), avant de lancer `claude`. Non bloquant : un échec ici
 // n'empêche pas d'utiliser le starter, mais pointe vers le dépannage SETUP.
 // Pas de clé Gemini requise — lister les outils n'embedde rien.
-step("7/7 · Vérification de la connexion MCP");
+step("8/8 · Vérification de la connexion MCP");
 const EXPECT_TOOLS = ["search_vault", "get_document", "list_documents", "vault_stats"];
 try {
   const mcp = JSON.parse(readFileSync(join(ROOT, ".mcp.json"), "utf8"));

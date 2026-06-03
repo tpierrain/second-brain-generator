@@ -82,22 +82,25 @@ Améliorer l'expérience MCP de `bootstrap.mjs` :
 
 ---
 
-## Session C — Connecteurs : wizard + docs  ⬜
+## Session C — Connecteurs : wizard + docs  ✅
 
 **Livrable** : étape interactive optionnelle dans `bootstrap.mjs`, + `SETUP.md §6` réécrit.
 
-- [ ] Étape `bootstrap.mjs` (après génération des fichiers, avant/après le smoke-test) :
-      si **interactif** → « Brancher des sources externes ? [o/N] » → pour chaque connecteur
-      `kind:'mcp'` choisi : lire `.mcp.json` + `settings.json`, appliquer `addServerToMcpJson` /
-      `addPermissions` (Session B), réécrire les fichiers, afficher le `credentialsHint`.
-      Pour les `kind:'native'` : juste afficher le pointeur claude.ai (ne rien écrire).
-- [ ] Non-interactif (`!stdin.isTTY`) → skip silencieux. Relançable (idempotent grâce à Session B).
-- [ ] Test d'intégration léger en dossier jetable (`/tmp/...`) : choisir 1 connecteur mcp →
-      vérifier que `.mcp.json` et `settings.json` contiennent bien le serveur + les permissions,
-      et qu'une 2ᵉ passe ne duplique pas.
-- [ ] Réécrire `SETUP.md §6` : **3 chemins distincts et nommés** —
-      (a) wizard `node bootstrap.mjs`, (b) ajout manuel, (c) connecteurs natifs claude.ai (≠ `.mcp.json`).
-- [ ] `node --test` vert + `cd rag && npm test` vert.
+- [x] Étape `bootstrap.mjs` **5/8 « Brancher des sources externes »** (après génération des
+      fichiers, `rl` encore ouvert, avant `npm install`) : si **interactif** → « Brancher des
+      sources externes ? [o/N] » → pour chaque connecteur du catalogue accepté, `kind:'mcp'` →
+      `applyConnectorFiles` (fusionne `.mcp.json` + `settings.json`), `kind:'native'` → warn +
+      pointeur claude.ai (rien écrit). `credentialsHint` affiché dans les deux cas. Steps
+      renumérotés `/7`→`/8` (5 = connecteurs, 6 = install, 7 = index, 8 = smoke-test).
+- [x] Non-interactif (`!stdin.isTTY`) → étape ignorée (warn). Relançable / idempotent (Session B).
+- [x] Cœur I/O testable extrait : `scripts/lib/connectors-apply.mjs` (`applyConnectorFiles`,
+      fine couche read/merge/write au-dessus de Session B) + `connectors-apply.test.mjs` (TDD,
+      3 tests en dossier jetable `mkdtemp` : écrit serveur+permissions, idempotence 2ᵉ passe,
+      natif n'écrit rien). Le wizard interactif lui-même = orchestration I/O (exception assumée).
+- [x] `SETUP.md §6` réécrit : **3 chemins nommés** — (a) wizard `node bootstrap.mjs`,
+      (b) ajout manuel, (c) connecteurs natifs claude.ai (≠ `.mcp.json`). `§2` liste 8 étapes.
+- [x] `node --test scripts/lib/*.test.mjs` vert (17) + `cd rag && npm test` vert (76) + tsc OK.
+      Neutralité OK (aucun chemin absolu en dur dans les fichiers touchés).
 - [ ] **Commit** : `feat: étape connecteurs guidée au bootstrap`
 
 ---
@@ -124,3 +127,9 @@ Améliorer l'expérience MCP de `bootstrap.mjs` :
   non mutants) + tests (6 merge, 4 catalogue). `node --test` vert (14), tsc OK, neutralité OK.
   **Prochain point d'entrée : Session C** (wizard interactif optionnel dans `bootstrap.mjs` qui
   consomme catalogue + merge, + réécriture `SETUP.md §6`).
+- **Session C (faite)** — wizard livré : étape `bootstrap.mjs` 5/8 (interactive, optionnelle,
+  skip si non-TTY) qui branche les connecteurs via `connectors-apply.mjs` (`applyConnectorFiles`,
+  3 tests jetables TDD) ; steps renumérotés `/7`→`/8`. `SETUP.md §6` réécrit en 3 chemins
+  nommés (wizard / manuel / natifs claude.ai), `§2` à 8 étapes. Tout vert (17 + 76), tsc OK,
+  neutralité OK. **Prochain point d'entrée : Session D** (clôture : E2E bootstrap jetable
+  smoke-test + wizard, passe finale README/SETUP/DEVELOPING, suppression de ce fichier).

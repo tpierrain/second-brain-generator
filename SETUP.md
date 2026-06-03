@@ -23,8 +23,10 @@ Le script :
 2. te demande nom / contexte / langue / nom de projet ;
 3. te demande ta clé Gemini (ou plus tard) ;
 4. génère `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, `.env` personnalisés ;
-5. installe les dépendances du moteur (`npm install`) ;
-6. indexe le vault d'exemple.
+5. propose de **brancher des sources externes** (optionnel — cf. §6) ;
+6. installe les dépendances du moteur (`npm install`) ;
+7. indexe le vault d'exemple ;
+8. **smoke-test MCP** : vérifie que Claude Code pourra parler au serveur `vault-rag` (cf. §8).
 
 Idempotent : tu peux le relancer. Les fichiers déjà générés ne sont pas écrasés (supprime-les pour régénérer).
 
@@ -70,8 +72,20 @@ Outils MCP exposés : `search_vault`, `get_document`, `list_documents`, `vault_s
 
 ## 6. Connecteurs externes (optionnel)
 
-Le starter ne fournit que le moteur RAG. Pour brancher tes sources, ajoute des MCP servers
-dans `.mcp.json`. Exemples (adapte les commandes/credentials à chaque serveur) :
+Le starter ne fournit que le moteur RAG. Pour interroger aussi tes autres sources
+(Drive, Notion, Slack, Calendar…), trois chemins — choisis selon ton confort.
+
+### (a) Le wizard du bootstrap — *recommandé*
+
+Pendant `node bootstrap.mjs`, l'étape **5/8 « Brancher des sources externes »** te propose un
+petit catalogue. Pour chaque connecteur **MCP** que tu acceptes, le script fusionne tout seul
+son bloc serveur dans `.mcp.json` **et** ses permissions dans `.claude/settings.json`, puis
+t'affiche le rappel credentials à renseigner. C'est **idempotent** : relancer le bootstrap ne
+crée jamais de doublon. Reste à mettre tes vrais credentials à la place des placeholders `<…>`.
+
+### (b) À la main — *si tu préfères tout contrôler*
+
+Ajoute toi-même le MCP server dans `.mcp.json` (adapte commande/credentials à chaque serveur) :
 
 ```jsonc
 {
@@ -89,13 +103,17 @@ dans `.mcp.json`. Exemples (adapte les commandes/credentials à chaque serveur) 
 }
 ```
 
-Pense à :
+Pense alors à :
 - documenter dans `CLAUDE.md` (§ 4) **quel outil pour quoi** ;
 - ajouter les permissions correspondantes dans `.claude/settings.json` (`mcp__<server>__<tool>`) ;
 - activer le serveur côté Claude Code au démarrage.
 
-Pour les connecteurs natifs Claude (Slack/Gmail/Calendar/Notion via claude.ai), branche-les
-depuis les *Connectors* de ton compte plutôt que dans `.mcp.json`.
+### (c) Connecteurs natifs claude.ai — *≠ `.mcp.json`*
+
+Slack, Gmail, Calendar, Notion existent aussi en **connecteurs natifs** côté compte claude.ai.
+Ceux-là **ne se branchent pas dans `.mcp.json`** : active-les depuis les *Connectors* de ton
+compte (Settings → Connectors). Le wizard (a) te le rappelle pour ces sources et n'écrit rien
+pour elles.
 
 ## 7. Portabilité multi-machines
 
