@@ -104,51 +104,15 @@ fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un générateur
 > sert pour les gros volumes — et protège tes données (voir ci-dessous). *Vérifie le tarif courant,
 > il évolue.*
 
-### Comment ça s'installe — le modèle en un coup d'œil
-
-**Un launcher, un cerveau — deux dossiers.** Tu récupères d'abord le **launcher** (ce générateur).
-L'installateur **crée ensuite un dossier cerveau séparé** et y dépose tout. Le launcher n'est
-**jamais modifié** : il reste en **lecture seule** et **réutilisable** — un même launcher peut
-générer plusieurs cerveaux.
-
-```
-1.  Récupérer le launcher (ce générateur)
-        │   git clone <URL_DU_REPO>
-        ▼
-    📁 second-brain-generator/   ← le LAUNCHER : lecture seule, réutilisable, jamais modifié
-        │
-        │   node bootstrap.mjs --name mon-cerveau     (il CRÉE un dossier AILLEURS)
-        ▼
-    📁 ~/mon-cerveau/            ← TON second cerveau : dossier NEUF créé par le bootstrap
-        ├── CLAUDE.md          (ta constitution — générée à partir de l'amorce)
-        ├── vault/             (tes notes)
-        ├── rag/               (le moteur de recherche)
-        ├── .git/              (dépôt NEUF, 0 remote — aucun lien vers le launcher)
-        └── .mcp.json, .env …  (config générée)
-        │
-        │   cd ~/mon-cerveau  puis  claude   (ouvre Claude Code DANS le cerveau)
-        ▼
-    → tu poses tes questions
-```
-
-Pour lever les doutes qu'on a tous au début :
-
-- **Le launcher n'est pas ton cerveau** : c'est l'outil qui le **produit**. Garde-le pour en
-  générer d'autres, ou jette-le — ton cerveau vit dans **son propre dossier**.
-- **Aucun lien vers le launcher**, par construction : le bootstrap **copie** les fichiers dans un
-  dossier neuf puis y fait `git init` (0 remote). Rien à « détacher » toi-même.
-- **`--name` = le nom du dossier cerveau créé** ; son emplacement se choisit avec `--dest` (par
-  défaut, ton home → `~/<nom>`). Le bootstrap **refuse si le dossier existe déjà**.
-- Le cerveau naît **sans dépôt distant** : pour un backup / multi-machine, tu branches TON dépôt
-  plus tard (push opt-in, cf. geste 2 ci-dessous).
-
 ### Installation — Claude installe tout pour toi
 
 Tu utilises Claude Code et tu as l'URL du générateur ? Laisse **Claude tout installer pour toi** —
-c'est le seul geste à faire. Ouvre Claude Code (même hors du repo) et donne-lui cette
-instruction — adapte le nom et l'URL :
+c'est le seul geste à faire. Ouvre Claude Code (même hors du repo) et **copie-colle cette unique
+instruction** (adapte le nom et l'URL) :
 
-> *« Installe-moi un second cerveau nommé `mon-cerveau` à partir de ce générateur : `<URL_DU_REPO>`. »*
+```text
+Installe-moi un second cerveau nommé "mon-cerveau" à partir de ce générateur : <URL_DU_REPO>
+```
 
 > 📍 **Depuis quel dossier ?** Peu importe — ouvre Claude Code dans n'importe quel dossier de
 > travail (un sous-dossier `second-brain-generator/`, jetable, y sera cloné). **Le dossier courant
@@ -185,6 +149,46 @@ Claude cherche dans ton vault et répond avec les liens vers les notes sources.
 > tu voies tout de suite à quoi ça ressemble, dès la première question. En fin d'installation, le
 > bootstrap te **propose de les effacer** d'un coup — histoire de repartir d'un vault propre, sans
 > polluer ton second cerveau avec ces données factices.
+
+### Le dessous de l'installation — launcher vs cerveau
+
+*(Pour les curieux — pas besoin de comprendre ça pour t'en servir.)*
+
+**Un launcher, un cerveau — deux dossiers.** Tu récupères d'abord le **launcher** (ce générateur).
+L'installateur **crée ensuite un dossier cerveau séparé** et y dépose tout. Le launcher n'est
+**jamais modifié** : il reste en **lecture seule** et **réutilisable** — un même launcher peut
+générer plusieurs cerveaux.
+
+```
+1.  Récupérer le launcher (ce générateur)
+        │   git clone <URL_DU_REPO>
+        ▼
+    📁 second-brain-generator/   ← le LAUNCHER : lecture seule, réutilisable, jamais modifié
+        │
+        │   node bootstrap.mjs --name mon-cerveau     (il CRÉE un dossier AILLEURS)
+        ▼
+    📁 ~/mon-cerveau/            ← TON second cerveau : dossier NEUF créé par le bootstrap
+        ├── CLAUDE.md          (ta constitution — générée à partir de l'amorce)
+        ├── vault/             (tes notes)
+        ├── rag/               (le moteur de recherche)
+        ├── .git/              (dépôt NEUF, 0 remote — aucun lien vers le launcher)
+        └── .mcp.json, .env …  (config générée)
+        │
+        │   cd ~/mon-cerveau  puis  claude   (ouvre Claude Code DANS le cerveau)
+        ▼
+    → tu poses tes questions
+```
+
+Pour lever les doutes qu'on a tous au début :
+
+- **Le launcher n'est pas ton cerveau** : c'est l'outil qui le **produit**. Garde-le pour en
+  générer d'autres, ou jette-le — ton cerveau vit dans **son propre dossier**.
+- **Aucun lien vers le launcher**, par construction : le bootstrap **copie** les fichiers dans un
+  dossier neuf puis y fait `git init` (0 remote). Rien à « détacher » toi-même.
+- **`--name` = le nom du dossier cerveau créé** ; son emplacement se choisit avec `--dest` (par
+  défaut, ton home → `~/<nom>`). Le bootstrap **refuse si le dossier existe déjà**.
+- Le cerveau naît **sans dépôt distant** : pour un backup / multi-machine, tu branches TON dépôt
+  plus tard (push opt-in, cf. geste 2 ci-dessus).
 
 ### 💾 Sauvegarder ton cerveau & l'utiliser sur plusieurs machines (optionnel)
 
