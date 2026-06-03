@@ -36,8 +36,13 @@ donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
    (sauf placeholders `{{PROJECT_ROOT}}` dans les templates).
 3. **Fichiers générés non versionnés.** `.mcp.json`, `.claude/settings.json`, `.env`,
    `rag/.cache/`, `node_modules/` sont gitignorés. Ne pas les committer.
-   Ne **pas** ajouter de `CLAUDE.md` à la racine : il entrerait en conflit avec le bootstrap
-   (qui refuse d'écraser un `CLAUDE.md` existant) → l'utilisateur n'aurait pas le sien.
+   **Exception — le `CLAUDE.md` « amorce ».** Un `CLAUDE.md` **est** livré à la racine, mais c'est
+   une **amorce de pré-installation** : elle porte le marqueur `<!-- second-brain-starter:bootstrap-stub -->`
+   et signale à Claude que le repo n'est pas encore installé (→ guide l'utilisateur vers
+   `node bootstrap.mjs`). Le bootstrap la **remplace** par le vrai `CLAUDE.md` personnalisé : la
+   détection est dans `scripts/lib/claude-md.mjs` (`isBootstrapStub`), branchée sur `gen()` dans
+   `bootstrap.mjs`. Un `CLAUDE.md` **sans** ce marqueur (= vraie constitution utilisateur) est
+   toujours **préservé**. Donc : **ne supprime pas** cette amorce, et n'y touche que via le marqueur.
 4. **Tester le bootstrap dans une copie jetable** (jamais en place), pour ne pas polluer le
    template avec des fichiers générés / `node_modules` :
    ```bash

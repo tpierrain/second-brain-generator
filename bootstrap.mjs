@@ -26,6 +26,7 @@ import { smokeTestMcp } from "./scripts/lib/mcp-smoke.mjs";
 import { CONNECTORS } from "./scripts/lib/connectors-catalog.mjs";
 import { applyConnectorFiles } from "./scripts/lib/connectors-apply.mjs";
 import { clearExampleNotes } from "./scripts/lib/example-notes.mjs";
+import { isBootstrapStub } from "./scripts/lib/claude-md.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
 process.chdir(ROOT);
@@ -160,17 +161,22 @@ const replacements = {
   "{{TMP_DIR}}": toPosix(tmpdir()),
   "{{SOURCE_1}}": "(ta source)",
 };
-function gen(tpl, out) {
+// `canOverwrite(existingContent)` (optionnel) : si le fichier existe déjà mais
+// que ce prédicat renvoie vrai, on le régénère (cas du CLAUDE.md « amorce »).
+function gen(tpl, out, canOverwrite) {
   if (existsSync(out)) {
-    warn(`${out} existe déjà — laissé tel quel (supprime-le pour régénérer).`);
-    return;
+    if (!(canOverwrite && canOverwrite(readFileSync(out, "utf8")))) {
+      warn(`${out} existe déjà — laissé tel quel (supprime-le pour régénérer).`);
+      return;
+    }
+    warn(`${out} était une amorce — remplacé par ta version personnalisée.`);
   }
   let content = readFileSync(tpl, "utf8");
   for (const [k, v] of Object.entries(replacements)) content = content.split(k).join(v);
   writeFileSync(out, content);
   ok(`généré : ${out}`);
 }
-gen(join(ROOT, "CLAUDE.md.template"), join(ROOT, "CLAUDE.md"));
+gen(join(ROOT, "CLAUDE.md.template"), join(ROOT, "CLAUDE.md"), isBootstrapStub);
 gen(join(ROOT, ".mcp.json.template"), join(ROOT, ".mcp.json"));
 gen(join(ROOT, ".claude", "settings.json.template"), join(ROOT, ".claude", "settings.json"));
 
