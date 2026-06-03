@@ -9,6 +9,8 @@
 > sprint 1.*
 > *→ décision du 10 janvier · → point d'équipe du 15 janvier »*
 
+> 🧑 *« Que veut dire "MEDDIC", ce truc que l'équipe sales répète en boucle dans leurs réunions ? »*
+
 Au lieu d'aller fouiller toi-même dans Slack, tes mails, Google Drive et tes comptes rendus de
 réunion, tu demandes — et ton **second cerveau** te répond tout de suite, en citant d'où vient
 l'info. Dans la langue de ton choix : il **retrouve par le sens**, donc tu peux questionner en
