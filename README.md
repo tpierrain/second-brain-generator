@@ -155,27 +155,28 @@ Claude cherche dans ton vault et répond avec les liens vers les notes sources.
 
 *(Pour les curieux — pas besoin de comprendre ça pour t'en servir.)*
 
-**Un launcher, un cerveau — deux dossiers.** Tu récupères d'abord le **launcher** (ce générateur).
-L'installateur **crée ensuite un dossier cerveau séparé** et y dépose tout. Le launcher n'est
-**jamais modifié** : il reste en **lecture seule** et **réutilisable** — un même launcher peut
-générer plusieurs cerveaux.
+**Un launcher, un cerveau — deux dossiers.** Tu donnes **une seule instruction** à Claude ; lui se
+charge de récupérer le **launcher** (ce générateur) et de **créer un dossier cerveau séparé** où il
+dépose tout. Le launcher n'est **jamais modifié** : il reste en **lecture seule** et
+**réutilisable** — un même launcher peut générer plusieurs cerveaux.
 
 ```
-1.  Récupérer le launcher (ce générateur)
-        │   git clone <URL_DU_REPO>
+1.  Tu donnes UNE instruction à Claude Code :
+        │   « Installe-moi un second cerveau nommé "mon-cerveau" à partir
+        │     de ce générateur : https://github.com/tpierrain/second-brain-generator »
         ▼
-    📁 second-brain-generator/   ← le LAUNCHER : lecture seule, réutilisable, jamais modifié
+    📁 second-brain-generator/   ← le LAUNCHER (Claude le clone) : lecture seule, réutilisable, jamais modifié
         │
-        │   node bootstrap.mjs --name mon-cerveau     (il CRÉE un dossier AILLEURS)
+        │   Claude y lance l'installateur  →  il CRÉE un dossier AILLEURS
         ▼
-    📁 ~/mon-cerveau/            ← TON second cerveau : dossier NEUF créé par le bootstrap
+    📁 ~/mon-cerveau/            ← TON second cerveau : dossier NEUF (copie des fichiers + git init)
         ├── CLAUDE.md          (ta constitution — générée à partir de l'amorce)
         ├── vault/             (tes notes)
         ├── rag/               (le moteur de recherche)
         ├── .git/              (dépôt NEUF, 0 remote — aucun lien vers le launcher)
         └── .mcp.json, .env …  (config générée)
         │
-        │   cd ~/mon-cerveau  puis  claude   (ouvre Claude Code DANS le cerveau)
+        │   tu rouvres Claude Code DANS le cerveau
         ▼
     → tu poses tes questions
 ```
