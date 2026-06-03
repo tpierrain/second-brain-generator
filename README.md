@@ -10,6 +10,11 @@
 > *→ décision du 10 janvier · → point d'équipe du 15 janvier »*
 
 > 🧑 *« Que veut dire "MEDDIC", ce truc que l'équipe sales répète en boucle dans leurs réunions ? »*
+>
+> 🧠 *« MEDDIC = la méthode de qualification d'opportunités adoptée par les sales : Metrics, Economic
+> buyer, Decision criteria, Decision process, Identify pain, Champion. Introduite par John Smith (VP
+> Sales) au kickoff commercial du 12 février pour fiabiliser le forecast.*
+> *→ kickoff commercial du 12 février · → playbook sales »*
 
 Au lieu d'aller fouiller toi-même dans Slack, tes mails, Google Drive et tes comptes rendus de
 réunion, tu demandes — et ton **second cerveau** te répond tout de suite, en citant d'où vient
