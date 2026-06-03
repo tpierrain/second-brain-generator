@@ -1,7 +1,7 @@
 # Second Brain Starter
 
 > Ce dépôt est une **graine** pour te construire ton propre **second cerveau** — à la façon
-> décrite par **Thomas Pierrain** dans sa série d'articles Medium. Concrètement : un vault
+> *use case driven* décrite par **Thomas Pierrain** dans sa série d'articles Medium. Concrètement : un vault
 > Markdown versionné que des agents Claude Code interrogent en langage naturel, au lieu de
 > re-parcourir tes outils à chaque question.
 
