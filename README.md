@@ -19,14 +19,19 @@ en l'utilisant.
 
 ### La spécificité en un paragraphe
 
-Le parti-pris : **répondre tout de suite, vérifier ensuite.** À ta question, le second
-cerveau répond en quelques secondes à partir du vault par **recherche sémantique** (embeddings
-/ RAG — il retrouve une note même formulée autrement, pas par mots-clés exacts), en citant ses
-sources et leur fraîcheur. Pendant que tu lis, des agents vont en arrière-plan re-vérifier les
-sources externes (Slack, Drive, transcripts…) et n'**amendent** la réponse que s'il y a du
-nouveau. C'est le pattern *stale-while-revalidate* du web appliqué à ta mémoire : le cache
-prime sur la fraîcheur immédiate, et tout est persisté dans un vault Markdown *append-only*
-versionné par git (ton cerveau te suit d'une machine à l'autre).
+Le parti-pris : **répondre tout de suite sur la base de ce qui a déjà été aspiré dans le
+substrat, vérifier ensuite** qu'il n'y a pas d'infos plus fraîches ou contradictoires. À ta
+question, le second cerveau répond en quelques secondes à partir du vault par **recherche
+sémantique** (embeddings / RAG — il retrouve une note même formulée autrement, pas par
+mots-clés exacts), en citant ses sources et leur fraîcheur. Pendant que tu lis, des agents
+vont en arrière-plan re-vérifier les sources externes (Slack, Drive, transcripts…) et
+n'**amendent** la réponse que s'il y a du nouveau. C'est le pattern *stale-while-revalidate*
+du web appliqué à ta mémoire : le cache prime sur la fraîcheur immédiate.
+
+Et **à chaque question posée, le substrat se rattrape** : il aspire tout ce qui s'est passé
+de nouveau depuis la dernière fois (**en mode delta** — uniquement les nouveautés, pas tout
+re-télécharger). Tout est persisté dans un vault Markdown *append-only* versionné par git
+(ton cerveau te suit d'une machine à l'autre).
 
 ---
 
