@@ -36,7 +36,8 @@ qu'un emballage conversationnel** — il récolte les réponses en chat, appelle
 `--non-interactive`, relaie le verdict du script, puis gère les 3 consignes finales (clé `.env`,
 dépôt distant, redémarrage). On ne confie **pas** la séquence d'install à Claude. L'amorce
 `CLAUDE.md` (marqueur `bootstrap-stub`) porte ce runbook ; `scripts/lib/bootstrap-args.mjs`
-(`parseAnswers`) et `scripts/lib/git-init.mjs` (`shouldInitGit`) en sont les briques pures testées.
+(`parseAnswers`, `resolveTargetDir`) et `scripts/lib/tracked-files.mjs` (`parseLsFilesZ`,
+`filterCopyable`) en sont les briques pures testées.
 
 ## Règles de dev
 
@@ -91,7 +92,8 @@ dépôt distant, redémarrage). On ne confie **pas** la séquence d'install à C
 - ~~Bootstrap : option `--non-interactive`~~ ✅ livré : `parseAnswers` (`scripts/lib/bootstrap-args.mjs`)
   → flags `--name/--owner/--context/--lang` (+ env `SB_*`, précédence flag > env > défaut),
   `--non-interactive`/`--yes`/`--no-input` ; **jamais la clé Gemini** (différée en `.env`). Le
-  bootstrap fait aussi un `git init` local s'il n'y a pas de dépôt (`scripts/lib/git-init.mjs`).
-  Doc : `SETUP.md §2`. Suite : variante avec fichier de réponses si besoin CI / re-provisioning.
+  bootstrap CRÉE le dossier cerveau (TARGET, cf. `resolveTargetDir`/`--dest`) et y fait un `git init`
+  trivial (dossier neuf, 0 remote). Doc : `SETUP.md §2`. Suite : variante avec fichier de réponses
+  si besoin CI / re-provisioning.
 - Internationalisation : les templates sont en français. Prévoir une variante EN ?
 - Skills d'exemple réellement fonctionnels (un `prepare-meeting` générique branché Calendar).
