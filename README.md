@@ -1,6 +1,6 @@
 # Second Brain Starter
 
-**Retrouve n'importe quelle décision ou info de ton travail en quelques secondes — en posant la question en français, avec les sources à l'appui.**
+**Retrouve n'importe quelle décision ou info de ton travail en quelques secondes — en posant la question en langage naturel, avec les sources à l'appui.**
 
 > 🧑 *« Quelle base de données a-t-on choisie pour la facturation, et pourquoi ? »*
 >
@@ -11,7 +11,8 @@
 
 Au lieu d'aller fouiller toi-même dans Slack, tes mails, Google Drive et tes comptes rendus de
 réunion, tu demandes — et ton **second cerveau** te répond tout de suite, en citant d'où vient
-l'info.
+l'info. Dans la langue de ton choix : il **retrouve par le sens**, donc tu peux questionner en
+français des notes rédigées en anglais (ou l'inverse).
 
 > ⚠️ Ce repo n'est **pas** un cerveau tout fait : c'est une **graine** (un *starter*) que tu fais
 > pousser pour t'en construire **un à toi**. On explique pourquoi plus bas — et c'est précisément
