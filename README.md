@@ -1,24 +1,70 @@
 # Second Brain Starter
 
-**C'est quoi un second cerveau ?** Une mémoire externe à toi : tes notes, décisions et échanges
-de travail réunis en un seul endroit que tu interroges **en langage naturel** — et qui te répond
-tout de suite, **sources à l'appui**, au lieu d'aller fouiller dans **tous tes outils** (Slack,
-Teams, mails, Google Drive, CR de meetings, etc.).
-
-> Ce dépôt est une **graine** pour te construire ton propre **second cerveau** — à la façon
-> *use case driven* décrite par **Thomas Pierrain** dans sa série d'articles Medium. Concrètement : un vault
-> Markdown versionné que des agents Claude Code interrogent en langage naturel, au lieu de
-> re-parcourir tes outils à chaque question.
-
-Le moteur est prêt à l'emploi ; le harnais (règles + skills) est un **template** que tu
-adaptes à **ton** usage. C'est une *graine*, pas un cerveau tout fait : tu le fais pousser
-en l'utilisant.
-
 > **Principe directeur — l'affordance avant tout.** Tu interroges ton second cerveau en langage
 > naturel et tu obtiens une réponse immédiate, sourcée. Tu n'as **jamais** à savoir comment c'est
 > fait à l'intérieur (RAG, embeddings, synchro delta, index, sous-agents) : **l'usage est découplé
 > de l'implémentation**. C'est pensé pour alléger ta charge mentale — au point que *même quelqu'un
 > de non-technique* pourrait s'en servir.
+
+## C'est quoi un second cerveau ?
+
+Une mémoire externe à toi : tes notes, décisions et échanges de travail réunis en un seul endroit
+que tu interroges **en langage naturel** — et qui te répond tout de suite, **sources à l'appui**,
+au lieu d'aller fouiller dans **tous tes outils** (Slack, Teams, mails, Google Drive, CR de
+meetings, etc.).
+
+## À quoi sert ce starter ?
+
+À te construire **TON** second cerveau — pas à t'en livrer un tout fait. Le moteur (RAG) est prêt à
+l'emploi ; le harnais (règles + skills) est un **template** : une **graine** que tu fais pousser en
+l'utilisant, à la façon *use case driven* décrite par **Thomas Pierrain** dans sa série d'articles
+(ci-dessous).
+
+Car un second cerveau est **personnel** : il doit être **fine-tuné à tes usages**. Ce n'est **pas
+un outil *one-size-fits-all*** — ce qui sert un Head of Engineering, un commercial ou un chercheur
+n'a rien à voir. Le starter te donne la mécanique et la méthode ; *toi*, tu définis tes notes, tes
+règles (`CLAUDE.md`) et tes skills (cf. la section « adapte-le à tes cas d'usage » plus bas).
+
+## En quoi ce « second cerveau *use case driven* » est-il spécifique ?
+
+Tout ici est pensé **interaction et expérience** d'abord : tu veux une réponse **immédiate**, en
+quelques secondes, à *chacune* de tes questions — pas attendre qu'un agent ait fini de re-fouiller
+tous tes outils. Tout le reste découle de cette exigence.
+
+Le parti-pris : **répondre tout de suite sur la base de ce qui a déjà été aspiré dans le substrat,
+vérifier ensuite en parallèle par des sous-agents** qu'il n'y a pas d'infos plus fraîches ou
+contradictoires. À ta question, le second cerveau répond en quelques secondes à partir du vault par
+**recherche sémantique** (embeddings / RAG — il retrouve une note même formulée autrement, pas par
+mots-clés exacts), en citant ses sources et leur fraîcheur. Pendant que tu lis, des agents
+re-vérifient en arrière-plan les sources externes (Slack, Drive, transcripts…) et n'**amendent** la
+réponse que s'il y a du nouveau. C'est le pattern *stale-while-revalidate* du web appliqué à ta
+mémoire : le cache prime sur la fraîcheur immédiate.
+
+Et **à chaque question posée, le substrat se rattrape** : il aspire tout ce qui s'est passé de
+nouveau depuis la dernière fois (**en mode delta** — uniquement les nouveautés). Tout est persisté
+dans un vault Markdown *append-only* versionné par git (ton cerveau te suit d'une machine à
+l'autre) ; et comme tout vit dans un **repo git privé**, un laptop perdu ou volé n'est plus un
+drame : tu re-clones ailleurs et tu **reprends exactement là où tu en étais**.
+
+Corollaire : **zéro couplage temporel, zéro charge cognitive.** Tu n'as *jamais* à orchestrer la
+mécanique (pas de « appelle tel skill avant tel autre », pas de synchro à déclencher, pas à savoir
+quand l'index se reconstruit) — c'est le principe d'**affordance** rappelé plus haut. Et comme
+**tout est persisté**, ton second cerveau accumule une trace exploitable : tu peux lui demander
+*« qu'est-ce qu'on pourrait améliorer ? »*, il observe cet historique et suggère ses propres pistes
+d'**amélioration continue** (c'est l'objet de la skill `improve`).
+
+## De quoi vais-je avoir besoin ?
+
+- **[Claude Code](https://claude.com/claude-code)**, **[Node.js](https://nodejs.org) ≥ 18** et **git**
+  (le bootstrap vérifie tout).
+- **Tes sources d'information**, branchées via **MCP** (ou d'autres moyens) : Slack, Google Drive,
+  Calendar, mails, Notion, transcripts de réunions… selon *tes* outils (cf. [SETUP §6](SETUP.md)).
+- Une **clé API Gemini de Google** pour le RAG (chunking → embeddings → recherche sémantique). Le
+  **palier gratuit suffit pour démarrer** (quotas journaliers, avec garde-fous intégrés). Pour aller
+  plus vite ou indexer un **gros volume**, le palier payant est **très bon marché** : les embeddings
+  se comptent en **centimes** (ordre de grandeur ~0,15 $ par million de tokens indexés — indexer des
+  milliers de notes coûte typiquement quelques dizaines de centimes ; *vérifie le tarif courant, il
+  évolue*).
 
 ### La série d'articles (le « pourquoi » derrière ce repo)
 
@@ -27,49 +73,6 @@ en l'utilisant.
 1. [Mon second cerveau a pivoté 2 fois en 3 jours](https://medium.com/@tpierrain/mon-second-cerveau-a-pivot%C3%A9-2-fois-en-3-jours-d846b7b2cbb5)
 2. [J'ai mis un coach vénère dans mon second cerveau](https://medium.com/@tpierrain/jai-mis-un-coach-v%C3%A9n%C3%A9re-dans-mon-second-cerveau-c5593bbfd7d7)
 3. [Pourquoi mon second cerveau parlait sans comprendre](https://medium.com/@tpierrain/pourquoi-mon-second-cerveau-parlait-sans-comprendre-6848fcf98421)
-
-### La spécificité en un paragraphe
-
-Tout ici est pensé **interaction et expérience** d'abord : tu veux une réponse **immédiate**,
-en quelques secondes, à *chacune* de tes questions — pas attendre qu'un agent ait fini de
-re-fouiller tous tes outils avant de te répondre. Tout le reste découle de cette exigence.
-
-Le parti-pris : **répondre tout de suite sur la base de ce qui a déjà été aspiré dans le
-substrat, vérifier ensuite en parallèle par des sous-agents** qu'il n'y a pas d'infos plus
-fraîches ou contradictoires. À ta
-question, le second cerveau répond en quelques secondes à partir du vault par **recherche
-sémantique** (embeddings / RAG — il retrouve une note même formulée autrement, pas par
-mots-clés exacts), en citant ses sources et leur fraîcheur. Pendant que tu lis, des agents
-vont en arrière-plan re-vérifier les sources externes (Slack, Drive, transcripts…) et
-n'**amendent** la réponse que s'il y a du nouveau. C'est le pattern *stale-while-revalidate*
-du web appliqué à ta mémoire : le cache prime sur la fraîcheur immédiate.
-
-Et **à chaque question posée, le substrat se rattrape** : il aspire tout ce qui s'est passé
-de nouveau depuis la dernière fois (**en mode delta** — uniquement les nouveautés, pas tout
-re-télécharger). Concrètement, selon les outils que tu utilises au travail : les réunions
-ajoutées à ton **Google Calendar**, les transcripts déposés dans **Google Drive** ou **Notion**,
-les échanges dans tes **mails**… — bref, *tes* sources de données primaires. Cela suppose de
-brancher au départ les **connecteurs MCP** correspondants (le bootstrap t'y aide via un wizard,
-cf. [SETUP.md §6](SETUP.md)). Tout est persisté dans un vault Markdown *append-only* versionné par git
-(ton cerveau te suit d'une machine à l'autre). Et comme tout vit dans un **repo git privé**,
-un laptop perdu ou volé n'est plus un drame : tu re-clones ailleurs et tu **reprends ton
-activité exactement là où tu en étais**.
-
-Corollaire : **zéro couplage temporel, zéro charge cognitive.** Le moteur RAG comme le harnais
-fonctionnent en **foolproof** — tu n'as *jamais* à orchestrer la mécanique : pas de « appelle
-tel skill avant tel autre », pas de synchro à déclencher à la main, pas besoin de savoir quand
-l'index se reconstruit. Tu poses ta question ; la recherche, la synchro delta, l'indexation et
-la persistance s'enchaînent toutes seules, au bon moment. C'est un parti-pris d'**affordance** :
-l'**usage est volontairement découplé de l'implémentation** — tu n'as pas à savoir *comment c'est
-fait à l'intérieur* pour t'en servir. Fluide, souple, simple au point que *n'importe qui* pourrait
-l'utiliser. Tout l'objectif : **alléger ta charge mentale** pour que tu te concentres sur les bons
-sujets, au bon moment.
-
-Et comme **tout est persisté** — tes questions, les réponses, ce qui a été synchronisé et
-généré —, ton second cerveau accumule une trace exploitable. Au bout d'un moment, tu peux
-littéralement lui demander *« qu'est-ce qu'on pourrait améliorer ? »* : il observe tout cet
-historique et s'en sert comme base pour suggérer ses propres pistes d'**amélioration continue**
-(c'est tout l'objet de la skill `improve`).
 
 ---
 
