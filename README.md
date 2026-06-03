@@ -150,6 +150,12 @@ instruction — adapte le nom et l'URL :
 
 > *« Installe-moi un second cerveau nommé `mon-cerveau` à partir de ce générateur : `<URL_DU_REPO>`. »*
 
+> 📍 **Depuis quel dossier ?** Peu importe — ouvre Claude Code dans n'importe quel dossier de
+> travail (un sous-dossier `second-brain-generator/`, jetable, y sera cloné). **Le dossier courant
+> ne décide pas où va ton cerveau** : par défaut il est créé dans ton home (`~/<nom>`). Pour un
+> autre emplacement, précise-le dans l'instruction (« …dans `~/cerveaux` ») — pas besoin de t'y
+> placer toi-même.
+
 C'est tout : pas besoin de préciser « ne touche pas au launcher » ni « ne demande pas ma clé » —
 **le générateur enforce lui-même la sûreté** (le launcher reste en lecture seule, le cerveau est un
 dossier neuf sans lien distant, clé jamais demandée en chat). Claude clone le **launcher**, te pose
