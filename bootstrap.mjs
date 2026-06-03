@@ -1,0 +1,216 @@
+#!/usr/bin/env node
+// ═══════════════════════════════════════════════════════════════════════════
+// bootstrap.mjs — installateur interactif du Second Brain Starter.
+// Vérifie les prérequis, personnalise le harnais, installe le moteur RAG.
+// Idempotent : peut être relancé sans casse.
+//
+// Multi-OS : pur Node (le seul prérequis runtime). Fonctionne en cmd /
+// PowerShell (Windows) comme en bash/zsh (macOS/Linux). Aucune dépendance
+// shell, jq, sqlite3 ni sed.
+//
+//   Usage :  node bootstrap.mjs
+// ═══════════════════════════════════════════════════════════════════════════
+import { execFileSync } from "node:child_process";
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  copyFileSync,
+} from "node:fs";
+import { dirname, resolve, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { tmpdir } from "node:os";
+import { createInterface } from "node:readline/promises";
+import { stdin, stdout } from "node:process";
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
+process.chdir(ROOT);
+
+// npm/npx portent une extension .cmd sur Windows ; node/git sont des .exe.
+const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
+
+// Chemins injectés dans du JSON : on normalise en slashes « / » (valides sur
+// Windows pour node/npx/cwd et sûrs en JSON, contrairement aux backslashes).
+const toPosix = (p) => p.split("\\").join("/");
+
+// ── Couleurs ────────────────────────────────────────────────────────────────
+const tty = stdout.isTTY;
+const c = {
+  B: tty ? "\x1b[1m" : "",
+  G: tty ? "\x1b[32m" : "",
+  Y: tty ? "\x1b[33m" : "",
+  R: tty ? "\x1b[31m" : "",
+  C: tty ? "\x1b[36m" : "",
+  X: tty ? "\x1b[0m" : "",
+};
+const ok = (m) => console.log(`${c.G}✓${c.X} ${m}`);
+const warn = (m) => console.log(`${c.Y}!${c.X} ${m}`);
+const err = (m) => console.error(`${c.R}✗${c.X} ${m}`);
+const step = (m) => console.log(`\n${c.B}━━ ${m}${c.X}`);
+
+console.log(`${c.B}${c.C}`);
+console.log(`  ╔══════════════════════════════════════════════╗`);
+console.log(`  ║        Second Brain Starter — bootstrap      ║`);
+console.log(`  ╚══════════════════════════════════════════════╝`);
+console.log(c.X);
+
+// Exécute une commande sans throw ; renvoie { out, ok }.
+function run(cmd, args, opts = {}) {
+  try {
+    const out = execFileSync(cmd, args, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      ...opts,
+    });
+    return { out: out ?? "", ok: true };
+  } catch (e) {
+    return { out: `${e.stdout ?? ""}${e.stderr ?? ""}`, ok: false };
+  }
+}
+
+// ── 1. Prérequis ────────────────────────────────────────────────────────────
+step("1/6 · Vérification des prérequis");
+let missing = false;
+
+// Node : on tourne déjà dedans, version lisible directement.
+const nodeMajor = Number(process.versions.node.split(".")[0]);
+if (nodeMajor >= 18) {
+  ok(`node trouvé (v${process.versions.node})`);
+} else {
+  err(`Node ${nodeMajor} trop ancien — il faut Node ≥ 18 : https://nodejs.org`);
+  missing = true;
+}
+
+const git = run("git", ["--version"]);
+if (git.ok) ok(`git trouvé (${git.out.trim()})`);
+else {
+  err("git manquant — installe-le : https://git-scm.com");
+  missing = true;
+}
+
+const npm = run(NPM, ["--version"]);
+if (npm.ok) ok(`npm trouvé (v${npm.out.trim()})`);
+else {
+  err("npm manquant — fourni avec Node.js : https://nodejs.org");
+  missing = true;
+}
+
+if (missing) {
+  err("Prérequis manquants — corrige les points ci-dessus puis relance : node bootstrap.mjs");
+  process.exit(1);
+}
+
+// ── 2. Personnalisation ─────────────────────────────────────────────────────
+step("2/6 · Personnalisation du harnais");
+const interactive = stdin.isTTY;
+const rl = interactive ? createInterface({ input: stdin, output: stdout }) : null;
+
+async function ask(prompt, def = "") {
+  if (!rl) return def;
+  const suffix = def ? ` ${c.C}[${def}]${c.X} : ` : " : ";
+  const ans = (await rl.question(`${prompt}${suffix}`)).trim();
+  return ans || def;
+}
+
+const defaultProject = ROOT.split(/[\\/]/).filter(Boolean).pop() ?? "second-brain";
+const gitUser = run("git", ["config", "user.name"]).out.trim();
+
+let projectName, ownerName, ownerContext, language;
+if (interactive) {
+  projectName = await ask("Nom du projet", defaultProject);
+  ownerName = await ask("Ton nom", gitUser);
+  ownerContext = await ask("Ton contexte (ex: CTO d'une scale-up)", "usage professionnel");
+  language = await ask("Langue par défaut des notes", "français");
+} else {
+  warn("Entrée non interactive — valeurs par défaut utilisées.");
+  projectName = defaultProject;
+  ownerName = "";
+  ownerContext = "usage professionnel";
+  language = "français";
+}
+
+// ── 3. Clé Gemini ───────────────────────────────────────────────────────────
+step("3/6 · Clé API Google Gemini (pour le RAG)");
+let geminiKey = "";
+const envPath = join(ROOT, ".env");
+const envHasKey =
+  existsSync(envPath) && /^GOOGLE_GEMINI_API_KEY=.+/m.test(readFileSync(envPath, "utf8"));
+if (envHasKey) {
+  ok(".env existe déjà avec une clé — conservée.");
+} else {
+  console.log(`Clé gratuite : ${c.C}https://aistudio.google.com/apikey${c.X}`);
+  geminiKey = await ask("Colle ta clé Gemini (ou Entrée pour configurer plus tard)");
+}
+
+// ── 4. Génération des fichiers ──────────────────────────────────────────────
+step("4/6 · Génération des fichiers personnalisés");
+const replacements = {
+  "{{PROJECT_ROOT}}": toPosix(ROOT),
+  "{{PROJECT_NAME}}": projectName,
+  "{{OWNER_NAME}}": ownerName,
+  "{{OWNER_CONTEXT}}": ownerContext,
+  "{{LANGUAGE}}": language,
+  "{{TMP_DIR}}": toPosix(tmpdir()),
+  "{{SOURCE_1}}": "(ta source)",
+};
+function gen(tpl, out) {
+  if (existsSync(out)) {
+    warn(`${out} existe déjà — laissé tel quel (supprime-le pour régénérer).`);
+    return;
+  }
+  let content = readFileSync(tpl, "utf8");
+  for (const [k, v] of Object.entries(replacements)) content = content.split(k).join(v);
+  writeFileSync(out, content);
+  ok(`généré : ${out}`);
+}
+gen(join(ROOT, "CLAUDE.md.template"), join(ROOT, "CLAUDE.md"));
+gen(join(ROOT, ".mcp.json.template"), join(ROOT, ".mcp.json"));
+gen(join(ROOT, ".claude", "settings.json.template"), join(ROOT, ".claude", "settings.json"));
+
+// .env
+if (!existsSync(envPath)) {
+  copyFileSync(join(ROOT, ".env.example"), envPath);
+  ok("généré : .env (depuis .env.example)");
+}
+if (geminiKey) {
+  let env = readFileSync(envPath, "utf8");
+  env = /^GOOGLE_GEMINI_API_KEY=/m.test(env)
+    ? env.replace(/^GOOGLE_GEMINI_API_KEY=.*$/m, `GOOGLE_GEMINI_API_KEY=${geminiKey}`)
+    : `${env}\nGOOGLE_GEMINI_API_KEY=${geminiKey}\n`;
+  writeFileSync(envPath, env);
+  ok("clé Gemini enregistrée dans .env");
+}
+
+if (rl) rl.close();
+
+// ── 5. Installation du moteur RAG ───────────────────────────────────────────
+step("5/6 · Installation du moteur RAG (npm install)");
+const rag = join(ROOT, "rag");
+const install = run(NPM, ["install", "--silent"], { cwd: rag, stdio: "inherit" });
+if (install.ok) ok("dépendances RAG installées");
+else {
+  err("npm install a échoué dans rag/ — relance : cd rag && npm install");
+  process.exit(1);
+}
+
+// ── 6. Indexation initiale (si clé présente) ────────────────────────────────
+step("6/6 · Indexation initiale du vault d'exemple");
+const keyReady =
+  existsSync(envPath) && /^GOOGLE_GEMINI_API_KEY=.+/m.test(readFileSync(envPath, "utf8"));
+if (keyReady) {
+  const idx = run(NPM, ["run", "--silent", "index"], { cwd: rag, stdio: "inherit" });
+  if (idx.ok) ok("vault d'exemple indexé");
+  else warn("Indexation interrompue (quota/clé ?) — elle reprendra au prochain démarrage de Claude Code.");
+} else {
+  warn("Pas de clé Gemini → indexation reportée. Ajoute la clé dans .env puis : cd rag && npm run index");
+}
+
+// ── Fin ─────────────────────────────────────────────────────────────────────
+console.log(`\n${c.B}${c.G}✓ Bootstrap terminé.${c.X}\n`);
+console.log(`Prochaines étapes :`);
+console.log(`  1. ${c.C}claude${c.X}                 ← ouvre Claude Code dans ce dossier`);
+console.log(`  2. Pose une question, ex. :`);
+console.log(`     ${c.C}"Quelle base de données a-t-on choisie pour la facturation et pourquoi ?"${c.X}`);
+console.log(`     → Claude répond depuis le vault, sources citées.`);
+console.log(`  3. Remplace les notes d'exemple par les tiennes, édite ${c.C}CLAUDE.md${c.X} à ton image.`);
+console.log(`\nDoc complète : ${c.C}SETUP.md${c.X}`);

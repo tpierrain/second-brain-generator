@@ -4,16 +4,18 @@
 
 | Outil | Pourquoi | Installation |
 |---|---|---|
-| **Node.js ≥ 18** | Fait tourner le moteur RAG | https://nodejs.org · ou `brew install node` |
+| **Node.js ≥ 18** | Fait tourner le moteur RAG **et** tout le harnais (installateur + hooks sont en Node, multi-OS) | https://nodejs.org (macOS : `brew install node` · Windows : `winget install OpenJS.NodeJS`) |
 | **git** | Versionnement + portabilité entre machines | https://git-scm.com |
 | **Claude Code** | L'agent qui interroge le vault | https://claude.com/claude-code |
 | **Clé Gemini** | Embeddings + recherche sémantique (gratuit) | https://aistudio.google.com/apikey |
-| `jq`, `sqlite3` *(optionnels)* | Ligne de statut plus riche au démarrage | `brew install jq sqlite3` |
+
+> **Multi-OS** : macOS, Linux et Windows (cmd ou PowerShell). L'installateur et les hooks
+> sont en Node — pas besoin de bash, `jq` ni `sqlite3`. Node est le seul prérequis runtime.
 
 ## 2. Installation
 
 ```bash
-./bootstrap.sh
+node bootstrap.mjs
 ```
 
 Le script :
@@ -27,13 +29,14 @@ Le script :
 Idempotent : tu peux le relancer. Les fichiers déjà générés ne sont pas écrasés (supprime-les pour régénérer).
 
 ### Installation manuelle (si tu préfères)
-```bash
-cp .env.example .env && $EDITOR .env            # mets ta clé Gemini
-sed "s|{{PROJECT_ROOT}}|$(pwd)|g" .mcp.json.template > .mcp.json
-sed "s|{{PROJECT_ROOT}}|$(pwd)|g" .claude/settings.json.template > .claude/settings.json
-cp CLAUDE.md.template CLAUDE.md                  # puis édite les placeholders {{...}}
-cd rag && npm install && npm run index
-```
+1. Copie `.env.example` → `.env` et renseigne ta clé Gemini.
+2. Copie chaque `*.template` vers son fichier final (`CLAUDE.md.template` → `CLAUDE.md`,
+   `.mcp.json.template` → `.mcp.json`, `.claude/settings.json.template` → `.claude/settings.json`)
+   puis remplace les placeholders `{{...}}` (notamment `{{PROJECT_ROOT}}` = chemin absolu du
+   repo en slashes `/`, et `{{TMP_DIR}}` = dossier temp de l'OS).
+3. `cd rag && npm install && npm run index`
+
+> En pratique, `node bootstrap.mjs` fait tout ça pour toi, sur tous les OS — préfère-le.
 
 ## 3. Premier test
 
@@ -102,7 +105,7 @@ git remote add origin <url-de-ton-repo-privé>
 git push -u origin main
 ```
 Le hook auto-commit pushera ensuite à chaque modif. Sur l'autre machine, `git clone` +
-`./bootstrap.sh` (récupère la clé / réinstalle), et tu retrouves ton cerveau. En cours de
+`node bootstrap.mjs` (récupère la clé / réinstalle), et tu retrouves ton cerveau. En cours de
 session, le skill `/sync` récupère les changements de l'autre machine.
 
 > ⚠️ Ne commite **jamais** `.env` (gitignoré). Sur une nouvelle machine, re-renseigne la clé.
@@ -112,7 +115,8 @@ session, le skill `/sync` récupère les changements de l'autre machine.
 | Symptôme | Cause probable | Remède |
 |---|---|---|
 | `npm install` échoue dans `rag/` | Node trop ancien | Node ≥ 18 (`node -v`) |
+| `npm install` échoue sur **`better-sqlite3`** (Windows) | Module natif sans prebuild pour ta version de Node | Utilise une **version LTS** de Node (prebuilds dispos), ou installe les outils de compilation : `npm install --global windows-build-tools` (ancien) ou les *Visual Studio Build Tools* (« Desktop development with C++ »). Puis `cd rag && npm install`. |
 | Recherches vides | Index pas construit / pas de clé | `cd rag && npm run index` après avoir mis la clé |
 | `RESOURCE_EXHAUSTED` / 429 | Quota Gemini du jour atteint | reprise auto au reset (minuit Pacifique), ou monte `MAX_EMBED_REQUESTS_PER_DAY` |
-| Statut RAG « indisponible » au démarrage | `sqlite3`/`jq` absents | `brew install jq sqlite3` (optionnel) |
-| Le serveur MCP n'apparaît pas | `.mcp.json` absent / mauvais chemin | relance `./bootstrap.sh`, accepte le serveur dans Claude Code |
+| Statut RAG « indisponible » au démarrage | Moteur RAG pas encore installé / DB en cours d'écriture | `cd rag && npm install` ; le statut se rétablit une fois l'index construit |
+| Le serveur MCP n'apparaît pas | `.mcp.json` absent / mauvais chemin | relance `node bootstrap.mjs`, accepte le serveur dans Claude Code |

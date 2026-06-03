@@ -21,8 +21,10 @@ donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
 - 🟡 **Harnais** — fichiers `*.template` (`CLAUDE.md.template`, `.mcp.json.template`,
   `.claude/settings.json.template`) + skills génériques (`sync`, `improve`) +
   `.claude/skills/EXAMPLES.md`. Le bootstrap génère les fichiers réels à partir des templates.
-- 🟢 **Onboarding** — `bootstrap.sh` (installateur foolproof), `vault/` d'exemple,
-  `README.md`, `SETUP.md`.
+- 🟢 **Onboarding** — `bootstrap.mjs` (installateur foolproof, Node pur → multi-OS), `vault/`
+  d'exemple, `README.md`, `SETUP.md`. Les hooks (`scripts/session-status.mjs`,
+  `scripts/auto-commit.mjs`) sont aussi en Node → pas de dépendance bash/jq/sqlite3, marche sur
+  macOS / Linux / Windows.
 
 ## Règles de dev
 
@@ -39,10 +41,18 @@ donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
 4. **Tester le bootstrap dans une copie jetable** (jamais en place), pour ne pas polluer le
    template avec des fichiers générés / `node_modules` :
    ```bash
-   cp -R . /tmp/sbs-test && cd /tmp/sbs-test && printf '\n\n\n\n\n' | ./bootstrap.sh
+   # stdin non-TTY → bootstrap part en mode non-interactif (valeurs par défaut)
+   cp -R . /tmp/sbs-test && cd /tmp/sbs-test && node bootstrap.mjs < /dev/null
    ```
 5. **Garder le moteur synchronisable** avec le second cerveau source : `rag/` est resté quasi
    identique à l'original → les correctifs peuvent être rapatriés dans un sens ou l'autre.
+6. **TDD strict sur le moteur (`rag/`).** Toute évolution de la logique du moteur se fait en
+   **red → green → refactor** : écrire d'abord le test qui échoue (`rag/src/lib/*.test.ts`,
+   runner `node --test`), le voir rouge pour la bonne raison, puis le minimum de code pour le
+   verdir, puis refactor à vert. Suite complète verte (`cd rag && npm test`) + typecheck
+   (`cd rag && npx tsc --noEmit`) à chaque étape. Exception assumée et **signalée
+   explicitement** : le purement mécanique/non testable unitairement (renommage, message,
+   config triviale, intégration réseau Gemini) — pas de test artificiel juste pour la forme.
 
 ## Pistes d'amélioration (backlog informel)
 

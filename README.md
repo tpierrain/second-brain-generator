@@ -21,7 +21,8 @@ est un template que tu adaptes à **ton** usage.
 cd second-brain-starter
 
 # 2. Lance l'installateur (vérifie les prérequis, personnalise, installe le moteur)
-./bootstrap.sh
+#    Multi-OS : macOS / Linux / Windows (cmd ou PowerShell), aucun shell requis.
+node bootstrap.mjs
 
 # 3. Ouvre Claude Code et pose une question
 claude
@@ -46,8 +47,8 @@ Claude cherche dans le vault et répond avec les backlinks vers les notes source
 | **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🔧 template à adapter |
 | **`.claude/skills/`** | Skills `sync` + `improve` (génériques) + idées d'autres skills | 🔧 à étoffer |
 | **`.claude/settings.json`** | Hooks (auto-commit, statut au démarrage) + permissions | ✅ généré |
-| **`scripts/session-status.sh`** | Ligne d'état repo + RAG affichée au démarrage | ✅ prêt |
-| **`bootstrap.sh`** | Installateur interactif | ✅ |
+| **`scripts/*.mjs`** | Hooks Node multi-OS : état repo + RAG au démarrage (`session-status`), commit auto (`auto-commit`) | ✅ prêt |
+| **`bootstrap.mjs`** | Installateur interactif (macOS / Linux / Windows) | ✅ |
 
 ---
 

@@ -33,7 +33,7 @@
     ],
     "deny": [],
     "additionalDirectories": [
-      "/tmp"
+      "{{TMP_DIR}}"
     ]
   },
   "hooks": {
@@ -43,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd {{PROJECT_ROOT}} && CHANGED=$(git status --porcelain 2>/dev/null | head -20); if [ -n \"$CHANGED\" ]; then git add . && git commit -m \"auto: vault/claude sync\" >/dev/null 2>&1; if git remote 2>/dev/null | grep -q .; then git push >/dev/null 2>&1 || { sleep 3 && git push >/dev/null 2>&1 || { echo ''; echo '⚠️  PUSH ÉCHOUÉ — commit local OK mais non poussé. Vérifie le réseau puis: git push'; }; }; fi; fi",
+            "command": "node \"{{PROJECT_ROOT}}/scripts/auto-commit.mjs\"",
             "timeout": 30000
           }
         ]
@@ -55,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{PROJECT_ROOT}}/scripts/session-status.sh",
+            "command": "node \"{{PROJECT_ROOT}}/scripts/session-status.mjs\"",
             "timeout": 20000
           }
         ]

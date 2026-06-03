@@ -40,7 +40,7 @@ vault/.obsidian/
 # donc PAS partir avec le « Use this template ».
 CLAUDE.local.md
 
-# ── Fichiers générés par bootstrap.sh (contiennent un chemin absolu, ────
+# ── Fichiers générés par bootstrap.mjs (contiennent un chemin absolu, ───
 #    propres à chaque machine → régénérés à chaque clone, jamais versionnés)
 .mcp.json
 .claude/settings.json

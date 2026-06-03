@@ -140,7 +140,9 @@ Le contexte de la session principale est une **ressource rare et qualitative**. 
 
 ### Règles générales
 
-- **Horodatage obligatoire.** Avant toute analyse de sources ou rédaction datée, exécuter `date` en bash pour ancrer la date/heure courante. Ne jamais deviner. Toute date dérivée (« demain », « jeudi dernier ») doit être calculée via `date -v+Nd` / `date -v-Nd` (macOS), jamais de tête.
+- **Horodatage obligatoire.** Avant toute analyse de sources ou rédaction datée, ancrer la date/heure courante — ne jamais deviner. Node étant un prérequis, utiliser une commande **portable** (macOS / Linux / Windows) :
+  - Date/heure courante : `node -e "console.log(new Date().toString())"`
+  - Date dérivée (« demain », « il y a 3 jours ») : `node -e "console.log(new Date(Date.now()+N*864e5).toISOString().slice(0,10))"` (N négatif pour le passé). Ne jamais calculer une date de tête.
 - **Ne pas créer de fichiers** hors de la structure définie sans demander.
 - **Ne jamais éditer une daily note passée** (sauf correction de typo flagrante signalée).
 - Si on touche au harnais (`.claude/`), commit séparé avec message clair (`harness: …`).
