@@ -46,9 +46,9 @@ quel que soit son niveau technique :
 - **Consultants, chercheurs, freelances** — consolider un domaine métier, ne rien perdre d'un
   contexte client.
 
-L'**usage au quotidien ne demande aucune compétence technique** : tu poses des questions, tu lis
-des réponses. Seule l'**installation** (une fois, ~15 min) suppose d'avoir git, Node et une clé
-API — on te guide pas à pas, et un installateur vérifie tout pour toi.
+> ⚠️ L'**usage au quotidien ne demande aucune compétence technique** : tu poses des questions, tu
+> lis des réponses. Seule l'**installation** (une fois, ~15 min) suppose d'avoir git, Node et une
+> clé API — on te guide pas à pas, et un installateur vérifie tout pour toi.
 
 ## En quoi c'est différent de ChatGPT, de Notion AI ou de la recherche Slack ?
 
