@@ -1,93 +1,177 @@
 # Second Brain Starter
 
-## C'est quoi un second cerveau ?
+**Retrouve n'importe quelle décision ou info de ton travail en quelques secondes — en posant la question en français, avec les sources à l'appui.**
 
-Une mémoire externe à toi : tes notes, décisions et échanges de travail réunis en un seul endroit
-que tu interroges **en langage naturel** — et qui te répond tout de suite, **sources à l'appui**,
-au lieu que tu ailles fouiller toi-même dans **tous tes outils** (Slack, Teams, mails, Google
-Drive, CR de meetings, etc.).
+> 🧑 *« Quelle base de données a-t-on choisie pour la facturation, et pourquoi ? »*
+>
+> 🧠 *« PostgreSQL, décidé au comité archi du 12 mai — pour le support JSONB et la cohérence
+> transactionnelle. La piste MongoDB a été écartée faute de transactions multi-documents
+> fiables à l'époque.*
+> *→ note `comité-archi-2025-05-12` · → Slack #tech, 14 mai »*
 
-## À quoi sert ce starter ?
+Au lieu d'aller fouiller toi-même dans Slack, tes mails, Google Drive et tes comptes rendus de
+réunion, tu demandes — et ton **second cerveau** te répond tout de suite, en citant d'où vient
+l'info.
 
-À te construire **TON** second cerveau — pas à t'en livrer un tout fait. Le moteur (RAG) est prêt à
-l'emploi ; le harnais (règles + skills) est un **template** : une **graine** que tu fais pousser en
-l'utilisant, à la façon *use case driven* décrite par **Thomas Pierrain** dans sa série d'articles
-(ci-dessous).
+> ⚠️ Ce repo n'est **pas** un cerveau tout fait : c'est une **graine** (un *starter*) que tu fais
+> pousser pour t'en construire **un à toi**. On explique pourquoi plus bas — et c'est précisément
+> ce qui le rend utile.
 
-Car un second cerveau est **personnel** : il doit être **fine-tuné à tes usages**. Ce n'est **pas
-un outil *one-size-fits-all*** — ce qui sert un Head of Engineering, un commercial ou un chercheur
-n'a rien à voir. Le starter te donne la mécanique et la méthode ; *toi*, tu définis tes notes, tes
-règles (`CLAUDE.md`) et tes skills (cf. la section « adapte-le à tes cas d'usage » plus bas).
+---
 
-## En quoi ce « second cerveau *use case driven* » est-il spécifique ?
+## C'est quoi, un « second cerveau » ?
 
-Tout ici est pensé **interaction et expérience** d'abord : tu veux une réponse **immédiate**, en
-quelques secondes, à *chacune* de tes questions — pas attendre qu'un agent ait fini de re-fouiller
-tous tes outils. Tout le reste découle de cette exigence.
+Une **mémoire externe à toi** : tes notes, tes décisions et tes échanges de travail réunis en un
+seul endroit, que tu interroges en langage naturel et qui te répond **immédiatement, sources à
+l'appui**.
 
-Le parti-pris : **répondre tout de suite sur la base de ce qui a déjà été aspiré dans le substrat,
-vérifier ensuite en parallèle par des sous-agents** qu'il n'y a pas d'infos plus fraîches ou
-contradictoires. À ta question, le second cerveau répond en quelques secondes à partir du vault par
-**recherche sémantique** (embeddings / RAG — il retrouve une note même formulée autrement, pas par
-mots-clés exacts), en citant ses sources et leur fraîcheur. Pendant que tu lis, des agents
-re-vérifient en arrière-plan les sources externes (Slack, Drive, transcripts…) et n'**amendent** la
-réponse que s'il y a du nouveau. C'est le pattern *stale-while-revalidate* du web appliqué à ta
-mémoire : le cache prime sur la fraîcheur immédiate.
+Trois propriétés le définissent :
 
-Et **à chaque question posée, le substrat se rattrape** : il aspire tout ce qui s'est passé de
-nouveau depuis la dernière fois (**en mode delta** — uniquement les nouveautés). Tout est persisté
-dans un vault Markdown *append-only* versionné par git (ton cerveau te suit d'une machine à
-l'autre) ; et comme tout vit dans un **repo git privé**, un laptop perdu ou volé n'est plus un
-drame : tu re-clones ailleurs et tu **reprends exactement là où tu en étais**.
+- **Il est à toi.** Tout vit dans un dossier de notes (un *vault*) versionné dans **ton repo git
+  privé**. Tu n'es pas locataire d'un service en ligne : tu es propriétaire de tes données.
+- **Il se souvient.** Chaque réponse, chaque info nouvelle est persistée. Ton cerveau accumule une
+  trace exploitable et te suit d'une machine à l'autre.
+- **Il cite ses sources.** Pas de réponse en l'air : tu remontes toujours à la note ou au message
+  d'origine, avec sa date.
 
-> **Principe directeur — l'affordance avant tout.** Tu interroges ton second cerveau en langage
-> naturel et tu obtiens une réponse immédiate, sourcée. Tu n'as **jamais** à savoir comment c'est
-> fait à l'intérieur (RAG, embeddings, synchro delta, index, sous-agents) : **l'usage est découplé
-> de l'implémentation**. C'est pensé pour alléger ta charge mentale — au point que *même quelqu'un
-> de non-technique* pourrait s'en servir.
+## C'est pour qui ?
 
-Corollaire : **zéro couplage temporel, zéro charge cognitive.** Tu n'as *jamais* à orchestrer la
-mécanique (pas de « appelle tel skill avant tel autre », pas de synchro à déclencher, pas à savoir
-quand l'index se reconstruit). Et comme **tout est persisté**, ton second cerveau accumule une trace
-exploitable : tu peux lui demander *« qu'est-ce qu'on pourrait améliorer ? »*, il observe cet
-historique et suggère ses propres pistes d'**amélioration continue** (c'est l'objet de la skill `improve`).
+Pour toute personne qui **croule sous l'information dispersée** et veut la retrouver sans effort —
+quel que soit son niveau technique :
 
-## De quoi vais-je avoir besoin ?
+- **Managers, Head of Engineering** — suivre ses équipes, ses 1-1, ce qu'on attend de soi.
+- **Product managers, product designers** — garder le fil des décisions produit, des arbitrages,
+  du « pourquoi on a tranché comme ça ».
+- **Consultants, chercheurs, freelances** — consolider un domaine métier, ne rien perdre d'un
+  contexte client.
 
-- **[Claude Code](https://claude.com/claude-code)**, **[Node.js](https://nodejs.org) ≥ 18** et **git**
-  (le bootstrap vérifie tout).
-- **Tes sources d'information**, branchées via **MCP** (ou d'autres moyens) : Slack, Google Drive,
-  Calendar, mails, Notion, transcripts de réunions… selon *tes* outils (cf. [SETUP §6](SETUP.md)).
-- Une **clé API Gemini de Google** pour le RAG (chunking → embeddings → recherche sémantique). Le
-  **palier gratuit suffit pour démarrer** (quotas journaliers, avec garde-fous intégrés). Pour aller
-  plus vite ou indexer un **gros volume**, le palier payant est **très bon marché** : les embeddings
-  se comptent en **centimes** (ordre de grandeur ~0,15 $ par million de tokens indexés — indexer des
-  milliers de notes coûte typiquement quelques dizaines de centimes ; *vérifie le tarif courant, il
-  évolue*).
+L'**usage au quotidien ne demande aucune compétence technique** : tu poses des questions, tu lis
+des réponses. Seule l'**installation** (une fois, ~15 min) suppose d'avoir git, Node et une clé
+API — on te guide pas à pas, et un installateur vérifie tout pour toi.
+
+## En quoi c'est différent de ChatGPT, de Notion AI ou de la recherche Slack ?
+
+| | Ce qui leur manque | Ce que fait ton second cerveau |
+|---|---|---|
+| **ChatGPT / Claude « nu »** | Ne connaît que ce que tu recolles à chaque conversation. Oublie tout ensuite. | Une **mémoire persistante**, qui grossit à chaque question. |
+| **Notion AI, recherche Slack…** | Cloisonné à **un seul outil**. | **Transversal** : Slack + Drive + mails + transcripts + tes notes, au même endroit. |
+| **N'importe quel SaaS** | Tes données chez un tiers, format fermé. | **Chez toi**, en Markdown, dans **ton** repo git privé. |
+
+Et surtout : ce n'est pas **un** produit unique pour tout le monde. C'est une **méthode** pour te
+fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un starter et pas un produit fini ?* »).
+
+## Ce que ça change pour toi, concrètement
+
+- **Réponse immédiate.** En quelques secondes, pas le temps d'aller faire un café.
+- **Toujours sourcé.** Tu vois d'où vient chaque info, et si elle est récente ou pas.
+- **Rien ne se perd.** Tout est sauvegardé automatiquement. Laptop perdu ou volé ? Tu reprends
+  ailleurs exactement où tu en étais.
+- **Zéro effort de ta part.** Tu n'as jamais à lancer une synchro, à déclencher quoi que ce soit
+  dans le bon ordre, ni même à savoir que git existe : **tu n'as à savoir ni comment c'est fait
+  dedans, ni comment c'est rangé.** Tu poses ta question, c'est tout.
+
+> 💡 Pour les curieux : ta réponse arrive tout de suite à partir de ce que ton cerveau a déjà en
+> mémoire, et se met à jour discrètement en arrière-plan s'il trouve du nouveau — un peu comme une
+> page web qui s'affiche instantanément puis se rafraîchit toute seule. Le détail est en
+> [« Sous le capot »](#sous-le-capot).
+
+---
+
+## Prêt à essayer ?
+
+### De quoi tu as besoin
+
+- **[Claude Code](https://claude.com/claude-code)**, **[Node.js](https://nodejs.org) ≥ 18** et
+  **git**. *(L'installateur vérifie tout — s'il en manque un, il te le dit proprement.)*
+- **Une [clé API Gemini](https://aistudio.google.com/apikey)** (Google) pour la recherche. Le
+  **palier gratuit suffit pour démarrer**.
+- **Tes sources d'information** (Slack, Drive, mails, Notion, transcripts…), à brancher selon
+  *tes* outils. Optionnel au début. *(cf. [SETUP §6](SETUP.md))*
+
+> 💶 **Combien ça coûte ?** Quasi rien. Indexer **~1 000 notes ≈ 0,10 €**, **~10 000 notes ≈ 1 €**,
+> les questions sont négligeables. Le gratuit suffit pour démarrer ; le payant (très bon marché)
+> sert pour les gros volumes — et protège tes données (voir ci-dessous). *Vérifie le tarif courant,
+> il évolue.*
+
+### Démarrage en 3 étapes
+
+```bash
+# 1. Récupère ce template (bouton "Use this template" sur GitHub, ou git clone)
+cd second-brain-starter
+
+# 2. Lance l'installateur — il vérifie, personnalise et installe tout pour toi.
+#    Multi-OS : macOS / Linux / Windows (cmd ou PowerShell), aucun shell requis.
+node bootstrap.mjs
+
+# 3. Ouvre Claude Code et pose ta première question
+claude
+```
+
+Une fois installé, essaie par exemple :
+
+> *« Quelle base de données a-t-on choisie pour la facturation, et pourquoi ? »*
+
+Claude cherche dans ton vault et répond avec les liens vers les notes sources.
 
 ## Et la confidentialité de mes données ?
 
 Question légitime : ton vault peut être **confidentiel**. Deux services voient ton contenu — et
-dans les deux cas tu peux **fermer la porte à leur exploitation** :
+**dans les deux cas, tu peux fermer la porte à leur exploitation** :
 
-- **Claude (le raisonnement)** lit ton vault pour répondre. Par **API / Team / Enterprise**, tes
-  données ne servent **pas** à l'entraînement. Sur le **grand public** (claude.ai Free/Pro/Max),
-  va dans **Réglages → Confidentialité** et **décoche** l'usage de tes conversations pour
-  l'amélioration des modèles.
-- **Gemini (le RAG)** reçoit le **texte de tes notes** pour calculer les embeddings (rien d'autre ;
-  les vecteurs restent en local). ⚠️ Sur le **palier gratuit**, Google **peut exploiter** ces
-  contenus (amélioration produit, relecture humaine possible). **Activer la facturation (palier
-  payant) = le geste qui protège** : Google s'engage alors à **ne pas** s'en servir pour
-  l'entraînement.
+- **Claude** (qui raisonne et répond) lit ton vault. En **API / Team / Enterprise**, tes données
+  ne servent **pas** à l'entraînement. Sur le **grand public** (claude.ai Free/Pro/Max), va dans
+  **Réglages → Confidentialité** et **décoche** l'usage de tes conversations pour l'amélioration
+  des modèles.
+- **Gemini** (qui fait la recherche) reçoit le **texte de tes notes** pour les indexer. ⚠️ Sur le
+  **palier gratuit**, Google **peut exploiter** ces contenus (relecture humaine possible).
+  **Activer la facturation = le geste qui protège** : Google s'engage alors à **ne pas** s'en
+  servir pour l'entraînement.
 
-Et ça ne coûte **presque rien** : indexer **~1 000 notes ≈ 0,10 €**, **~10 000 notes ≈ 1 €**, les
-requêtes négligeables, l'index incrémental → coût récurrent quasi nul. **Pour le prix d'un café à
-l'année, tes données sortent du périmètre d'entraînement.** Détails et abaque :
-[SETUP — §9 Confidentialité](SETUP.md). *(Les conditions des deux fournisseurs évoluent : vérifie-les.)*
+**Pour le prix d'un café à l'année, tes données sortent du périmètre d'entraînement.** Détails et
+abaque : [SETUP §9](SETUP.md). *(Les conditions des deux fournisseurs évoluent : vérifie-les.)*
 
-### La série d'articles (le « pourquoi » derrière ce repo)
+---
 
-À lire dans l'ordre — chaque épisode raconte une étape de la construction :
+## Pourquoi un *starter*, et pas un produit fini ?
+
+Parce qu'un second cerveau est **personnel**. Ce qui sert un Head of Engineering, un commercial ou
+un chercheur n'a **rien à voir**. Un outil unique pour tous serait fade pour chacun.
+
+Alors ce repo te livre **la mécanique prête à l'emploi** (le moteur de recherche) et **une
+méthode** — l'approche *use case driven* de **Thomas Pierrain** ([sa série d'articles](#la-série-darticles)) —
+pour faire **émerger tes propres usages** au fil de tes questions. Tu pars d'une graine ; tu la
+fais pousser en t'en servant.
+
+**Chacun a son instance.** Un collègue qui veut le sien **repart du template** et crée **son** repo
+privé à lui. On ne partage pas un second cerveau à plusieurs — on partage la graine.
+
+C'est aussi pour ça qu'aucun fichier `CLAUDE.md` (les règles que Claude suit) n'est livré :
+l'installateur le **génère** sur mesure pour toi, et refuse d'écraser le tien. C'est **ta
+constitution**, propre à *tes* usages.
+
+## Adapte-le à tes cas d'usage
+
+Un second cerveau ne vaut que **calé sur ton activité** : tes besoins, le type de questions que tu
+poses, le type d'échange que tu veux avoir avec lui. C'est *toi* qui définis ça.
+
+**Exemple — pour Thomas Pierrain, *Head of Engineering*** — son second cerveau l'aide à :
+
+- **suivre ses collaborateurs**, celles et ceux qu'il coache et mentore ;
+- **se faire challenger** quand il a la tête dans le guidon, sur un poste où l'on se sent parfois
+  seul ;
+- **consolider des concepts métier client avancés** (ici comptabilité et fiscalité) ;
+- **distinguer les acronymes** métier des acronymes applicatifs — récupérer vite le sens en pleine
+  réunion, sans interrompre tout le monde ;
+- **cartographier les équipes** : qui porte quel sujet, à tout moment ;
+- **savoir en permanence ce qu'on attend de lui, et ce qu'il attend des autres**.
+
+Rien de tout cela n'est livré : ce sont **ses** spécificités. Le starter ne cherche pas à les
+répliquer — il te donne le moteur et la méthode pour faire émerger **les tiennes**.
+
+## La série d'articles
+
+Le « pourquoi » derrière ce repo — à lire dans l'ordre, chaque épisode raconte une étape (et ses
+ratés assumés) :
 
 1. [Mon second cerveau a pivoté 2 fois en 3 jours](https://medium.com/@tpierrain/mon-second-cerveau-a-pivot%C3%A9-2-fois-en-3-jours-d846b7b2cbb5)
 2. [J'ai mis un coach vénère dans mon second cerveau](https://medium.com/@tpierrain/jai-mis-un-coach-v%C3%A9n%C3%A9re-dans-mon-second-cerveau-c5593bbfd7d7)
@@ -95,161 +179,113 @@ l'année, tes données sortent du périmètre d'entraînement.** Détails et aba
 
 ---
 
-## Démarrage en 3 étapes
+## Sous le capot
 
-```bash
-# 1. Clone ce template (bouton "Use this template" sur GitHub, ou git clone)
-cd second-brain-starter
+*Cette section est pour les curieux et les profils techniques. Tu n'as pas besoin de la lire pour
+utiliser ton second cerveau.*
 
-# 2. Lance l'installateur (vérifie les prérequis, personnalise, installe le moteur)
-#    Multi-OS : macOS / Linux / Windows (cmd ou PowerShell), aucun shell requis.
-node bootstrap.mjs
+### Le parti-pris : répondre tout de suite, vérifier ensuite
 
-# 3. Ouvre Claude Code et pose une question
-claude
-```
+Tout est pensé **expérience d'abord** : tu veux une réponse en quelques secondes à *chaque*
+question — pas attendre qu'un agent ait fini de re-fouiller tous tes outils.
 
-> **Prérequis** : [Node.js](https://nodejs.org) ≥ 18, git, [Claude Code](https://claude.com/claude-code),
-> et une [clé Gemini gratuite](https://aistudio.google.com/apikey). Le bootstrap vérifie tout.
+Donc le second cerveau **répond immédiatement** à partir de ce qu'il a déjà en mémoire (le vault),
+par **recherche sémantique** (il retrouve une note même formulée autrement, pas par mots-clés
+exacts). Pendant que tu lis, des agents **re-vérifient en arrière-plan** les sources externes et
+n'**amendent** la réponse que s'il y a du nouveau. C'est le pattern *stale-while-revalidate* du web
+appliqué à ta mémoire : la rapidité prime, la fraîcheur suit.
 
-Une fois installé, demande par exemple :
-> *« Quelle base de données a-t-on choisie pour la facturation, et pourquoi ? »*
+À chaque question, le cerveau **se rattrape** : il aspire ce qui s'est passé de nouveau depuis la
+dernière fois (en **mode delta** — uniquement les nouveautés) et persiste tout dans le vault
+Markdown, versionné par git.
 
-Claude cherche dans le vault et répond avec les backlinks vers les notes sources.
-
----
-
-## Ton second cerveau = ta propre instance de ce template
-
-Ce repo est un **template**, pas un service partagé. Pour te faire un second cerveau :
-
-1. **« Use this template » sur GitHub** (ou `git clone` puis re-pointe `origin` vers un repo à toi,
-   cf. [SETUP §7](SETUP.md)) → tu obtiens **ton propre repo privé**, séparé de ce starter.
-2. `node bootstrap.mjs` → il **génère tes fichiers personnalisés** (dont `CLAUDE.md`) dans cette copie.
-3. Cette copie **EST** ton second cerveau : vault + harnais dans un seul repo privé, qui te suit
-   d'une machine à l'autre.
-
-Chaque personne a **sa** propre instance : un collègue qui veut le sien **repart du template** et
-crée **son** repo privé à lui. Un second cerveau est personnel — on n'en partage pas un seul à plusieurs.
-
-> **Pourquoi aucun `CLAUDE.md` n'est livré (et pourquoi ne pas en ajouter ici).** `CLAUDE.md` est
-> **ta constitution** : les règles que Claude suit, propres à *tes* usages. Le bootstrap la **génère**
-> depuis `CLAUDE.md.template`, et il **refuse d'écraser** un `CLAUDE.md` existant. En committer un
-> dans le starter empêcherait donc chaque utilisateur d'avoir le sien.
-
----
-
-## Ce qu'il y a dans la boîte
-
-| Élément | Rôle | Statut |
-|---|---|---|
-| **`rag/`** | Moteur RAG (MCP server TypeScript) : chunking, embeddings Gemini, recherche sémantique, garde-fous quota | ✅ prêt à l'emploi |
-| **`vault/`** | Ton contenu Markdown (notes d'exemple fournies) | 🔧 à remplir |
-| **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🔧 template à adapter |
-| **`.claude/skills/`** | Skills livrées : `sync`, `improve`, `coach` (le **coach vénère** à la Radical Candor), `prepare-1-1`, `sync-sources` + `tdd-discipline` (vendorée) — détail ci-dessous — et des idées d'autres skills | 🔧 à étoffer |
-| **`.claude/settings.json`** | Hooks (auto-commit, statut au démarrage) + permissions | ✅ généré |
-| **`scripts/*.mjs`** | Hooks Node multi-OS : état repo + RAG au démarrage (`session-status`), commit auto (`auto-commit`) | ✅ prêt |
-| **`bootstrap.mjs`** | Installateur interactif (macOS / Linux / Windows) | ✅ |
-
-### Les skills que tu appelles
-
-Le starter reste volontairement **frugal en skills**. Celles que tu invoques au quotidien :
-
-| Skill | Ce qu'elle fait |
-|---|---|
-| **`/coach`** | **coach « vénère », sparring partner branché sur ton vault**, dans l'esprit *Radical Candor* (Care Personally + Challenge Directly) : brutalement honnête ET bienveillant, il challenge tes décisions et tes raisonnements, nomme tes angles morts. *Coaching de soi uniquement.* |
-| **`/prepare-1-1`** | prépare un 1-1 **dans les deux sens** : avec **ton manager** (les sujets que tu veux porter, ce qui a bougé depuis la dernière fois) ou avec quelqu'un que **tu manages** (suivi des engagements, sujets opérationnels, **revue de KPI**). Croise fiche personne + dernier 1-1 + delta de signaux. *Skill méta : une structure à affiner à tes axes et tes KPI.* |
-| **`/improve`** | fait évoluer ton harnais : lit les frictions, propose et applique les améliorations les plus utiles |
-| **`/sync`** | synchronise le repo git entre tes machines — **utile surtout si tu as plusieurs laptops** (commit, `pull --rebase`, gestion de conflits, push). Rarement nécessaire au quotidien. |
-
-### Outillage interne du harnais (tu ne les appelles pas)
-
-Ces skills font partie de la **mécanique** : tu n'as pas à les connaître pour utiliser ton second
-cerveau — c'est tout l'objet de l'**affordance** du harnais (l'usage est découplé de
-l'implémentation). C'est juste bon de savoir qu'elles existent.
-
-| Élément | Rôle | Qui le déclenche |
-|---|---|---|
-| **`sync-sources`** | architecture **fan-out/fan-in** qui aspire le **delta** des sources externes en sous-agents parallèles **lecture seule** — le moteur de la Phase 2 (cf. « Comment ça marche »). 🔧 à câbler sur tes connecteurs. | **tes questions** (jamais toi directement) |
-| **hook auto-commit** | committe **et pushe** ton vault à chaque ajout/modif de fichier (`scripts/auto-commit.mjs`). Rôle clé dans l'**affordance** : un profil **non-tech n'a pas à connaître git** (ni `add`, ni `commit`, ni `push`) — tout est versionné tout seul. Précieux pour **ne rien perdre**, **auditer** l'historique, nourrir l'**amélioration continue**, et **changer de laptop / jongler entre plusieurs machines** sans y penser. | automatique (hook PostToolUse sur Write/Edit) |
-| **`tdd-discipline`** | discipline TDD vendorée — sert à développer *le harnais lui-même* en TDD. | Claude, quand on modifie le harnais |
-
-Le reste n'est **pas livré** : ce sont des **idées de skills à faire émerger selon tes besoins**.
-Le starter t'en propose plusieurs (détaillées dans
-[`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md)), inspirées de cas d'usage réels —
-par exemple :
-
-- **`briefing-journee`** — briefing du matin : agenda du jour, points chauds, actions prioritaires ;
-- **`briefing`** — après une absence, la synthèse de ce qui s'est passé sur tes canaux suivis ;
-- **`prepare-meeting`** — contexte, points ouverts et historique des participants avant une réunion ;
-- **`rapport-etonnement`** — capturer ton regard neuf lors d'une prise de poste / d'une nouvelle mission ;
-- **`weekly-review`** — revue hebdo : ce qui a avancé, ce qui stagne, ce qui arrive.
-
-C'est voulu : un second cerveau ne vaut que calé sur *tes* cas d'usage (cf. la section
-« adapte-le à tes cas d'usage » plus bas).
-
-> **Skill ≠ connecteur.** Slack, Drive, Notion, Calendar sont des **connecteurs** (sources de
-> données), pas des skills. Tu les branches au bootstrap (wizard, cf. [SETUP §6](SETUP.md)) ;
-> les natifs (Slack, Calendar) se configurent côté compte claude.ai. Une *skill* est une
-> procédure qui exploite ces sources — à toi de l'écrire.
-
----
-
-## Comment ça marche
+### Le flux en 4 phases
 
 ```
 Question
    │
-   ▼  PHASE 1 — Réponse immédiate depuis le vault (recherche sémantique RAG)
+   ▼  PHASE 1 — Réponse immédiate depuis le vault (recherche sémantique)
    │
-   ├──▶ PHASE 2 — (optionnel) Sync sources externes en background
+   ├──▶ PHASE 2 — (optionnel) Sync des sources externes en arrière-plan
    │
-   ▼  PHASE 3 — Amender si du nouveau est trouvé
+   ▼  PHASE 3 — Amender la réponse si du nouveau est trouvé
    │
-   ▼  PHASE 4 — Persistance : tout est sauvé dans le vault + commit auto (hook)
+   ▼  PHASE 4 — Persistance : tout est sauvé dans le vault + commit auto
 ```
 
-Sous le capot, le **moteur RAG** découpe chaque note en *chunks* (un par section), les
-transforme en vecteurs (embeddings Gemini) et retrouve les passages les plus proches du sens
-de ta question. L'index se reconstruit seul, incrémentalement ; un hook git committe et pushe
-à chaque modification (phase 4).
+Le **moteur RAG** découpe chaque note en *chunks* (un par section), les transforme en vecteurs
+(*embeddings* Gemini) et retrouve les passages les plus proches du **sens** de ta question. L'index
+se reconstruit seul, incrémentalement ; un hook git committe et pousse à chaque modification.
 
----
+### Ce qu'il y a dans la boîte
 
-## Un second cerveau, c'est *personnel* — adapte-le à tes cas d'usage
+| Élément | Rôle | Statut |
+|---|---|---|
+| **`rag/`** | Moteur RAG (serveur MCP TypeScript) : chunking, embeddings Gemini, recherche sémantique, garde-fous quota | ✅ prêt à l'emploi |
+| **`vault/`** | Ton contenu Markdown (notes d'exemple fournies) | 🔧 à remplir |
+| **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🔧 généré, à adapter |
+| **`.claude/skills/`** | Skills livrées (voir ci-dessous) + idées d'autres skills | 🔧 à étoffer |
+| **`.claude/settings.json`** | Hooks (auto-commit, statut au démarrage) + permissions | ✅ généré |
+| **`scripts/*.mjs`** | Hooks Node multi-OS : état repo + RAG au démarrage, commit auto | ✅ prêt |
+| **`bootstrap.mjs`** | Installateur interactif (macOS / Linux / Windows) | ✅ |
 
-Un second cerveau n'a de valeur que **calé sur ton activité** : tes besoins, le **type de
-questions** que tu poses, le **type d'interaction** que tu veux avoir avec lui. C'est *toi*
-qui définis ça — pas le starter.
+### Les skills que tu appelles
 
-**Par exemple, pour Thomas Pierrain — *Head of Engineering*** — le second cerveau doit l'aider à :
+Le starter reste volontairement **frugal**. Celles que tu invoques au quotidien :
 
-- **suivre ses collaborateurs**, celles et ceux qu'il coache et mentore ;
-- **se coacher lui-même** (et se faire challenger) : prendre du recul quand on a la tête dans
-  le guidon, sur des postes où l'on se sent parfois un peu seul ;
-- **comprendre et consolider des concepts métier avancés** côté client — ici comptabilité et
-  fiscalité, des domaines loin d'être triviaux ;
-- **distinguer les acronymes métier des acronymes applicatifs** : tu es en réunion, quelqu'un
-  vient de lâcher un acronyme barbare — récupère vite l'info pour suivre, sans avoir à
-  interrompre tout le monde pour demander (les mêmes lettres ne veulent pas dire la même chose) ;
-- **cartographier les équipes et l'organisation** : qui travaille sur quel périmètre, quelle
-  équipe porte quel sujet, à tout moment ;
-- **savoir en permanence ce qu'on attend de lui — et ce qu'il attend des autres**.
+| Skill | Ce qu'elle fait |
+|---|---|
+| **`/coach`** | **Coach « vénère »**, sparring partner branché sur ton vault, esprit *Radical Candor* (bienveillant ET brutalement honnête) : il challenge tes décisions, nomme tes angles morts. *Coaching de soi uniquement.* |
+| **`/prepare-1-1`** | Prépare un 1-1 **dans les deux sens** : avec **ton manager** ou avec quelqu'un que **tu manages** (suivi des engagements, revue de KPI). Croise fiche personne + dernier 1-1 + signaux récents. |
+| **`/improve`** | Fait évoluer ton harnais : lit les frictions, propose et applique les améliorations utiles. |
+| **`/sync`** | Synchronise ton repo entre machines — utile surtout si tu as **plusieurs laptops**. Rarement nécessaire au quotidien. |
 
-Rien de tout cela n'est livré dans le starter : ce sont des **spécificités propres à son
-activité**. Le starter ne cherche surtout pas à les répliquer — il te donne le moteur et la
-méthode pour faire **émerger les tiennes**, au fil de tes questions et de tes interactions.
+### L'outillage interne (tu ne l'appelles pas)
+
+Ces éléments font partie de la mécanique : tu n'as pas à les connaître. C'est juste bon de savoir
+qu'ils existent.
+
+| Élément | Rôle | Qui le déclenche |
+|---|---|---|
+| **`sync-sources`** | Aspire le **delta** des sources externes en sous-agents parallèles **lecture seule** — le moteur de la Phase 2. 🔧 à câbler sur tes connecteurs. | **tes questions** (jamais toi) |
+| **hook auto-commit** | Committe **et pousse** ton vault à chaque modification. C'est ce qui fait qu'un profil **non-technique n'a jamais à connaître git** — tout est versionné tout seul, rien ne se perd, tu changes de laptop sans y penser. | automatique |
+| **`tdd-discipline`** | Discipline TDD vendorée — sert à développer *le harnais lui-même*. | Claude, quand on modifie le harnais |
+
+Le reste n'est **pas livré** : ce sont des **idées de skills** à faire émerger selon tes besoins,
+détaillées dans [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md). Par exemple :
+`briefing-journee` (briefing du matin), `briefing` (synthèse après une absence), `prepare-meeting`,
+`rapport-etonnement`, `weekly-review`.
+
+> **Skill ≠ connecteur.** Slack, Drive, Notion, Calendar sont des **connecteurs** (sources de
+> données), pas des skills. Tu les branches au bootstrap ([SETUP §6](SETUP.md)). Une *skill* est
+> une procédure qui exploite ces sources — à toi de l'écrire.
+
+### Le vocabulaire en 30 secondes
+
+<details>
+<summary>Déplier le mini-glossaire</summary>
+
+- **Vault** — le dossier où vivent tes notes (en Markdown).
+- **RAG / recherche sémantique** — la techno qui retrouve une note par le *sens* de ta question,
+  pas par mots-clés exacts.
+- **Embeddings** — la traduction d'un texte en chiffres, pour comparer les *sens* entre eux.
+- **Skill** — une procédure que tu déclenches (ex. « prépare mon 1-1 »).
+- **Connecteur (MCP)** — un branchement vers une de tes sources (Slack, Drive…).
+- **Harnais** — l'ensemble des règles (`CLAUDE.md`) + skills que tu personnalises.
+- **Hook** — une action automatique déclenchée par un événement (ex. sauvegarder à chaque modif).
+- **Bootstrap** — l'installateur qui prépare tout pour toi.
+- **Repo / git** — l'endroit versionné où tout est stocké et sauvegardé.
+
+</details>
 
 ---
 
 ## Et après ?
 
-La graine te donne le **moteur** et un **squelette de harnais** ; *ton* second cerveau, tu le
-fais pousser en l'utilisant — tes notes, tes règles dans `CLAUDE.md`, tes skills. Pour aller
-plus loin : [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md) (idées de skills) et
-[SETUP.md](SETUP.md) (connecteurs Slack/Drive/Notion, troubleshooting, détails du RAG).
-
----
+La graine te donne le **moteur** et un **squelette de harnais** ; *ton* second cerveau, tu le fais
+pousser en l'utilisant — tes notes, tes règles, tes skills. Pour aller plus loin :
+[`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md) (idées de skills) et
+[SETUP.md](SETUP.md) (connecteurs, troubleshooting, détails du RAG).
 
 ## À propos
 
