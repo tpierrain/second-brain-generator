@@ -16,10 +16,11 @@ import {
   readFileSync,
   writeFileSync,
   copyFileSync,
+  mkdirSync,
 } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { tmpdir } from "node:os";
+import { tmpdir, homedir } from "node:os";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { smokeTestMcp } from "./scripts/lib/mcp-smoke.mjs";
@@ -27,11 +28,15 @@ import { CONNECTORS } from "./scripts/lib/connectors-catalog.mjs";
 import { applyConnectorFiles } from "./scripts/lib/connectors-apply.mjs";
 import { clearExampleNotes } from "./scripts/lib/example-notes.mjs";
 import { isBootstrapStub } from "./scripts/lib/claude-md.mjs";
-import { parseAnswers } from "./scripts/lib/bootstrap-args.mjs";
-import { planGitSetup } from "./scripts/lib/git-init.mjs";
+import { parseAnswers, resolveTargetDir } from "./scripts/lib/bootstrap-args.mjs";
+import { parseLsFilesZ, filterCopyable } from "./scripts/lib/tracked-files.mjs";
 
+// ROOT = le LAUNCHER (ce dépôt cloné). Source en LECTURE SEULE, réutilisable :
+// le bootstrap n'y écrit JAMAIS. Il CRÉE ailleurs un dossier cerveau (TARGET),
+// y copie les fichiers suivis, puis `git init` dedans → aucun lien vers le
+// launcher par construction. Pas de process.chdir : tout passe par des chemins
+// explicites (ROOT pour lire, TARGET pour écrire).
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
-process.chdir(ROOT);
 
 // npm/npx portent une extension .cmd sur Windows ; node/git sont des .exe.
 const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
@@ -110,7 +115,6 @@ if (missing) {
 // ── 2. Personnalisation ─────────────────────────────────────────────────────
 step("2/9 · Personnalisation du harnais");
 
-const defaultProject = ROOT.split(/[\\/]/).filter(Boolean).pop() ?? "second-brain";
 const gitUser = run("git", ["config", "user.name"]).out.trim();
 
 // Réponses pilotables sans clavier : flags CLI > variables d'env > défauts.
@@ -118,10 +122,11 @@ const gitUser = run("git", ["config", "user.name"]).out.trim();
 // récolte les réponses en chat puis appelle UNE commande --non-interactive.
 // La clé Gemini n'est JAMAIS un argument (sécurité) — toujours différée en .env.
 const cli = parseAnswers(process.argv.slice(2), process.env, {
-  projectName: defaultProject,
+  projectName: "second-brain",
   ownerName: gitUser,
   ownerContext: "usage professionnel",
   language: "français",
+  destParent: undefined,
 });
 
 // Interactif seulement si vrai TTY ET pas de --non-interactive demandé.
@@ -135,10 +140,11 @@ async function ask(prompt, def = "") {
   return ans || def;
 }
 
-let projectName, ownerName, ownerContext, language;
+let projectName, ownerName, ownerContext, language, destParent;
 if (interactive) {
   // Prompts pré-remplis avec les réponses CLI/env (ou les défauts) comme valeur proposée.
-  projectName = await ask("Nom du projet", cli.projectName);
+  projectName = await ask("Nom du cerveau (dossier à créer)", cli.projectName);
+  destParent = await ask("Emplacement (dossier parent)", cli.destParent ?? homedir());
   ownerName = await ask("Ton nom", cli.ownerName);
   ownerContext = await ask("Ton contexte (ex: CTO d'une scale-up)", cli.ownerContext);
   language = await ask("Langue par défaut des notes", cli.language);
@@ -148,7 +154,34 @@ if (interactive) {
   ownerName = cli.ownerName;
   ownerContext = cli.ownerContext;
   language = cli.language;
+  destParent = cli.destParent;
 }
+
+// ── Résolution du dossier cerveau (TARGET) ───────────────────────────────────
+// On REFUSE une cible existante (garantit que c'est bien le bootstrap qui crée
+// le dossier — pas de greffe dans un dossier déjà peuplé), puis on la crée et on
+// y copie les fichiers SUIVIS du launcher (git ls-files -z, en Node pur → gère
+// espaces/accents, multi-OS). Le launcher (ROOT) reste intact.
+const TARGET = resolveTargetDir({ name: projectName, destParent, home: homedir() });
+if (existsSync(TARGET)) {
+  err(`Le dossier cible existe déjà : ${TARGET}`);
+  err("Choisis un autre nom (--name) ou emplacement (--dest), ou supprime-le, puis relance.");
+  process.exit(1);
+}
+mkdirSync(TARGET, { recursive: true });
+
+const lsFiles = run("git", ["-C", ROOT, "ls-files", "-z"]);
+if (!lsFiles.ok) {
+  err("Impossible de lister les fichiers du launcher (git ls-files) — le launcher est-il un dépôt git ?");
+  process.exit(1);
+}
+const tracked = filterCopyable(parseLsFilesZ(lsFiles.out));
+for (const rel of tracked) {
+  const dst = join(TARGET, rel);
+  mkdirSync(dirname(dst), { recursive: true });
+  copyFileSync(join(ROOT, rel), dst);
+}
+ok(`dossier cerveau créé : ${TARGET} (${tracked.length} fichiers copiés depuis le launcher)`);
 
 // ── 3. Clé Gemini ───────────────────────────────────────────────────────────
 step("3/9 · Clé API Google Gemini (pour le RAG)");
@@ -156,7 +189,7 @@ warn(
   "Confidentialité : sur le palier GRATUIT, Google peut exploiter tes contenus (amélioration produit, relecture humaine). Pour un vault confidentiel, active la FACTURATION (palier payant) — quelques centimes. Détails : SETUP §9.",
 );
 let geminiKey = "";
-const envPath = join(ROOT, ".env");
+const envPath = join(TARGET, ".env");
 const envHasKey =
   existsSync(envPath) && /^GOOGLE_GEMINI_API_KEY=.+/m.test(readFileSync(envPath, "utf8"));
 if (envHasKey) {
@@ -169,7 +202,7 @@ if (envHasKey) {
 // ── 4. Génération des fichiers ──────────────────────────────────────────────
 step("4/9 · Génération des fichiers personnalisés");
 const replacements = {
-  "{{PROJECT_ROOT}}": toPosix(ROOT),
+  "{{PROJECT_ROOT}}": toPosix(TARGET),
   "{{PROJECT_NAME}}": projectName,
   "{{OWNER_NAME}}": ownerName,
   "{{OWNER_CONTEXT}}": ownerContext,
@@ -192,18 +225,17 @@ function gen(tpl, out, canOverwrite) {
   writeFileSync(out, content);
   ok(`généré : ${out}`);
 }
-// Capturé AVANT génération (gen() remplace l'amorce) : sert à décider du git.
-const claudeMdPath = join(ROOT, "CLAUDE.md");
-const wasStub = existsSync(claudeMdPath) && isBootstrapStub(readFileSync(claudeMdPath, "utf8"));
-const isMaintainer = existsSync(join(ROOT, "CLAUDE.local.md"));
-
-gen(join(ROOT, "CLAUDE.md.template"), join(ROOT, "CLAUDE.md"), isBootstrapStub);
-gen(join(ROOT, ".mcp.json.template"), join(ROOT, ".mcp.json"));
-gen(join(ROOT, ".claude", "settings.json.template"), join(ROOT, ".claude", "settings.json"));
+// Les templates ont été copiés dans TARGET : on les lit là et on écrit à côté.
+// Le CLAUDE.md copié est l'amorce (stub) → isBootstrapStub la fait remplacer par
+// la constitution personnalisée. .mcp.json / settings.json sont gitignorés (donc
+// absents de la copie) → gen les écrit à neuf.
+gen(join(TARGET, "CLAUDE.md.template"), join(TARGET, "CLAUDE.md"), isBootstrapStub);
+gen(join(TARGET, ".mcp.json.template"), join(TARGET, ".mcp.json"));
+gen(join(TARGET, ".claude", "settings.json.template"), join(TARGET, ".claude", "settings.json"));
 
 // .env
 if (!existsSync(envPath)) {
-  copyFileSync(join(ROOT, ".env.example"), envPath);
+  copyFileSync(join(TARGET, ".env.example"), envPath);
   ok("généré : .env (depuis .env.example)");
 }
 if (geminiKey) {
@@ -215,41 +247,19 @@ if (geminiKey) {
   ok("clé Gemini enregistrée dans .env");
 }
 
-// Dépôt git local — socle de l'auto-commit. AUCUNE opération irréversible : on
-// n'efface jamais le .git. Le générateur enforce simplement « pas de lien vers le
-// template » sans détruire d'historique (cf. scripts/lib/git-init.mjs). La
-// garantie anti-fuite vient du push opt-in du hook (secondbrain.autopush).
-const plan = planGitSetup({
-  hasDotGit: existsSync(join(ROOT, ".git")),
-  wasStub,
-  isMaintainer,
-});
-if (isMaintainer) {
-  ok("repo de dev du template détecté (CLAUDE.local.md) — git laissé intact.");
-}
-if (plan.init) {
-  const init = run("git", ["init", "-q"], { cwd: ROOT });
-  if (!init.ok) warn("git init impossible — l'auto-commit sera inactif tant qu'il n'y a pas de dépôt.");
-}
-if (plan.stripRemote) {
-  // Clone resté lié au générateur : on retire le(s) remote(s) hérité(s).
-  // Non destructif et recouvrable (`git remote add …`). Le .git est conservé.
-  const remotes = run("git", ["remote"], { cwd: ROOT }).out.trim().split(/\s+/).filter(Boolean);
-  for (const r of remotes) run("git", ["remote", "remove", r], { cwd: ROOT });
-  if (remotes.length) {
-    ok(`lien vers le générateur retiré (remote ${remotes.join(", ")} supprimé) — aucun push tant que tu n'as pas branché TON dépôt.`);
-  }
-}
-if (plan.commit) {
-  run("git", ["add", "-A"], { cwd: ROOT });
-  const commit = run(
-    "git",
-    ["commit", "-q", "-m", "chore: initialisation du second cerveau"],
-    { cwd: ROOT },
-  );
-  if (commit.ok) ok("dépôt git local prêt (commit d'installation)");
-  else warn("commit d'installation impossible (configure git user.name/email).");
-}
+// Dépôt git DU CERVEAU — socle de l'auto-commit. Dossier NEUF → `git init`
+// systématique, aucun conditionnel, aucun remote, aucune suppression. Aucun lien
+// vers le launcher par construction (on a copié les fichiers suivis, jamais le
+// .git du launcher). L'anti-fuite vient du push opt-in du hook (secondbrain.autopush).
+run("git", ["init", "-q"], { cwd: TARGET });
+run("git", ["add", "-A"], { cwd: TARGET });
+const commit = run(
+  "git",
+  ["commit", "-q", "-m", "chore: initialisation du second cerveau"],
+  { cwd: TARGET },
+);
+if (commit.ok) ok("dépôt git local prêt (commit d'installation)");
+else warn("commit d'installation impossible (configure git user.name/email).");
 
 // ── 5. Connecteurs externes (optionnel) ─────────────────────────────────────
 // Propose de brancher des sources externes (Drive/Notion/Slack/Calendar…).
@@ -262,8 +272,8 @@ step("5/9 · Brancher des sources externes (optionnel)");
 if (interactive) {
   const want = await ask("Brancher des sources externes maintenant ? [o/N]", "N");
   if (/^o/i.test(want)) {
-    const mcpPath = join(ROOT, ".mcp.json");
-    const settingsPath = join(ROOT, ".claude", "settings.json");
+    const mcpPath = join(TARGET, ".mcp.json");
+    const settingsPath = join(TARGET, ".claude", "settings.json");
     for (const conn of CONNECTORS) {
       for (const u of conn.useCases ?? []) console.log(`    ${c.C}· ${u}${c.X}`);
       const pick = await ask(`  • ${conn.label} ? [o/N]`, "N");
@@ -290,7 +300,7 @@ if (interactive) {
 // propose la purge ICI, avant l'indexation, pour que l'index reste propre.
 // La machinerie (vault/backlog/harnais.md) et la doc (README) sont préservées.
 step("6/9 · Nettoyer les notes d'exemple (optionnel)");
-const vaultDir = join(ROOT, "vault");
+const vaultDir = join(TARGET, "vault");
 if (interactive) {
   const purge = await ask(
     "Vider les notes d'exemple ? (garde-les pour tester le 1er run) [o/N]",
@@ -310,7 +320,7 @@ if (rl) rl.close();
 
 // ── 6. Installation du moteur RAG ───────────────────────────────────────────
 step("7/9 · Installation du moteur RAG (npm install)");
-const rag = join(ROOT, "rag");
+const rag = join(TARGET, "rag");
 const install = run(NPM, ["install", "--silent"], { cwd: rag, stdio: "inherit" });
 if (install.ok) ok("dépendances RAG installées");
 else {
@@ -338,7 +348,7 @@ if (keyReady) {
 step("9/9 · Vérification de la connexion MCP");
 const EXPECT_TOOLS = ["search_vault", "get_document", "list_documents", "vault_stats"];
 try {
-  const mcp = JSON.parse(readFileSync(join(ROOT, ".mcp.json"), "utf8"));
+  const mcp = JSON.parse(readFileSync(join(TARGET, ".mcp.json"), "utf8"));
   const srv = mcp.mcpServers?.["vault-rag"];
   if (!srv) {
     warn(".mcp.json sans serveur « vault-rag » — vérification ignorée.");
@@ -351,7 +361,7 @@ try {
     const res = await smokeTestMcp({
       command: cmd,
       args: srv.args ?? [],
-      cwd: srv.cwd ?? ROOT,
+      cwd: srv.cwd ?? TARGET,
       expectTools: EXPECT_TOOLS,
       timeoutMs: 30000,
     });
@@ -368,8 +378,9 @@ try {
 
 // ── Fin ─────────────────────────────────────────────────────────────────────
 console.log(`\n${c.B}${c.G}✓ Bootstrap terminé.${c.X}\n`);
+console.log(`Ton second cerveau a été créé dans : ${c.C}${TARGET}${c.X}`);
 console.log(`Prochaines étapes :`);
-console.log(`  1. ${c.C}claude${c.X}                 ← ouvre Claude Code dans ce dossier`);
+console.log(`  1. ${c.C}cd ${toPosix(TARGET)} && claude${c.X}   ← ouvre Claude Code dans le dossier cerveau`);
 console.log(`  2. Pose une question, ex. :`);
 console.log(`     ${c.C}"Quelle base de données a-t-on choisie pour la facturation et pourquoi ?"${c.X}`);
 console.log(`     → Claude répond depuis le vault, sources citées.`);
