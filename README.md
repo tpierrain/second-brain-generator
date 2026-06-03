@@ -10,8 +10,8 @@
 
 Une mémoire externe à toi : tes notes, décisions et échanges de travail réunis en un seul endroit
 que tu interroges **en langage naturel** — et qui te répond tout de suite, **sources à l'appui**,
-au lieu d'aller fouiller dans **tous tes outils** (Slack, Teams, mails, Google Drive, CR de
-meetings, etc.).
+au lieu que tu ailles fouiller toi-même dans **tous tes outils** (Slack, Teams, mails, Google
+Drive, CR de meetings, etc.).
 
 ## À quoi sert ce starter ?
 
