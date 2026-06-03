@@ -169,9 +169,10 @@ Ces skills font partie de la **mécanique** : tu n'as pas à les connaître pour
 cerveau — c'est tout l'objet de l'**affordance** du harnais (l'usage est découplé de
 l'implémentation). C'est juste bon de savoir qu'elles existent.
 
-| Skill | Rôle | Qui la déclenche |
+| Élément | Rôle | Qui le déclenche |
 |---|---|---|
 | **`sync-sources`** | architecture **fan-out/fan-in** qui aspire le **delta** des sources externes en sous-agents parallèles **lecture seule** — le moteur de la Phase 2 (cf. « Comment ça marche »). 🔧 à câbler sur tes connecteurs. | **tes questions** (jamais toi directement) |
+| **hook auto-commit** | committe **et pushe** ton vault à chaque ajout/modif de fichier (`scripts/auto-commit.mjs`). Précieux pour **ne rien perdre**, **auditer** l'historique, nourrir l'**amélioration continue**, et **changer de laptop / jongler entre plusieurs machines** sans y penser. | automatique (hook PostToolUse sur Write/Edit) |
 | **`tdd-discipline`** | discipline TDD vendorée — sert à développer *le harnais lui-même* en TDD. | Claude, quand on modifie le harnais |
 
 Le reste n'est **pas livré** : ce sont des **idées de skills à faire émerger selon tes besoins**.
