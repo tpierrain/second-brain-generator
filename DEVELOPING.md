@@ -26,6 +26,18 @@ donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
   `scripts/auto-commit.mjs`) sont aussi en Node → pas de dépendance bash/jq/sqlite3, marche sur
   macOS / Linux / Windows.
 
+### Note de design — onboarding piloté par Claude
+
+Deux chemins d'install coexistent (README « Option A / B ») : **manuel** (`node bootstrap.mjs`
+interactif) et **assisté par Claude** (une instruction en langage naturel). Le principe directeur
+du chemin assisté est le **déterminisme** : tout ce qui est mécanique + critique + répétable reste
+**dans le script** (génération, `git init`, install RAG, smoke-test auto-jugé) ; **Claude n'est
+qu'un emballage conversationnel** — il récolte les réponses en chat, appelle **une seule commande**
+`--non-interactive`, relaie le verdict du script, puis gère les 3 consignes finales (clé `.env`,
+dépôt distant, redémarrage). On ne confie **pas** la séquence d'install à Claude. L'amorce
+`CLAUDE.md` (marqueur `bootstrap-stub`) porte ce runbook ; `scripts/lib/bootstrap-args.mjs`
+(`parseAnswers`) et `scripts/lib/git-init.mjs` (`shouldInitGit`) en sont les briques pures testées.
+
 ## Règles de dev
 
 1. **Commits manuels.** Pas de hook auto-commit dans ce repo (il n'existe que dans
@@ -76,6 +88,10 @@ donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
   d'embeddings local (Ollama / open-source) via `EMBEDDING_MODEL` (`rag/src/lib/config.ts` +
   `embedder.ts`), pour que rien ne sorte de la machine. Aujourd'hui seulement documenté
   (README/SETUP §9 : palier payant Gemini = données hors entraînement).
-- Bootstrap : option `--non-interactive` avec fichier de réponses (pour CI / re-provisioning).
+- ~~Bootstrap : option `--non-interactive`~~ ✅ livré : `parseAnswers` (`scripts/lib/bootstrap-args.mjs`)
+  → flags `--name/--owner/--context/--lang` (+ env `SB_*`, précédence flag > env > défaut),
+  `--non-interactive`/`--yes`/`--no-input` ; **jamais la clé Gemini** (différée en `.env`). Le
+  bootstrap fait aussi un `git init` local s'il n'y a pas de dépôt (`scripts/lib/git-init.mjs`).
+  Doc : `SETUP.md §2`. Suite : variante avec fichier de réponses si besoin CI / re-provisioning.
 - Internationalisation : les templates sont en français. Prévoir une variante EN ?
 - Skills d'exemple réellement fonctionnels (un `prepare-meeting` générique branché Calendar).

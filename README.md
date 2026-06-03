@@ -131,7 +131,27 @@ Pour lever les doutes qu'on a tous au début :
 - L'installateur te demande un « **Nom du projet** » : c'est juste une **étiquette** affichée dans ta
   config (par défaut, le nom du dossier). Ça **ne renomme ni ne déplace rien**.
 
-### Les 3 étapes
+### Option A — Démarrage assisté par Claude (le plus simple)
+
+Tu as **déjà accès au repo** (via ton compte GitHub) et tu utilises Claude Code ? Tu peux laisser
+**Claude tout installer pour toi**. Ouvre Claude Code (même hors du repo) et donne-lui cette
+instruction — adapte le nom et l'URL :
+
+> *« Crée-moi un second cerveau nommé `mon-cerveau` à partir de ce starter : `<URL_DU_REPO>`.
+> Fais-en une **copie** (pas un clone lié à ce repo), puis installe-le en suivant son `CLAUDE.md`.
+> Pose-moi les questions nécessaires, mais **ne me demande pas ma clé Gemini**. »*
+
+Claude récupère une copie détachée, te pose **en chat** les quelques questions (nom, ton contexte,
+langue), puis lance l'installateur en mode non-interactif — qui fait **tout** (dépôt git, fichiers,
+moteur RAG, vérification). Il te reste **3 gestes** :
+
+1. **Coller ta clé Gemini** dans `.env` (ligne `GOOGLE_GEMINI_API_KEY=`) — jamais dans le chat.
+2. **Dépôt distant ?** Claude te demandera si tu veux un dépôt git **distant** (backup +
+   multi-machine). **Dire non est sans risque** : tout reste versionné en local, rien ne se perd,
+   et l'auto-commit ne tentera aucun push. Tu pourras en ajouter un plus tard.
+3. **Rouvrir Claude Code** dans le dossier `mon-cerveau` (active le moteur de recherche).
+
+### Option B — Manuel (`node bootstrap.mjs`)
 
 ```bash
 # 1. Sur GitHub : « Use this template » → crée TON repo privé (ex. « mon-cerveau »).

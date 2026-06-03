@@ -57,7 +57,8 @@ Le script :
 2. te demande nom / contexte / langue / nom de projet ;
 3. te demande ta clé Gemini (ou plus tard) ;
 4. génère tes fichiers personnalisés : `CLAUDE.md` (qui **remplace l'amorce de pré-installation**),
-   `.mcp.json`, `.claude/settings.json`, `.env` ;
+   `.mcp.json`, `.claude/settings.json`, `.env` — puis **initialise un dépôt git local** s'il n'y
+   en a pas encore (socle de l'auto-commit ; idempotent) ;
 5. propose de **brancher des sources externes** (optionnel — cf. §6) ;
 6. propose de **vider les notes d'exemple** (optionnel — garde-les pour le 1er test, vide-les ensuite pour ne pas polluer ton RAG) ;
 7. installe les dépendances du moteur (`npm install`) ;
@@ -77,6 +78,35 @@ constitution `CLAUDE.md`, une fois en place, est ensuite préservée.
 3. `cd rag && npm install && npm run index`
 
 > En pratique, `node bootstrap.mjs` fait tout ça pour toi, sur tous les OS — préfère-le.
+
+### Installation non-interactive (flags) & démarrage piloté par Claude
+
+Le bootstrap accepte un **mode non-interactif** : utile pour scripter l'install, et c'est ce qui
+permet le **démarrage assisté par Claude** (cf. README « Option A »). Claude récolte les réponses
+en chat, puis appelle **une seule commande** :
+
+```bash
+node bootstrap.mjs --non-interactive --name "mon-cerveau" --owner "Jane Doe" \
+  --context "CTO d'une scale-up" --lang "français"
+```
+
+- **Flags** : `--name` (étiquette de projet), `--owner` (ton nom), `--context`, `--lang`. Formes
+  `--x valeur` **et** `--x=valeur`. Alias du mode : `--non-interactive`, `--yes`, `--no-input`.
+- **Précédence** : flag CLI > variable d'environnement (`SB_PROJECT_NAME`, `SB_OWNER_NAME`,
+  `SB_OWNER_CONTEXT`, `SB_LANGUAGE`) > valeur par défaut.
+- **La clé Gemini n'est JAMAIS un argument** (sécurité : pas de secret en ligne de commande). En
+  mode non-interactif elle est **toujours différée** → renseigne-la ensuite dans `.env` ; l'index
+  se construit au 1er démarrage du serveur MCP.
+- **Dépôt git local automatique** : si le dossier n'a pas de `.git` (cas d'une **copie détachée** —
+  `git clone` puis `rm -rf .git`), le bootstrap fait `git init` + 1er commit. Idempotent : s'il y a
+  déjà un dépôt, il n'y touche pas. C'est le socle de l'auto-commit — **pas** une question posée.
+- **Dépôt distant : décidé après coup, jamais imposé.** L'install ne crée aucun remote. **Sans
+  remote**, tout reste versionné en local et l'auto-commit **ne tente aucun push** (aucune erreur) ;
+  tu peux en brancher un quand tu veux (cf. §7). En démarrage assisté, Claude te **proposera** d'en
+  créer un (backup + multi-machine) — répondre non est sans risque.
+
+> ⚠️ En mode non-interactif, les étapes **connecteurs** (§6) et **purge des notes d'exemple** sont
+> sautées (elles restent interactives) — tu les feras à la main ou en relançant le bootstrap.
 
 ## 3. Premier test
 
