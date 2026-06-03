@@ -41,7 +41,14 @@ démarrer.
 
 ## 2. Installation
 
+> **Installation sur place — un seul dossier.** Le bootstrap s'exécute **dans le dossier où tu l'as
+> cloné** et y génère ta config : ce dossier **devient** ton second cerveau. Il ne crée **aucun**
+> autre répertoire ailleurs. Le nom de ton second cerveau = le **nom du dossier** (celui de ton
+> repo, choisi au « Use this template »). Le « Nom du projet » qu'il te demande n'est qu'une
+> **étiquette** de config (défaut = nom du dossier) ; il ne renomme ni ne déplace rien.
+
 ```bash
+cd mon-cerveau        # le dossier cloné depuis ton repo (issu du template)
 node bootstrap.mjs
 ```
 

@@ -95,19 +95,61 @@ fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un starter et p
 > sert pour les gros volumes — et protège tes données (voir ci-dessous). *Vérifie le tarif courant,
 > il évolue.*
 
-### Démarrage en 3 étapes
+### Comment ça s'installe — le modèle en un coup d'œil
+
+**Un seul dossier.** Le dossier que tu récupères depuis le template **devient** ton second cerveau :
+l'installation se fait **sur place**. Le starter ne crée **aucun** autre dossier ailleurs sur ton
+disque — il transforme le dossier courant.
+
+```
+1.  GitHub — bouton « Use this template »
+        │   → crée TON repo privé ; c'est toi qui choisis son nom (ex. « mon-cerveau »)
+        ▼
+2.  git clone …/mon-cerveau.git
+        ▼
+    📁 mon-cerveau/            ← un dossier normal, encore « vierge » (juste le template)
+        │
+        │   cd mon-cerveau  puis  node bootstrap.mjs   (l'installateur tourne DANS ce dossier)
+        ▼
+    📁 mon-cerveau/            ← LE MÊME dossier, devenu ton second cerveau
+        ├── CLAUDE.md          (ta constitution — générée à partir de l'amorce)
+        ├── vault/             (tes notes)
+        ├── rag/               (le moteur de recherche)
+        └── .mcp.json, .env …  (config générée)
+        │
+        │   claude             (ouvre Claude Code DANS ce dossier)
+        ▼
+    → tu poses tes questions
+```
+
+Pour lever les doutes qu'on a tous au début :
+
+- **Le nom du dossier = le nom que TU choisis** au « Use this template » (le nom de ton repo). C'est
+  *lui*, le nom de ton second cerveau — **pas** « second-brain-starter ».
+- **Aucun second dossier** n'est créé : le starter ne fabrique pas un cerveau « ailleurs », il
+  **transforme sur place** le dossier que tu viens de cloner.
+- L'installateur te demande un « **Nom du projet** » : c'est juste une **étiquette** affichée dans ta
+  config (par défaut, le nom du dossier). Ça **ne renomme ni ne déplace rien**.
+
+### Les 3 étapes
 
 ```bash
-# 1. Récupère ce template (bouton "Use this template" sur GitHub, ou git clone)
-cd second-brain-starter
+# 1. Sur GitHub : « Use this template » → crée TON repo privé (ex. « mon-cerveau »).
+#    Puis clone-le et entre dedans :
+git clone git@github.com:<toi>/mon-cerveau.git
+cd mon-cerveau
 
-# 2. Lance l'installateur — il vérifie, personnalise et installe tout pour toi.
+# 2. Lance l'installateur — il s'exécute DANS ce dossier : vérifie, personnalise, installe.
 #    Multi-OS : macOS / Linux / Windows (cmd ou PowerShell), aucun shell requis.
 node bootstrap.mjs
 
-# 3. Ouvre Claude Code et pose ta première question
+# 3. Ouvre Claude Code DANS ce dossier et pose ta première question
 claude
 ```
+
+> 💡 Pas de compte GitHub / pas envie de passer par « Use this template » ? Tu peux aussi cloner
+> directement ce starter puis re-pointer `origin` vers un repo privé à toi — même résultat, c'est
+> juste un peu plus manuel ([SETUP §7](SETUP.md)).
 
 Une fois installé, essaie par exemple :
 
