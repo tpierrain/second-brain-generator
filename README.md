@@ -1,11 +1,5 @@
 # Second Brain Starter
 
-> **Principe directeur — l'affordance avant tout.** Tu interroges ton second cerveau en langage
-> naturel et tu obtiens une réponse immédiate, sourcée. Tu n'as **jamais** à savoir comment c'est
-> fait à l'intérieur (RAG, embeddings, synchro delta, index, sous-agents) : **l'usage est découplé
-> de l'implémentation**. C'est pensé pour alléger ta charge mentale — au point que *même quelqu'un
-> de non-technique* pourrait s'en servir.
-
 ## C'est quoi un second cerveau ?
 
 Une mémoire externe à toi : tes notes, décisions et échanges de travail réunis en un seul endroit
@@ -46,12 +40,17 @@ dans un vault Markdown *append-only* versionné par git (ton cerveau te suit d'u
 l'autre) ; et comme tout vit dans un **repo git privé**, un laptop perdu ou volé n'est plus un
 drame : tu re-clones ailleurs et tu **reprends exactement là où tu en étais**.
 
+> **Principe directeur — l'affordance avant tout.** Tu interroges ton second cerveau en langage
+> naturel et tu obtiens une réponse immédiate, sourcée. Tu n'as **jamais** à savoir comment c'est
+> fait à l'intérieur (RAG, embeddings, synchro delta, index, sous-agents) : **l'usage est découplé
+> de l'implémentation**. C'est pensé pour alléger ta charge mentale — au point que *même quelqu'un
+> de non-technique* pourrait s'en servir.
+
 Corollaire : **zéro couplage temporel, zéro charge cognitive.** Tu n'as *jamais* à orchestrer la
 mécanique (pas de « appelle tel skill avant tel autre », pas de synchro à déclencher, pas à savoir
-quand l'index se reconstruit) — c'est le principe d'**affordance** rappelé plus haut. Et comme
-**tout est persisté**, ton second cerveau accumule une trace exploitable : tu peux lui demander
-*« qu'est-ce qu'on pourrait améliorer ? »*, il observe cet historique et suggère ses propres pistes
-d'**amélioration continue** (c'est l'objet de la skill `improve`).
+quand l'index se reconstruit). Et comme **tout est persisté**, ton second cerveau accumule une trace
+exploitable : tu peux lui demander *« qu'est-ce qu'on pourrait améliorer ? »*, il observe cet
+historique et suggère ses propres pistes d'**amélioration continue** (c'est l'objet de la skill `improve`).
 
 ## De quoi vais-je avoir besoin ?
 
@@ -172,7 +171,7 @@ l'implémentation). C'est juste bon de savoir qu'elles existent.
 | Élément | Rôle | Qui le déclenche |
 |---|---|---|
 | **`sync-sources`** | architecture **fan-out/fan-in** qui aspire le **delta** des sources externes en sous-agents parallèles **lecture seule** — le moteur de la Phase 2 (cf. « Comment ça marche »). 🔧 à câbler sur tes connecteurs. | **tes questions** (jamais toi directement) |
-| **hook auto-commit** | committe **et pushe** ton vault à chaque ajout/modif de fichier (`scripts/auto-commit.mjs`). Précieux pour **ne rien perdre**, **auditer** l'historique, nourrir l'**amélioration continue**, et **changer de laptop / jongler entre plusieurs machines** sans y penser. | automatique (hook PostToolUse sur Write/Edit) |
+| **hook auto-commit** | committe **et pushe** ton vault à chaque ajout/modif de fichier (`scripts/auto-commit.mjs`). Rôle clé dans l'**affordance** : un profil **non-tech n'a pas à connaître git** (ni `add`, ni `commit`, ni `push`) — tout est versionné tout seul. Précieux pour **ne rien perdre**, **auditer** l'historique, nourrir l'**amélioration continue**, et **changer de laptop / jongler entre plusieurs machines** sans y penser. | automatique (hook PostToolUse sur Write/Edit) |
 | **`tdd-discipline`** | discipline TDD vendorée — sert à développer *le harnais lui-même* en TDD. | Claude, quand on modifie le harnais |
 
 Le reste n'est **pas livré** : ce sont des **idées de skills à faire émerger selon tes besoins**.
