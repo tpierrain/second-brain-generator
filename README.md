@@ -35,7 +35,9 @@ du web appliqué à ta mémoire : le cache prime sur la fraîcheur immédiate.
 Et **à chaque question posée, le substrat se rattrape** : il aspire tout ce qui s'est passé
 de nouveau depuis la dernière fois (**en mode delta** — uniquement les nouveautés, pas tout
 re-télécharger). Tout est persisté dans un vault Markdown *append-only* versionné par git
-(ton cerveau te suit d'une machine à l'autre).
+(ton cerveau te suit d'une machine à l'autre). Et comme tout vit dans un **repo git privé**,
+un laptop perdu ou volé n'est plus un drame : tu re-clones ailleurs et tu **reprends ton
+activité exactement là où tu en étais**.
 
 Corollaire : **zéro couplage temporel, zéro charge cognitive.** Le moteur RAG comme le harnais
 fonctionnent en **foolproof** — tu n'as *jamais* à orchestrer la mécanique : pas de « appelle
