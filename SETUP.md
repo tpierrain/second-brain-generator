@@ -214,7 +214,7 @@ Ceux-là **ne se branchent pas dans `.mcp.json`** : active-les depuis les *Conne
 compte (Settings → Connectors). Le wizard (a) te le rappelle pour ces sources et n'écrit rien
 pour elles.
 
-## 7. Portabilité multi-machines
+## 7. Sauvegarde & portabilité multi-machines (dépôt distant)
 
 Configure un remote git privé, **puis active le push** (sans ça, l'auto-commit reste local — c'est
 le garde-fou opt-in qui empêche toute fuite par défaut) :

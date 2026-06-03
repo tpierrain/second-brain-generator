@@ -198,6 +198,22 @@ Claude cherche dans ton vault et répond avec les liens vers les notes sources.
 > bootstrap te **propose de les effacer** d'un coup — histoire de repartir d'un vault propre, sans
 > polluer ton second cerveau avec ces données factices.
 
+### 💾 Sauvegarder ton cerveau & l'utiliser sur plusieurs machines (optionnel)
+
+Par défaut, ton cerveau est **versionné en local** (chaque modif est commitée automatiquement) mais
+**reste sur ta machine** — rien ne part ailleurs. Pour avoir un **backup hors-machine** et/ou t'en
+servir **depuis plusieurs ordinateurs**, branche-lui un **dépôt git distant** : **GitHub**, GitLab,
+Azure DevOps, ou ton propre serveur git.
+
+- **En install assistée (Option A)** : Claude te le **propose directement** (geste 2) et configure tout.
+- **À la main** : trois commandes (`git remote add` → `git push -u` → activer le push auto), pas à
+  pas dans [SETUP §7](SETUP.md).
+
+C'est **opt-in** : tant que tu ne l'as pas branché, **rien n'est poussé** (garde-fou anti-fuite par
+défaut). Tu peux le faire tout de suite **ou des semaines plus tard**, sans rien casser. Une fois en
+place, le hook auto-commit **pousse à chaque modif** — backup et bascule entre laptops deviennent
+transparents.
+
 ## Et la confidentialité de mes données ?
 
 Question légitime : ton vault peut être **confidentiel**. Deux services voient ton contenu — et
@@ -368,7 +384,8 @@ détaillées dans [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md). Pa
   pas par mots-clés exacts.
 - **Embeddings** — la traduction d'un texte en chiffres, pour comparer les *sens* entre eux.
 - **Skill** — une procédure que tu déclenches (ex. « prépare mon 1-1 »).
-- **Connecteur (MCP)** — un branchement vers une de tes sources (Slack, Drive…).
+- **Connecteur** — un branchement vers une de tes sources (Slack, Drive, Notion…). Deux formes :
+  **natif** (activé dans les réglages de ton compte Claude) ou **MCP** (un serveur déclaré dans `.mcp.json`).
 - **Harnais** — l'ensemble des règles (`CLAUDE.md`) + skills que tu personnalises.
 - **Hook** — une action automatique déclenchée par un événement (ex. sauvegarder à chaque modif).
 - **Bootstrap** — l'installateur qui prépare tout pour toi.
@@ -381,16 +398,30 @@ détaillées dans [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md). Pa
 ## Brancher tes sources (connecteurs)
 
 Le moteur RAG répond depuis **tes notes**. Pour qu'il puisse aussi aller chercher dans tes **autres
-sources** (mail, agenda, Notion, fichiers, chat…), tu branches des **connecteurs**. Quelques idées
-pour démarrer — *à toi de choisir selon tes outils* :
+sources** (mail, agenda, Notion, fichiers, chat…), tu branches des **connecteurs**.
+
+**Deux façons de brancher une source — c'est ce que veut dire « natif » vs « MCP » :**
+
+- **Connecteur _natif_ (claude.ai)** — une intégration **fournie et hébergée par Claude**, que tu
+  actives en quelques clics dans **les réglages de ton compte Claude** (*Settings → Connectors*).
+  **Rien à installer ni configurer** dans ton cerveau. Le plus simple — c'est le cas de Gmail,
+  Google Calendar, Slack, Google Drive, Notion.
+- **Serveur _MCP_ (communautaire)** — un petit programme (souvent un paquet `npm`) que **tu déclares
+  toi-même** dans le fichier `.mcp.json` de ton cerveau, avec tes identifiants. Plus de choix et de
+  contrôle, mais un peu plus de configuration. Le wizard du bootstrap peut l'ajouter pour toi.
+
+> 👉 Quand une source existe **dans les deux formes** (Notion, Drive…), commence par le **natif** :
+> moins de friction. Passe au **MCP** si tu veux une variante précise ou un outil sans connecteur natif.
+
+Quelques idées pour démarrer — *à toi de choisir selon tes outils* :
 
 | Tu veux interroger… | Tu peux par exemple brancher… | Type |
 |---|---|---|
-| Tes **notes / wikis** Notion | le MCP Notion `@notionhq/notion-mcp-server`, ou le connecteur Notion natif | MCP ou natif claude.ai |
-| Tes **mails** | le connecteur **Gmail** natif | natif claude.ai |
-| Ton **agenda** | le connecteur **Google Calendar** natif | natif claude.ai |
-| Tes **fichiers / documents** | un MCP Google Drive (`@modelcontextprotocol/server-gdrive`, `@isaacphi/mcp-gdrive`…), ou le connecteur Drive natif | MCP ou natif claude.ai |
-| Ton **chat d'équipe** | le connecteur **Slack** natif | natif claude.ai |
+| Tes **notes / wikis** Notion | le serveur MCP Notion `@notionhq/notion-mcp-server`, ou le connecteur Notion **natif** | natif **ou** MCP |
+| Tes **mails** | le connecteur **Gmail** **natif** | natif (claude.ai) |
+| Ton **agenda** | le connecteur **Google Calendar** **natif** | natif (claude.ai) |
+| Tes **fichiers / documents** | un serveur MCP Google Drive (`@modelcontextprotocol/server-gdrive`, `@isaacphi/mcp-gdrive`…), ou le connecteur Drive **natif** | natif **ou** MCP |
+| Ton **chat d'équipe** | le connecteur **Slack** **natif** | natif (claude.ai) |
 | Les **transcripts de tes réunions** (Meet) | le **Calendar** *et* le **Drive** — voir ci-dessous | natif + MCP |
 
 > 🎙️ **Les transcripts de réunion ne sont pas un connecteur à part.** Quand tu enregistres une
