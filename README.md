@@ -1,5 +1,9 @@
 # Second Brain Starter
 
+**C'est quoi un second cerveau ?** Une mémoire externe à toi : tes notes, décisions et échanges
+de travail réunis en un seul endroit que tu interroges **en langage naturel** — et qui te répond
+tout de suite, **sources à l'appui**, au lieu d'aller fouiller tes outils.
+
 > Ce dépôt est une **graine** pour te construire ton propre **second cerveau** — à la façon
 > *use case driven* décrite par **Thomas Pierrain** dans sa série d'articles Medium. Concrètement : un vault
 > Markdown versionné que des agents Claude Code interrogent en langage naturel, au lieu de
@@ -8,6 +12,12 @@
 Le moteur est prêt à l'emploi ; le harnais (règles + skills) est un **template** que tu
 adaptes à **ton** usage. C'est une *graine*, pas un cerveau tout fait : tu le fais pousser
 en l'utilisant.
+
+> **Principe directeur — l'affordance avant tout.** Tu interroges ton second cerveau en langage
+> naturel et tu obtiens une réponse immédiate, sourcée. Tu n'as **jamais** à savoir comment c'est
+> fait à l'intérieur (RAG, embeddings, synchro delta, index, sous-agents) : **l'usage est découplé
+> de l'implémentation**. C'est pensé pour alléger ta charge mentale — au point que *même quelqu'un
+> de non-technique* pourrait s'en servir.
 
 ### La série d'articles (le « pourquoi » derrière ce repo)
 
@@ -83,6 +93,26 @@ Une fois installé, demande par exemple :
 > *« Quelle base de données a-t-on choisie pour la facturation, et pourquoi ? »*
 
 Claude cherche dans le vault et répond avec les backlinks vers les notes sources.
+
+---
+
+## Ton second cerveau = ta propre instance de ce template
+
+Ce repo est un **template**, pas un service partagé. Pour te faire un second cerveau :
+
+1. **« Use this template » sur GitHub** (ou `git clone` puis re-pointe `origin` vers un repo à toi,
+   cf. [SETUP §7](SETUP.md)) → tu obtiens **ton propre repo privé**, séparé de ce starter.
+2. `node bootstrap.mjs` → il **génère tes fichiers personnalisés** (dont `CLAUDE.md`) dans cette copie.
+3. Cette copie **EST** ton second cerveau : vault + harnais dans un seul repo privé, qui te suit
+   d'une machine à l'autre.
+
+Chaque personne a **sa** propre instance : un collègue qui veut le sien **repart du template** et
+crée **son** repo privé à lui. Un second cerveau est personnel — on n'en partage pas un seul à plusieurs.
+
+> **Pourquoi aucun `CLAUDE.md` n'est livré (et pourquoi ne pas en ajouter ici).** `CLAUDE.md` est
+> **ta constitution** : les règles que Claude suit, propres à *tes* usages. Le bootstrap la **génère**
+> depuis `CLAUDE.md.template`, et il **refuse d'écraser** un `CLAUDE.md` existant. En committer un
+> dans le starter empêcherait donc chaque utilisateur d'avoir le sien.
 
 ---
 
