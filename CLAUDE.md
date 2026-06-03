@@ -1,5 +1,5 @@
-<!-- second-brain-starter:bootstrap-stub -->
-# 🧠 Second Brain Starter — notice d'auto-installation (pour Claude)
+<!-- second-brain-generator:bootstrap-stub -->
+# 🧠 Second Brain Generator — notice d'auto-installation (pour Claude)
 
 > **Ce repo n'est pas encore installé.** Ce fichier est une **amorce** : le bootstrap la
 > **remplacera** par la vraie constitution (`CLAUDE.md` personnalisé) une fois l'install faite.
@@ -10,7 +10,7 @@
 > mode **non-interactif** (`--non-interactive`) — tu n'as donc PAS besoin que l'utilisateur le
 > lance au clavier. Tu récoltes les réponses **en chat**, puis tu appelles **une seule commande**.
 
-## Étape 1 — Récupérer le starter (clone normal)
+## Étape 1 — Récupérer le générateur (clone normal)
 
 *(Souvent déjà fait si tu lis ce fichier depuis l'intérieur du dossier.)* Si tu pars d'une URL :
 
@@ -20,9 +20,9 @@ cd <nom-du-cerveau>
 ```
 
 **Pas besoin de « détacher » quoi que ce soit toi-même** : le bootstrap garantit qu'il ne reste
-**aucun lien vers le starter** (il retire le remote hérité, sans jamais toucher à l'historique),
+**aucun lien vers le générateur** (il retire le remote hérité, sans jamais toucher à l'historique),
 et le hook auto-commit **ne pousse rien tant que l'utilisateur n'a pas branché SON dépôt distant**
-(push opt-in). C'est le *starter* qui enforce la sûreté — pas le prompt.
+(push opt-in). C'est le *générateur* qui enforce la sûreté — pas le prompt.
 
 ## Étape 2 — Poser les questions EN CHAT (groupées)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ═══════════════════════════════════════════════════════════════════════════
-// bootstrap.mjs — installateur interactif du Second Brain Starter.
+// bootstrap.mjs — installateur interactif du Second Brain Generator.
 // Vérifie les prérequis, personnalise le harnais, installe le moteur RAG.
 // Idempotent : peut être relancé sans casse.
 //
@@ -57,7 +57,7 @@ const step = (m) => console.log(`\n${c.B}━━ ${m}${c.X}`);
 
 console.log(`${c.B}${c.C}`);
 console.log(`  ╔══════════════════════════════════════════════╗`);
-console.log(`  ║        Second Brain Starter — bootstrap      ║`);
+console.log(`  ║        Second Brain Generator — bootstrap    ║`);
 console.log(`  ╚══════════════════════════════════════════════╝`);
 console.log(c.X);
 
@@ -216,7 +216,7 @@ if (geminiKey) {
 }
 
 // Dépôt git local — socle de l'auto-commit. AUCUNE opération irréversible : on
-// n'efface jamais le .git. Le starter enforce simplement « pas de lien vers le
+// n'efface jamais le .git. Le générateur enforce simplement « pas de lien vers le
 // template » sans détruire d'historique (cf. scripts/lib/git-init.mjs). La
 // garantie anti-fuite vient du push opt-in du hook (secondbrain.autopush).
 const plan = planGitSetup({
@@ -232,12 +232,12 @@ if (plan.init) {
   if (!init.ok) warn("git init impossible — l'auto-commit sera inactif tant qu'il n'y a pas de dépôt.");
 }
 if (plan.stripRemote) {
-  // Clone resté lié au starter : on retire le(s) remote(s) hérité(s).
+  // Clone resté lié au générateur : on retire le(s) remote(s) hérité(s).
   // Non destructif et recouvrable (`git remote add …`). Le .git est conservé.
   const remotes = run("git", ["remote"], { cwd: ROOT }).out.trim().split(/\s+/).filter(Boolean);
   for (const r of remotes) run("git", ["remote", "remove", r], { cwd: ROOT });
   if (remotes.length) {
-    ok(`lien vers le starter retiré (remote ${remotes.join(", ")} supprimé) — aucun push tant que tu n'as pas branché TON dépôt.`);
+    ok(`lien vers le générateur retiré (remote ${remotes.join(", ")} supprimé) — aucun push tant que tu n'as pas branché TON dépôt.`);
   }
 }
 if (plan.commit) {
@@ -253,7 +253,7 @@ if (plan.commit) {
 
 // ── 5. Connecteurs externes (optionnel) ─────────────────────────────────────
 // Propose de brancher des sources externes (Drive/Notion/Slack/Calendar…).
-// Esprit « starter » : guidé mais pas magique. Pour les connecteurs MCP, on
+// Esprit « générateur » : guidé mais pas magique. Pour les connecteurs MCP, on
 // fusionne le bloc serveur dans .mcp.json + les permissions dans settings.json
 // (idempotent — relançable sans doublon). Pour les natifs claude.ai, on ne
 // touche à rien : on pointe juste vers les *Connectors* du compte.
@@ -333,7 +333,7 @@ if (keyReady) {
 // ── 8. Vérification de la connexion MCP ──────────────────────────────────────
 // Confirme que Claude Code pourra réellement parler au serveur `vault-rag`
 // (handshake stdio), avant de lancer `claude`. Non bloquant : un échec ici
-// n'empêche pas d'utiliser le starter, mais pointe vers le dépannage SETUP.
+// n'empêche pas d'utiliser le générateur, mais pointe vers le dépannage SETUP.
 // Pas de clé Gemini requise — lister les outils n'embedde rien.
 step("9/9 · Vérification de la connexion MCP");
 const EXPECT_TOOLS = ["search_vault", "get_document", "list_documents", "vault_stats"];

@@ -1,6 +1,6 @@
 # Connecteurs — brancher tes sources externes
 
-Le moteur RAG du starter répond depuis **tes notes** (le `vault/`). Les **connecteurs** lui
+Le moteur RAG du générateur répond depuis **tes notes** (le `vault/`). Les **connecteurs** lui
 donnent accès à tes **autres sources** — mail, agenda, Notion, fichiers, chat — pour qu'il croise
 tout au même endroit. **Tout est optionnel** : sans aucun connecteur, le second cerveau fonctionne
 déjà, il répond seul depuis le vault.
@@ -65,7 +65,7 @@ Trois chemins, détaillés dans [SETUP §6](SETUP.md) :
 - **(c) Connecteurs natifs claude.ai** — rien dans `.mcp.json` : active-les depuis *Settings →
   Connectors* de ton compte.
 
-> 🔐 **Neutralité / sécurité.** Le starter ne met **aucun secret en dur** : les credentials des
+> 🔐 **Neutralité / sécurité.** Le générateur ne met **aucun secret en dur** : les credentials des
 > MCP sont des placeholders `<…>` que **tu** renseignes. Ne commite jamais tes vrais tokens.
 
 ---

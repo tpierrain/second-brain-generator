@@ -8,7 +8,7 @@
 // utilisateur.
 // ═══════════════════════════════════════════════════════════════════════════
 
-export const BOOTSTRAP_STUB_MARKER = "<!-- second-brain-starter:bootstrap-stub -->";
+export const BOOTSTRAP_STUB_MARKER = "<!-- second-brain-generator:bootstrap-stub -->";
 
 // Vrai si le contenu d'un CLAUDE.md porte le marqueur d'amorce.
 export function isBootstrapStub(content) {

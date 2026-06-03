@@ -1,15 +1,15 @@
-# DEVELOPING — contexte pour bosser sur le starter lui-même
+# DEVELOPING — contexte pour bosser sur le générateur lui-même
 
 > Ce fichier s'adresse à **celui qui développe le template** (toi + Claude), pas à
 > l'utilisateur final. Lis-le en début de session de dev pour avoir le contexte.
 
 ## Objectif du projet
 
-`second-brain-starter` est un **template installable** d'un second cerveau : un vault
+`second-brain-generator` est un **template installable** d'un second cerveau : un vault
 Markdown versionné qu'un agent Claude Code interroge en langage naturel via un moteur RAG.
 Extrait d'un second cerveau personnel pour être réutilisable par n'importe qui.
 
-**Principe directeur** : livrer un *starter*, pas un cerveau tout fait. Le moteur est prêt ;
+**Principe directeur** : livrer un *générateur*, pas un cerveau tout fait. Le moteur est prêt ;
 le harnais est un template que l'utilisateur adapte. Rester **générique et neutre** — aucune
 donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
 
@@ -49,7 +49,7 @@ dépôt distant, redémarrage). On ne confie **pas** la séquence d'install à C
 3. **Fichiers générés non versionnés.** `.mcp.json`, `.claude/settings.json`, `.env`,
    `rag/.cache/`, `node_modules/` sont gitignorés. Ne pas les committer.
    **Exception — le `CLAUDE.md` « amorce ».** Un `CLAUDE.md` **est** livré à la racine, mais c'est
-   une **amorce de pré-installation** : elle porte le marqueur `<!-- second-brain-starter:bootstrap-stub -->`
+   une **amorce de pré-installation** : elle porte le marqueur `<!-- second-brain-generator:bootstrap-stub -->`
    et signale à Claude que le repo n'est pas encore installé (→ guide l'utilisateur vers
    `node bootstrap.mjs`). Le bootstrap la **remplace** par le vrai `CLAUDE.md` personnalisé : la
    détection est dans `scripts/lib/claude-md.mjs` (`isBootstrapStub`), branchée sur `gen()` dans

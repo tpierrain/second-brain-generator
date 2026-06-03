@@ -103,7 +103,7 @@ Le RAG (`rag/`) découpe chaque fichier Markdown en **chunks** (un par section `
 
 ### Sources externes (optionnel — à activer selon tes outils)
 
-> 🔧 **À adapter** : ce starter ne fournit que le moteur RAG. Si tu veux brancher Slack,
+> 🔧 **À adapter** : ce générateur ne fournit que le moteur RAG. Si tu veux brancher Slack,
 > Google Drive, Gmail, Notion, Calendar, etc., choisis tes connecteurs dans le menu
 > [CONNECTORS.md](CONNECTORS.md) (le *comment* est dans [SETUP.md](SETUP.md) § connecteurs),
 > ajoute les MCP servers dans `.mcp.json` et documente ici quel outil pour quoi.

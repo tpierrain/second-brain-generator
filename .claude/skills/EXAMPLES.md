@@ -1,6 +1,6 @@
 # Skills à construire toi-même — exemples d'inspiration
 
-Ce starter ne fournit que quelques skills génériques : `sync` (synchro git inter-machines),
+Ce générateur ne fournit que quelques skills génériques : `sync` (synchro git inter-machines),
 `improve` (amélioration du harnais), `coach` (sparring partner « vénère » sur soi),
 `prepare-1-1` (préparer un 1-1 avec n'importe qui) et `sync-sources` (l'architecture
 fan-out/fan-in qui aspire le delta des sources, moteur de la Phase 2). `coach` et `prepare-1-1`

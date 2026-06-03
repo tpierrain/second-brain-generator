@@ -9,7 +9,7 @@ origin: use-case-driven-harness
 
 > Skill vendorée depuis le harnais `use-case-driven-harness` (re-sync manuel).
 > Volontairement réduite au **socle universel** : les déclinaisons spécialisées (archi
-> back-end, conventions par langage) vivent dans le harnais source, hors périmètre de ce starter.
+> back-end, conventions par langage) vivent dans le harnais source, hors périmètre de ce générateur.
 
 La discipline TDD de base, **agnostique langage**, qui s'applique à **tout type de code** :
 petites libs, simples tools, helpers, algorithmes isolés comme services et applications.

@@ -97,7 +97,7 @@ node bootstrap.mjs --non-interactive --name "mon-cerveau" --owner "Jane Doe" \
 - **La clé Gemini n'est JAMAIS un argument** (sécurité : pas de secret en ligne de commande). En
   mode non-interactif elle est **toujours différée** → renseigne-la ensuite dans `.env` ; l'index
   se construit au 1er démarrage du serveur MCP.
-- **Dépôt git local + aucun lien vers le starter (enforced, sans rien détruire).** Le bootstrap
+- **Dépôt git local + aucun lien vers le générateur (enforced, sans rien détruire).** Le bootstrap
   garantit un dépôt local **sans aucun lien vers le repo d'origine**, quelle que soit la façon dont
   les fichiers sont arrivés :
   - pas de `.git` (copie/zip) → `git init` + 1er commit ;
@@ -149,7 +149,7 @@ Outils MCP exposés : `search_vault`, `get_document`, `list_documents`, `vault_s
 
 ## 6. Connecteurs externes (optionnel)
 
-Le starter ne fournit que le moteur RAG. Pour interroger aussi tes autres sources
+Le générateur ne fournit que le moteur RAG. Pour interroger aussi tes autres sources
 (Drive, Notion, Slack, Calendar…), trois chemins — choisis selon ton confort.
 
 ### Menu — quel connecteur pour quel besoin

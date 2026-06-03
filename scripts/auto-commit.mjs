@@ -40,7 +40,7 @@ git(["commit", "-m", "auto: vault/claude sync"]);
 // Push OPT-IN explicite (Couche 1) : la simple présence d'un remote ne suffit
 // PAS. On ne pousse que si l'utilisateur l'a activé (`git config
 // secondbrain.autopush true`, posé par l'étape « dépôt distant » de l'install).
-// Garantie : un remote hérité (clone resté lié au starter) ne reçoit JAMAIS les
+// Garantie : un remote hérité (clone resté lié au générateur) ne reçoit JAMAIS les
 // notes privées — la fuite est impossible par défaut, sans toucher au .git.
 const hasRemote = git(["remote"]).out.trim().length > 0;
 const autopush = git(["config", "--get", "secondbrain.autopush"]).out.trim() === "true";

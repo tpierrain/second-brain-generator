@@ -1,4 +1,4 @@
-# Second Brain Starter
+# Second Brain Generator
 
 **Retrouve n'importe quelle décision ou info de ton travail en quelques secondes — en posant la question en langage naturel, avec les sources à l'appui.**
 
@@ -14,9 +14,9 @@ réunion, tu demandes — et ton **second cerveau** te répond tout de suite, en
 l'info. Dans la langue de ton choix : il **retrouve par le sens**, donc tu peux questionner en
 français des notes rédigées en anglais (ou l'inverse).
 
-> ⚠️ Ce repo n'est **pas** un cerveau tout fait : c'est une **graine** (un *starter*) que tu fais
-> pousser pour t'en construire **un à toi**. On explique pourquoi plus bas — et c'est précisément
-> ce qui le rend utile.
+> ⚠️ Ce repo n'est **pas** un cerveau tout fait : c'est un **générateur** qui te **produit** une
+> **graine** (un squelette) que tu fais pousser pour t'en construire **un à toi**. On explique
+> pourquoi plus bas — et c'est précisément ce qui le rend utile.
 
 ---
 
@@ -59,7 +59,7 @@ quel que soit son niveau technique :
 | **N'importe quel SaaS** | Tes données chez un tiers, format fermé. | **Chez toi**, en Markdown, dans **ton** repo git privé. |
 
 Et surtout : ce n'est pas **un** produit unique pour tout le monde. C'est une **méthode** pour te
-fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un starter et pas un produit fini ?* »).
+fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un générateur et pas un produit fini ?* »).
 
 ## Ce que ça change pour toi, concrètement
 
@@ -98,7 +98,7 @@ fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un starter et p
 ### Comment ça s'installe — le modèle en un coup d'œil
 
 **Un seul dossier.** Le dossier que tu récupères depuis le template **devient** ton second cerveau :
-l'installation se fait **sur place**. Le starter ne crée **aucun** autre dossier ailleurs sur ton
+l'installation se fait **sur place**. Le générateur ne crée **aucun** autre dossier ailleurs sur ton
 disque — il transforme le dossier courant.
 
 ```
@@ -125,8 +125,8 @@ disque — il transforme le dossier courant.
 Pour lever les doutes qu'on a tous au début :
 
 - **Le nom du dossier = le nom que TU choisis** au « Use this template » (le nom de ton repo). C'est
-  *lui*, le nom de ton second cerveau — **pas** « second-brain-starter ».
-- **Aucun second dossier** n'est créé : le starter ne fabrique pas un cerveau « ailleurs », il
+  *lui*, le nom de ton second cerveau — **pas** « second-brain-generator ».
+- **Aucun second dossier** n'est créé : le générateur ne fabrique pas un cerveau « ailleurs », il
   **transforme sur place** le dossier que tu viens de cloner.
 - L'installateur te demande un « **Nom du projet** » : c'est juste une **étiquette** affichée dans ta
   config (par défaut, le nom du dossier). Ça **ne renomme ni ne déplace rien**.
@@ -137,10 +137,10 @@ Tu as **déjà accès au repo** (via ton compte GitHub) et tu utilises Claude Co
 **Claude tout installer pour toi**. Ouvre Claude Code (même hors du repo) et donne-lui cette
 instruction — adapte le nom et l'URL :
 
-> *« Installe-moi un second cerveau nommé `mon-cerveau` à partir de ce starter : `<URL_DU_REPO>`. »*
+> *« Installe-moi un second cerveau nommé `mon-cerveau` à partir de ce générateur : `<URL_DU_REPO>`. »*
 
 C'est tout : pas besoin de préciser « fais-en une copie » ni « ne demande pas ma clé » — **le
-starter enforce lui-même la sûreté** (aucun lien vers le repo d'origine, clé jamais demandée en
+générateur enforce lui-même la sûreté** (aucun lien vers le repo d'origine, clé jamais demandée en
 chat). Claude clone le repo, te pose **en chat** les quelques questions (nom, ton contexte,
 langue), puis lance l'installateur en mode non-interactif — qui fait **tout** (dépôt git propre,
 fichiers, moteur RAG, vérification). Il te reste **3 gestes** :
@@ -169,7 +169,7 @@ claude
 ```
 
 > 💡 Pas de compte GitHub / pas envie de passer par « Use this template » ? Tu peux aussi cloner
-> directement ce starter puis re-pointer `origin` vers un repo privé à toi — même résultat, c'est
+> directement ce générateur puis re-pointer `origin` vers un repo privé à toi — même résultat, c'est
 > juste un peu plus manuel ([SETUP §7](SETUP.md)).
 
 Une fois installé, essaie par exemple :
@@ -178,7 +178,7 @@ Une fois installé, essaie par exemple :
 
 Claude cherche dans ton vault et répond avec les liens vers les notes sources.
 
-> 🧪 **Les notes d'exemple.** Le starter est livré avec quelques **fausses notes de démo** pour que
+> 🧪 **Les notes d'exemple.** Le générateur est livré avec quelques **fausses notes de démo** pour que
 > tu voies tout de suite à quoi ça ressemble, dès la première question. En fin d'installation, le
 > bootstrap te **propose de les effacer** d'un coup — histoire de repartir d'un vault propre, sans
 > polluer ton second cerveau avec ces données factices.
@@ -202,7 +202,7 @@ abaque : [SETUP §9](SETUP.md). *(Les conditions des deux fournisseurs évoluent
 
 ---
 
-## Pourquoi un *starter*, et pas un produit fini ?
+## Pourquoi un *générateur*, et pas un produit fini ?
 
 Parce qu'un second cerveau est **personnel**. Ce qui sert un Head of Engineering, un commercial ou
 un chercheur n'a **rien à voir**. Un outil unique pour tous serait fade pour chacun.
@@ -247,7 +247,7 @@ poses, le type d'échange que tu veux avoir avec lui. C'est *toi* qui définis �
 - **cartographier les équipes** : qui porte quel sujet, à tout moment ;
 - **savoir en permanence ce qu'on attend de lui, et ce qu'il attend des autres**.
 
-Rien de tout cela n'est livré : ce sont **ses** spécificités. Le starter ne cherche pas à les
+Rien de tout cela n'est livré : ce sont **ses** spécificités. Le générateur ne cherche pas à les
 répliquer — il te donne le moteur et la méthode pour faire émerger **les tiennes**.
 
 ## La série d'articles
@@ -313,7 +313,7 @@ se reconstruit seul, incrémentalement ; un hook git committe et pousse à chaqu
 
 ### Les skills que tu appelles
 
-Le starter reste volontairement **frugal**. Celles que tu invoques au quotidien :
+Le générateur reste volontairement **frugal**. Celles que tu invoques au quotidien :
 
 | Skill | Ce qu'elle fait |
 |---|---|

@@ -93,7 +93,7 @@ test("auto-commit — arbre propre : aucun commit créé (idempotent)", () => {
 // ── Couche 1 : push OPT-IN explicite ────────────────────────────────────────
 // La présence d'un remote ne suffit PAS : auto-commit ne pousse que si
 // l'utilisateur l'a explicitement activé (git config secondbrain.autopush true).
-// Garantit qu'un remote hérité (clone lié au starter) ne reçoit JAMAIS les notes.
+// Garantit qu'un remote hérité (clone lié au générateur) ne reçoit JAMAIS les notes.
 
 test("auto-commit — remote présent mais autopush OFF (défaut) : commit local, AUCUN push", () => {
   const { root, git } = makeRepo();

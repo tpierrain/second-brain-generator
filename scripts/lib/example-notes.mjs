@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // example-notes.mjs — détection/suppression des notes d'exemple du vault.
 //
-// Les notes de démo livrées avec le starter portent le tag `exemple` dans leur
+// Les notes de démo livrées avec le générateur portent le tag `exemple` dans leur
 // frontmatter. La machinerie (vault/backlog/harnais.md) et la doc (README.md)
 // ne le portent pas → elles sont préservées. But : permettre au bootstrap de
 // vider le vault d'exemple pour ne pas polluer le RAG du vrai second cerveau.
