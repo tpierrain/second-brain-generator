@@ -37,8 +37,9 @@ Trois propriétés le définissent :
 
 - **Il est à toi.** Tout vit dans un dossier de notes (un *vault*) versionné dans **ton repo git
   privé**. Tu n'es pas locataire d'un service en ligne : tu es propriétaire de tes données.
-- **Il se souvient.** Chaque réponse, chaque info nouvelle est persistée. Ton cerveau accumule une
-  trace exploitable et te suit d'une machine à l'autre.
+- **Il se souvient.** Chaque réponse, chaque info nouvelle est persistée (commit git local). Ton
+  cerveau accumule une trace exploitable — et peut **te suivre d'une machine à l'autre** dès que tu
+  lui branches un dépôt distant (optionnel).
 - **Il cite ses sources.** Pas de réponse en l'air : tu remontes toujours à la note ou au message
   d'origine, avec sa date.
 
@@ -72,8 +73,9 @@ fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un générateur
 
 - **Réponse immédiate.** En quelques secondes, pas le temps d'aller faire un café.
 - **Toujours sourcé.** Tu vois d'où vient chaque info, et si elle est récente ou pas.
-- **Rien ne se perd.** Tout est sauvegardé automatiquement. Laptop perdu ou volé ? Tu reprends
-  ailleurs exactement où tu en étais.
+- **Rien ne se perd.** Chaque modif est **commitée automatiquement en local**. Et si tu branches un
+  **dépôt distant** (optionnel, ~2 min — push *opt-in*), tout est aussi sauvegardé **hors de ta
+  machine** : laptop perdu ou volé, tu reprends ailleurs où tu en étais.
 - **Zéro effort de ta part.** Tu n'as jamais à lancer une synchro, à déclencher quoi que ce soit
   dans le bon ordre, ni même à savoir que git existe : **tu n'as à savoir ni comment c'est fait
   dedans, ni comment c'est rangé.** Tu poses ta question, c'est tout.
@@ -121,7 +123,7 @@ générer plusieurs cerveaux.
         ├── CLAUDE.md          (ta constitution — générée à partir de l'amorce)
         ├── vault/             (tes notes)
         ├── rag/               (le moteur de recherche)
-        ├── .git/             (dépôt NEUF, 0 remote — aucun lien vers le launcher)
+        ├── .git/              (dépôt NEUF, 0 remote — aucun lien vers le launcher)
         └── .mcp.json, .env …  (config générée)
         │
         │   cd ~/mon-cerveau  puis  claude   (ouvre Claude Code DANS le cerveau)
@@ -142,7 +144,7 @@ Pour lever les doutes qu'on a tous au début :
 
 ### Option A — Démarrage assisté par Claude (le plus simple)
 
-Tu as **déjà accès au repo** (via ton compte GitHub) et tu utilises Claude Code ? Tu peux laisser
+Tu peux **cloner le générateur** (tu as son URL) et tu utilises Claude Code ? Tu peux laisser
 **Claude tout installer pour toi**. Ouvre Claude Code (même hors du repo) et donne-lui cette
 instruction — adapte le nom et l'URL :
 
@@ -310,7 +312,8 @@ Question
 
 Le **moteur RAG** découpe chaque note en *chunks* (un par section), les transforme en vecteurs
 (*embeddings* Gemini) et retrouve les passages les plus proches du **sens** de ta question. L'index
-se reconstruit seul, incrémentalement ; un hook git committe et pousse à chaque modification.
+se reconstruit seul, incrémentalement ; un hook git **committe** à chaque modification (et **pousse**
+seulement si tu as branché un dépôt distant — *opt-in*).
 
 ### Ce qu'il y a dans la boîte
 
@@ -318,11 +321,11 @@ se reconstruit seul, incrémentalement ; un hook git committe et pousse à chaqu
 |---|---|---|
 | **`rag/`** | Moteur RAG (serveur MCP TypeScript) : chunking, embeddings Gemini, recherche sémantique, garde-fous quota | ✅ prêt à l'emploi |
 | **`vault/`** | Ton contenu Markdown (notes d'exemple fournies) | 🔧 à remplir |
-| **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🌱 amorce avant install → **généré** par le bootstrap, puis à adapter |
+| **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🌱 amorce dans le launcher → le bootstrap en **génère** une version perso **dans le cerveau**, puis à adapter |
 | **`.claude/skills/`** | Skills livrées (voir ci-dessous) + idées d'autres skills | 🔧 à étoffer |
 | **`.claude/settings.json`** | Hooks (auto-commit, statut au démarrage) + permissions | ✅ généré |
 | **`scripts/*.mjs`** | Hooks Node multi-OS : état repo + RAG au démarrage, commit auto | ✅ prêt |
-| **`bootstrap.mjs`** | Installateur interactif (macOS / Linux / Windows) | ✅ |
+| **`bootstrap.mjs`** | Installateur : **crée le dossier cerveau** à partir du launcher (macOS / Linux / Windows) | ✅ |
 
 ### Les skills que tu appelles
 
@@ -343,7 +346,7 @@ qu'ils existent.
 | Élément | Rôle | Qui le déclenche |
 |---|---|---|
 | **`sync-sources`** | Aspire le **delta** des sources externes en sous-agents parallèles **lecture seule** — le moteur de la Phase 2. 🔧 à câbler sur tes connecteurs. | **tes questions** (jamais toi) |
-| **hook auto-commit** | Committe **et pousse** ton vault à chaque modification. C'est ce qui fait qu'un profil **non-technique n'a jamais à connaître git** — tout est versionné tout seul, rien ne se perd, tu changes de laptop sans y penser. | automatique |
+| **hook auto-commit** | **Committe** ton vault à chaque modification (et le **pousse** si tu as activé un dépôt distant — *opt-in*, off par défaut). C'est ce qui fait qu'un profil **non-technique n'a jamais à connaître git** — tout est versionné tout seul en local, rien ne se perd ; branche un dépôt distant et tu changes de laptop sans y penser. | automatique |
 | **`tdd-discipline`** | Discipline TDD vendorée — sert à développer *le harnais lui-même*. | Claude, quand on modifie le harnais |
 
 Le reste n'est **pas livré** : ce sont des **idées de skills** à faire émerger selon tes besoins,
