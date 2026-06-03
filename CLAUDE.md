@@ -59,10 +59,13 @@ node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
 
 > Le script affiche le chemin du cerveau créé (`<emplacement-parent>/<nom>`). Utilise-le ci-dessous.
 
-1. **Clé Gemini** : « Colle ta clé dans `<cerveau>/.env` (ligne `GOOGLE_GEMINI_API_KEY=`). »
-   L'index se construira au 1er démarrage du serveur MCP. *(Clé gratuite :
-   https://aistudio.google.com/apikey ; pour un vault confidentiel, active la facturation — cf.
-   SETUP §9.)*
+1. **Clé Gemini** : « Colle ta clé dans `<cerveau>/.env` (ligne `GOOGLE_GEMINI_API_KEY=`), **de
+   préférence AVANT de rouvrir Claude Code** (geste 3). » L'index se construira au 1er démarrage du
+   serveur MCP. **Si l'utilisateur a déjà ouvert Claude Code sans la clé** : qu'il la colle dans
+   `.env` puis **repose sa question** — le serveur relit `.env` à la volée (pas besoin de
+   reconnecter) ; en dernier recours, `/mcp` pour reconnecter, ou relancer Claude Code. *(Clé
+   gratuite : https://aistudio.google.com/apikey ; pour un vault confidentiel, active la
+   facturation — cf. SETUP §9.)*
 2. **Dépôt distant (optionnel)** : demande — *« Veux-tu un dépôt git **distant** pour que ton
    second cerveau ait un **backup**, voire soit **utilisable depuis plusieurs machines** ? »*
    - **Si non** → ne fais rien. Tout reste versionné en local, rien ne se perd ; le hook

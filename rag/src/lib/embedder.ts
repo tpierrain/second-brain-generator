@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import {
-  GEMINI_API_KEY,
+  readGeminiKey,
   EMBEDDING_MODEL,
   MAX_EMBED_REQUESTS_PER_DAY,
   QUERY_RESERVE,
@@ -19,10 +19,13 @@ const usage = new UsageTracker({
 
 function getClient(): GoogleGenAI {
   if (!client) {
-    if (!GEMINI_API_KEY) {
+    // Relit .env à la volée : si la clé a été collée après le 1er lancement de
+    // Claude Code, la prochaine requête la prend en compte sans reconnecter le MCP.
+    const key = readGeminiKey();
+    if (!key) {
       throw new Error("GOOGLE_GEMINI_API_KEY is not set in .env");
     }
-    client = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    client = new GoogleGenAI({ apiKey: key });
   }
   return client;
 }

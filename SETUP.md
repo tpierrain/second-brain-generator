@@ -120,12 +120,21 @@ node bootstrap.mjs --non-interactive --name "mon-cerveau" --owner "Jane Doe" --l
 
 ## 3. Premier test
 
+> ⚠️ **Renseigne ta clé Gemini dans `.env` AVANT ce premier démarrage.** Le serveur MCP `vault-rag`
+> est lancé une fois à l'ouverture de Claude Code : s'il démarre sans clé, le RAG ne pourra pas
+> répondre. (Au démarrage, le hook de statut **te prévient** si la clé manque.)
+
 ```bash
 cd <emplacement>/<nom>   # le dossier cerveau créé par le bootstrap (ex. ~/mon-cerveau)
 claude
 ```
 Puis : *« Quelle base de données a-t-on choisie pour la facturation et pourquoi ? »*
 Claude doit citer `[[decisions/2026-01-10-choix-base-de-donnees]]`.
+
+> **Clé ajoutée après coup ?** Si tu as lancé Claude Code sans la clé, colle-la dans `.env` puis
+> **repose ta question** : le serveur relit `.env` à la volée et la prend en compte — pas besoin de
+> reconnecter. Si jamais ça résiste, reconnecte le serveur MCP avec `/mcp` (dans Claude Code) ou
+> relance Claude Code.
 
 > Si Claude ne « voit » pas le serveur RAG : vérifie que `.mcp.json` existe et pointe le bon
 > chemin, accepte le serveur MCP au démarrage de Claude Code, et que `.env` contient la clé.

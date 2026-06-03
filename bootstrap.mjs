@@ -375,6 +375,17 @@ try {
 // ── Fin ─────────────────────────────────────────────────────────────────────
 console.log(`\n${c.B}${c.G}✓ Bootstrap terminé.${c.X}\n`);
 console.log(`Ton second cerveau a été créé dans : ${c.C}${TARGET}${c.X}`);
+const keyMissing = !envHasKey && !geminiKey;
+if (keyMissing) {
+  console.log(
+    `\n${c.B}⚠️ Clé Gemini pas encore renseignée.${c.X} Avant d'ouvrir Claude Code, colle-la dans`
+  );
+  console.log(`   ${c.C}${toPosix(envPath)}${c.X} (ligne ${c.C}GOOGLE_GEMINI_API_KEY=${c.X}).`);
+  console.log(
+    `   Si tu ouvres Claude Code avant : colle la clé puis repose ta question (le serveur relit`
+  );
+  console.log(`   .env tout seul) ; au pire, ${c.C}/mcp${c.X} pour reconnecter, ou relance Claude Code.`);
+}
 console.log(`Prochaines étapes :`);
 console.log(`  1. ${c.C}cd ${toPosix(TARGET)} && claude${c.X}   ← ouvre Claude Code dans le dossier cerveau`);
 console.log(`  2. Pose une question, ex. :`);

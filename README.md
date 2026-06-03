@@ -164,6 +164,10 @@ l'installateur en mode non-interactif — qui **crée le dossier cerveau** et fa
 fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 gestes** :
 
 1. **Coller ta clé Gemini** dans `<cerveau>/.env` (ligne `GOOGLE_GEMINI_API_KEY=`) — jamais dans le chat.
+   > 💡 **Idéalement avant le 1er démarrage** (geste 3). Si tu as déjà ouvert Claude Code sans la
+   > clé : colle-la dans `.env`, puis **repose simplement ta question** — le serveur RAG relit
+   > `.env` tout seul à la requête suivante. Si jamais ça résiste, reconnecte le serveur MCP
+   > (commande `/mcp` dans Claude Code) ou relance Claude Code.
 2. **Dépôt distant ?** Claude te demandera si tu veux un dépôt git **distant** (backup +
    multi-machine). **Dire non est sans risque** : tout reste versionné en local, rien ne se perd,
    et l'auto-commit **ne pousse nulle part** (push opt-in désactivé par défaut). Tu pourras en
