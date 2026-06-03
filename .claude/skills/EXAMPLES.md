@@ -42,6 +42,8 @@ version: 1.0.0
 | **briefing** | Après une absence : synthèse de ce qui s'est passé sur les canaux suivis | Slack, mail |
 | **debrief** | En fin de journée : transforme les événements en notes structurées (daily, topics) | conversation, vault |
 | **weekly-review** | Revue hebdo : ce qui a avancé, ce qui stagne, ce qui arrive | vault/backlog, Calendar |
+| **rapport-etonnement** | Capturer ton regard neuf lors d'une prise de poste / d'une nouvelle mission (étonnements, angles morts) | vault, observations |
+| **article** | Écrire ou continuer un texte en binôme conversationnel, nourri par le vault | vault entier |
 
 ## Méthode recommandée
 

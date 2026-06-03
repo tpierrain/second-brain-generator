@@ -108,10 +108,20 @@ Le starter reste volontairement **frugal en skills** — il en livre quatre, gé
 | **`/coach`** | **coach « vénère », sparring partner branché sur ton vault**, dans l'esprit *Radical Candor* (Care Personally + Challenge Directly) : brutalement honnête ET bienveillant, il challenge tes décisions et tes raisonnements, nomme tes angles morts. *Coaching de soi uniquement.* |
 | **`/tdd-discipline`** | discipline TDD vendorée — sert à développer *le harnais lui-même* en TDD (utile surtout si tu le modifies) |
 
-Tout le reste — `prepare-1-1`, `briefing`, `prepare-meeting`… — n'est **pas livré** :
-ce sont des **idées** à construire toi-même selon tes usages, décrites dans
-[`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md). C'est voulu : un second cerveau ne
-vaut que calé sur *tes* cas d'usage (cf. la section « adapte-le à tes cas d'usage » plus bas).
+Le reste n'est **pas livré** : ce sont des **idées de skills à faire émerger selon tes besoins**.
+Le starter t'en propose plusieurs (détaillées dans
+[`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md)), inspirées de cas d'usage réels —
+par exemple :
+
+- **`prepare-1-1`** — brief avant un entretien individuel : derniers échanges, engagements, signaux faibles ;
+- **`briefing`** — après une absence, la synthèse de ce qui s'est passé sur tes canaux suivis ;
+- **`prepare-meeting`** — contexte, points ouverts et historique des participants avant une réunion ;
+- **`rapport-etonnement`** — capturer ton regard neuf lors d'une prise de poste / d'une nouvelle mission ;
+- **`article`** — écrire ou continuer un texte en binôme conversationnel, nourri par ton vault ;
+- **`weekly-review`** — revue hebdo : ce qui a avancé, ce qui stagne, ce qui arrive.
+
+C'est voulu : un second cerveau ne vaut que calé sur *tes* cas d'usage (cf. la section
+« adapte-le à tes cas d'usage » plus bas).
 
 > **Skill ≠ connecteur.** Slack, Drive, Notion, Calendar sont des **connecteurs** (sources de
 > données), pas des skills. Tu les branches au bootstrap (wizard, cf. [SETUP §6](SETUP.md)) ;
