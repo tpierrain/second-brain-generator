@@ -124,7 +124,6 @@ const gitUser = run("git", ["config", "user.name"]).out.trim();
 const cli = parseAnswers(process.argv.slice(2), process.env, {
   projectName: "second-brain",
   ownerName: gitUser,
-  ownerContext: "usage professionnel",
   language: "français",
   destParent: undefined,
 });
@@ -140,19 +139,17 @@ async function ask(prompt, def = "") {
   return ans || def;
 }
 
-let projectName, ownerName, ownerContext, language, destParent;
+let projectName, ownerName, language, destParent;
 if (interactive) {
   // Prompts pré-remplis avec les réponses CLI/env (ou les défauts) comme valeur proposée.
   projectName = await ask("Nom du cerveau (dossier à créer)", cli.projectName);
   destParent = await ask("Emplacement (dossier parent)", cli.destParent ?? homedir());
   ownerName = await ask("Ton nom", cli.ownerName);
-  ownerContext = await ask("Ton contexte (ex: CTO d'une scale-up)", cli.ownerContext);
   language = await ask("Langue par défaut des notes", cli.language);
 } else {
   warn("Mode non interactif — réponses prises des flags/env (ou défauts).");
   projectName = cli.projectName;
   ownerName = cli.ownerName;
-  ownerContext = cli.ownerContext;
   language = cli.language;
   destParent = cli.destParent;
 }
@@ -205,7 +202,6 @@ const replacements = {
   "{{PROJECT_ROOT}}": toPosix(TARGET),
   "{{PROJECT_NAME}}": projectName,
   "{{OWNER_NAME}}": ownerName,
-  "{{OWNER_CONTEXT}}": ownerContext,
   "{{LANGUAGE}}": language,
   "{{TMP_DIR}}": toPosix(tmpdir()),
   "{{SOURCE_1}}": "(ta source)",

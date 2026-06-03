@@ -90,7 +90,7 @@ dépôt distant, redémarrage). On ne confie **pas** la séquence d'install à C
   `embedder.ts`), pour que rien ne sorte de la machine. Aujourd'hui seulement documenté
   (README/SETUP §9 : palier payant Gemini = données hors entraînement).
 - ~~Bootstrap : option `--non-interactive`~~ ✅ livré : `parseAnswers` (`scripts/lib/bootstrap-args.mjs`)
-  → flags `--name/--owner/--context/--lang` (+ env `SB_*`, précédence flag > env > défaut),
+  → flags `--name/--owner/--lang` (+ env `SB_*`, précédence flag > env > défaut),
   `--non-interactive`/`--yes`/`--no-input` ; **jamais la clé Gemini** (différée en `.env`). Le
   bootstrap CRÉE le dossier cerveau (TARGET, cf. `resolveTargetDir`/`--dest`) et y fait un `git init`
   trivial (dossier neuf, 0 remote). Doc : `SETUP.md §2`. Suite : variante avec fichier de réponses

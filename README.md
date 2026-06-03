@@ -159,7 +159,7 @@ instruction — adapte le nom et l'URL :
 C'est tout : pas besoin de préciser « ne touche pas au launcher » ni « ne demande pas ma clé » —
 **le générateur enforce lui-même la sûreté** (le launcher reste en lecture seule, le cerveau est un
 dossier neuf sans lien distant, clé jamais demandée en chat). Claude clone le **launcher**, te pose
-**en chat** les quelques questions (nom du cerveau, emplacement, ton contexte, langue), puis lance
+**en chat** les quelques questions (nom du cerveau, emplacement, ton nom, langue), puis lance
 l'installateur en mode non-interactif — qui **crée le dossier cerveau** et fait **tout** (copie,
 fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 gestes** :
 
@@ -180,9 +180,9 @@ cd second-brain-generator
 
 # 2. Lance l'installateur — il CRÉE un dossier cerveau SÉPARÉ (par défaut ~/<nom>) et refuse
 #    si ce dossier existe déjà. Multi-OS : macOS / Linux / Windows (cmd ou PowerShell).
-node bootstrap.mjs                      # interactif : demande nom, emplacement, contexte, langue
+node bootstrap.mjs                      # interactif : demande nom, emplacement, ton nom, langue
 #   ou tout en une fois :
-#   node bootstrap.mjs --name mon-cerveau --dest ~/cerveaux --owner "Moi" --context "..." --lang français
+#   node bootstrap.mjs --name mon-cerveau --dest ~/cerveaux --owner "Moi" --lang français
 
 # 3. Ouvre Claude Code DANS le dossier cerveau créé et pose ta première question
 cd ~/mon-cerveau

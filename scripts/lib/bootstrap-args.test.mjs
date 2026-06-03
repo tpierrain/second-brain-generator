@@ -70,13 +70,11 @@ test("parseAnswers — précédence flag > env > default", () => {
   const defaults = {
     projectName: "def-proj",
     ownerName: "def-owner",
-    ownerContext: "def-ctx",
     language: "def-lang",
   };
   const env = {
     SB_PROJECT_NAME: "env-proj",
     SB_OWNER_NAME: "env-owner",
-    SB_OWNER_CONTEXT: "env-ctx",
     SB_LANGUAGE: "env-lang",
   };
   // flag gagne sur env et default
@@ -89,7 +87,6 @@ test("parseAnswers — précédence flag > env > default", () => {
   assert.deepEqual(onlyDefaults, {
     projectName: "def-proj",
     ownerName: "def-owner",
-    ownerContext: "def-ctx",
     language: "def-lang",
     destParent: undefined,
     nonInteractive: false,

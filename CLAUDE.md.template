@@ -1,6 +1,6 @@
 # CLAUDE.md — Règles projet `{{PROJECT_NAME}}`
 
-> Second cerveau de **{{OWNER_NAME}}** ({{OWNER_CONTEXT}}).
+> Second cerveau de **{{OWNER_NAME}}**.
 > Ces règles s'appliquent à toute session Claude Code ouverte depuis ce repo.
 > Pour l'installation : voir [SETUP.md](SETUP.md). Pour l'idée générale : voir [README.md](README.md).
 >

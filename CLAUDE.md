@@ -29,8 +29,14 @@ cerveau **ne pousse rien tant que l'utilisateur n'a pas branché SON dépôt dis
 ## Étape 2 — Poser les questions EN CHAT (groupées)
 
 Demande, en une fois : **nom du cerveau** (= nom du dossier à créer), **emplacement** (dossier
-parent ; défaut : le home de l'utilisateur → `~/<nom>`), **nom de l'utilisateur**, **son contexte**
-(ex. « CTO d'une scale-up »), **langue par défaut des notes**.
+parent ; défaut : le home de l'utilisateur → `~/<nom>`), **nom de l'utilisateur**, **langue par
+défaut des notes**.
+
+> 🎯 **Installation toujours générique — aucun « profil » à choisir.** Ne propose AUCUN preset ni
+> persona (surtout pas un faux choix « install générique vs Head of Engineering »), et ne demande
+> **pas** le « contexte » de l'utilisateur. La constitution est générée neutre ; c'est l'utilisateur
+> qui l'adaptera ensuite. Les personas cités dans le README (Head of Engineering, PM, consultant…)
+> sont des **exemples d'usage**, pas des options d'installation.
 
 > ⚠️ **Ne demande PAS la clé Gemini.** Elle ne transite **jamais** par le chat ni par la ligne de
 > commande (elle ira directement dans `.env`, cf. étape 4).
@@ -38,7 +44,7 @@ parent ; défaut : le home de l'utilisateur → `~/<nom>`), **nom de l'utilisate
 ## Étape 3 — Lancer LA commande exacte (copier, ne pas paraphraser)
 
 ```bash
-node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>" --owner "<nom user>" --context "<contexte>" --lang "<langue>"
+node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>" --owner "<nom user>" --lang "<langue>"
 ```
 
 - `--dest` est **optionnel** : sans lui, le cerveau est créé sous le home (`~/<nom>`).

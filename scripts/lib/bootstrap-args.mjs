@@ -12,7 +12,7 @@ export function resolveTargetDir({ name, destParent, home }) {
 }
 
 // Flags porteurs d'une valeur (formes `--x=v` ET `--x v`).
-const VALUE_FLAGS = ["name", "owner", "context", "lang", "dest"];
+const VALUE_FLAGS = ["name", "owner", "lang", "dest"];
 // Flags booléens déclenchant le mode non-interactif (avec leurs alias).
 const NON_INTERACTIVE_FLAGS = ["non-interactive", "yes", "no-input"];
 
@@ -39,7 +39,6 @@ export function parseAnswers(argv, env, defaults) {
   return {
     projectName: pick("name", "SB_PROJECT_NAME", defaults.projectName),
     ownerName: pick("owner", "SB_OWNER_NAME", defaults.ownerName),
-    ownerContext: pick("context", "SB_OWNER_CONTEXT", defaults.ownerContext),
     language: pick("lang", "SB_LANGUAGE", defaults.language),
     destParent: pick("dest", "SB_DEST", defaults.destParent),
     nonInteractive,

@@ -49,12 +49,12 @@ démarrer.
 
 ```bash
 cd second-brain-generator   # le launcher cloné
-node bootstrap.mjs          # interactif : demande nom, emplacement, contexte, langue
+node bootstrap.mjs          # interactif : demande nom, emplacement, ton nom, langue
 ```
 
 Le script :
 1. vérifie les prérequis (et s'arrête proprement s'il en manque) ;
-2. te demande **nom du cerveau / emplacement / ton nom / contexte / langue** ;
+2. te demande **nom du cerveau / emplacement / ton nom / langue** ;
 3. te demande ta clé Gemini (ou plus tard) ;
 4. **crée le dossier cerveau** (`<emplacement>/<nom>`, **refus s'il existe**) et y **copie les
    fichiers suivis du launcher**, puis génère tes fichiers personnalisés dedans : `CLAUDE.md` (qui
@@ -91,16 +91,15 @@ permet le **démarrage assisté par Claude** (cf. README « Option A »). Claude
 en chat, puis appelle **une seule commande** :
 
 ```bash
-node bootstrap.mjs --non-interactive --name "mon-cerveau" --owner "Jane Doe" \
-  --context "CTO d'une scale-up" --lang "français"
+node bootstrap.mjs --non-interactive --name "mon-cerveau" --owner "Jane Doe" --lang "français"
 # → crée ~/mon-cerveau. Ajoute --dest <dossier-parent> pour choisir l'emplacement.
 ```
 
 - **Flags** : `--name` (nom du dossier cerveau créé), `--dest` (dossier parent ; défaut = ton home),
-  `--owner` (ton nom), `--context`, `--lang`. Formes `--x valeur` **et** `--x=valeur`. Alias du
+  `--owner` (ton nom), `--lang`. Formes `--x valeur` **et** `--x=valeur`. Alias du
   mode : `--non-interactive`, `--yes`, `--no-input`.
 - **Précédence** : flag CLI > variable d'environnement (`SB_PROJECT_NAME`, `SB_DEST`, `SB_OWNER_NAME`,
-  `SB_OWNER_CONTEXT`, `SB_LANGUAGE`) > valeur par défaut.
+  `SB_LANGUAGE`) > valeur par défaut.
 - **La clé Gemini n'est JAMAIS un argument** (sécurité : pas de secret en ligne de commande). En
   mode non-interactif elle est **toujours différée** → renseigne-la ensuite dans `<cerveau>/.env` ;
   l'index se construit au 1er démarrage du serveur MCP.
