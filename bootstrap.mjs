@@ -208,6 +208,7 @@ if (interactive) {
     const mcpPath = join(ROOT, ".mcp.json");
     const settingsPath = join(ROOT, ".claude", "settings.json");
     for (const conn of CONNECTORS) {
+      for (const u of conn.useCases ?? []) console.log(`    ${c.C}· ${u}${c.X}`);
       const pick = await ask(`  • ${conn.label} ? [o/N]`, "N");
       if (!/^o/i.test(pick)) continue;
       if (conn.kind === "mcp") {

@@ -113,9 +113,28 @@ Outils MCP exposés : `search_vault`, `get_document`, `list_documents`, `vault_s
 Le starter ne fournit que le moteur RAG. Pour interroger aussi tes autres sources
 (Drive, Notion, Slack, Calendar…), trois chemins — choisis selon ton confort.
 
+### Menu — quel connecteur pour quel besoin
+
+Des **idées** pour démarrer (à adapter à tes outils). « Natif claude.ai » = à activer côté
+compte (Settings → Connectors), rien à écrire dans `.mcp.json` ; « MCP communautaire » = un
+serveur que tu branches dans `.mcp.json`. Catalogue complet et détaillé : [CONNECTORS.md](CONNECTORS.md).
+
+| Besoin | Connecteur recommandé | Comment le brancher |
+|---|---|---|
+| **Notes / wikis** | Notion | MCP communautaire `@notionhq/notion-mcp-server`, ou connecteur **natif** claude.ai |
+| **Mail** | Gmail | Connecteur **natif** claude.ai |
+| **Agenda** | Google Calendar | Connecteur **natif** claude.ai |
+| **Fichiers / documents** | Google Drive | MCP communautaire (`@modelcontextprotocol/server-gdrive`, `@isaacphi/mcp-gdrive`…), ou **natif** claude.ai |
+| **Chat d'équipe** | Slack | Connecteur **natif** claude.ai |
+| **Transcripts de réunion** (Meet) | **Google Calendar + Google Drive** | Pas un produit à part : le lien d'enregistrement/transcription est souvent dans l'**invitation** (Calendar) et le doc de transcription atterrit sur le **Drive**. Branche les deux. |
+
+> 💡 Les transcripts de réunion ne sont **pas** un connecteur dédié : ce sont des documents
+> produits par Meet/Gemini. On les attrape via le **Calendar** (lien dans l'événement) et le
+> **Drive** (le doc de transcription). Pas besoin d'un MCP de meeting-bot tiers pour démarrer.
+
 ### (a) Le wizard du bootstrap — *recommandé*
 
-Pendant `node bootstrap.mjs`, l'étape **5/8 « Brancher des sources externes »** te propose un
+Pendant `node bootstrap.mjs`, l'étape **5/9 « Brancher des sources externes »** te propose un
 petit catalogue. Pour chaque connecteur **MCP** que tu acceptes, le script fusionne tout seul
 son bloc serveur dans `.mcp.json` **et** ses permissions dans `.claude/settings.json`, puis
 t'affiche le rappel credentials à renseigner. C'est **idempotent** : relancer le bootstrap ne

@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 
 import { CONNECTORS } from "./connectors-catalog.mjs";
 
-test("le catalogue contient 2 à 4 connecteurs", () => {
+test("le catalogue contient 2 à 8 connecteurs", () => {
   assert.ok(Array.isArray(CONNECTORS));
-  assert.ok(CONNECTORS.length >= 2 && CONNECTORS.length <= 4, `len=${CONNECTORS.length}`);
+  assert.ok(CONNECTORS.length >= 2 && CONNECTORS.length <= 8, `len=${CONNECTORS.length}`);
 });
 
 test("chaque connecteur a id/label/kind/credentialsHint, ids uniques", () => {
@@ -18,6 +18,31 @@ test("chaque connecteur a id/label/kind/credentialsHint, ids uniques", () => {
     assert.ok(!ids.has(c.id), `id dupliqué : ${c.id}`);
     ids.add(c.id);
   }
+});
+
+test("chaque connecteur expose des useCases (idées de « pour quoi faire »)", () => {
+  for (const c of CONNECTORS) {
+    assert.ok(Array.isArray(c.useCases) && c.useCases.length > 0, `useCases manquants pour ${c.id}`);
+    for (const u of c.useCases) {
+      assert.equal(typeof u, "string", `useCase non-string pour ${c.id}`);
+      assert.ok(u.trim().length > 0, `useCase vide pour ${c.id}`);
+    }
+  }
+});
+
+test("Gmail figure au catalogue (connecteur natif)", () => {
+  const gmail = CONNECTORS.find((c) => c.id === "gmail");
+  assert.ok(gmail, "connecteur gmail manquant");
+  assert.equal(gmail.kind, "native");
+});
+
+test("les transcripts de réunion sont couverts par Drive ET Calendar (cas d'usage, pas un produit tiers)", () => {
+  const mentionsTranscript = (c) =>
+    (c.useCases ?? []).some((u) => /transcript/i.test(u));
+  const drive = CONNECTORS.find((c) => c.id === "google-drive");
+  const calendar = CONNECTORS.find((c) => c.id === "google-calendar");
+  assert.ok(drive && mentionsTranscript(drive), "Drive devrait citer les transcripts dans ses useCases");
+  assert.ok(calendar && mentionsTranscript(calendar), "Calendar devrait citer les transcripts dans ses useCases");
 });
 
 test("connecteurs mcp : serverConfig + permissions, env en placeholders (pas de vrai secret)", () => {

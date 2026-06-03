@@ -341,6 +341,31 @@ détaillées dans [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md). Pa
 
 ---
 
+## Brancher tes sources (connecteurs)
+
+Le moteur RAG répond depuis **tes notes**. Pour qu'il puisse aussi aller chercher dans tes **autres
+sources** (mail, agenda, Notion, fichiers, chat…), tu branches des **connecteurs**. Quelques idées
+pour démarrer — *à toi de choisir selon tes outils* :
+
+| Tu veux interroger… | Tu peux par exemple brancher… | Type |
+|---|---|---|
+| Tes **notes / wikis** Notion | le MCP Notion `@notionhq/notion-mcp-server`, ou le connecteur Notion natif | MCP ou natif claude.ai |
+| Tes **mails** | le connecteur **Gmail** natif | natif claude.ai |
+| Ton **agenda** | le connecteur **Google Calendar** natif | natif claude.ai |
+| Tes **fichiers / documents** | un MCP Google Drive (`@modelcontextprotocol/server-gdrive`, `@isaacphi/mcp-gdrive`…), ou le connecteur Drive natif | MCP ou natif claude.ai |
+| Ton **chat d'équipe** | le connecteur **Slack** natif | natif claude.ai |
+| Les **transcripts de tes réunions** (Meet) | le **Calendar** *et* le **Drive** — voir ci-dessous | natif + MCP |
+
+> 🎙️ **Les transcripts de réunion ne sont pas un connecteur à part.** Quand tu enregistres une
+> visio (Google Meet / Gemini), le lien de la transcription se retrouve souvent dans
+> l'**invitation de l'événement** (→ via le **Calendar**) et le document de transcription atterrit
+> sur ton **Google Drive** (→ via le **Drive**). Tu les attrapes donc en branchant **ces deux
+> connecteurs**, pas un outil de meeting-bot tiers.
+
+Le **wizard du bootstrap** (étape 5/9) te propose de brancher tout ça en te montrant, pour chaque
+source, *à quoi elle sert*. Le menu complet et le détail des credentials sont dans
+[**CONNECTORS.md**](CONNECTORS.md) et [SETUP §6](SETUP.md).
+
 ## Et après ?
 
 La graine te donne le **moteur** et un **squelette de harnais** ; *ton* second cerveau, tu le fais
