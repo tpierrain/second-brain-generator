@@ -48,10 +48,11 @@ Corollaire : **zéro couplage temporel, zéro charge cognitive.** Le moteur RAG 
 fonctionnent en **foolproof** — tu n'as *jamais* à orchestrer la mécanique : pas de « appelle
 tel skill avant tel autre », pas de synchro à déclencher à la main, pas besoin de savoir quand
 l'index se reconstruit. Tu poses ta question ; la recherche, la synchro delta, l'indexation et
-la persistance s'enchaînent toutes seules, au bon moment. L'**usage est volontairement découplé
-de l'implémentation** — fluide, souple, simple au point que *n'importe qui* pourrait s'en servir.
-Tout l'objectif : **alléger ta charge mentale** pour que tu te concentres sur les bons sujets,
-au bon moment.
+la persistance s'enchaînent toutes seules, au bon moment. C'est un parti-pris d'**affordance** :
+l'**usage est volontairement découplé de l'implémentation** — tu n'as pas à savoir *comment c'est
+fait à l'intérieur* pour t'en servir. Fluide, souple, simple au point que *n'importe qui* pourrait
+l'utiliser. Tout l'objectif : **alléger ta charge mentale** pour que tu te concentres sur les bons
+sujets, au bon moment.
 
 Et comme **tout est persisté** — tes questions, les réponses, ce qui a été synchronisé et
 généré —, ton second cerveau accumule une trace exploitable. Au bout d'un moment, tu peux
@@ -97,18 +98,27 @@ Claude cherche dans le vault et répond avec les backlinks vers les notes source
 | **`scripts/*.mjs`** | Hooks Node multi-OS : état repo + RAG au démarrage (`session-status`), commit auto (`auto-commit`) | ✅ prêt |
 | **`bootstrap.mjs`** | Installateur interactif (macOS / Linux / Windows) | ✅ |
 
-### Les skills incluses
+### Les skills que tu appelles
 
-Le starter reste volontairement **frugal en skills** — il en livre six, génériques :
+Le starter reste volontairement **frugal en skills**. Celles que tu invoques au quotidien :
 
 | Skill | Ce qu'elle fait |
 |---|---|
-| **`/sync`** | synchronise le repo git entre tes machines (commit, `pull --rebase`, gestion de conflits, push) |
-| **`/improve`** | fait évoluer ton harnais : lit les frictions, propose et applique les améliorations les plus utiles |
 | **`/coach`** | **coach « vénère », sparring partner branché sur ton vault**, dans l'esprit *Radical Candor* (Care Personally + Challenge Directly) : brutalement honnête ET bienveillant, il challenge tes décisions et tes raisonnements, nomme tes angles morts. *Coaching de soi uniquement.* |
 | **`/prepare-1-1`** | prépare un 1-1 **dans les deux sens** : avec **ton manager** (les sujets que tu veux porter, ce qui a bougé depuis la dernière fois) ou avec quelqu'un que **tu manages** (suivi des engagements, sujets opérationnels, **revue de KPI**). Croise fiche personne + dernier 1-1 + delta de signaux. *Skill méta : une structure à affiner à tes axes et tes KPI.* |
-| **`sync-sources`** | *(référence interne, pas une commande)* — l'architecture **fan-out/fan-in** qui aspire le **delta** des sources externes en sous-agents parallèles **lecture seule**. C'est le moteur de la Phase 2 (cf. « Comment ça marche »). 🔧 à câbler sur tes connecteurs. |
-| **`/tdd-discipline`** | discipline TDD vendorée — sert à développer *le harnais lui-même* en TDD (utile surtout si tu le modifies) |
+| **`/improve`** | fait évoluer ton harnais : lit les frictions, propose et applique les améliorations les plus utiles |
+| **`/sync`** | synchronise le repo git entre tes machines — **utile surtout si tu as plusieurs laptops** (commit, `pull --rebase`, gestion de conflits, push). Rarement nécessaire au quotidien. |
+
+### Outillage interne du harnais (tu ne les appelles pas)
+
+Ces skills font partie de la **mécanique** : tu n'as pas à les connaître pour utiliser ton second
+cerveau — c'est tout l'objet de l'**affordance** du harnais (l'usage est découplé de
+l'implémentation). C'est juste bon de savoir qu'elles existent.
+
+| Skill | Rôle | Qui la déclenche |
+|---|---|---|
+| **`sync-sources`** | architecture **fan-out/fan-in** qui aspire le **delta** des sources externes en sous-agents parallèles **lecture seule** — le moteur de la Phase 2 (cf. « Comment ça marche »). 🔧 à câbler sur tes connecteurs. | **tes questions** (jamais toi directement) |
+| **`tdd-discipline`** | discipline TDD vendorée — sert à développer *le harnais lui-même* en TDD. | Claude, quand on modifie le harnais |
 
 Le reste n'est **pas livré** : ce sont des **idées de skills à faire émerger selon tes besoins**.
 Le starter t'en propose plusieurs (détaillées dans
