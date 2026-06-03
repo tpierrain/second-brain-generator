@@ -2,12 +2,12 @@
 
 **Retrouve n'importe quelle décision ou info de ton travail en quelques secondes — en posant la question en langage naturel, avec les sources à l'appui.**
 
-> 🧑 *« Quelle base de données a-t-on choisie pour la facturation, et pourquoi ? »*
+> 🧑 *« On en est où sur le projet facturation — qui porte quoi, et qu'est-ce qui a été décidé ? »*
 >
-> 🧠 *« PostgreSQL, décidé au comité archi du 12 mai — pour le support JSONB et la cohérence
-> transactionnelle. La piste MongoDB a été écartée faute de transactions multi-documents
-> fiables à l'époque.*
-> *→ note `comité-archi-2025-05-12` · → Slack #tech, 14 mai »*
+> 🧠 *« Au point d'équipe du 15 janvier : la base de données a été tranchée (PostgreSQL plutôt que
+> MongoDB), et Jane Doe — Tech Lead plateforme — pousse pour anticiper la dette technique dès le
+> sprint 1.*
+> *→ décision du 10 janvier · → point d'équipe du 15 janvier »*
 
 Au lieu d'aller fouiller toi-même dans Slack, tes mails, Google Drive et tes comptes rendus de
 réunion, tu demandes — et ton **second cerveau** te répond tout de suite, en citant d'où vient
