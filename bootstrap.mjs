@@ -22,6 +22,7 @@ import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
+import { smokeTestMcp } from "./scripts/lib/mcp-smoke.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
 process.chdir(ROOT);
@@ -69,7 +70,7 @@ function run(cmd, args, opts = {}) {
 }
 
 // ── 1. Prérequis ────────────────────────────────────────────────────────────
-step("1/6 · Vérification des prérequis");
+step("1/7 · Vérification des prérequis");
 let missing = false;
 
 // Node : on tourne déjà dedans, version lisible directement.
@@ -101,7 +102,7 @@ if (missing) {
 }
 
 // ── 2. Personnalisation ─────────────────────────────────────────────────────
-step("2/6 · Personnalisation du harnais");
+step("2/7 · Personnalisation du harnais");
 const interactive = stdin.isTTY;
 const rl = interactive ? createInterface({ input: stdin, output: stdout }) : null;
 
@@ -130,7 +131,7 @@ if (interactive) {
 }
 
 // ── 3. Clé Gemini ───────────────────────────────────────────────────────────
-step("3/6 · Clé API Google Gemini (pour le RAG)");
+step("3/7 · Clé API Google Gemini (pour le RAG)");
 let geminiKey = "";
 const envPath = join(ROOT, ".env");
 const envHasKey =
@@ -143,7 +144,7 @@ if (envHasKey) {
 }
 
 // ── 4. Génération des fichiers ──────────────────────────────────────────────
-step("4/6 · Génération des fichiers personnalisés");
+step("4/7 · Génération des fichiers personnalisés");
 const replacements = {
   "{{PROJECT_ROOT}}": toPosix(ROOT),
   "{{PROJECT_NAME}}": projectName,
@@ -184,7 +185,7 @@ if (geminiKey) {
 if (rl) rl.close();
 
 // ── 5. Installation du moteur RAG ───────────────────────────────────────────
-step("5/6 · Installation du moteur RAG (npm install)");
+step("5/7 · Installation du moteur RAG (npm install)");
 const rag = join(ROOT, "rag");
 const install = run(NPM, ["install", "--silent"], { cwd: rag, stdio: "inherit" });
 if (install.ok) ok("dépendances RAG installées");
@@ -194,7 +195,7 @@ else {
 }
 
 // ── 6. Indexation initiale (si clé présente) ────────────────────────────────
-step("6/6 · Indexation initiale du vault d'exemple");
+step("6/7 · Indexation initiale du vault d'exemple");
 const keyReady =
   existsSync(envPath) && /^GOOGLE_GEMINI_API_KEY=.+/m.test(readFileSync(envPath, "utf8"));
 if (keyReady) {
@@ -203,6 +204,42 @@ if (keyReady) {
   else warn("Indexation interrompue (quota/clé ?) — elle reprendra au prochain démarrage de Claude Code.");
 } else {
   warn("Pas de clé Gemini → indexation reportée. Ajoute la clé dans .env puis : cd rag && npm run index");
+}
+
+// ── 7. Vérification de la connexion MCP ──────────────────────────────────────
+// Confirme que Claude Code pourra réellement parler au serveur `vault-rag`
+// (handshake stdio), avant de lancer `claude`. Non bloquant : un échec ici
+// n'empêche pas d'utiliser le starter, mais pointe vers le dépannage SETUP.
+// Pas de clé Gemini requise — lister les outils n'embedde rien.
+step("7/7 · Vérification de la connexion MCP");
+const EXPECT_TOOLS = ["search_vault", "get_document", "list_documents", "vault_stats"];
+try {
+  const mcp = JSON.parse(readFileSync(join(ROOT, ".mcp.json"), "utf8"));
+  const srv = mcp.mcpServers?.["vault-rag"];
+  if (!srv) {
+    warn(".mcp.json sans serveur « vault-rag » — vérification ignorée.");
+  } else {
+    // npx/npm portent .cmd sur Windows (cf. NPM ci-dessus).
+    const cmd =
+      process.platform === "win32" && /^(npx|npm)$/.test(srv.command)
+        ? `${srv.command}.cmd`
+        : srv.command;
+    const res = await smokeTestMcp({
+      command: cmd,
+      args: srv.args ?? [],
+      cwd: srv.cwd ?? ROOT,
+      expectTools: EXPECT_TOOLS,
+      timeoutMs: 30000,
+    });
+    if (res.ok) {
+      ok(`connexion MCP OK — ${res.tools.length} outils exposés (${EXPECT_TOOLS.join(", ")})`);
+    } else {
+      warn(`connexion MCP KO : ${res.error ?? "raison inconnue"}`);
+      warn("Claude Code pourrait ne pas voir le vault. Dépannage : SETUP.md §8.");
+    }
+  }
+} catch (e) {
+  warn(`vérification MCP impossible (${e.message}) — voir SETUP.md §8.`);
 }
 
 // ── Fin ─────────────────────────────────────────────────────────────────────

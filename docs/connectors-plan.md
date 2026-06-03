@@ -28,26 +28,24 @@ Améliorer l'expérience MCP de `bootstrap.mjs` :
 
 ---
 
-## Session A — Smoke-test MCP  ⬜
+## Session A — Smoke-test MCP  ✅
 
 **Livrable** : `bootstrap.mjs` affiche ✅/❌ de connexion au serveur `vault-rag` en fin d'install.
 
-- [ ] `scripts/lib/mcp-smoke.mjs` — `smokeTestMcp({command, args, cwd, expectTools, timeoutMs})`
+- [x] `scripts/lib/mcp-smoke.mjs` — `smokeTestMcp({command, args, cwd, expectTools, timeoutMs, env})`
       → spawn le serveur, handshake JSON-RPC **stdio newline-delimited** :
       `initialize` → réponse → `notifications/initialized` → `tools/list` → réponse.
-      Renvoie `{ ok, tools: string[], error? }`. Timeout (défaut ~15 s). Kill le child en sortie.
-      **Pas de clé Gemini requise** (lister les outils n'embedde rien).
-- [ ] `scripts/lib/mcp-smoke.test.mjs` (TDD) + **stub serveur** (`scripts/lib/__fixtures__/stub-mcp-server.mjs`)
-      qui répond à `initialize`/`tools/list` → test déterministe, sans réseau ni Gemini.
-      Cas : succès (outils attendus présents), timeout, serveur qui crash, outil manquant.
-- [ ] Wiring `bootstrap.mjs` : nouvelle étape « 7/7 · Vérification de la connexion MCP »
-      après l'indexation. Appelle `smokeTestMcp` avec la conf lue dans `.mcp.json` (command
-      `npx`, args `["tsx","rag/src/index.ts"]`, cwd = ROOT), `expectTools` =
+      Renvoie `{ ok, tools: string[], error? }`. Timeout (défaut 15 s). Kill le child en sortie.
+      Détection rapide de la mort du process (handler `exit`). **Pas de clé Gemini requise**.
+- [x] `scripts/lib/mcp-smoke.test.mjs` (TDD) + **stub serveur** (`scripts/lib/__fixtures__/stub-mcp-server.mjs`,
+      pilotable par `STUB_TOOLS`/`STUB_MODE`) → tests déterministes, sans réseau ni Gemini.
+      Cas couverts : succès, outil manquant, timeout, serveur qui meurt. (4 tests verts.)
+- [x] Wiring `bootstrap.mjs` : étape « 7/7 · Vérification de la connexion MCP » après l'indexation.
+      Lit la conf `vault-rag` dans `.mcp.json` (mapping `npx`→`npx.cmd` sur Windows), `expectTools` =
       `["search_vault","get_document","list_documents","vault_stats"]`.
-      **Non bloquant** : ❌ → `warn(...)` + pointer SETUP, ne PAS `exit 1`.
-      (Renuméroter les étapes : passer de « 6/6 » à « 7/7 ».)
-- [ ] Doc : ligne troubleshooting `SETUP.md §8` (« smoke-test MCP ❌ → … »).
-- [ ] `node --test` vert + `cd rag && npm test` vert.
+      **Non bloquant** : ❌ → `warn(...)` + pointer SETUP §8, pas d'`exit 1`. Étapes renumérotées `/6`→`/7`.
+- [x] Doc : ligne troubleshooting `SETUP.md §8` (« Smoke-test MCP ❌ → … »).
+- [x] `node --test` vert (4) + `cd rag && npm test` vert (76). E2E bootstrap jetable OK (`7/7 ✓ 5 outils`).
 - [ ] **Commit** : `feat: smoke-test MCP en fin de bootstrap`
 
 **Notes d'implémentation**
@@ -117,4 +115,6 @@ Améliorer l'expérience MCP de `bootstrap.mjs` :
 
 > Chaque session : noter en une ligne ce qui est fait et le prochain point d'entrée.
 
-- _(rien encore — démarrer par la Session A)_
+- **Session A (faite)** — smoke-test MCP livré : `scripts/lib/mcp-smoke.mjs` (+ test + stub),
+  étape 7/7 du bootstrap, doc SETUP §8. Tout vert, E2E jetable OK. **Prochain point d'entrée : Session B**
+  (catalogue connecteurs + merge idempotent, TDD pur, aucun interactif).
