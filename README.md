@@ -112,7 +112,7 @@ répertoire de travail temporaire fait l'affaire — c'est juste là que le laun
 **copie-colle cette unique instruction** (adapte le nom et l'URL) :
 
 ```text
-Installe-moi un second cerveau nommé "mon-cerveau" à partir de ce générateur : <URL_DU_REPO>
+Installe-moi un second cerveau nommé "mon-cerveau" à partir de ce générateur : https://github.com/tpierrain/second-brain-generator
 ```
 
 > 📍 **Et mon cerveau, il atterrit où ?** **Pas dans ce dossier courant** : par défaut il est créé
