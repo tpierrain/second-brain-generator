@@ -128,8 +128,9 @@ qui définis ça — pas le starter.
   le guidon, sur des postes où l'on se sent parfois un peu seul ;
 - **comprendre et consolider des concepts métier avancés** côté client — ici comptabilité et
   fiscalité, des domaines loin d'être triviaux ;
-- **distinguer les acronymes métier des acronymes applicatifs** (les mêmes lettres ne veulent
-  pas dire la même chose) ;
+- **distinguer les acronymes métier des acronymes applicatifs** : tu es en réunion, quelqu'un
+  vient de lâcher un acronyme barbare — récupère vite l'info pour suivre, sans avoir à
+  interrompre tout le monde pour demander (les mêmes lettres ne veulent pas dire la même chose) ;
 - **cartographier les équipes et l'organisation** : qui travaille sur quel périmètre, quelle
   équipe porte quel sujet, à tout moment ;
 - **savoir en permanence ce qu'on attend de lui — et ce qu'il attend des autres**.
