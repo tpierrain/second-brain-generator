@@ -22,7 +22,7 @@ const mcpConnector = {
 
 // Prépare un dossier jetable avec un .mcp.json et un settings.json minimaux.
 function scratch() {
-  const dir = mkdtempSync(join(tmpdir(), "sbs-connectors-"));
+  const dir = mkdtempSync(join(tmpdir(), "sbg-connectors-"));
   const mcpPath = join(dir, ".mcp.json");
   const settingsPath = join(dir, "settings.json");
   writeFileSync(mcpPath, JSON.stringify({ mcpServers: { "vault-rag": { command: "npx" } } }, null, 2));

@@ -60,7 +60,7 @@ dépôt distant, redémarrage). On ne confie **pas** la séquence d'install à C
    template avec des fichiers générés / `node_modules` :
    ```bash
    # stdin non-TTY → bootstrap part en mode non-interactif (valeurs par défaut)
-   cp -R . /tmp/sbs-test && cd /tmp/sbs-test && node bootstrap.mjs < /dev/null
+   cp -R . /tmp/sbg-test && cd /tmp/sbg-test && node bootstrap.mjs < /dev/null
    ```
 5. **Garder le moteur synchronisable** avec le second cerveau source : `rag/` est resté quasi
    identique à l'original → les correctifs peuvent être rapatriés dans un sens ou l'autre.
