@@ -113,11 +113,11 @@ Le starter t'en propose plusieurs (détaillées dans
 [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md)), inspirées de cas d'usage réels —
 par exemple :
 
+- **`prepare-journee`** — briefing du matin : agenda du jour, points chauds, actions prioritaires ;
 - **`prepare-1-1`** — brief avant un entretien individuel : derniers échanges, engagements, signaux faibles ;
 - **`briefing`** — après une absence, la synthèse de ce qui s'est passé sur tes canaux suivis ;
 - **`prepare-meeting`** — contexte, points ouverts et historique des participants avant une réunion ;
 - **`rapport-etonnement`** — capturer ton regard neuf lors d'une prise de poste / d'une nouvelle mission ;
-- **`article`** — écrire ou continuer un texte en binôme conversationnel, nourri par ton vault ;
 - **`weekly-review`** — revue hebdo : ce qui a avancé, ce qui stagne, ce qui arrive.
 
 C'est voulu : un second cerveau ne vaut que calé sur *tes* cas d'usage (cf. la section

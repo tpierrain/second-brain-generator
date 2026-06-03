@@ -36,6 +36,7 @@ version: 1.0.0
 
 | Skill | Ce qu'il fait | Sources typiques |
 |---|---|---|
+| **prepare-journee** | Briefing du matin : agenda du jour, points chauds, actions prioritaires | Calendar, vault/backlog, vault/daily |
 | **prepare-meeting** | Avant une réunion : ramène l'historique, les points ouverts, le contexte des participants | Calendar, vault, transcripts |
 | **prepare-1-1** | Brief avant un entretien individuel : derniers échanges, engagements, signaux faibles | Calendar, Slack, vault/backlog |
 | **coach** ✅ livré | Sparring partner branché sur le vault : challenge les raisonnements, rappelle les engagements (coaching de soi) | vault entier |
@@ -43,7 +44,6 @@ version: 1.0.0
 | **debrief** | En fin de journée : transforme les événements en notes structurées (daily, topics) | conversation, vault |
 | **weekly-review** | Revue hebdo : ce qui a avancé, ce qui stagne, ce qui arrive | vault/backlog, Calendar |
 | **rapport-etonnement** | Capturer ton regard neuf lors d'une prise de poste / d'une nouvelle mission (étonnements, angles morts) | vault, observations |
-| **article** | Écrire ou continuer un texte en binôme conversationnel, nourri par le vault | vault entier |
 
 ## Méthode recommandée
 
