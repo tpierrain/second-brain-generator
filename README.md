@@ -150,18 +150,15 @@ C'est aussi pour ça qu'aucun fichier `CLAUDE.md` (les règles que Claude suit) 
 l'installateur le **génère** sur mesure pour toi, et refuse d'écraser le tien. C'est **ta
 constitution**, propre à *tes* usages.
 
-## De la mémoire à l'action (si tu le souhaites)
+## Sûr par construction : il observe, il répond
 
-De base, ton second cerveau **lit et répond** — c'est tout, et c'est volontaire : le substrat livré
-ne prend **aucune action** sur tes outils. C'est le socle sûr et prévisible.
+Ton second cerveau **ne prend aucune action** sur tes outils. Il **lit et il répond**, point. Aucune
+surprise, rien qui parte en ton nom : c'est un choix de conception, et c'est ce qui le rend
+tranquille à adopter.
 
-Mais rien ne t'y enferme. En le faisant grandir, tu peux lui donner des **capacités nouvelles**, y
-compris **agir pour toi** : rédiger un brouillon de mail, créer une page dans Notion, préparer un
-message Slack… Tu décides, tu actives, et tu gardes la main (par exemple en validant avant l'envoi).
-
-> ⚠️ **Ce n'est pas inclus dans le starter de base** — et c'est un choix. On commence par une
-> mémoire qui répond ; tu ajoutes les actions **délibérément**, quand tu en as besoin et seulement
-> celles que tu veux.
+> Et si un jour tu le veux : en le faisant grandir, on peut lui ajouter des **capacités d'action**
+> (brouillon de mail, page Notion, message Slack à valider…), **délibérément et sous ton contrôle**.
+> Jamais par défaut, jamais dans ton dos.
 
 ## Adapte-le à tes cas d'usage
 
