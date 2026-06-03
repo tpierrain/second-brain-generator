@@ -140,12 +140,12 @@ Pour lever les doutes qu'on a tous au début :
 - **`--name` = le nom du dossier cerveau créé** ; son emplacement se choisit avec `--dest` (par
   défaut, ton home → `~/<nom>`). Le bootstrap **refuse si le dossier existe déjà**.
 - Le cerveau naît **sans dépôt distant** : pour un backup / multi-machine, tu branches TON dépôt
-  plus tard (push opt-in, cf. Option A geste 2).
+  plus tard (push opt-in, cf. geste 2 ci-dessous).
 
-### Option A — Démarrage assisté par Claude (le plus simple)
+### Installation — Claude installe tout pour toi
 
-Tu peux **cloner le générateur** (tu as son URL) et tu utilises Claude Code ? Tu peux laisser
-**Claude tout installer pour toi**. Ouvre Claude Code (même hors du repo) et donne-lui cette
+Tu utilises Claude Code et tu as l'URL du générateur ? Laisse **Claude tout installer pour toi** —
+c'est le seul geste à faire. Ouvre Claude Code (même hors du repo) et donne-lui cette
 instruction — adapte le nom et l'URL :
 
 > *« Installe-moi un second cerveau nommé `mon-cerveau` à partir de ce générateur : `<URL_DU_REPO>`. »*
@@ -175,28 +175,6 @@ fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 ges
 3. **Rouvrir Claude Code** dans le **dossier cerveau créé** (ex. `~/mon-cerveau`) — active le moteur
    de recherche. (Le launcher, lui, peut être réutilisé pour un autre cerveau ou supprimé.)
 
-### Option B — Manuel (`node bootstrap.mjs`)
-
-```bash
-# 1. Récupère le LAUNCHER (ce générateur) — un simple clone :
-git clone <URL_DU_REPO> second-brain-generator
-cd second-brain-generator
-
-# 2. Lance l'installateur — il CRÉE un dossier cerveau SÉPARÉ (par défaut ~/<nom>) et refuse
-#    si ce dossier existe déjà. Multi-OS : macOS / Linux / Windows (cmd ou PowerShell).
-node bootstrap.mjs                      # interactif : demande nom, emplacement, ton nom, langue
-#   ou tout en une fois :
-#   node bootstrap.mjs --name mon-cerveau --dest ~/cerveaux --owner "Moi" --lang français
-
-# 3. Ouvre Claude Code DANS le dossier cerveau créé et pose ta première question
-cd ~/mon-cerveau
-claude
-```
-
-> 💡 Le launcher reste **réutilisable** : relance `node bootstrap.mjs --name autre-cerveau` pour en
-> générer un second sans tout recloner. Le cerveau créé n'a **aucun lien distant** par défaut — tu
-> branches le tien plus tard si tu veux un backup / du multi-machine ([SETUP §7](SETUP.md)).
-
 Une fois installé, essaie par exemple :
 
 > *« Quelle base de données a-t-on choisie pour la facturation, et pourquoi ? »*
@@ -215,8 +193,8 @@ Par défaut, ton cerveau est **versionné en local** (chaque modif est commitée
 servir **depuis plusieurs ordinateurs**, branche-lui un **dépôt git distant** : **GitHub**, GitLab,
 Azure DevOps, ou ton propre serveur git.
 
-- **En install assistée (Option A)** : Claude te le **propose directement** (geste 2) et configure tout.
-- **À la main** : trois commandes (`git remote add` → `git push -u` → activer le push auto), pas à
+- **Pendant l'installation** : Claude te le **propose directement** (geste 2) et configure tout.
+- **Plus tard** : trois commandes (`git remote add` → `git push -u` → activer le push auto), pas à
   pas dans [SETUP §7](SETUP.md).
 
 C'est **opt-in** : tant que tu ne l'as pas branché, **rien n'est poussé** (garde-fou anti-fuite par
