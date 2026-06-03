@@ -152,9 +152,11 @@ fais pousser en t'en servant.
 **Chacun a son instance.** Un collègue qui veut le sien **repart du template** et crée **son** repo
 privé à lui. On ne partage pas un second cerveau à plusieurs — on partage la graine.
 
-C'est aussi pour ça qu'aucun fichier `CLAUDE.md` (les règles que Claude suit) n'est livré :
-l'installateur le **génère** sur mesure pour toi, et refuse d'écraser le tien. C'est **ta
-constitution**, propre à *tes* usages.
+C'est aussi pour ça que le `CLAUDE.md` (les règles que Claude suit) est **ta constitution**,
+propre à *tes* usages : l'installateur le **génère** sur mesure pour toi. Au départ, le repo
+contient juste une **amorce** qui signale à Claude qu'il n'est pas encore installé (et te guide
+vers l'installateur) ; le bootstrap la remplace par ta vraie constitution — et ne touche **jamais**
+à un `CLAUDE.md` que tu aurais déjà personnalisé.
 
 ## Sûr par construction : il observe, il répond
 
@@ -240,7 +242,7 @@ se reconstruit seul, incrémentalement ; un hook git committe et pousse à chaqu
 |---|---|---|
 | **`rag/`** | Moteur RAG (serveur MCP TypeScript) : chunking, embeddings Gemini, recherche sémantique, garde-fous quota | ✅ prêt à l'emploi |
 | **`vault/`** | Ton contenu Markdown (notes d'exemple fournies) | 🔧 à remplir |
-| **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🔧 généré, à adapter |
+| **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🌱 amorce avant install → **généré** par le bootstrap, puis à adapter |
 | **`.claude/skills/`** | Skills livrées (voir ci-dessous) + idées d'autres skills | 🔧 à étoffer |
 | **`.claude/settings.json`** | Hooks (auto-commit, statut au démarrage) + permissions | ✅ généré |
 | **`scripts/*.mjs`** | Hooks Node multi-OS : état repo + RAG au démarrage, commit auto | ✅ prêt |

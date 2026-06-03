@@ -49,14 +49,17 @@ Le script :
 1. vérifie les prérequis (et s'arrête proprement s'il en manque) ;
 2. te demande nom / contexte / langue / nom de projet ;
 3. te demande ta clé Gemini (ou plus tard) ;
-4. génère `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`, `.env` personnalisés ;
+4. génère tes fichiers personnalisés : `CLAUDE.md` (qui **remplace l'amorce de pré-installation**),
+   `.mcp.json`, `.claude/settings.json`, `.env` ;
 5. propose de **brancher des sources externes** (optionnel — cf. §6) ;
 6. propose de **vider les notes d'exemple** (optionnel — garde-les pour le 1er test, vide-les ensuite pour ne pas polluer ton RAG) ;
 7. installe les dépendances du moteur (`npm install`) ;
 8. indexe le vault d'exemple ;
 9. **smoke-test MCP** : vérifie que Claude Code pourra parler au serveur `vault-rag` (cf. §8).
 
-Idempotent : tu peux le relancer. Les fichiers déjà générés ne sont pas écrasés (supprime-les pour régénérer).
+Idempotent : tu peux le relancer. Les fichiers déjà générés ne sont pas écrasés (supprime-les pour
+régénérer) — seule exception, le `CLAUDE.md` **amorce** est remplacé au premier passage ; ta vraie
+constitution `CLAUDE.md`, une fois en place, est ensuite préservée.
 
 ### Installation manuelle (si tu préfères)
 1. Copie `.env.example` → `.env` et renseigne ta clé Gemini.
