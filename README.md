@@ -85,7 +85,8 @@ fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un starter et p
 - **[Claude Code](https://claude.com/claude-code)**, **[Node.js](https://nodejs.org) ≥ 18** et
   **git**. *(L'installateur vérifie tout — s'il en manque un, il te le dit proprement.)*
 - **Une [clé API Gemini](https://aistudio.google.com/apikey)** (Google) pour la recherche. Le
-  **palier gratuit suffit pour démarrer**.
+  **palier gratuit suffit pour démarrer** — ~2 min, 3 clics, sans toucher à la console Google
+  Cloud ni sortir de carte bancaire. *(Pas à pas : [SETUP §1.1](SETUP.md).)*
 - **Tes sources d'information** (Slack, Drive, mails, Notion, transcripts…), à brancher selon
   *tes* outils. Optionnel au début. *(cf. [SETUP §6](SETUP.md))*
 

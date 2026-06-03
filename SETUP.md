@@ -17,6 +17,28 @@
 > **facturation** (palier payant). Côté Claude, pense aussi à désactiver le partage pour
 > l'amélioration. **Détails en §9 (Confidentialité des données).**
 
+### 1.1 Récupérer ta clé Gemini — l'affaire de 2 minutes
+
+Pas besoin de toucher à la console Google Cloud : tout se fait via **Google AI Studio**, en
+quelques clics.
+
+1. Ouvre **<https://aistudio.google.com/apikey>** et connecte-toi avec un compte Google.
+2. Clique **« Create API key »** (Créer une clé API).
+3. Laisse AI Studio **créer un projet automatiquement** (ou choisis-en un existant) — tu n'as rien
+   d'autre à configurer.
+4. **Copie la clé** (elle ressemble à `AIza…`).
+5. Colle-la quand `node bootstrap.mjs` te la demande (ou dans `.env`, variable `GEMINI_API_KEY`).
+
+C'est tout : le **palier gratuit est actif immédiatement**, aucune carte bancaire requise pour
+démarrer.
+
+> 💳 **Passer au payant** (recommandé pour un vault confidentiel — cf. §9) : dans AI Studio, ouvre
+> la clé et **active la facturation** sur son projet (un compte de facturation Google Cloud, créé en
+> une fois). Le coût reste de l'ordre de quelques centimes (cf. l'abaque en §9).
+>
+> ⚠️ Une clé API est un **secret** : ne la commite jamais, ne la partage pas. Elle vit dans `.env`,
+> qui est gitignoré.
+
 ## 2. Installation
 
 ```bash
