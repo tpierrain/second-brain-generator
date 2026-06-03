@@ -24,7 +24,8 @@ en quelques secondes, à *chacune* de tes questions — pas attendre qu'un agent
 re-fouiller tous tes outils avant de te répondre. Tout le reste découle de cette exigence.
 
 Le parti-pris : **répondre tout de suite sur la base de ce qui a déjà été aspiré dans le
-substrat, vérifier ensuite** qu'il n'y a pas d'infos plus fraîches ou contradictoires. À ta
+substrat, vérifier ensuite en parallèle par des sous-agents** qu'il n'y a pas d'infos plus
+fraîches ou contradictoires. À ta
 question, le second cerveau répond en quelques secondes à partir du vault par **recherche
 sémantique** (embeddings / RAG — il retrouve une note même formulée autrement, pas par
 mots-clés exacts), en citant ses sources et leur fraîcheur. Pendant que tu lis, des agents
