@@ -1,16 +1,32 @@
 # Second Brain Starter
 
-> Un **second cerveau** personnel : un vault Markdown versionné que des agents Claude Code
-> interrogent en langage naturel, au lieu de re-parcourir tes outils à chaque question.
->
-> Inspiré de l'approche *append-only + LLM retrieval* (Andrej Karpathy).
+> Ce dépôt est une **graine** pour te construire ton propre **second cerveau** — à la façon
+> décrite par **Thomas Pierrain** dans sa série d'articles Medium. Concrètement : un vault
+> Markdown versionné que des agents Claude Code interrogent en langage naturel, au lieu de
+> re-parcourir tes outils à chaque question.
 
-L'idée centrale : le vault n'est pas un stockage, c'est un **substrat**. Tu y déposes tes
-notes (réunions, décisions, idées, fiches personnes), un moteur **RAG** les indexe par le
-sens, et tu poses des questions — Claude répond en citant ses sources.
+Le moteur est prêt à l'emploi ; le harnais (règles + skills) est un **template** que tu
+adaptes à **ton** usage. C'est une *graine*, pas un cerveau tout fait : tu le fais pousser
+en l'utilisant.
 
-Ce repo est un **starter** : le moteur est prêt à l'emploi, le harnais (règles + skills)
-est un template que tu adaptes à **ton** usage.
+### La série d'articles (le « pourquoi » derrière ce repo)
+
+À lire dans l'ordre — chaque épisode raconte une étape de la construction :
+
+1. [Mon second cerveau a pivoté 2 fois en 3 jours](https://medium.com/@tpierrain/mon-second-cerveau-a-pivot%C3%A9-2-fois-en-3-jours-d846b7b2cbb5)
+2. [J'ai mis un coach vénère dans mon second cerveau](https://medium.com/@tpierrain/jai-mis-un-coach-v%C3%A9n%C3%A9re-dans-mon-second-cerveau-c5593bbfd7d7)
+3. [Pourquoi mon second cerveau parlait sans comprendre](https://medium.com/@tpierrain/pourquoi-mon-second-cerveau-parlait-sans-comprendre-6848fcf98421)
+
+### La spécificité en un paragraphe
+
+Le parti-pris : **répondre tout de suite, vérifier ensuite.** À ta question, le second
+cerveau répond en quelques secondes à partir du vault par **recherche sémantique** (embeddings
+/ RAG — il retrouve une note même formulée autrement, pas par mots-clés exacts), en citant ses
+sources et leur fraîcheur. Pendant que tu lis, des agents vont en arrière-plan re-vérifier les
+sources externes (Slack, Drive, transcripts…) et n'**amendent** la réponse que s'il y a du
+nouveau. C'est le pattern *stale-while-revalidate* du web appliqué à ta mémoire : le cache
+prime sur la fraîcheur immédiate, et tout est persisté dans un vault Markdown *append-only*
+versionné par git (ton cerveau te suit d'une machine à l'autre).
 
 ---
 
@@ -66,19 +82,16 @@ Question
    ▼  PHASE 4 — Persistance : tout est sauvé dans le vault + commit auto (hook)
 ```
 
-Le **moteur RAG** découpe chaque note en *chunks* (un par section), les transforme en
-vecteurs (embeddings Gemini), et retrouve les passages les plus proches du sens de ta
-question. L'index se reconstruit tout seul, incrémentalement.
-
-La **portabilité** est assurée par git : ton cerveau te suit d'une machine à l'autre. Un
-hook committe et pushe automatiquement à chaque modification.
+Sous le capot, le **moteur RAG** découpe chaque note en *chunks* (un par section), les
+transforme en vecteurs (embeddings Gemini) et retrouve les passages les plus proches du sens
+de ta question. L'index se reconstruit seul, incrémentalement ; un hook git committe et pushe
+à chaque modification (phase 4).
 
 ---
 
-## Le starter ≠ un cerveau tout fait
+## Et après ?
 
-Ce repo te donne le **moteur** et un **squelette de harnais**. Il ne te donne pas *ton*
-second cerveau — celui-là, tu le construis en l'utilisant : tes notes, tes règles dans
-`CLAUDE.md`, tes skills. Voir [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md)
-pour des idées, et [SETUP.md](SETUP.md) pour les détails (connecteurs Slack/Drive/Notion,
-troubleshooting, fonctionnement du RAG).
+La graine te donne le **moteur** et un **squelette de harnais** ; *ton* second cerveau, tu le
+fais pousser en l'utilisant — tes notes, tes règles dans `CLAUDE.md`, tes skills. Pour aller
+plus loin : [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md) (idées de skills) et
+[SETUP.md](SETUP.md) (connecteurs Slack/Drive/Notion, troubleshooting, détails du RAG).
