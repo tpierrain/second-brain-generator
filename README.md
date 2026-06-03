@@ -99,13 +99,14 @@ Claude cherche dans le vault et répond avec les backlinks vers les notes source
 
 ### Les skills incluses
 
-Le starter reste volontairement **frugal en skills** — il en livre quatre, génériques :
+Le starter reste volontairement **frugal en skills** — il en livre cinq, génériques :
 
 | Skill | Ce qu'elle fait |
 |---|---|
 | **`/sync`** | synchronise le repo git entre tes machines (commit, `pull --rebase`, gestion de conflits, push) |
 | **`/improve`** | fait évoluer ton harnais : lit les frictions, propose et applique les améliorations les plus utiles |
 | **`/coach`** | **coach « vénère », sparring partner branché sur ton vault**, dans l'esprit *Radical Candor* (Care Personally + Challenge Directly) : brutalement honnête ET bienveillant, il challenge tes décisions et tes raisonnements, nomme tes angles morts. *Coaching de soi uniquement.* |
+| **`sync-sources`** | *(référence interne, pas une commande)* — l'architecture **fan-out/fan-in** qui aspire le **delta** des sources externes en sous-agents parallèles **lecture seule**. C'est le moteur de la Phase 2 (cf. « Comment ça marche »). 🔧 à câbler sur tes connecteurs. |
 | **`/tdd-discipline`** | discipline TDD vendorée — sert à développer *le harnais lui-même* en TDD (utile surtout si tu le modifies) |
 
 Le reste n'est **pas livré** : ce sont des **idées de skills à faire émerger selon tes besoins**.
@@ -113,7 +114,7 @@ Le starter t'en propose plusieurs (détaillées dans
 [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md)), inspirées de cas d'usage réels —
 par exemple :
 
-- **`prepare-journee`** — briefing du matin : agenda du jour, points chauds, actions prioritaires ;
+- **`briefing-journee`** — briefing du matin : agenda du jour, points chauds, actions prioritaires ;
 - **`prepare-1-1`** — brief avant un entretien individuel : derniers échanges, engagements, signaux faibles ;
 - **`briefing`** — après une absence, la synthèse de ce qui s'est passé sur tes canaux suivis ;
 - **`prepare-meeting`** — contexte, points ouverts et historique des participants avant une réunion ;
