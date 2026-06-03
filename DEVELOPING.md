@@ -63,8 +63,10 @@ donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
 
 ## Pistes d'amélioration (backlog informel)
 
-- Connecteurs externes optionnels (Slack/Drive/Notion) : aujourd'hui seulement documentés
-  dans `SETUP.md`. Possible : un sous-script `bootstrap-connectors.sh` interactif.
+- ~~Connecteurs externes optionnels (Slack/Drive/Notion)~~ ✅ livré : wizard guidé à l'étape
+  5/8 du bootstrap (catalogue `scripts/lib/connectors-catalog.mjs` + merge idempotent
+  `connectors-merge.mjs`/`connectors-apply.mjs`), doc `SETUP.md §6`. Suite : enrichir le
+  catalogue (plus de connecteurs MCP communautaires) au fil des besoins.
 - Bootstrap : option `--non-interactive` avec fichier de réponses (pour CI / re-provisioning).
 - Internationalisation : les templates sont en français. Prévoir une variante EN ?
 - Skills d'exemple réellement fonctionnels (un `prepare-meeting` générique branché Calendar).
