@@ -112,7 +112,7 @@ répertoire de travail temporaire fait l'affaire — c'est juste là que le laun
 **copie-colle cette unique instruction** (adapte le nom et l'URL) :
 
 ```text
-Installe-moi un second cerveau nommé "second-brain" à partir de ce générateur : https://github.com/tpierrain/second-brain-generator
+Installe-moi un second cerveau nommé "second-brain" (nom à confirmer) à partir de ce générateur : https://github.com/tpierrain/second-brain-generator
 ```
 
 > 📍 **Et mon cerveau, il atterrit où ?** **Pas dans ce dossier courant** : par défaut il est créé
@@ -162,8 +162,8 @@ dépose tout. Le launcher n'est **jamais modifié** : il reste en **lecture seul
 
 ```
 Tu donnes UNE instruction à Claude Code :
-        │   « Installe-moi un second cerveau nommé "second-brain" à partir
-        │     de ce générateur : https://github.com/tpierrain/second-brain-generator »
+        │   « Installe-moi un second cerveau nommé "second-brain" (nom à confirmer)
+        │     à partir de ce générateur : https://github.com/tpierrain/second-brain-generator »
         ▼
     📁 second-brain-generator/   ← le LAUNCHER (Claude le clone) : lecture seule, réutilisable, jamais modifié
         │
