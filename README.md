@@ -444,3 +444,12 @@ pousser en l'utilisant — tes notes, tes règles, tes skills. Pour aller plus l
 
 Par **Thomas Pierrain** — retrouve la série « second cerveau » et ses autres écrits sur
 [medium.com/@tpierrain](https://medium.com/@tpierrain).
+
+## Licence
+
+[Apache License 2.0](LICENSE) — Copyright 2026 Thomas Pierrain.
+
+Tu peux l'utiliser, le modifier et le redistribuer librement, **y compris à titre commercial**, à
+condition de **conserver l'attribution** : garde la mention de copyright, le fichier [`LICENSE`](LICENSE)
+et le contenu du fichier [`NOTICE`](NOTICE) dans toute copie ou œuvre dérivée, et signale les
+fichiers que tu as modifiés. La licence inclut aussi une concession de brevets.
