@@ -112,7 +112,7 @@ répertoire de travail temporaire fait l'affaire — c'est juste là que le laun
 **copie-colle cette unique instruction** (adapte le nom et l'URL) :
 
 ```text
-Installe-moi un second cerveau nommé "mon-cerveau" à partir de ce générateur : https://github.com/tpierrain/second-brain-generator
+Installe-moi un second cerveau nommé "second-brain" à partir de ce générateur : https://github.com/tpierrain/second-brain-generator
 ```
 
 > 📍 **Et mon cerveau, il atterrit où ?** **Pas dans ce dossier courant** : par défaut il est créé
@@ -136,7 +136,7 @@ fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 ges
    multi-machine). **Dire non est sans risque** : tout reste versionné en local, rien ne se perd,
    et l'auto-commit **ne pousse nulle part** (push opt-in désactivé par défaut). Tu pourras en
    ajouter un plus tard.
-3. **Rouvrir Claude Code** dans le **dossier cerveau créé** (ex. `~/mon-cerveau`) — active le moteur
+3. **Rouvrir Claude Code** dans le **dossier cerveau créé** (ex. `~/second-brain`) — active le moteur
    de recherche. (Le launcher, lui, peut être réutilisé pour un autre cerveau ou supprimé.)
 
 Une fois installé, essaie par exemple :
@@ -162,14 +162,14 @@ dépose tout. Le launcher n'est **jamais modifié** : il reste en **lecture seul
 
 ```
 Tu donnes UNE instruction à Claude Code :
-        │   « Installe-moi un second cerveau nommé "mon-cerveau" à partir
+        │   « Installe-moi un second cerveau nommé "second-brain" à partir
         │     de ce générateur : https://github.com/tpierrain/second-brain-generator »
         ▼
     📁 second-brain-generator/   ← le LAUNCHER (Claude le clone) : lecture seule, réutilisable, jamais modifié
         │
         │   Claude y lance l'installateur  →  qui CRÉE un dossier AILLEURS
         ▼
-    📁 ~/mon-cerveau/            ← TON second cerveau : dossier NEUF (copie des fichiers + git init)
+    📁 ~/second-brain/            ← TON second cerveau : dossier NEUF (copie des fichiers + git init)
         ├── CLAUDE.md          (ta constitution — générée à partir de l'amorce)
         ├── vault/             (tes notes)
         ├── rag/               (le moteur de recherche)

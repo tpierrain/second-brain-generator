@@ -91,8 +91,8 @@ permet le **démarrage assisté par Claude** (cf. README « Option A »). Claude
 en chat, puis appelle **une seule commande** :
 
 ```bash
-node bootstrap.mjs --non-interactive --name "mon-cerveau" --owner "Jane Doe" --lang "français"
-# → crée ~/mon-cerveau. Ajoute --dest <dossier-parent> pour choisir l'emplacement.
+node bootstrap.mjs --non-interactive --name "second-brain" --owner "Jane Doe" --lang "français"
+# → crée ~/second-brain. Ajoute --dest <dossier-parent> pour choisir l'emplacement.
 ```
 
 - **Flags** : `--name` (nom du dossier cerveau créé), `--dest` (dossier parent ; défaut = ton home),
@@ -125,7 +125,7 @@ node bootstrap.mjs --non-interactive --name "mon-cerveau" --owner "Jane Doe" --l
 > répondre. (Au démarrage, le hook de statut **te prévient** si la clé manque.)
 
 ```bash
-cd <emplacement>/<nom>   # le dossier cerveau créé par le bootstrap (ex. ~/mon-cerveau)
+cd <emplacement>/<nom>   # le dossier cerveau créé par le bootstrap (ex. ~/second-brain)
 claude
 ```
 Puis : *« Comment l'Alliance Rebelle a-t-elle décidé d'attaquer l'Étoile de la Mort et pourquoi ? »*
