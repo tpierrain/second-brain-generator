@@ -21,6 +21,9 @@
   - [`claude-driven-install.md`](plans/claude-driven-install.md) — onboarding « installe mon
     second cerveau » piloté par Claude. **STATUT : LIVRÉ.**
   - [`launcher-vs-brain.md`](plans/launcher-vs-brain.md) — bascule du modèle d'install. **STATUT : LIVRÉ.**
+  - [`translate-to-english.md`](plans/translate-to-english.md) — traduction complète FR → EN du
+    générateur (docs, skills, code, démo), tests rendus agnostiques de la langue, sur branche
+    dédiée. **STATUT : À FAIRE.**
 
 ## Historique
 
