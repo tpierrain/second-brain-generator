@@ -42,6 +42,19 @@ réclament. Le premier test peut être satisfait par une réponse « en dur » ;
 différent, force à dégager la vraie logique. On évite ainsi de sur-généraliser trop tôt — la
 généralité émerge des exemples, elle n'est pas décrétée.
 
+## Asserter sur le comportement, jamais sur des strings d'affichage
+
+Les assertions (et les setups de test) ne doivent **pas dépendre du texte** d'un message
+d'erreur, d'un log ou d'une sortie console (ex. `assert(!/PUSH ÉCHOUÉ/.test(stdout))`).
+
+- **Pourquoi** : un message change pour mille raisons (refacto, i18n, ponctuation) sans que le
+  comportement bouge → le test casse à tort, ou pire passe à tort. **Le message n'est pas le
+  contrat.**
+- **En pratique** : asserter sur l'**état/comportement réel observable**. Exemples : pour « le
+  hook auto-commit n'a pas poussé », vérifier qu'un dépôt bare servant de remote n'a **reçu aucun
+  commit** (`git --git-dir … rev-list --count HEAD`) plutôt que l'absence d'un message d'échec ;
+  pour une décision, tester une **fonction pure** qui renvoie des données plutôt que le log du script.
+
 ## Portée
 
 Cette discipline **vaut pour tous les langages** et tous les types de code. C'est le socle

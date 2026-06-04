@@ -26,6 +26,12 @@ donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
   `scripts/auto-commit.mjs`) sont aussi en Node → pas de dépendance bash/jq/sqlite3, marche sur
   macOS / Linux / Windows.
 
+> 📁 **`maintainers/`** — contexte de dev versionné (décisions/ADR, plans), **synchronisé entre
+> les machines du mainteneur** mais **jamais livré** à l'utilisateur (exclu de la copie bootstrap
+> via `filterCopyable`, non auto-chargé par Claude). Voir [`maintainers/README.md`](maintainers/README.md).
+> C'est là que vit l'historique de décision — ce dossier remplace l'ancienne « mémoire » Claude,
+> qui n'était pas portable entre laptops.
+
 ### Note de design — onboarding piloté par Claude
 
 Deux chemins d'install coexistent (README « Option A / B ») : **manuel** (`node bootstrap.mjs`
@@ -47,6 +53,11 @@ dépôt distant, redémarrage). On ne confie **pas** la séquence d'install à C
 2. **Neutralité.** Avant tout commit, vérifier l'absence de fuite :
    `grep -rniE "<noms/entreprises à exclure>" .` doit sortir vide. Pas de chemin absolu en dur
    (sauf placeholders `{{PROJECT_ROOT}}` dans les templates).
+   **Exception assumée — Thomas Pierrain (`tpierrain`) lui-même.** La règle interdit les noms de
+   **tiers** (collègues, clients, employeurs), mais **pas** le propriétaire du repo et auteur de
+   la méthode : ce repo public sert aussi de **personal branding**. Citer « Thomas Pierrain » /
+   `@tpierrain` et ses articles Medium (série « second cerveau ») est **voulu**, pas une fuite —
+   ne pas les générifier ni les retirer (README en particulier).
 3. **Fichiers générés non versionnés.** `.mcp.json`, `.claude/settings.json`, `.env`,
    `rag/.cache/`, `node_modules/` sont gitignorés. Ne pas les committer.
    **Exception — le `CLAUDE.md` « amorce ».** Un `CLAUDE.md` **est** livré à la racine, mais c'est
