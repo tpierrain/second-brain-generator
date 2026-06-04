@@ -43,6 +43,13 @@ Trois propriétés le définissent :
 - **Il cite ses sources.** Pas de réponse en l'air : tu remontes toujours à la note ou au message
   d'origine, avec sa date.
 
+> 📂 **Un format ouvert, lisible par un humain.** Le substrat de ton second cerveau, c'est juste un
+> ensemble de fichiers **Markdown (`.md`)** — reliés entre eux par des liens `[[wikilink]]` quand
+> c'est pertinent (une note renvoie à une personne, une décision, un sujet…). Rien de propriétaire,
+> rien d'enfermé. Et comme la structure est **compatible [Obsidian](https://obsidian.md)** : en plus
+> d'interroger ton cerveau via Claude, tu peux **ouvrir le dossier `vault/` dans Obsidian** pour
+> parcourir tes notes, suivre les liens et visualiser le graphe de ton savoir.
+
 ## C'est pour qui ?
 
 Pour toute personne qui **croule sous l'information dispersée** et veut la retrouver sans effort —
