@@ -71,69 +71,89 @@ Validé avec Thomas le 2026-06-04 :
 >   **skills** (§B), le **vault de démo** (§E-démo). Le FR devient la **locale `fr`**.
 
 ### A. Docs publics (face utilisateur) — prose FR
-- `README.md` (≈28 ko, le plus gros)
-- `SETUP.md`
-- `CONNECTORS.md`
-- `CLAUDE.md` (l'**amorce**/bootstrap-stub — garder le marqueur `second-brain-starter:bootstrap-stub`,
-  cf. `scripts/lib/claude-md.mjs` `isBootstrapStub`)
-- `CLAUDE.md.template` (la constitution **générée** dans chaque cerveau — placeholders `{{…}}` à
-  préserver intacts)
-- `.env.example` (commentaires)
+- [ ] `README.md` (≈28 ko, le plus gros)
+- [ ] `SETUP.md`
+- [ ] `CONNECTORS.md`
+- [ ] `CLAUDE.md` (l'**amorce**/bootstrap-stub — garder le marqueur `second-brain-starter:bootstrap-stub`,
+      cf. `scripts/lib/claude-md.mjs` `isBootstrapStub`)
+- [ ] `CLAUDE.md.template` (constitution **générée** → localisée `en`+`fr`, placeholders `{{…}}` intacts)
+- [ ] `.env.example` (commentaires)
 
 ### B. Skills générés (déposés dans chaque cerveau) — `.claude/skills/`
-- `coach/SKILL.md`
-- `improve/SKILL.md`
-- `prepare-1-1/SKILL.md`  *(garder le nom de dossier `prepare-1-1` tel quel — pas un renommage)*
-- `sync/SKILL.md`
-- `sync-sources/SKILL.md`
-- `tdd-discipline/SKILL.md`
-- `EXAMPLES.md`
+- [ ] `coach/SKILL.md`
+- [ ] `improve/SKILL.md`
+- [ ] `prepare-1-1/SKILL.md`  *(garder le nom de dossier `prepare-1-1` tel quel — pas un renommage)*
+- [ ] `sync/SKILL.md`
+- [ ] `sync-sources/SKILL.md`
+- [ ] `tdd-discipline/SKILL.md`
+- [ ] `EXAMPLES.md`
 - ⚠️ Le champ `description:` du frontmatter des skills est lu/affiché : le traduire AUSSI, mais
   vérifier qu'aucun test ne fige sa valeur exacte (sinon → assert structurel).
 
 ### C. Code — commentaires FR + messages console (strings utilisateur)
-- `bootstrap.mjs` (orchestration : beaucoup de `console.log` FR)
-- `scripts/auto-commit.mjs`, `scripts/session-status.mjs`
-- `scripts/lib/*.mjs` : `bootstrap-args`, `claude-md`, `connectors-apply`, `connectors-catalog`,
-  `connectors-merge`, `example-notes`, `gemini-key`, `mcp-smoke`, `tracked-files`
-- `scripts/lib/__fixtures__/stub-mcp-server.mjs`
-- `rag/src/index.ts` + `rag/src/lib/*.ts` (config, embedder, indexer, index-manager,
-  progress-report, reindex-*, search-degradation, status-report, usage-tracker, vault-watcher,
-  vector-store) + `rag/src/tools/*.ts` (get-document, list-documents, reindex, search-vault,
-  vault-stats)
-- `rag/docs/adr/*.md` (ADRs RAG : `_template`, `0001`, `0002`, `0003`, `README`) — **renommer
-  aussi les slugs FR** des fichiers (`0001-atomicite-document-hash-chunks` →
-  `0001-atomicity-document-hash-chunks`, etc.) et mettre à jour les liens croisés.
+- [ ] `bootstrap.mjs` (orchestration : beaucoup de `console.log` FR)
+- [ ] `scripts/auto-commit.mjs`
+- [ ] `scripts/session-status.mjs`
+- [ ] `scripts/lib/bootstrap-args.mjs`
+- [ ] `scripts/lib/claude-md.mjs`
+- [ ] `scripts/lib/connectors-apply.mjs`
+- [ ] `scripts/lib/connectors-catalog.mjs`
+- [ ] `scripts/lib/connectors-merge.mjs`
+- [ ] `scripts/lib/example-notes.mjs`
+- [ ] `scripts/lib/gemini-key.mjs`
+- [ ] `scripts/lib/mcp-smoke.mjs`
+- [ ] `scripts/lib/tracked-files.mjs`
+- [ ] `scripts/lib/__fixtures__/stub-mcp-server.mjs`
+- [ ] `rag/src/index.ts`
+- [ ] `rag/src/lib/*.ts` (config, embedder, indexer, index-manager, progress-report, reindex-*,
+      search-degradation, status-report, usage-tracker, vault-watcher, vector-store)
+- [ ] `rag/src/tools/*.ts` (get-document, list-documents, reindex, search-vault, vault-stats)
+- [ ] `rag/docs/adr/*.md` (ADRs RAG : `_template`, `0001`, `0002`, `0003`, `README`) — **renommer
+      aussi les slugs FR** (`0001-atomicite-document-hash-chunks` → `0001-atomicity-…`, etc.) + liens croisés.
 
 ### D. Tests à RENDRE AGNOSTIQUES (pas juste « traduire ») — cf. §0.4
 Triés par densité de strings FR assertées (du plus chargé au moins) :
-- `scripts/auto-commit.test.mjs` (22)
-- `rag/src/lib/reindex-scheduler.test.ts` (18)
-- `rag/src/lib/usage-tracker.test.ts` (15), `status-report.test.ts` (15),
-  `reindex-lock.test.ts` (15)
-- `rag/src/lib/indexer.test.ts` (12), `index-manager.test.ts` (12)
-- `scripts/lib/bootstrap-args.test.mjs` (10), `rag/src/lib/progress-report.test.ts` (10)
-- `scripts/lib/connectors-merge.test.mjs` (9)
-- `rag/src/lib/reindex-reporter.test.ts` (8), `config.test.ts` (8)
-- `scripts/lib/example-notes.test.mjs` (7)
-- `scripts/lib/mcp-smoke.test.mjs` (6), `connectors-catalog.test.mjs` (6)
-- `connectors-apply.test.mjs` (4), `tracked-files.test.mjs` (3), `gemini-key.test.mjs` (3),
-  `claude-md.test.mjs` (3)
-- `rag/src/lib/search-degradation.test.ts` (2), `embedder.test.ts` (2)
+- [ ] `scripts/auto-commit.test.mjs` (22)
+- [ ] `rag/src/lib/reindex-scheduler.test.ts` (18)
+- [ ] `rag/src/lib/usage-tracker.test.ts` (15)
+- [ ] `rag/src/lib/status-report.test.ts` (15)
+- [ ] `rag/src/lib/reindex-lock.test.ts` (15)
+- [ ] `rag/src/lib/indexer.test.ts` (12)
+- [ ] `rag/src/lib/index-manager.test.ts` (12)
+- [ ] `scripts/lib/bootstrap-args.test.mjs` (10)
+- [ ] `rag/src/lib/progress-report.test.ts` (10)
+- [ ] `scripts/lib/connectors-merge.test.mjs` (9)
+- [ ] `rag/src/lib/reindex-reporter.test.ts` (8)
+- [ ] `rag/src/lib/config.test.ts` (8)
+- [ ] `scripts/lib/example-notes.test.mjs` (7)
+- [ ] `scripts/lib/mcp-smoke.test.mjs` (6)
+- [ ] `scripts/lib/connectors-catalog.test.mjs` (6)
+- [ ] `scripts/lib/connectors-apply.test.mjs` (4)
+- [ ] `scripts/lib/tracked-files.test.mjs` (3)
+- [ ] `scripts/lib/gemini-key.test.mjs` (3)
+- [ ] `scripts/lib/claude-md.test.mjs` (3)
+- [ ] `rag/src/lib/search-degradation.test.ts` (2)
+- [ ] `rag/src/lib/embedder.test.ts` (2)
 - ⚠️ Attention aux **clés structurelles** qui ressemblent à du FR mais n'en sont pas : ex.
   `type: backlog` dans le frontmatter, le dossier `vault/backlog/`, `harnais.md`. Ce sont des
   **identifiants consommés par le code** — décider au cas par cas s'ils restent (identifiant
   stable) ou deviennent EN **en même temps que le code qui les lit** (sinon on casse le contrat).
 
 ### E. Interne mainteneur + démo
-- `maintainers/README.md`, `maintainers/decisions/0001-launcher-vs-brain.md`,
-  `maintainers/plans/launcher-vs-brain.md`, `maintainers/plans/claude-driven-install.md`
-- **ce plan lui-même** (`maintainers/plans/translate-to-english.md`) → à traduire en dernier
-- `DEVELOPING.md`
+- [ ] `maintainers/README.md`
+- [ ] `maintainers/decisions/0001-launcher-vs-brain.md`
+- [ ] `maintainers/plans/launcher-vs-brain.md`
+- [ ] `maintainers/plans/claude-driven-install.md`
+- [ ] **ce plan lui-même** (`maintainers/plans/translate-to-english.md`) → à traduire en dernier
+- [ ] `DEVELOPING.md`
 - Vault de démo (univers Star Wars, exclu de la copie bootstrap mais versionné) :
-  `vault/README.md`, `vault/backlog/{harnais,perso}.md`, `vault/daily/2026-01-15.md`,
-  `vault/decisions/2026-01-10-attaque-etoile-de-la-mort.md`, `vault/people/luke-skywalker.md`,
-  `vault/topics/la-force.md`
+  - [ ] `vault/README.md`
+  - [ ] `vault/backlog/harnais.md`
+  - [ ] `vault/backlog/perso.md`
+  - [ ] `vault/daily/2026-01-15.md`
+  - [ ] `vault/decisions/2026-01-10-attaque-etoile-de-la-mort.md`
+  - [ ] `vault/people/luke-skywalker.md`
+  - [ ] `vault/topics/la-force.md`
   - ⚠️ Le vault de démo est aussi **généré** par `scripts/lib/example-notes.mjs` : traduire le
     contenu **dans le générateur** (la source de vérité), pas seulement les fichiers déposés.
     Renommer les slugs FR (`la-force` → `the-force`, `attaque-etoile-de-la-mort` →
