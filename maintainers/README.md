@@ -17,6 +17,15 @@
 - **`decisions/`** — les décisions d'architecture (ADR) : le *pourquoi*, pérenne.
   - [`0001-launcher-vs-brain.md`](decisions/0001-launcher-vs-brain.md) — launcher réutilisable
     en lecture seule vs cerveau créé ailleurs ; renommage `starter` → `generator`.
+  - [`0002-installateur-maison-vs-plugin.md`](decisions/0002-installateur-maison-vs-plugin.md) —
+    installateur/générateur maison (pensé non-tech, guidé en chat) plutôt qu'un plugin Claude /
+    marketplace.
+  - [`0003-pas-upgrade-capacites-cerveaux.md`](decisions/0003-pas-upgrade-capacites-cerveaux.md) —
+    pas (encore) d'upgradabilité des capacités : complexité disproportionnée + itération locale
+    simple (skills maison) ; à rouvrir sur feedbacks.
+  - [`0004-claude-only-pour-l-instant.md`](decisions/0004-claude-only-pour-l-instant.md) —
+    Claude-only pour l'instant (vault + RAG déjà agnostiques) ; cross-platform non exclu, sur
+    feedbacks, avec la couche pilotage à adapter.
 - **`plans/`** — plans d'implémentation, avec un `STATUT` en tête (LIVRÉ / EN COURS / ABANDONNÉ).
   - [`claude-driven-install.md`](plans/claude-driven-install.md) — onboarding « installe mon
     second cerveau » piloté par Claude. **STATUT : LIVRÉ.**
