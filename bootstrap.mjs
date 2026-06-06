@@ -60,6 +60,10 @@ const warn = (m) => console.log(`${c.Y}!${c.X} ${m}`);
 const err = (m) => console.error(`${c.R}✗${c.X} ${m}`);
 const step = (m) => console.log(`\n${c.B}━━ ${m}${c.X}`);
 
+// Question de démo : sert au probe fonctionnel du post-flight (étape 9/9) ET au
+// message de fin (« pose une question, ex. … »). Une seule source de vérité.
+const DEMO = "Comment l'Alliance Rebelle a-t-elle décidé d'attaquer l'Étoile de la Mort et pourquoi ?";
+
 console.log(`${c.B}${c.C}`);
 console.log(`  ╔══════════════════════════════════════════════╗`);
 console.log(`  ║        Second Brain Generator — bootstrap    ║`);
@@ -336,12 +340,16 @@ if (keyReady) {
   warn("Pas de clé Gemini → indexation reportée. Ajoute la clé dans .env puis : cd rag && npm run index");
 }
 
-// ── 8. Vérification de la connexion MCP ──────────────────────────────────────
-// Confirme que Claude Code pourra réellement parler au serveur `vault-rag`
-// (handshake stdio), avant de lancer `claude`. Non bloquant : un échec ici
-// n'empêche pas d'utiliser le générateur, mais pointe vers le dépannage SETUP.
-// Pas de clé Gemini requise — lister les outils n'embedde rien.
-step("9/9 · Vérification de la connexion MCP");
+// ── 8. Post-flight — vérification que le cerveau répond DEPUIS le vault ───────
+// Stratégie « échec bruyant » : on n'essaie pas de prévenir une install cassée,
+// on l'ATTRAPE. Deux niveaux :
+//   • structurel — handshake stdio + outils `vault-rag` exposés (pas de clé requise).
+//   • fonctionnel (probe) — si la clé est là, on appelle vraiment search_vault avec
+//     la question de DÉMO et on exige une source du vault citée (« vault/… »). C'est
+//     ce qui distingue un vrai cerveau d'un cerveau qui répondrait à côté (panne B).
+// Avec clé : un probe en échec = FAIL BRUYANT + exit(1) AVANT la bannière succès
+// (pas de faux vert). Sans clé : structurel seul + check démo honnêtement reporté.
+step("9/9 · Post-flight — le cerveau répond-il depuis le vault ?");
 const EXPECT_TOOLS = ["search_vault", "get_document", "list_documents", "vault_stats"];
 try {
   const mcp = JSON.parse(readFileSync(join(TARGET, ".mcp.json"), "utf8"));
@@ -360,12 +368,30 @@ try {
       cwd: srv.cwd ?? TARGET,
       expectTools: EXPECT_TOOLS,
       timeoutMs: 30000,
+      // Probe fonctionnel uniquement si la clé est prête (sinon search_vault
+      // throw « GOOGLE_GEMINI_API_KEY is not set » — l'index n'existe pas encore).
+      ...(keyReady
+        ? { probe: { tool: "search_vault", args: { query: DEMO }, expectText: /vault\// } }
+        : {}),
     });
-    if (res.ok) {
-      ok(`connexion MCP OK — ${res.tools.length} outils exposés (${EXPECT_TOOLS.join(", ")})`);
+    if (keyReady) {
+      if (res.ok) {
+        ok("post-flight OK — la démo répond depuis le vault, source citée.");
+      } else {
+        err(`POST-FLIGHT ÉCHEC — le cerveau ne répond PAS depuis le vault : ${res.error ?? "raison inconnue"}`);
+        err("Refus de déclarer l'install réussie (un cerveau qui répond à côté du vault est pire qu'un cerveau en panne).");
+        err("Dépannage : SETUP.md §8 (clé .env, index, connexion MCP), puis relance le bootstrap.");
+        process.exit(1); // FAIL BRUYANT — avant toute bannière de succès
+      }
     } else {
-      warn(`connexion MCP KO : ${res.error ?? "raison inconnue"}`);
-      warn("Claude Code pourrait ne pas voir le vault. Dépannage : SETUP.md §8.");
+      // Pas de clé → on ne peut pas prouver le retrieval ; structurel seul, KO = warn.
+      if (res.ok) {
+        ok(`connexion MCP OK — ${res.tools.length} outils exposés (${EXPECT_TOOLS.join(", ")}).`);
+      } else {
+        warn(`connexion MCP KO : ${res.error ?? "raison inconnue"}`);
+        warn("Claude Code pourrait ne pas voir le vault. Dépannage : SETUP.md §8.");
+      }
+      warn("Check démo REPORTÉ — colle ta clé Gemini dans .env puis pose la question de démo pour valider.");
     }
   }
 } catch (e) {
@@ -389,7 +415,7 @@ if (keyMissing) {
 console.log(`Prochaines étapes :`);
 console.log(`  1. ${c.C}cd ${toPosix(TARGET)} && claude${c.X}   ← ouvre Claude Code dans le dossier cerveau`);
 console.log(`  2. Pose une question, ex. :`);
-console.log(`     ${c.C}"Comment l'Alliance Rebelle a-t-elle décidé d'attaquer l'Étoile de la Mort et pourquoi ?"${c.X}`);
+console.log(`     ${c.C}"${DEMO}"${c.X}`);
 console.log(`     → Claude répond depuis le vault, sources citées.`);
 console.log(`  3. Remplace les notes d'exemple par les tiennes, édite ${c.C}CLAUDE.md${c.X} à ton image.`);
 console.log(`\nDoc complète : ${c.C}SETUP.md${c.X}`);
