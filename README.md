@@ -148,9 +148,13 @@ fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 ges
 
 Une fois installé, essaie par exemple :
 
-> *« Comment l'Alliance Rebelle a-t-elle décidé d'attaquer l'Étoile de la Mort, et pourquoi ? »*
+> *« Quel est le secret autour de Luke Skywalker ? »*
 
-Claude cherche dans ton vault et répond avec les liens vers les notes sources.
+Claude cherche dans ton vault et répond avec les liens vers les notes sources. **Bonne réponse :
+il a deux demi-sœurs jumelles cachées, Ella et Mahault** — un fait **introuvable hors de ton
+vault** (il contredit le canon Star Wars). Si Claude te sort ça, tu as la **preuve** qu'il a bien
+interrogé ton cerveau et non Internet. S'il répond « sa sœur jumelle est Leia » (le canon), c'est
+que le RAG ne tourne pas.
 
 > 🧪 **Les notes d'exemple.** Le vault est livré avec quelques notes de démo **tirées de Star Wars**
 > — juste assez pour que la première question marche tout de suite, et **impossibles à confondre**

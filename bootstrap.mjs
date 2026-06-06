@@ -62,7 +62,12 @@ const step = (m) => console.log(`\n${c.B}━━ ${m}${c.X}`);
 
 // Question de démo : sert au probe fonctionnel du post-flight (étape 9/9) ET au
 // message de fin (« pose une question, ex. … »). Une seule source de vérité.
-const DEMO = "Comment l'Alliance Rebelle a-t-elle décidé d'attaquer l'Étoile de la Mort et pourquoi ?";
+// C'est un CANARI : la réponse (deux demi-sœurs cachées, Ella et Mahault) est
+// introuvable hors du vault — et la question ne partage aucun mot rare avec la
+// note, donc seule la recherche SÉMANTIQUE du RAG peut faire le lien. Le probe
+// asserte le token unique « Mahault » → preuve que le bon contenu remonte.
+const DEMO = "Quel est le secret autour de Luke Skywalker ?";
+const DEMO_EXPECT = /Mahault/i;
 
 console.log(`${c.B}${c.C}`);
 console.log(`  ╔══════════════════════════════════════════════╗`);
@@ -371,12 +376,12 @@ try {
       // Probe fonctionnel uniquement si la clé est prête (sinon search_vault
       // throw « GOOGLE_GEMINI_API_KEY is not set » — l'index n'existe pas encore).
       ...(keyReady
-        ? { probe: { tool: "search_vault", args: { query: DEMO }, expectText: /vault\// } }
+        ? { probe: { tool: "search_vault", args: { query: DEMO }, expectText: DEMO_EXPECT } }
         : {}),
     });
     if (keyReady) {
       if (res.ok) {
-        ok("post-flight OK — la démo répond depuis le vault, source citée.");
+        ok("post-flight OK — le RAG retrouve un fait introuvable hors-vault (canari Ella/Mahault).");
       } else {
         err(`POST-FLIGHT ÉCHEC — le cerveau ne répond PAS depuis le vault : ${res.error ?? "raison inconnue"}`);
         err("Refus de déclarer l'install réussie (un cerveau qui répond à côté du vault est pire qu'un cerveau en panne).");

@@ -128,8 +128,10 @@ node bootstrap.mjs --non-interactive --name "second-brain" --owner "Jane Doe" --
 cd <emplacement>/<nom>   # le dossier cerveau créé par le bootstrap (ex. ~/second-brain)
 claude
 ```
-Puis : *« Comment l'Alliance Rebelle a-t-elle décidé d'attaquer l'Étoile de la Mort et pourquoi ? »*
-Claude doit citer `[[decisions/2026-01-10-attaque-etoile-de-la-mort]]`.
+Puis : *« Quel est le secret autour de Luke Skywalker ? »*
+Claude doit répondre **deux demi-sœurs cachées, Ella et Mahault**, en citant
+`[[intel/2026-01-12-rapport-espion-empire]]`. C'est un **canari** : ce fait est introuvable hors
+du vault, donc cette réponse prouve que le RAG fonctionne (s'il répond « Leia », le RAG est down).
 
 > **Clé ajoutée après coup ?** Si tu as lancé Claude Code sans la clé, colle-la dans `.env` puis
 > **repose ta question** : le serveur relit `.env` à la volée et la prend en compte — pas besoin de
