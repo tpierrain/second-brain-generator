@@ -103,9 +103,22 @@ node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
      git config secondbrain.autopush true
      ```
      GitHub = cas simple ; autres plateformes = best-effort + guidage.
-3. **Redémarrage** : « Ferme et rouvre Claude Code **dans le dossier cerveau créé**
-   (`<emplacement-parent>/<nom>`) » → cela active le serveur MCP `vault-rag` (chargé au démarrage),
-   qui indexe le vault. (Le launcher, lui, peut être laissé tel quel ou réutilisé pour un autre cerveau.)
+3. **Ouvrir une CONVERSATION NEUVE rootée dans le cerveau** (étape critique, souvent ratée).
+   L'installation tourne dans une session dont le **répertoire de travail n'est PAS le cerveau**
+   (souvent un dossier temporaire). Or Claude — CLI **comme** onglet Code de Claude Desktop —
+   **fige son répertoire de travail au démarrage de la conversation** et charge `CLAUDE.md`,
+   l'allowlist `settings.json`, les **hooks** (dont l'auto-commit) et le serveur MCP `vault-rag`
+   **relativement à ce répertoire**. Tant que la conversation n'est pas *réellement* rootée dans
+   le cerveau, **rien ne marche vraiment** : pas d'auto-commit (les fichiers s'écrivent mais ne se
+   committent jamais), liens cassés, demandes d'autorisation à répétition. **⚠️ Basculer le
+   dossier d'une conversation existante ne suffit PAS** (ça ne déplace pas le répertoire de
+   travail) — il faut une **nouvelle conversation** :
+   - **Claude Desktop (onglet Code)** : ouvre une **nouvelle conversation** → **« Select folder »
+     → le dossier du cerveau (`<emplacement-parent>/<nom>`) AVANT** d'écrire le premier message.
+   - **CLI** : `cd <emplacement-parent>/<nom>` puis lancer `claude` **depuis** ce dossier.
+   - **Vérifie en un mot** : tape `pwd` en premier message — ça doit afficher le dossier du
+     cerveau (PAS un dossier temporaire type `~/tmp`). Alors seulement `vault-rag`, l'auto-commit
+     et l'allowlist sont actifs. (Le launcher peut être laissé tel quel ou réutilisé pour un autre cerveau.)
 
 ## Garde-fous (à ne jamais enfreindre)
 
