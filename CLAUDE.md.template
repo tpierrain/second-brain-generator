@@ -101,6 +101,8 @@ Le RAG (`rag/`) découpe chaque fichier Markdown en **chunks** (un par section `
 - `search_vault` est rapide et peu coûteux — ne pas hésiter quand la question est sémantique.
 - L'index se reconstruit automatiquement, incrémental (seuls les fichiers modifiés sont ré-indexés). Pas de maintenance manuelle. Rebuild forcé : `cd rag && npm run reindex`.
 
+**⚠️ Échec bruyant — jamais de réponse hors-vault déguisée.** Si les outils `mcp__vault-rag__*` sont **indisponibles, absents ou renvoient une erreur** (serveur MCP non chargé, clé Gemini manquante, index vide…), tu dois le **DIRE FORT** — « ⚠️ RAG indisponible : je ne peux pas interroger le vault » — et **REFUSER de fabriquer une réponse** depuis Internet ou tes connaissances générales. Un second cerveau qui répond à côté du vault *en ayant l'air de marcher* est pire qu'un cerveau qui dit franchement qu'il est en panne. Cela vaut **en particulier pour la question de démo** (premier contact de l'utilisateur) : pas de réponse plausible mais hors-vault. Indique plutôt comment réparer (clé dans `.env`, redémarrage de Claude Code, `/mcp`).
+
 ### Sources externes (optionnel — à activer selon tes outils)
 
 > 🔧 **À adapter** : ce générateur ne fournit que le moteur RAG. Si tu veux brancher Slack,
