@@ -61,10 +61,27 @@ node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
 
 1. **Clé Gemini, PUIS vérifie le RAG (étape clé).** La clé n'est **jamais** là au moment du
    bootstrap (elle ne transite ni par le chat ni par la CLI) → le cerveau n'est pas encore vérifié.
-   **Guide activement l'utilisateur** : (a) « Colle ta clé dans `<cerveau>/.env` (ligne
-   `GOOGLE_GEMINI_API_KEY=`) » *(clé gratuite : https://aistudio.google.com/apikey ; pour un vault
-   confidentiel, active la facturation — cf. SETUP §9)* ; puis (b) **lance, depuis le dossier
-   cerveau, la vérification déterministe** :
+   **Guide activement l'utilisateur** : (a) **ouvre TOI-MÊME le `.env` dans son éditeur** —
+   c.-à-d. **LANCE-le via une commande shell (Bash)**. N'utilise **PAS** l'outil Read et ne te
+   contente **pas** d'en afficher le contenu dans le chat : « ouvrir » veut dire faire
+   apparaître une **fenêtre d'éditeur côté utilisateur** (`.env` est un fichier *caché* qu'un
+   lambda ne saura pas localiser seul). Emploie un **chemin absolu** (ou `$HOME/…`), **jamais un
+   `~` entre guillemets** (il ne s'étend pas dans le shell). Commande selon l'OS :
+   ```bash
+   open -t "$HOME/<sous-chemin>/.env"   # macOS — ouvre TextEdit (vérifié terrain)
+   notepad "<chemin>\.env"              # Windows
+   xdg-open "<chemin>/.env"             # Linux (ou : ${EDITOR:-nano} "<chemin>/.env")
+   ```
+   Puis dis-lui exactement quoi faire : « J'ai ouvert ton `.env` dans TextEdit — colle ta clé
+   juste après `GOOGLE_GEMINI_API_KEY=`, enregistre (⌘S), et dis-moi quand c'est fait. »
+   *(clé gratuite : https://aistudio.google.com/apikey ; pour un vault confidentiel, active la
+   facturation — cf. SETUP §9)*. **Si rien ne s'ouvre** (pas d'éditeur GUI, environnement
+   headless), enchaîne les fallbacks sans attendre : révéler dans le Finder
+   (`open -R "$HOME/<sous-chemin>/.env"`), ou ouvrir VS Code (`code "<chemin>/.env"`) ; en
+   dernier recours seulement, donne le chemin complet + la ligne à compléter pour une édition
+   manuelle. **La clé reste éditée dans `.env` par l'utilisateur — jamais collée dans le chat ni
+   passée en argument.** Puis (b) **lance, depuis le dossier cerveau, la vérification
+   déterministe** :
    ```bash
    node scripts/verify-rag.mjs
    ```
