@@ -69,7 +69,7 @@ node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
    node scripts/verify-rag.mjs
    ```
    Elle (ré)indexe et **prouve bruyamment** que la démo répond DEPUIS le vault (canari : la réponse
-   contient « Mahault », fait introuvable hors-vault). **`exit 0` = cerveau opérationnel** → tu peux
+   contient « Mollecuisse », fait introuvable hors-vault). **`exit 0` = cerveau opérationnel** → tu peux
    l'annoncer. **`exit 1` = échec → relaie l'erreur telle quelle, ne fais PAS semblant que ça marche.**
    *(Si l'utilisateur a déjà ouvert Claude Code sans clé : qu'il colle la clé puis repose sa
    question — le serveur relit `.env` à la volée ; au pire `/mcp` ou relance Claude Code.)*

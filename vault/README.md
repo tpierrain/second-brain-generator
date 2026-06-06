@@ -3,10 +3,11 @@
 C'est ici que vivent **tes notes** : c'est le substrat que le RAG indexe et que Claude
 interroge. Tout est en Markdown, compatible Obsidian.
 
-> Les notes ci-dessous (`daily/`, `people/`, `topics/`…) sont des **exemples fictifs tirés de
-> Star Wars** — volontairement **impossibles à confondre** avec de vraies notes de travail. Elles
-> servent juste à voir comment ça marche dès la 1re question. Supprime-les quand tu commences ton
-> vrai vault (efface les fichiers de `vault/`) — ou garde-les comme gabarits.
+> Les notes ci-dessous (`daily/`, `people/`, `topics/`…) tournent autour d'une **entreprise
+> parodique inventée** (Flemmr, qui « industrialise la procrastination ») — volontairement
+> **impossibles à confondre** avec de vraies notes de travail. Elles servent juste à voir comment
+> ça marche dès la 1re question. Supprime-les quand tu commences ton vrai vault (efface les fichiers
+> de `vault/`) — ou garde-les comme gabarits.
 
 ## Dossiers
 

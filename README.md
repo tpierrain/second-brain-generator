@@ -148,23 +148,25 @@ fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 ges
 
 Une fois installé, essaie par exemple :
 
-> *« Le jeune pilote blond qui détruit l'Étoile de la Mort a-t-il de la famille qu'on lui a cachée depuis l'enfance ? »*
+> *« Dans la boîte qui aide les gens à arrêter de se surmener, quel salarié a été mis à l'honneur pour en avoir fichu le moins de tous — et avec quel pourcentage ? »*
 
 Claude cherche dans ton vault et répond avec les liens vers les notes sources. **Bonne réponse :
-il a deux demi-sœurs jumelles cachées, Ella et Mahault** — un fait **introuvable hors de ton
-vault** (il contredit le canon Star Wars). Si Claude te sort ça, tu as la **preuve** qu'il a bien
-interrogé ton cerveau et non Internet. S'il répond « sa sœur jumelle est Leia » (le canon), c'est
-que le RAG ne tourne pas.
+Pélagie de Mollecuisse, lauréate du Trophée de l'Inertie avec un TRF de 98,7 %** — un fait
+**introuvable hors de ton vault** (l'entreprise « Flemmr » est inventée). Si Claude te sort ça, tu as
+la **preuve** qu'il a bien interrogé ton cerveau et non Internet. S'il répond qu'il ne connaît pas
+cette entreprise, c'est que le RAG ne tourne pas.
 
-> 💡 La question ne nomme **jamais** Luke ni le mot « secret » : elle le **décrit**. Aucun mot de
-> la question n'est dans la note — un simple « rechercher dans les fichiers » (grep) échouerait.
-> Si « Mahault » ressort quand même, c'est que la recherche a fait le lien **par le sens**.
+> 💡 Pourquoi cette question marche **toujours** : le sujet est **inventé**, donc Claude n'a aucune
+> réponse en mémoire → il est *obligé* d'interroger le vault (un sujet public comme Star Wars, il y
+> répondrait de tête sans chercher). Et la question **décrit** la situation par synonymes : aucun de
+> ses mots n'est dans les notes → un simple « rechercher dans les fichiers » (grep) échouerait.
+> Si « Mollecuisse » ressort quand même, c'est que la recherche a fait le lien **par le sens**.
 
-> 🧪 **Les notes d'exemple.** Le vault est livré avec quelques notes de démo **tirées de Star Wars**
-> — juste assez pour que la première question marche tout de suite, et **impossibles à confondre**
-> avec de vraies notes de travail. Garde-les comme gabarits, ou efface-les quand tu démarres ton vrai
-> vault (supprime les fichiers du dossier `vault/`, ou relance l'installateur en mode interactif qui
-> propose de les vider).
+> 🧪 **Les notes d'exemple.** Le vault est livré avec quelques notes de démo autour d'une **entreprise
+> parodique inventée** (Flemmr, qui « industrialise la procrastination ») — juste assez pour que la
+> première question marche tout de suite, et **impossibles à confondre** avec de vraies notes de
+> travail. Garde-les comme gabarits, ou efface-les quand tu démarres ton vrai vault (supprime les
+> fichiers du dossier `vault/`, ou relance l'installateur en mode interactif qui propose de les vider).
 
 ### Le dessous de l'installation — launcher vs cerveau
 

@@ -5,7 +5,7 @@
 //
 // (Ré)indexe le vault d'exemple, puis prouve de façon DÉTERMINISTE et BRUYANTE que
 // la question de démo répond DEPUIS le vault — en exigeant le token canari unique
-// « Mahault » (introuvable hors-vault). C'est l'attrape-panne-B post-clé :
+// « Mollecuisse » (introuvable hors-vault). C'est l'attrape-panne-B post-clé :
 //   exit 0 = le cerveau marche vraiment ; exit 1 = échec, à relayer tel quel.
 // ─────────────────────────────────────────────────────────────────────────────
 import { existsSync, readFileSync } from "node:fs";
@@ -74,7 +74,7 @@ const res = await smokeTestMcp({
 });
 
 if (res.ok) {
-  ok("RAG vérifié — la démo répond DEPUIS le vault (canari Ella/Mahault retrouvé).");
+  ok("RAG vérifié — la démo répond DEPUIS le vault (canari Pélagie de Mollecuisse retrouvé).");
   console.log(`  Tu peux ouvrir Claude Code et poser : « ${DEMO_QUESTION} »`);
   process.exit(0);
 }

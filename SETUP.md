@@ -128,20 +128,22 @@ node bootstrap.mjs --non-interactive --name "second-brain" --owner "Jane Doe" --
 cd <emplacement>/<nom>   # le dossier cerveau créé par le bootstrap (ex. ~/second-brain)
 claude
 ```
-Puis : *« Le jeune pilote blond qui détruit l'Étoile de la Mort a-t-il de la famille qu'on lui a
-cachée depuis l'enfance ? »*
-Claude doit répondre **deux demi-sœurs cachées, Ella et Mahault**, en citant
-`[[intel/2026-01-12-rapport-espion-empire]]`. C'est un **canari** à deux étages : ce fait est
-introuvable hors du vault (prouve la **provenance** — pas Internet ; s'il répond « Leia », le RAG
-est down), et la question ne partage **aucun mot** avec la note (Luke y est seulement *décrit*) —
-donc retrouver « Mahault » prouve aussi la recherche **par le sens**, pas un grep.
+Puis : *« Dans la boîte qui aide les gens à arrêter de se surmener, quel salarié a été mis à
+l'honneur pour en avoir fichu le moins de tous — et avec quel pourcentage ? »*
+Claude doit répondre **Pélagie de Mollecuisse, lauréate du Trophée de l'Inertie avec un TRF de
+98,7 %**, en citant `[[decisions/2025-11-20-trophee-de-l-inertie]]`. C'est un **canari** à trois
+étages : le sujet est **inventé** (l'entreprise « Flemmr ») → Claude n'a pas de réponse en mémoire,
+il est *forcé* d'interroger le vault (**routage**) ; le fait est introuvable ailleurs (**provenance**
+— pas Internet ; s'il dit ne pas connaître l'entreprise, le RAG est down) ; et la question ne partage
+**aucun mot** avec les notes (tout est *décrit* par synonymes) — donc retrouver « Mollecuisse »
+prouve aussi la recherche **par le sens**, pas un grep.
 
 > 🔎 **Verdict déterministe (recommandé après avoir collé la clé).** Plutôt que de juger la réponse
 > à l'œil, lance depuis le dossier cerveau :
 > ```bash
 > node scripts/verify-rag.mjs
 > ```
-> Il (ré)indexe et **assert** que la démo ressort « Mahault ». `exit 0` = RAG OK ; `exit 1` = échec
+> Il (ré)indexe et **assert** que la démo ressort « Mollecuisse ». `exit 0` = RAG OK ; `exit 1` = échec
 > explicite (pas de faux vert).
 
 > **Clé ajoutée après coup ?** Si tu as lancé Claude Code sans la clé, colle-la dans `.env` puis

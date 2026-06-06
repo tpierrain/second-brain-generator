@@ -391,7 +391,7 @@ try {
     });
     if (keyReady) {
       if (res.ok) {
-        ok("post-flight OK — le RAG retrouve un fait introuvable hors-vault (canari Ella/Mahault).");
+        ok("post-flight OK — le RAG retrouve un fait introuvable hors-vault (canari Pélagie de Mollecuisse).");
       } else {
         err(`POST-FLIGHT ÉCHEC — le cerveau ne répond PAS depuis le vault : ${res.error ?? "raison inconnue"}`);
         err("Refus de déclarer l'install réussie (un cerveau qui répond à côté du vault est pire qu'un cerveau en panne).");
