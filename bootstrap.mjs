@@ -30,6 +30,7 @@ import { clearExampleNotes } from "./scripts/lib/example-notes.mjs";
 import { isBootstrapStub } from "./scripts/lib/claude-md.mjs";
 import { parseAnswers, resolveTargetDir } from "./scripts/lib/bootstrap-args.mjs";
 import { parseLsFilesZ, filterCopyable } from "./scripts/lib/tracked-files.mjs";
+import { buildShLauncher, buildCmdLauncher, applyRagLauncher } from "./scripts/lib/rag-launcher.mjs";
 
 // ROOT = le LAUNCHER (ce dépôt cloné). Source en LECTURE SEULE, réutilisable :
 // le bootstrap n'y écrit JAMAIS. Il CRÉE ailleurs un dossier cerveau (TARGET),
@@ -237,6 +238,19 @@ function gen(tpl, out, canOverwrite) {
 gen(join(TARGET, "CLAUDE.md.template"), join(TARGET, "CLAUDE.md"), isBootstrapStub);
 gen(join(TARGET, ".mcp.json.template"), join(TARGET, ".mcp.json"));
 gen(join(TARGET, ".claude", "settings.json.template"), join(TARGET, ".claude", "settings.json"));
+
+// Lanceurs self-heal du serveur RAG (cf. scripts/lib/rag-launcher.mjs) : l'app
+// desktop lance les MCP avec un PATH minimal → on rajoute les emplacements node
+// usuels avant de démarrer le serveur. .mcp.json (gitignoré, par-machine) pointe
+// vers le lanceur adapté à l'OS courant.
+writeFileSync(join(TARGET, "rag", "launch.sh"), buildShLauncher());
+writeFileSync(join(TARGET, "rag", "launch.cmd"), buildCmdLauncher());
+{
+  const mcpPath = join(TARGET, ".mcp.json");
+  const mcp = applyRagLauncher(JSON.parse(readFileSync(mcpPath, "utf8")), process.platform);
+  writeFileSync(mcpPath, JSON.stringify(mcp, null, 2) + "\n");
+  ok("lanceurs RAG self-heal générés (launch.sh + launch.cmd), .mcp.json adapté à l'OS");
+}
 
 // .env
 if (!existsSync(envPath)) {
