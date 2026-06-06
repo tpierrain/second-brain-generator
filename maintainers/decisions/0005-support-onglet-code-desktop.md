@@ -1,6 +1,9 @@
 # ADR 0005 — Support de l'onglet Code (app desktop Claude) comme cible officielle
 
-- **STATUT :** ACTÉ (2026-06-06).
+- **STATUT :** ACTÉ (2026-06-06), **RÉVISÉ le 2026-06-06** — la conclusion (ii) « gate dur +
+  interdire les installs » est **renversée** au profit de « confiance à Claude + échec bruyant ».
+  Voir la section **« Révision 2026-06-06 »** en fin de document. La cible desktop officielle (la
+  décision centrale de cet ADR) reste **inchangée** ; seule la *manière de fiabiliser* change.
 - **Lié :** [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md) (l'onglet Code
   est une **autre surface du même Claude Code** — ne rouvre PAS le cross-IA),
   [`0006-le-mcp-du-rag-est-un-contrat-stable.md`](0006-le-mcp-du-rag-est-un-contrat-stable.md).
@@ -100,3 +103,48 @@ comme acquis.
 Si une **autre surface** apparaît (un client MCP tiers, claude.ai web sans onglet Code complet) :
 là, ce serait le cross-IA de l'ADR 0004, décision à rouvrir **sur feedbacks réels** — pas couvert
 ici.
+
+---
+
+## Révision 2026-06-06 — renversement (ii) : confiance + échec bruyant, pas de gate
+
+> *Addendum daté. On ne réécrit pas l'historique ci-dessus : il documente le raisonnement tel
+> qu'il était. Cette section acte ce qui a changé et pourquoi.*
+
+### Ce qui a déclenché la révision
+Tentative sur le **Mac nu d'Achille** (onglet Code) pour clore l'hypothèse panne A. Findings mesurés :
+- `git` présent (`/usr/bin/git`, Xcode CLT) ; **node / npm / npx absents**.
+- **PATH de l'onglet Code = `/usr/local/bin`** (+ système), **mais ni `/opt/homebrew/bin` ni les shims
+  nvm/asdf** — donnée terrain qui précise la conséquence « toolchain GUI-visible » de l'ADR.
+- **Agency de Claude NON prouvée** : on a **coupé avant le verdict**. On ne sait pas si Claude aurait
+  su installer proprement la toolchain depuis l'onglet Code.
+
+### Ce qui est renversé
+La conclusion **(ii)** de l'anecdote fondatrice disait : *« il faut un gate dur qui stoppe et confie
+l'install à l'humain, et interdire à Claude d'improviser des installs. »* On la **renverse** :
+
+- **La panne A (Claude improvise mal) est une hypothèse NON PROUVÉE.** On ne durcit pas (gate,
+  interdiction) contre un risque qu'on n'a pas démontré — ce serait de la sur-ingénierie.
+- **On fait CONFIANCE à Claude pour installer** (c'est l'UX de l'ère Claude). **Pas de gate d'install.**
+- **Le seul filet est l'échec BRUYANT** de la panne B (elle, **prouvée** : bypass silencieux du RAG
+  chez Richard). On **attrape** l'install cassée au lieu de la *prévenir* :
+  - **runtime** — la constitution générée refuse de répondre hors-vault quand `vault-rag` est indispo
+    (CHANGE 6, fait) ;
+  - **install-time** — le post-flight du bootstrap prouve que la démo répond **depuis le vault**
+    (source citée), sinon FAIL bruyant + `exit 1` ; sans clé, check démo honnêtement **reporté**
+    (pas de faux vert).
+
+### Conséquences sur (i) et (iii)
+- **(i)** reste vrai *en partie* : la défaillance observée chez Richard était en amont (toolchain).
+  Mais on ne sait pas si elle est **fatale** (Claude pourrait s'en sortir) → on ne pré-vole plus, on
+  vérifie **après**.
+- **(iii)** est **conservé et renforcé** : le bypass silencieux du RAG est bien le faux-positif le
+  plus dangereux → fail-loud (runtime) **+** post-flight sourcé (install-time). C'est le cœur de la
+  stratégie révisée.
+
+### Statut
+Items du gate (pré-vol déterministe, amorce STOP, interdiction d'installs, heuristiques PATH
+GUI-visible, self-heal baké) **gelés/retirés** — détail et « pourquoi » dans le plan
+[`../plans/onglet-code-desktop.md`](../plans/onglet-code-desktop.md) §5. La limite « statut
+SessionStart invisible en desktop » est désormais **couverte** par le post-flight (install-time) et
+la constitution fail-loud (runtime).

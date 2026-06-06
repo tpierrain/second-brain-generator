@@ -28,17 +28,18 @@
     feedbacks, avec la couche pilotage à adapter.
   - [`0005-support-onglet-code-desktop.md`](decisions/0005-support-onglet-code-desktop.md) —
     l'onglet Code (app desktop Claude) devient une cible officielle (= même Claude Code, pas du
-    cross-IA) ; reste robustesse PATH + onboarding non-terminal. Limite connue : statut
-    `SessionStart` non affiché en desktop.
+    cross-IA). **Révisé 2026-06-06** : on renverse le gate d'install → **confiance à Claude pour
+    installer + échec bruyant** (panne A non prouvée ; on attrape au lieu de prévenir).
   - [`0006-le-mcp-du-rag-est-un-contrat-stable.md`](decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md) —
     la surface MCP du RAG est un contrat public stable (port API) ; embedder/vector store/chunking
     = adaptateurs interchangeables (SPI). Permet de sortir de Gemini (→ local) sans casser les
     cerveaux. Complémentaire de 0003 ; généralisation de `vault_stats` actée.
 - **`plans/`** — plans d'implémentation, avec un `STATUT` en tête (LIVRÉ / EN COURS / ABANDONNÉ).
   - [`onglet-code-desktop.md`](plans/onglet-code-desktop.md) — fiabiliser l'install/usage depuis
-    l'**app desktop Claude (onglet Code)** pour managers non-devs : pré-vol toolchain déterministe,
-    bootstrap auto-vérifiant (post-flight smoke sous PATH GUI-minimal + démo sourcée), pas de
-    baking de chemins, fail-loud RAG. **STATUT : À FAIRE — PRIORITÉ N°1.** (ADR 0005 + 0006)
+    l'**app desktop Claude (onglet Code)** pour managers non-devs. Stratégie (révisée 2026-06-06) :
+    **confiance à Claude pour installer + échec bruyant + démo sourcée** — constitution fail-loud
+    (runtime) + post-flight qui prouve que la démo répond depuis le vault, sinon `exit 1` (install-time).
+    **STATUT : FAIT.** (ADR 0005 + 0006)
   - [`claude-driven-install.md`](plans/claude-driven-install.md) — onboarding « installe mon
     second cerveau » piloté par Claude. **STATUT : LIVRÉ.**
   - [`launcher-vs-brain.md`](plans/launcher-vs-brain.md) — bascule du modèle d'install. **STATUT : LIVRÉ.**
