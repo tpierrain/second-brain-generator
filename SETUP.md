@@ -133,6 +133,14 @@ Claude doit répondre **deux demi-sœurs cachées, Ella et Mahault**, en citant
 `[[intel/2026-01-12-rapport-espion-empire]]`. C'est un **canari** : ce fait est introuvable hors
 du vault, donc cette réponse prouve que le RAG fonctionne (s'il répond « Leia », le RAG est down).
 
+> 🔎 **Verdict déterministe (recommandé après avoir collé la clé).** Plutôt que de juger la réponse
+> à l'œil, lance depuis le dossier cerveau :
+> ```bash
+> node scripts/verify-rag.mjs
+> ```
+> Il (ré)indexe et **assert** que la démo ressort « Mahault ». `exit 0` = RAG OK ; `exit 1` = échec
+> explicite (pas de faux vert).
+
 > **Clé ajoutée après coup ?** Si tu as lancé Claude Code sans la clé, colle-la dans `.env` puis
 > **repose ta question** : le serveur relit `.env` à la volée et la prend en compte — pas besoin de
 > reconnecter. Si jamais ça résiste, reconnecte le serveur MCP avec `/mcp` (dans Claude Code) ou

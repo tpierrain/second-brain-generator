@@ -59,13 +59,20 @@ node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
 
 > Le script affiche le chemin du cerveau créé (`<emplacement-parent>/<nom>`). Utilise-le ci-dessous.
 
-1. **Clé Gemini** : « Colle ta clé dans `<cerveau>/.env` (ligne `GOOGLE_GEMINI_API_KEY=`), **de
-   préférence AVANT de rouvrir Claude Code** (geste 3). » L'index se construira au 1er démarrage du
-   serveur MCP. **Si l'utilisateur a déjà ouvert Claude Code sans la clé** : qu'il la colle dans
-   `.env` puis **repose sa question** — le serveur relit `.env` à la volée (pas besoin de
-   reconnecter) ; en dernier recours, `/mcp` pour reconnecter, ou relancer Claude Code. *(Clé
-   gratuite : https://aistudio.google.com/apikey ; pour un vault confidentiel, active la
-   facturation — cf. SETUP §9.)*
+1. **Clé Gemini, PUIS vérifie le RAG (étape clé).** La clé n'est **jamais** là au moment du
+   bootstrap (elle ne transite ni par le chat ni par la CLI) → le cerveau n'est pas encore vérifié.
+   **Guide activement l'utilisateur** : (a) « Colle ta clé dans `<cerveau>/.env` (ligne
+   `GOOGLE_GEMINI_API_KEY=`) » *(clé gratuite : https://aistudio.google.com/apikey ; pour un vault
+   confidentiel, active la facturation — cf. SETUP §9)* ; puis (b) **lance, depuis le dossier
+   cerveau, la vérification déterministe** :
+   ```bash
+   node scripts/verify-rag.mjs
+   ```
+   Elle (ré)indexe et **prouve bruyamment** que la démo répond DEPUIS le vault (canari : la réponse
+   contient « Mahault », fait introuvable hors-vault). **`exit 0` = cerveau opérationnel** → tu peux
+   l'annoncer. **`exit 1` = échec → relaie l'erreur telle quelle, ne fais PAS semblant que ça marche.**
+   *(Si l'utilisateur a déjà ouvert Claude Code sans clé : qu'il colle la clé puis repose sa
+   question — le serveur relit `.env` à la volée ; au pire `/mcp` ou relance Claude Code.)*
 2. **Dépôt distant (optionnel)** : demande — *« Veux-tu un dépôt git **distant** pour que ton
    second cerveau ait un **backup**, voire soit **utilisable depuis plusieurs machines** ? »*
    - **Si non** → ne fais rien. Tout reste versionné en local, rien ne se perd ; le hook

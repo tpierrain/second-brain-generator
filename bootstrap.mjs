@@ -31,6 +31,7 @@ import { isBootstrapStub } from "./scripts/lib/claude-md.mjs";
 import { parseAnswers, resolveTargetDir } from "./scripts/lib/bootstrap-args.mjs";
 import { parseLsFilesZ, filterCopyable } from "./scripts/lib/tracked-files.mjs";
 import { buildShLauncher, buildCmdLauncher, applyRagLauncher } from "./scripts/lib/rag-launcher.mjs";
+import { DEMO_QUESTION as DEMO, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
 
 // ROOT = le LAUNCHER (ce dépôt cloné). Source en LECTURE SEULE, réutilisable :
 // le bootstrap n'y écrit JAMAIS. Il CRÉE ailleurs un dossier cerveau (TARGET),
@@ -61,14 +62,9 @@ const warn = (m) => console.log(`${c.Y}!${c.X} ${m}`);
 const err = (m) => console.error(`${c.R}✗${c.X} ${m}`);
 const step = (m) => console.log(`\n${c.B}━━ ${m}${c.X}`);
 
-// Question de démo : sert au probe fonctionnel du post-flight (étape 9/9) ET au
-// message de fin (« pose une question, ex. … »). Une seule source de vérité.
-// C'est un CANARI : la réponse (deux demi-sœurs cachées, Ella et Mahault) est
-// introuvable hors du vault — et la question ne partage aucun mot rare avec la
-// note, donc seule la recherche SÉMANTIQUE du RAG peut faire le lien. Le probe
-// asserte le token unique « Mahault » → preuve que le bon contenu remonte.
-const DEMO = "Quel est le secret autour de Luke Skywalker ?";
-const DEMO_EXPECT = /Mahault/i;
+// DEMO (question canari) + DEMO_EXPECT : importés de scripts/lib/demo.mjs (source
+// de vérité partagée avec verify-rag.mjs). Servent au probe du post-flight et au
+// message de fin (« pose une question, ex. … »).
 
 console.log(`${c.B}${c.C}`);
 console.log(`  ╔══════════════════════════════════════════════╗`);
@@ -410,7 +406,8 @@ try {
         warn(`connexion MCP KO : ${res.error ?? "raison inconnue"}`);
         warn("Claude Code pourrait ne pas voir le vault. Dépannage : SETUP.md §8.");
       }
-      warn("Check démo REPORTÉ — colle ta clé Gemini dans .env puis pose la question de démo pour valider.");
+      warn("Check démo REPORTÉ (pas de clé) — étape suivante : colle ta clé Gemini dans .env,");
+      warn("puis valide le RAG avec :  node scripts/verify-rag.mjs  (verdict bruyant, sourcé du vault).");
     }
   }
 } catch (e) {
