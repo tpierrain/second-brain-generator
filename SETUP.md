@@ -128,10 +128,13 @@ node bootstrap.mjs --non-interactive --name "second-brain" --owner "Jane Doe" --
 cd <emplacement>/<nom>   # le dossier cerveau créé par le bootstrap (ex. ~/second-brain)
 claude
 ```
-Puis : *« Quel est le secret autour de Luke Skywalker ? »*
+Puis : *« Le jeune pilote blond qui détruit l'Étoile de la Mort a-t-il de la famille qu'on lui a
+cachée depuis l'enfance ? »*
 Claude doit répondre **deux demi-sœurs cachées, Ella et Mahault**, en citant
-`[[intel/2026-01-12-rapport-espion-empire]]`. C'est un **canari** : ce fait est introuvable hors
-du vault, donc cette réponse prouve que le RAG fonctionne (s'il répond « Leia », le RAG est down).
+`[[intel/2026-01-12-rapport-espion-empire]]`. C'est un **canari** à deux étages : ce fait est
+introuvable hors du vault (prouve la **provenance** — pas Internet ; s'il répond « Leia », le RAG
+est down), et la question ne partage **aucun mot** avec la note (Luke y est seulement *décrit*) —
+donc retrouver « Mahault » prouve aussi la recherche **par le sens**, pas un grep.
 
 > 🔎 **Verdict déterministe (recommandé après avoir collé la clé).** Plutôt que de juger la réponse
 > à l'œil, lance depuis le dossier cerveau :

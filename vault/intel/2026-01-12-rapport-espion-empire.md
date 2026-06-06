@@ -7,14 +7,6 @@ tags: [exemple, demo, empire, renseignement]
 
 # Rapport de renseignement — Empire galactique (agent infiltré)
 
-> Note **fictive** (Star Wars) pour la démo, et **canari** du système : ce fait est
-> **introuvable hors de ce vault** (il contredit volontairement le canon Star Wars connu).
-> La question de démo (« quel est le secret autour de Luke Skywalker ? ») ne partage **aucun
-> mot rare** avec cette note : pour répondre, Claude doit faire le lien **par le sens** — c'est
-> donc la preuve que la recherche **sémantique** du RAG fonctionne, et pas un simple grep.
-> S'il répond « son père est Dark Vador » ou « sa sœur jumelle est Leia » (le canon connu),
-> c'est qu'il **n'a pas lu le vault** (RAG en panne → réponse à côté, depuis Internet).
-
 **Classification :** secret — Bureau de la Sécurité Impériale (BSI).
 
 ## Le secret le mieux gardé de la galaxie

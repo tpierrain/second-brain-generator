@@ -148,13 +148,17 @@ fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 ges
 
 Une fois installé, essaie par exemple :
 
-> *« Quel est le secret autour de Luke Skywalker ? »*
+> *« Le jeune pilote blond qui détruit l'Étoile de la Mort a-t-il de la famille qu'on lui a cachée depuis l'enfance ? »*
 
 Claude cherche dans ton vault et répond avec les liens vers les notes sources. **Bonne réponse :
 il a deux demi-sœurs jumelles cachées, Ella et Mahault** — un fait **introuvable hors de ton
 vault** (il contredit le canon Star Wars). Si Claude te sort ça, tu as la **preuve** qu'il a bien
 interrogé ton cerveau et non Internet. S'il répond « sa sœur jumelle est Leia » (le canon), c'est
 que le RAG ne tourne pas.
+
+> 💡 La question ne nomme **jamais** Luke ni le mot « secret » : elle le **décrit**. Aucun mot de
+> la question n'est dans la note — un simple « rechercher dans les fichiers » (grep) échouerait.
+> Si « Mahault » ressort quand même, c'est que la recherche a fait le lien **par le sens**.
 
 > 🧪 **Les notes d'exemple.** Le vault est livré avec quelques notes de démo **tirées de Star Wars**
 > — juste assez pour que la première question marche tout de suite, et **impossibles à confondre**
