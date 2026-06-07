@@ -5,7 +5,7 @@
 # Plan — bascule du modèle d'install (launcher ↔ cerveau)
 
 > **STATUT : ✅ LIVRÉ (2026-06-03).** La décision d'architecture correspondante est consignée dans
-> [`../decisions/0001-launcher-vs-brain.md`](../decisions/0001-launcher-vs-brain.md). Archive
+> [`../../decisions/0001-launcher-vs-brain.md`](../../decisions/0001-launcher-vs-brain.md). Archive
 > conservée pour le détail des étapes (R, A→G).
 
 ---

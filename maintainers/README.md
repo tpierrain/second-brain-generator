@@ -35,17 +35,24 @@
     = adaptateurs interchangeables (SPI). Permet de sortir de Gemini (→ local) sans casser les
     cerveaux. Complémentaire de 0003 ; généralisation de `vault_stats` actée.
 - **`plans/`** — plans d'implémentation, avec un `STATUT` en tête (LIVRÉ / EN COURS / ABANDONNÉ).
-  - [`onglet-code-desktop.md`](plans/onglet-code-desktop.md) — fiabiliser l'install/usage depuis
-    l'**app desktop Claude (onglet Code)** pour managers non-devs. Stratégie (révisée 2026-06-06) :
-    **confiance à Claude pour installer + échec bruyant + démo sourcée** — constitution fail-loud
-    (runtime) + post-flight qui prouve que la démo répond depuis le vault, sinon `exit 1` (install-time).
-    **STATUT : FAIT.** (ADR 0005 + 0006)
-  - [`claude-driven-install.md`](plans/claude-driven-install.md) — onboarding « installe mon
-    second cerveau » piloté par Claude. **STATUT : LIVRÉ.**
-  - [`launcher-vs-brain.md`](plans/launcher-vs-brain.md) — bascule du modèle d'install. **STATUT : LIVRÉ.**
+  Les plans **livrés** sont déplacés dans **`plans/archived/`** ; seuls les plans encore **ouverts**
+  restent à la racine de `plans/`.
   - [`translate-to-english.md`](plans/translate-to-english.md) — traduction complète FR → EN du
     générateur (docs, skills, code, démo), tests rendus agnostiques de la langue, sur branche
-    dédiée. **STATUT : À FAIRE — repoussé en TOUTE FIN** (après `onglet-code-desktop`).
+    dédiée. **STATUT : À FAIRE — repoussé en TOUTE FIN.** *(seul plan encore ouvert)*
+  - **`plans/archived/`** — plans livrés (archive, conservés pour le détail des étapes) :
+    - [`onglet-code-desktop.md`](plans/archived/onglet-code-desktop.md) — fiabiliser l'install/usage
+      depuis l'**app desktop Claude (onglet Code)** : confiance à Claude + échec bruyant + démo
+      sourcée. **STATUT : FAIT.** (ADR 0005 + 0006)
+    - [`claude-driven-install.md`](plans/archived/claude-driven-install.md) — onboarding « installe
+      mon second cerveau » piloté par Claude. **STATUT : LIVRÉ.**
+    - [`launcher-vs-brain.md`](plans/archived/launcher-vs-brain.md) — bascule du modèle d'install. **STATUT : LIVRÉ.**
+    - [`harden-run-node-smoke-and-coverage.md`](plans/archived/harden-run-node-smoke-and-coverage.md) —
+      durcir le wrapper `run-node` (smoke-test en PATH appauvri, couverture élargie). **STATUT : LIVRÉ.**
+    - [`fix-hooks-node-nvm.md`](plans/archived/fix-hooks-node-nvm.md) — hooks muets quand `node` vient
+      de nvm (résolu par `run-node`). **STATUT : LIVRÉ.**
+    - [`rename-bootstrap-to-installer.md`](plans/archived/rename-bootstrap-to-installer.md) — renommage
+      `bootstrap` → `installer`. **STATUT : LIVRÉ.**
 
 ## Historique
 

@@ -142,8 +142,8 @@ Triés par densité de strings FR assertées (du plus chargé au moins) :
 ### E. Interne mainteneur + démo
 - [ ] `maintainers/README.md`
 - [ ] `maintainers/decisions/0001-launcher-vs-brain.md`
-- [ ] `maintainers/plans/launcher-vs-brain.md`
-- [ ] `maintainers/plans/claude-driven-install.md`
+- [ ] `maintainers/plans/archived/launcher-vs-brain.md`
+- [ ] `maintainers/plans/archived/claude-driven-install.md`
 - [ ] **ce plan lui-même** (`maintainers/plans/translate-to-english.md`) → à traduire en dernier
 - [ ] `DEVELOPING.md`
 - Vault de démo (univers Star Wars, exclu de la copie bootstrap mais versionné) :

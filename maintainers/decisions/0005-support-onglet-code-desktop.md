@@ -7,7 +7,7 @@
 - **Lié :** [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md) (l'onglet Code
   est une **autre surface du même Claude Code** — ne rouvre PAS le cross-IA),
   [`0006-le-mcp-du-rag-est-un-contrat-stable.md`](0006-le-mcp-du-rag-est-un-contrat-stable.md).
-- **Plan d'implémentation associé :** [`../plans/onglet-code-desktop.md`](../plans/onglet-code-desktop.md).
+- **Plan d'implémentation associé :** [`../plans/archived/onglet-code-desktop.md`](../plans/archived/onglet-code-desktop.md).
 
 ## Contexte
 
@@ -55,7 +55,7 @@ ci-dessous). Détails d'implémentation dans le plan associé.
 On **acte l'onglet Code (app desktop Claude) comme cible d'install/usage officielle**, au même
 rang que le CLI. Le travail correspondant reste **dans la couche de pilotage Claude** (robustesse
 PATH, pré-approbation MCP, onboarding « Open folder ») — détaillé dans le plan
-[`onglet-code-desktop.md`](../plans/onglet-code-desktop.md).
+[`onglet-code-desktop.md`](../plans/archived/onglet-code-desktop.md).
 
 **Ce n'est PAS le chantier cross-IA différé par l'ADR 0004.** L'onglet Code = Claude Code sur une
 autre surface, pas un autre client. On reste **Claude-only** ; cet ADR ne touche pas à cet
@@ -145,6 +145,6 @@ l'install à l'humain, et interdire à Claude d'improviser des installs. »* On 
 ### Statut
 Items du gate (pré-vol déterministe, amorce STOP, interdiction d'installs, heuristiques PATH
 GUI-visible, self-heal baké) **gelés/retirés** — détail et « pourquoi » dans le plan
-[`../plans/onglet-code-desktop.md`](../plans/onglet-code-desktop.md) §5. La limite « statut
+[`../plans/archived/onglet-code-desktop.md`](../plans/archived/onglet-code-desktop.md) §5. La limite « statut
 SessionStart invisible en desktop » est désormais **couverte** par le post-flight (install-time) et
 la constitution fail-loud (runtime).

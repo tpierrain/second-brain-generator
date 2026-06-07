@@ -9,9 +9,9 @@
 > échec BRUYANT pour attraper tout état cassé** — a été exécutée (CHANGE 6 + post-flight sourcé).
 > La traduction EN (`translate-to-english.md`) reste repoussée tout à la fin.
 >
-> **Décisions d'archi associées :** [`../decisions/0005-support-onglet-code-desktop.md`](../decisions/0005-support-onglet-code-desktop.md)
+> **Décisions d'archi associées :** [`../../decisions/0005-support-onglet-code-desktop.md`](../../decisions/0005-support-onglet-code-desktop.md)
 > (révisée 2026-06-06 — renversement D1/D4) et
-> [`../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md`](../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md)
+> [`../../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md`](../../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md)
 > (contrat MCP stable, inchangé).
 
 ---

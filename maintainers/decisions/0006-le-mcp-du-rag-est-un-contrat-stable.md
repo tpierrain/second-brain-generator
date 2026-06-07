@@ -5,7 +5,7 @@
   son invariant « serveur RAG = MCP standard, sans dépendance à une API propriétaire »),
   [`0003-pas-upgrade-capacites-cerveaux.md`](0003-pas-upgrade-capacites-cerveaux.md) (tension
   examinée ci-dessous), [`0005-support-onglet-code-desktop.md`](0005-support-onglet-code-desktop.md).
-- **Plan d'implémentation associé :** [`../plans/onglet-code-desktop.md`](../plans/onglet-code-desktop.md) (§8).
+- **Plan d'implémentation associé :** [`../plans/archived/onglet-code-desktop.md`](../plans/archived/onglet-code-desktop.md) (§8).
 
 ## Contexte
 

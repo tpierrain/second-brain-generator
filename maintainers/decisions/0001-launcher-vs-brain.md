@@ -1,7 +1,7 @@
 # ADR 0001 — Launcher réutilisable vs cerveau créé ailleurs
 
 - **STATUT :** ACTÉ (2026-06-03) — supersède l'approche « transform in-place ».
-- **Plan d'implémentation associé :** [`../plans/launcher-vs-brain.md`](../plans/launcher-vs-brain.md) (LIVRÉ).
+- **Plan d'implémentation associé :** [`../plans/archived/launcher-vs-brain.md`](../plans/archived/launcher-vs-brain.md) (LIVRÉ).
 
 ## Contexte
 
