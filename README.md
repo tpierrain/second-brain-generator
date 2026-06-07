@@ -150,9 +150,9 @@ fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 ges
 #### 🖱️ Sur Claude Desktop (onglet Code) : ouvrir ton cerveau au BON endroit
 
 C'est **le** piège n°1, et il n'a rien d'évident. Ton cerveau ne « marche » que si la conversation
-est **rootée dans son dossier**. Ouvrir une *New session* ne suffit pas : par défaut elle réutilise
-ton dernier dossier (souvent un `tmp`), et Claude **invente alors des réponses** au lieu d'interroger
-ton vault.
+est **bien ouverte dans son dossier**. Lancer une *New session* ne suffit pas : par défaut elle
+repart sur ton dernier dossier (souvent un `tmp`), et Claude **invente alors des réponses** au lieu
+d'aller chercher dans ton vault.
 
 Le réglage se fait avec **la rangée de petites puces en bas, juste au-dessus du champ de saisie** :
 
@@ -171,8 +171,8 @@ Le réglage se fait avec **la rangée de petites puces en bas, juste au-dessus d
 5. **Vérifie d'un mot** : tape `pwd` comme tout premier message → ça doit renvoyer le chemin de ton
    cerveau, **pas** un `…/tmp`.
 
-> ⌨️ **En terminal (CLI)**, c'est imparable : `cd ~/second-brain && claude` — la session est rootée
-> au bon endroit, sans ambiguïté.
+> ⌨️ **En terminal (CLI)**, c'est imparable : `cd ~/second-brain && claude` — la session s'ouvre
+> directement dans le bon dossier, sans ambiguïté.
 
 Une fois installé, essaie par exemple :
 
