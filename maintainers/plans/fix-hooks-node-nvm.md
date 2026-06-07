@@ -1,9 +1,10 @@
 # Plan — Fix : hooks muets quand `node` vient de nvm (PATH minimal)
 
-> **État : À EXÉCUTER** (plan validé, code non commencé). Document auto-suffisant :
-> il contient tout le contexte nécessaire pour exécuter dans une session neuve.
-> Discipline : **TDD baby-steps** (skill `tdd-discipline`) — un test à la fois,
-> red→green→refactor. Le launcher est un outil Node/JS (pas un back-end Hive).
+> **État : ✅ LIVRÉ** (2026-06-07) — **résolu par le plan `harden-run-node-smoke-and-coverage.md`**
+> (même cause racine). Les 3 hooks de `.claude/settings.json.template` passent désormais par
+> `{{NODE}}` → le wrapper self-heal `scripts/run-node.*` (re-résolution de `node` à chaque run,
+> couverture nvm/asdf/volta/Homebrew/Windows), smoke-testé à l'install en PATH appauvri (échec
+> bruyant). Ce plan reste comme **contexte/historique** ; rien à exécuter de plus.
 
 ## Origine (feedback terrain — Mac nu d'Achille, 2026-06-07)
 

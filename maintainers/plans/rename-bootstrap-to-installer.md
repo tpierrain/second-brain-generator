@@ -1,10 +1,12 @@
 # Plan — Renommer `bootstrap` → `installer` (clarté pour les gens)
 
-> **État : À EXÉCUTER** (plan validé, code non commencé). Document auto-suffisant.
-> C'est un **renommage pur, zéro changement fonctionnel** : le filet de sécurité
-> est la **suite de tests existante** (doit rester verte) + un **E2E d'install**
-> qui prouve que la commande d'amorce marche toujours. Pas de TDD red→green ici
-> (rien de neuf à piloter par un test), mais discipline « refactor sous tests verts ».
+> **État : ✅ LIVRÉ** (2026-06-07, commit `24f1240`). Renommage complet appliqué
+> (D1 `installer.mjs` · D2 complet · D3 marqueur `installer-stub` · D4 pas de shim).
+> Filet vérifié : suite **74/74 verte**, **E2E install exit 0** + connexion MCP OK,
+> et le `CLAUDE.md` généré ne porte **aucun marqueur** (preuve bout-en-bout
+> qu'`isInstallerStub` reconnaît la nouvelle valeur et écrase l'amorce). Seule
+> mention « bootstrap » restante : un usage générique dans le vault d'exemple
+> (volontaire). Archive — plus rien à reprendre.
 
 ## Motivation (Thomas, 2026-06-07)
 
