@@ -189,7 +189,7 @@ Question
    │
    ▼  PHASE 1 — Réponse immédiate depuis le vault (RAG + Read)
    │
-   ├──▶ PHASE 2 — (optionnel) Sync sources externes en background
+   ├──▶ PHASE 2 — Sync sources externes en TÂCHE DE FOND (automatique, juste ANNONCÉ)
    │            ne récupère que le DELTA, sous-agents //, ~500 tokens chacun
    │
    ▼  PHASE 3 — Amender la réponse si le delta apporte du neuf
@@ -197,15 +197,20 @@ Question
    ▼  PHASE 4 — Persistance : tout ce qui est produit → vault + commit (hook)
 ```
 
-**Phase 1** — Retrieval itératif : `search_vault` → lire les 3-5 notes les plus pertinentes → drill-down si besoin. Toujours citer les sources (backlinks) et leur date de fraîcheur.
+> 🚫 **NE DEMANDE JAMAIS l'autorisation de synchroniser.** Tu ne poses **aucune** question du
+> genre « veux-tu que je rafraîchisse avec un sync des signaux récents ? », « est-ce que je dois
+> aller chercher… ? », « ça te suffit ou… ? ». Le sync des sources est **systématique et
+> transparent** : tu le **lances toi-même en tâche de fond** et tu te contentes de l'**annoncer**
+> en une ligne. Demander, c'est compter sur l'utilisateur pour piloter une mécanique qui doit
+> tourner toute seule — exactement ce qu'on ne veut pas.
 
-**Phase 2** *(si tu as branché des sources externes)* — Si la réponse pourrait être affectée par des événements récents, lancer des sous-agents en parallèle pour récupérer le delta. Ne pas attendre leur retour pour répondre. Max 3 agents background par question.
+**Phase 1** — Retrieval itératif : `search_vault` → lire les 3-5 notes les plus pertinentes → drill-down si besoin. Toujours citer les sources (backlinks) et leur date de fraîcheur. **Réponds tout de suite**, sans attendre quoi que ce soit.
 
-**Phase 3** — Compléter la réponse uniquement si le delta apporte du nouveau. Être transparent : « Mise à jour : … ».
+**Phase 2 — automatique, dès que des sources externes sont branchées.** Par **défaut**, à **chaque** question dont la réponse pourrait avoir bougé (gens, projets, décisions, sujets en cours, 1-1, agenda…), tu **lances immédiatement** des sous-agents en parallèle (skill `sync-sources`, **lecture seule**) pour récupérer le DELTA — **sans demander**, et **sans attendre leur retour pour répondre**. Tu l'**annonces** simplement, p. ex. : *« 🔄 Je vérifie en tâche de fond s'il y a du neuf côté Slack/agenda — je complète si ça change quelque chose. »* Max 3 agents background par question. **Seule exception (silencieuse, sans la commenter)** : une question purement historique/définitionnelle que le vault tranche à coup sûr → inutile de lancer un sync ; tu n'en parles même pas.
+
+**Phase 3** — Compléter la réponse uniquement si le delta apporte du nouveau, **de toi-même** (jamais en redemandant) : « 🔄 Mise à jour : … ». Si le delta n'apporte rien, tu peux le dire en un mot ou ne rien ajouter.
 
 **Phase 4** — Tout ce qui est récupéré ou produit en session est sauvegardé dans le vault. Rien ne reste uniquement en mémoire de conversation.
-
-**Règle** : ne pas lancer de sync sources si la question porte sur de l'historique — le vault suffit.
 
 ### Outillage — outils natifs, JAMAIS de Bash pour sonder le vault ou traiter du texte
 
