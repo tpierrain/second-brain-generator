@@ -22,6 +22,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { hasGeminiKey } from "./lib/gemini-key.mjs";
+import { repoStatusLine, countVaultUncommitted } from "./lib/repo-status.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, "..");
@@ -56,16 +57,17 @@ if (hasRemote) {
 }
 const short = git(["rev-parse", "--short", "HEAD"]).out.trim();
 
-let repoLine;
-if (!pullOk) {
-  repoLine = "⚠️ Pull échoué — vérifier manuellement.";
-} else if (/already up to date|déjà à jour/i.test(pullOut)) {
-  repoLine = `✅ Repo à jour (commit ${short}).`;
-} else {
-  const diff = git(["diff", "--name-only", "ORIG_HEAD", "HEAD"]).out;
-  const changed = diff.split("\n").filter((l) => l.trim().length > 0).length;
-  repoLine = `📥 Repo mis à jour — ${changed} fichier(s) modifié(s) (commit ${short}).`;
-}
+// Garde-fou fail-loud : des notes du vault non committées au démarrage = un
+// auto-commit précédent n'a pas tourné (hooks muets ?). repoStatusLine en fait
+// une alerte prioritaire (cf. scripts/lib/repo-status.mjs).
+const uncommittedVault = countVaultUncommitted(git(["status", "--porcelain"]).out);
+const changedCount =
+  pullOk && !/already up to date|déjà à jour/i.test(pullOut)
+    ? git(["diff", "--name-only", "ORIG_HEAD", "HEAD"]).out
+        .split("\n")
+        .filter((l) => l.trim().length > 0).length
+    : 0;
+const repoLine = repoStatusLine({ pullOk, pullOut, short, changedCount, uncommittedVault });
 
 // ─── Ligne RAG : docCount (db) vs fichiers .md sur disque ────────────────────
 function countMarkdown(dir) {
