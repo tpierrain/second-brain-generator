@@ -55,7 +55,7 @@ node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
   install du moteur RAG, smoke-test MCP) et **juge lui-même** la réussite : une **sortie non-zéro
   = échec** → relaie l'erreur telle quelle, **ne fais pas semblant** que ça a marché.
 
-## Étape 4 — Relayer le résultat + 3 consignes finales
+## Étape 4 — Relayer le résultat + 4 consignes finales
 
 > Le script affiche le chemin du cerveau créé (`<emplacement-parent>/<nom>`). Utilise-le ci-dessous.
 
@@ -136,6 +136,16 @@ node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
    - **Vérifie en un mot** : tape `pwd` en premier message — ça doit afficher le dossier du
      cerveau (PAS un dossier temporaire type `~/tmp`). Alors seulement `vault-rag`, l'auto-commit
      et l'allowlist sont actifs. (Le launcher peut être laissé tel quel ou réutilisé pour un autre cerveau.)
+4. **Rassure sur les premières autorisations (à dire AVANT qu'il commence à s'en servir).** Dis-lui,
+   simplement et sans dramatiser : *« Les **toutes premières fois** où ton cerveau ira chercher dans
+   tes outils connectés (Slack, agenda, Drive, mails…), Claude te demandera l'autorisation : clique
+   **“Always allow”** (Toujours autoriser) à chaque fois. C'est **une poignée de clics, une seule
+   fois** — l'app numérote chaque connecteur à sa façon, donc ça ne peut pas être pré-réglé pour toi.
+   Une fois ces autorisations données, **tu n'as plus jamais à t'en occuper** : ton second cerveau
+   s'utilise alors **uniquement à la voix ou au texte**, en langage naturel, comme une conversation —
+   tu poses tes questions, il répond et va chercher le neuf tout seul. »* Précise que c'est **normal
+   et sain** (les écritures, elles, resteront toujours confirmées) et que **ça ne concerne que les
+   sources externes** — le vault, lui, est déjà silencieux.
 
 ## Garde-fous (à ne jamais enfreindre)
 
