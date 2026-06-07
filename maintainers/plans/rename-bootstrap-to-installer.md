@@ -14,6 +14,13 @@ du renommage est donc la **lisibilité côté utilisateur** → priorité absolu
 **nom de fichier + commande + docs**. Le reste (identifiants internes, commentaires)
 suit pour la cohérence.
 
+> **Revu après le plan run-node (2026-06-07).** Les **compteurs d'occurrences
+> ci-dessous restent exacts** : la livraison `harden-run-node-smoke-and-coverage`
+> n'a introduit **aucune** nouvelle référence « bootstrap ». Seuls des **numéros de
+> ligne ont dérivé** (lignes ajoutées dans `SETUP.md` ≈ +5, `DEVELOPING.md` ≈ +12) —
+> les pivots ont été recalés dans les étapes 3-5. L'exécuteur reste invité à
+> **grepper** (étape 8) plutôt qu'à se fier aux numéros, qui restent un snapshot.
+
 ## Inventaire des références (relevé 2026-06-07, `git ls-files`, hors `maintainers/`)
 
 **Fichiers à renommer :**
@@ -27,11 +34,11 @@ suit pour la cohérence.
   telle quelle**. Toute coquille casse l'install pilotée par Claude.
 
 **Docs user-facing (à balayer) :** `README.md` (9), `SETUP.md` (19, dont la commande
-non-interactive l.100 et le tableau de dépannage l.272-273), `CONNECTORS.md` (2),
-`.env.example` (1, « fait par node bootstrap.mjs »).
+non-interactive l.105 et le tableau de dépannage l.277-278 — recalés post run-node),
+`CONNECTORS.md` (2), `.env.example` (1, « fait par node bootstrap.mjs »).
 
-**Docs dev :** `DEVELOPING.md` (18, dont le snippet de test l.94
-`… && node bootstrap.mjs < /dev/null`), `.gitignore` (2, commentaires l.43/47).
+**Docs dev :** `DEVELOPING.md` (18, dont le snippet de test l.106 — recalé post
+run-node — `… && node bootstrap.mjs < /dev/null`), `.gitignore` (2, commentaires l.43/47).
 
 **Code (commentaires + 1 identifiant) :** `scripts/lib/rag-launcher.mjs` (5,
 commentaires « écrit par le bootstrap »), `scripts/lib/claude-md.mjs` (4, dont le
@@ -92,17 +99,21 @@ commentaires/refs introduits par le plan run-node (sinon il faudrait re-balayer)
 - Remplacer `node bootstrap.mjs --non-interactive …` par
   `node installer.mjs --non-interactive …`. **Mot pour mot** : c'est la commande que
   Claude copie pour piloter l'install. La tester en E2E (étape 8).
-- Vérifier si la commande figure aussi dans `CLAUDE.md.template` → idem.
+- `CLAUDE.md.template` : **vérifié 2026-06-07 — la commande n'y figure PAS** (zéro
+  « bootstrap » dans le template) → rien à corriger ici, l'amorce-commande ne vit que
+  dans `CLAUDE.md`. (Re-grepper avant exécution au cas où ça aurait changé.)
 
 ### 4. Docs user-facing
-- `README.md`, `SETUP.md` (dont l.58/100/208/272/273), `CONNECTORS.md`,
+- `README.md`, `SETUP.md` (dont l.63/105/211/277-278 — recalés post run-node ;
+  ex-l.58/100/208/272-273), `CONNECTORS.md`,
   `.env.example` : remplacer `node bootstrap.mjs` → `node installer.mjs`, et les
   formulations « le bootstrap » → « l'installeur ».
 - Garder le **français naturel** : le script = « l'installeur » (déjà « installateur
   interactif » dans l'ancien en-tête) ; en code/commande = `installer.mjs`.
 
 ### 5. Docs dev
-- `DEVELOPING.md` (18 occurrences, dont le snippet de test l.94 :
+- `DEVELOPING.md` (18 occurrences, dont le snippet de test l.106 — recalé post
+  run-node, ex-l.94 :
   `cp -R . /tmp/sbg-test && cd /tmp/sbg-test && node installer.mjs < /dev/null`).
 - `.gitignore` (commentaires l.43/47).
 
