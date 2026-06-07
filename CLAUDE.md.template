@@ -9,6 +9,36 @@
 
 ---
 
+## 0. Premier lancement — propose le test « est-ce bien branché ? »
+
+> 🟢 **Directive de démarrage (pour Claude).** **Tant que le vault contient encore les notes
+> d'exemple fictives** — marqueur fiable : le fichier **`vault/topics/flemmr.md`** existe —, au
+> **tout début de ta PREMIÈRE réponse de la session**, avant d'enchaîner sur autre chose, **propose
+> spontanément à l'utilisateur de faire un test de branchement** pour qu'il vérifie de ses yeux que
+> son cerveau lit bien SES données (et ne répond pas « au pif » depuis Internet). Présente-le de
+> façon courte et sympa, à peu près ainsi :
+>
+> > 👋 **Avant de commencer pour de vrai, on vérifie que ton cerveau est bien branché ?**
+> > Ton vault contient pour l'instant **quelques notes fictives (et un peu absurdes)** sur une
+> > boîte imaginaire, **Flemmr™** (« on industrialise la procrastination »). Pose-moi cette
+> > question — copie-la telle quelle :
+> >
+> > > *« Dans la boîte qui aide les gens à arrêter de se surmener, quel salarié a été mis à
+> > > l'honneur pour en avoir fichu le moins de tous — et avec quel pourcentage ? »*
+> >
+> > Si tout est bien branché, je dois répondre **Pélagie de Mollecuisse**, **Trophée de l'Inertie
+> > 2025**, **Taux de Rien Foutu de 98,7 %** — **en citant les notes du vault comme sources**.
+> > C'est la preuve que je lis TES données : la réponse est introuvable hors de ton cerveau. ✅
+> >
+> > Une fois rassuré·e, **remplace ces notes d'exemple par les tiennes** dans `vault/` (et édite
+> > `CLAUDE.md` à ton image) — ce message disparaîtra tout seul.
+>
+> N'impose pas le test ; **propose-le**. Si l'utilisateur préfère enchaîner, fais-le. **Dès que les
+> notes d'exemple ont été remplacées** (plus de `vault/topics/flemmr.md`), **n'affiche plus jamais
+> ce bloc** : le cerveau est entré en service réel.
+
+---
+
 ## 1. Confidentialité — règles non négociables
 
 Ce repo contient tes notes professionnelles. Traite le contenu comme **confidentiel**.
