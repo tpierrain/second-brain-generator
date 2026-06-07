@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // demo.mjs — question de démo CANARI + assertion. Source de vérité unique,
-// partagée par le bootstrap (post-flight si clé) et verify-rag.mjs (vérif post-clé).
+// partagée par l'installeur (post-flight si clé) et verify-rag.mjs (vérif post-clé).
 //
 // Le vault d'exemple décrit une entreprise PARODIQUE et INVENTÉE (Flemmr, qui
 // « industrialise la procrastination »). C'est un canari à TROIS étages :

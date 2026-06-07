@@ -15,7 +15,7 @@ Ce fichier est un **menu d'idées** pour t'aider à choisir *quoi* brancher selo
 | Famille | C'est quoi | Où ça se branche |
 |---|---|---|
 | **Natif claude.ai** | Connecteur géré par ton compte claude.ai (Slack, Gmail, Calendar, Notion, Drive…). | Côté compte : *Settings → Connectors*. **Rien** à écrire dans `.mcp.json`. |
-| **MCP communautaire** | Un serveur MCP que tu héberges/lances toi-même (souvent un paquet npm). | Dans `.mcp.json` (le wizard du bootstrap peut le faire pour toi) + permissions dans `.claude/settings.json`. |
+| **MCP communautaire** | Un serveur MCP que tu héberges/lances toi-même (souvent un paquet npm). | Dans `.mcp.json` (le wizard de l'installeur peut le faire pour toi) + permissions dans `.claude/settings.json`. |
 
 > Plusieurs sources existent **dans les deux familles** (ex. Google Drive, Notion). Le **natif** est
 > en général le plus simple à démarrer ; le **MCP communautaire** te donne plus de contrôle (scopes,
@@ -58,7 +58,7 @@ démarrer.
 
 Trois chemins, détaillés dans [SETUP §6](SETUP.md) :
 
-- **(a) Le wizard du bootstrap** *(recommandé)* — à l'étape **5/9**, il propose le catalogue, te
+- **(a) Le wizard de l'installeur** *(recommandé)* — à l'étape **5/9**, il propose le catalogue, te
   montre **à quoi sert** chaque source, et pour les connecteurs **MCP** écrit tout seul le bloc
   serveur dans `.mcp.json` + les permissions dans `.claude/settings.json` (idempotent).
 - **(b) À la main** — tu ajoutes toi-même le MCP server dans `.mcp.json` et les permissions.

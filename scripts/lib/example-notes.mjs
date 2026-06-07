@@ -3,7 +3,7 @@
 //
 // Les notes de démo livrées avec le générateur portent le tag `exemple` dans leur
 // frontmatter. La machinerie (vault/backlog/harnais.md) et la doc (README.md)
-// ne le portent pas → elles sont préservées. But : permettre au bootstrap de
+// ne le portent pas → elles sont préservées. But : permettre à l'installeur de
 // vider le vault d'exemple pour ne pas polluer le RAG du vrai second cerveau.
 // ═══════════════════════════════════════════════════════════════════════════
 import { readdirSync, readFileSync, statSync, rmSync } from "node:fs";

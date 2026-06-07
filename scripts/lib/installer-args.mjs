@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// bootstrap-args.mjs — parsing PUR des réponses d'install non-interactive.
+// installer-args.mjs — parsing PUR des réponses d'install non-interactive.
 // Aucune I/O. parseAnswers(argv, env, defaults) → réponses résolues.
 // ═══════════════════════════════════════════════════════════════════════════
 import { join } from "node:path";

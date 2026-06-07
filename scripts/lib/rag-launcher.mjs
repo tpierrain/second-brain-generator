@@ -9,7 +9,7 @@
 //
 // Portable : aucun chemin machine n'est baké — on ne prepende que les dossiers
 // réellement présents (test d'existence). Source de vérité testée, écrite telle
-// quelle par le bootstrap dans rag/launch.sh (POSIX) et rag/launch.cmd (Windows).
+// quelle par l'installeur dans rag/launch.sh (POSIX) et rag/launch.cmd (Windows).
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Bloc PATH self-heal POSIX réutilisable (RAG comme hooks node). Prepend les
@@ -42,7 +42,7 @@ if exist "%NVM_SYMLINK%" set "PATH=%NVM_SYMLINK%;%PATH%"`;
 
 export function buildShLauncher() {
   return `#!/bin/sh
-# Lanceur self-heal du serveur RAG (macOS/Linux). Généré par le bootstrap.
+# Lanceur self-heal du serveur RAG (macOS/Linux). Généré par l'installeur.
 # Rajoute les emplacements usuels de node au PATH avant de démarrer le serveur,
 # pour que npx soit trouvé même si l'app a un PATH minimal. Portable : on ne
 # prepende que les dossiers existants (aucun chemin baké).
@@ -53,7 +53,7 @@ exec npx tsx rag/src/index.ts
 
 export function buildCmdLauncher() {
   return `@echo off
-REM Lanceur self-heal du serveur RAG (Windows). Généré par le bootstrap.
+REM Lanceur self-heal du serveur RAG (Windows). Généré par l'installeur.
 REM Rajoute les emplacements usuels de node au PATH avant de démarrer le serveur,
 REM pour que npx soit trouvé même si l'app a un PATH minimal. On ne prepende que
 REM les dossiers existants (aucun chemin baké).
@@ -70,7 +70,7 @@ npx tsx rag/src/index.ts
 // puis on relaie node + tous les arguments du hook (`exec node "$@"`).
 export function buildNodeRunnerSh() {
   return `#!/bin/sh
-# Lanceur self-heal de node pour les hooks (macOS/Linux). Généré par le bootstrap.
+# Lanceur self-heal de node pour les hooks (macOS/Linux). Généré par l'installeur.
 # Rajoute les emplacements usuels de node au PATH avant d'invoquer node, pour que
 # les hooks tournent même si l'app desktop a un PATH minimal (node via nvm/Homebrew
 # sinon introuvable → hooks muets, dont l'auto-commit). On ne prepende que les
@@ -82,7 +82,7 @@ exec node "$@"
 
 export function buildNodeRunnerCmd() {
   return `@echo off
-REM Lanceur self-heal de node pour les hooks (Windows). Généré par le bootstrap.
+REM Lanceur self-heal de node pour les hooks (Windows). Généré par l'installeur.
 REM Rajoute les emplacements usuels de node au PATH avant d'invoquer node, pour que
 REM les hooks tournent même si l'app desktop a un PATH minimal. On ne prepende que
 REM les dossiers existants (aucun chemin baké). Relaie node + tous les args du hook.

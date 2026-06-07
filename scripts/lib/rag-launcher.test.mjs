@@ -13,7 +13,7 @@ import {
   nodeHookCommand,
 } from "./rag-launcher.mjs";
 
-// Reproduit la substitution texte de bootstrap.mjs (gen) : .split().join() par clé.
+// Reproduit la substitution texte de installer.mjs (gen) : .split().join() par clé.
 function substitute(tpl, reps) {
   let out = tpl;
   for (const [k, v] of Object.entries(reps)) out = out.split(k).join(v);

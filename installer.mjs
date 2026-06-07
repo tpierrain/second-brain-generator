@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ═══════════════════════════════════════════════════════════════════════════
-// bootstrap.mjs — installateur interactif du Second Brain Generator.
+// installer.mjs — installateur interactif du Second Brain Generator.
 // Vérifie les prérequis, personnalise le harnais, installe le moteur RAG.
 // Idempotent : peut être relancé sans casse.
 //
@@ -8,7 +8,7 @@
 // PowerShell (Windows) comme en bash/zsh (macOS/Linux). Aucune dépendance
 // shell, jq, sqlite3 ni sed.
 //
-//   Usage :  node bootstrap.mjs
+//   Usage :  node installer.mjs
 // ═══════════════════════════════════════════════════════════════════════════
 import { execFileSync } from "node:child_process";
 import {
@@ -27,8 +27,8 @@ import { smokeTestMcp } from "./scripts/lib/mcp-smoke.mjs";
 import { CONNECTORS } from "./scripts/lib/connectors-catalog.mjs";
 import { applyConnectorFiles } from "./scripts/lib/connectors-apply.mjs";
 import { clearExampleNotes } from "./scripts/lib/example-notes.mjs";
-import { isBootstrapStub } from "./scripts/lib/claude-md.mjs";
-import { parseAnswers, resolveTargetDir } from "./scripts/lib/bootstrap-args.mjs";
+import { isInstallerStub } from "./scripts/lib/claude-md.mjs";
+import { parseAnswers, resolveTargetDir } from "./scripts/lib/installer-args.mjs";
 import { parseLsFilesZ, filterCopyable } from "./scripts/lib/tracked-files.mjs";
 import {
   buildShLauncher,
@@ -42,7 +42,7 @@ import {
 import { DEMO_QUESTION as DEMO, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
 
 // ROOT = le LAUNCHER (ce dépôt cloné). Source en LECTURE SEULE, réutilisable :
-// le bootstrap n'y écrit JAMAIS. Il CRÉE ailleurs un dossier cerveau (TARGET),
+// l'installeur n'y écrit JAMAIS. Il CRÉE ailleurs un dossier cerveau (TARGET),
 // y copie les fichiers suivis, puis `git init` dedans → aucun lien vers le
 // launcher par construction. Pas de process.chdir : tout passe par des chemins
 // explicites (ROOT pour lire, TARGET pour écrire).
@@ -76,7 +76,7 @@ const step = (m) => console.log(`\n${c.B}━━ ${m}${c.X}`);
 
 console.log(`${c.B}${c.C}`);
 console.log(`  ╔══════════════════════════════════════════════╗`);
-console.log(`  ║        Second Brain Generator — bootstrap    ║`);
+console.log(`  ║        Second Brain Generator — installeur   ║`);
 console.log(`  ╚══════════════════════════════════════════════╝`);
 console.log(c.X);
 
@@ -122,7 +122,7 @@ else {
 }
 
 if (missing) {
-  err("Prérequis manquants — corrige les points ci-dessus puis relance : node bootstrap.mjs");
+  err("Prérequis manquants — corrige les points ci-dessus puis relance : node installer.mjs");
   process.exit(1);
 }
 
@@ -169,7 +169,7 @@ if (interactive) {
 }
 
 // ── Résolution du dossier cerveau (TARGET) ───────────────────────────────────
-// On REFUSE une cible existante (garantit que c'est bien le bootstrap qui crée
+// On REFUSE une cible existante (garantit que c'est bien l'installeur qui crée
 // le dossier — pas de greffe dans un dossier déjà peuplé), puis on la crée et on
 // y copie les fichiers SUIVIS du launcher (git ls-files -z, en Node pur → gère
 // espaces/accents, multi-OS). Le launcher (ROOT) reste intact.
@@ -243,10 +243,10 @@ function gen(tpl, out, canOverwrite) {
   ok(`généré : ${out}`);
 }
 // Les templates ont été copiés dans TARGET : on les lit là et on écrit à côté.
-// Le CLAUDE.md copié est l'amorce (stub) → isBootstrapStub la fait remplacer par
+// Le CLAUDE.md copié est l'amorce (stub) → isInstallerStub la fait remplacer par
 // la constitution personnalisée. .mcp.json / settings.json sont gitignorés (donc
 // absents de la copie) → gen les écrit à neuf.
-gen(join(TARGET, "CLAUDE.md.template"), join(TARGET, "CLAUDE.md"), isBootstrapStub);
+gen(join(TARGET, "CLAUDE.md.template"), join(TARGET, "CLAUDE.md"), isInstallerStub);
 gen(join(TARGET, ".mcp.json.template"), join(TARGET, ".mcp.json"));
 gen(join(TARGET, ".claude", "settings.json.template"), join(TARGET, ".claude", "settings.json"));
 
@@ -384,7 +384,7 @@ if (interactive) {
     const deleted = clearExampleNotes(vaultDir);
     ok(`${deleted.length} note(s) d'exemple supprimée(s) — vault prêt pour tes vraies notes.`);
   } else {
-    warn("Notes d'exemple conservées (utiles pour le 1er test). Relance le bootstrap pour les vider plus tard.");
+    warn("Notes d'exemple conservées (utiles pour le 1er test). Relance l'installeur pour les vider plus tard.");
   }
 } else {
   warn("Entrée non interactive — notes d'exemple conservées.");
@@ -454,7 +454,7 @@ try {
       } else {
         err(`POST-FLIGHT ÉCHEC — le cerveau ne répond PAS depuis le vault : ${res.error ?? "raison inconnue"}`);
         err("Refus de déclarer l'install réussie (un cerveau qui répond à côté du vault est pire qu'un cerveau en panne).");
-        err("Dépannage : SETUP.md §8 (clé .env, index, connexion MCP), puis relance le bootstrap.");
+        err("Dépannage : SETUP.md §8 (clé .env, index, connexion MCP), puis relance l'installeur.");
         process.exit(1); // FAIL BRUYANT — avant toute bannière de succès
       }
     } else {
@@ -474,7 +474,7 @@ try {
 }
 
 // ── Fin ─────────────────────────────────────────────────────────────────────
-console.log(`\n${c.B}${c.G}✓ Bootstrap terminé.${c.X}\n`);
+console.log(`\n${c.B}${c.G}✓ Installation terminée.${c.X}\n`);
 console.log(`Ton second cerveau a été créé dans : ${c.C}${TARGET}${c.X}`);
 const keyMissing = !envHasKey && !geminiKey;
 if (keyMissing) {

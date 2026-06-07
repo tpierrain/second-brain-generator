@@ -110,7 +110,7 @@ export function smokeTestMcp({ command, args = [], cwd, expectTools = [], timeou
       params: {
         protocolVersion: "2025-06-18",
         capabilities: {},
-        clientInfo: { name: "bootstrap-smoke-test", version: "1.0.0" },
+        clientInfo: { name: "installer-smoke-test", version: "1.0.0" },
       },
     });
   });

@@ -40,11 +40,11 @@ vault/.obsidian/
 # donc PAS partir avec le « Use this template ».
 CLAUDE.local.md
 
-# ── Fichiers générés par bootstrap.mjs (contiennent un chemin absolu, ───
+# ── Fichiers générés par installer.mjs (contiennent un chemin absolu, ───
 #    propres à chaque machine → régénérés à chaque clone, jamais versionnés)
 .mcp.json
 .claude/settings.json
-# NB : CLAUDE.md est généré par bootstrap mais NE contient pas de chemin absolu.
+# NB : CLAUDE.md est généré par l'installeur mais NE contient pas de chemin absolu.
 # Volontairement laissé versionnable : c'est ta constitution, elle doit voyager
 # entre tes machines. (Dans CE repo-template il n'y a que CLAUDE.md.template.)
 

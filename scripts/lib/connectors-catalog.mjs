@@ -2,7 +2,7 @@
 // connectors-catalog.mjs — catalogue neutre de sources externes branchables.
 //
 // Deux familles :
-//  • kind:'mcp'    → serveur MCP self-hosted/communautaire. Le bootstrap peut écrire
+//  • kind:'mcp'    → serveur MCP self-hosted/communautaire. L'installeur peut écrire
 //                    son `serverConfig` dans .mcp.json et ses `permissions` dans
 //                    settings.json (cf. connectors-merge.mjs). Les valeurs d'env sont
 //                    des PLACEHOLDERS `<...>` : l'utilisateur renseigne ses vrais

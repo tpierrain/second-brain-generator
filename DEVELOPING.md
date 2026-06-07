@@ -20,28 +20,28 @@ donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
   (doit rester vert), typecheck : `cd rag && npx tsc --noEmit`.
 - 🟡 **Harnais** — fichiers `*.template` (`CLAUDE.md.template`, `.mcp.json.template`,
   `.claude/settings.json.template`) + skills génériques (`sync`, `improve`) +
-  `.claude/skills/EXAMPLES.md`. Le bootstrap génère les fichiers réels à partir des templates.
-- 🟢 **Onboarding** — `bootstrap.mjs` (installateur foolproof, Node pur → multi-OS), `vault/`
+  `.claude/skills/EXAMPLES.md`. L'installeur génère les fichiers réels à partir des templates.
+- 🟢 **Onboarding** — `installer.mjs` (installateur foolproof, Node pur → multi-OS), `vault/`
   d'exemple, `README.md`, `SETUP.md`. Les hooks (`scripts/session-status.mjs`,
   `scripts/auto-commit.mjs`) sont aussi en Node → pas de dépendance bash/jq/sqlite3, marche sur
   macOS / Linux / Windows.
 
 > 📁 **`maintainers/`** — contexte de dev versionné (décisions/ADR, plans), **synchronisé entre
-> les machines du mainteneur** mais **jamais livré** à l'utilisateur (exclu de la copie bootstrap
+> les machines du mainteneur** mais **jamais livré** à l'utilisateur (exclu de la copie d'install
 > via `filterCopyable`, non auto-chargé par Claude). Voir [`maintainers/README.md`](maintainers/README.md).
 > C'est là que vit l'historique de décision — ce dossier remplace l'ancienne « mémoire » Claude,
 > qui n'était pas portable entre laptops.
 
 ### Note de design — onboarding piloté par Claude
 
-Deux chemins d'install coexistent (README « Option A / B ») : **manuel** (`node bootstrap.mjs`
+Deux chemins d'install coexistent (README « Option A / B ») : **manuel** (`node installer.mjs`
 interactif) et **assisté par Claude** (une instruction en langage naturel). Le principe directeur
 du chemin assisté est le **déterminisme** : tout ce qui est mécanique + critique + répétable reste
 **dans le script** (génération, `git init`, install RAG, smoke-test auto-jugé) ; **Claude n'est
 qu'un emballage conversationnel** — il récolte les réponses en chat, appelle **une seule commande**
 `--non-interactive`, relaie le verdict du script, puis gère les 3 consignes finales (clé `.env`,
 dépôt distant, redémarrage). On ne confie **pas** la séquence d'install à Claude. L'amorce
-`CLAUDE.md` (marqueur `bootstrap-stub`) porte ce runbook ; `scripts/lib/bootstrap-args.mjs`
+`CLAUDE.md` (marqueur `installer-stub`) porte ce runbook ; `scripts/lib/installer-args.mjs`
 (`parseAnswers`, `resolveTargetDir`) et `scripts/lib/tracked-files.mjs` (`parseLsFilesZ`,
 `filterCopyable`) en sont les briques pures testées.
 
@@ -56,10 +56,10 @@ l'**auto-commit** ne tourne jamais → les notes s'écrivent sur disque mais ne 
 combat.
 
 **Fix.** Les 3 commandes de hook de `.claude/settings.json.template` passent par `{{NODE}}` (résolu
-par le bootstrap selon l'OS) au lieu de `node` en direct → un lanceur **self-heal** `scripts/run-node.*`
+par l'installeur selon l'OS) au lieu de `node` en direct → un lanceur **self-heal** `scripts/run-node.*`
 qui rejoue le même prepend PATH éprouvé que le serveur RAG (`scripts/lib/rag-launcher.mjs`,
 `buildNodeRunnerSh/Cmd`), puis `exec node "$@"`. Portable, **aucun chemin machine baké** (on ne
-prepende que les dossiers existants, glob nvm inclus). Le bootstrap **smoke-teste** `run-node` à
+prepende que les dossiers existants, glob nvm inclus). L'installeur **smoke-teste** `run-node` à
 l'install (`-e "process.exit(0)"`) : un échec = **install bruyante** (sortie non-zéro), pas un warning.
 En complément, `scripts/session-status.mjs` **crie au démarrage** (via `scripts/lib/repo-status.mjs`)
 si des notes du vault sont restées **non committées** — transformant un futur échec d'auto-commit en
@@ -93,17 +93,17 @@ nvm, volta, nodenv, fnm Linux+macOS ; Windows : nodejs, npm, Volta, `NVM_SYMLINK
 3. **Fichiers générés non versionnés.** `.mcp.json`, `.claude/settings.json`, `.env`,
    `rag/.cache/`, `node_modules/` sont gitignorés. Ne pas les committer.
    **Exception — le `CLAUDE.md` « amorce ».** Un `CLAUDE.md` **est** livré à la racine, mais c'est
-   une **amorce de pré-installation** : elle porte le marqueur `<!-- second-brain-generator:bootstrap-stub -->`
+   une **amorce de pré-installation** : elle porte le marqueur `<!-- second-brain-generator:installer-stub -->`
    et signale à Claude que le repo n'est pas encore installé (→ guide l'utilisateur vers
-   `node bootstrap.mjs`). Le bootstrap la **remplace** par le vrai `CLAUDE.md` personnalisé : la
-   détection est dans `scripts/lib/claude-md.mjs` (`isBootstrapStub`), branchée sur `gen()` dans
-   `bootstrap.mjs`. Un `CLAUDE.md` **sans** ce marqueur (= vraie constitution utilisateur) est
+   `node installer.mjs`). L'installeur la **remplace** par le vrai `CLAUDE.md` personnalisé : la
+   détection est dans `scripts/lib/claude-md.mjs` (`isInstallerStub`), branchée sur `gen()` dans
+   `installer.mjs`. Un `CLAUDE.md` **sans** ce marqueur (= vraie constitution utilisateur) est
    toujours **préservé**. Donc : **ne supprime pas** cette amorce, et n'y touche que via le marqueur.
-4. **Tester le bootstrap dans une copie jetable** (jamais en place), pour ne pas polluer le
+4. **Tester l'installeur dans une copie jetable** (jamais en place), pour ne pas polluer le
    template avec des fichiers générés / `node_modules` :
    ```bash
-   # stdin non-TTY → bootstrap part en mode non-interactif (valeurs par défaut)
-   cp -R . /tmp/sbg-test && cd /tmp/sbg-test && node bootstrap.mjs < /dev/null
+   # stdin non-TTY → l'installeur part en mode non-interactif (valeurs par défaut)
+   cp -R . /tmp/sbg-test && cd /tmp/sbg-test && node installer.mjs < /dev/null
    ```
 5. **Garder le moteur synchronisable** avec le second cerveau source : `rag/` est resté quasi
    identique à l'original → les correctifs peuvent être rapatriés dans un sens ou l'autre.
@@ -113,7 +113,7 @@ nvm, volta, nodenv, fnm Linux+macOS ; Windows : nodejs, npm, Volta, `NVM_SYMLINK
    **toute la logique du repo**, pas seulement au moteur :
    - **Moteur RAG** (`rag/`) : tests `rag/src/lib/*.test.ts`, suite verte `cd rag && npm test`
      + typecheck `cd rag && npx tsc --noEmit`.
-   - **Harnais / bootstrap** (`bootstrap.mjs`, `scripts/lib/*.mjs`) : tests
+   - **Harnais / installeur** (`installer.mjs`, `scripts/lib/*.mjs`) : tests
      `scripts/lib/*.test.mjs`, suite verte `node --test scripts/lib/*.test.mjs`.
 
    Chaque évolution se fait en **red → green → refactor** : écrire d'abord le test qui échoue,
@@ -125,17 +125,17 @@ nvm, volta, nodenv, fnm Linux+macOS ; Windows : nodejs, npm, Volta, `NVM_SYMLINK
 ## Pistes d'amélioration (backlog informel)
 
 - ~~Connecteurs externes optionnels (Slack/Drive/Notion)~~ ✅ livré : wizard guidé à l'étape
-  5/8 du bootstrap (catalogue `scripts/lib/connectors-catalog.mjs` + merge idempotent
+  5/8 de l'installeur (catalogue `scripts/lib/connectors-catalog.mjs` + merge idempotent
   `connectors-merge.mjs`/`connectors-apply.mjs`), doc `SETUP.md §6`. Suite : enrichir le
   catalogue (plus de connecteurs MCP communautaires) au fil des besoins.
 - **Embedder local (mode 100 % privé)** : permettre de remplacer Gemini par un modèle
   d'embeddings local (Ollama / open-source) via `EMBEDDING_MODEL` (`rag/src/lib/config.ts` +
   `embedder.ts`), pour que rien ne sorte de la machine. Aujourd'hui seulement documenté
   (README/SETUP §9 : palier payant Gemini = données hors entraînement).
-- ~~Bootstrap : option `--non-interactive`~~ ✅ livré : `parseAnswers` (`scripts/lib/bootstrap-args.mjs`)
+- ~~Installeur : option `--non-interactive`~~ ✅ livré : `parseAnswers` (`scripts/lib/installer-args.mjs`)
   → flags `--name/--owner/--lang` (+ env `SB_*`, précédence flag > env > défaut),
-  `--non-interactive`/`--yes`/`--no-input` ; **jamais la clé Gemini** (différée en `.env`). Le
-  bootstrap CRÉE le dossier cerveau (TARGET, cf. `resolveTargetDir`/`--dest`) et y fait un `git init`
+  `--non-interactive`/`--yes`/`--no-input` ; **jamais la clé Gemini** (différée en `.env`).
+  L'installeur CRÉE le dossier cerveau (TARGET, cf. `resolveTargetDir`/`--dest`) et y fait un `git init`
   trivial (dossier neuf, 0 remote). Doc : `SETUP.md §2`. Suite : variante avec fichier de réponses
   si besoin CI / re-provisioning.
 - Internationalisation : les templates sont en français. Prévoir une variante EN ?

@@ -1,8 +1,8 @@
-<!-- second-brain-generator:bootstrap-stub -->
+<!-- second-brain-generator:installer-stub -->
 # 🧠 Second Brain Generator — notice d'auto-installation (pour Claude)
 
 > **Ce dossier est le LAUNCHER (le générateur), pas un second cerveau.** Ce fichier est une
-> **amorce** : le bootstrap **crée un dossier cerveau séparé** et y dépose la vraie constitution
+> **amorce** : l'installeur **crée un dossier cerveau séparé** et y dépose la vraie constitution
 > (`CLAUDE.md` personnalisé). Le launcher, lui, **n'est jamais modifié** : il reste en lecture
 > seule et **réutilisable** (un même launcher peut générer plusieurs cerveaux).
 >
@@ -21,7 +21,7 @@ git clone --depth 1 <URL_DU_REPO> <dossier-launcher>
 cd <dossier-launcher>
 ```
 
-Le launcher est **réutilisable** et **n'est jamais touché** par l'install : le bootstrap **crée
+Le launcher est **réutilisable** et **n'est jamais touché** par l'install : l'installeur **crée
 ailleurs** un dossier cerveau neuf, y copie les fichiers, puis `git init` **dedans** → **aucun
 lien vers le launcher, par construction** (pas de remote hérité à retirer). Le hook auto-commit du
 cerveau **ne pousse rien tant que l'utilisateur n'a pas branché SON dépôt distant** (push opt-in).
@@ -44,7 +44,7 @@ défaut des notes**.
 ## Étape 3 — Lancer LA commande exacte (copier, ne pas paraphraser)
 
 ```bash
-node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>" --owner "<nom user>" --lang "<langue>"
+node installer.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>" --owner "<nom user>" --lang "<langue>"
 ```
 
 - `--dest` est **optionnel** : sans lui, le cerveau est créé sous le home (`~/<nom>`).
@@ -59,8 +59,8 @@ node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
 
 > Le script affiche le chemin du cerveau créé (`<emplacement-parent>/<nom>`). Utilise-le ci-dessous.
 
-1. **Clé Gemini, PUIS vérifie le RAG (étape clé).** La clé n'est **jamais** là au moment du
-   bootstrap (elle ne transite ni par le chat ni par la CLI) → le cerveau n'est pas encore vérifié.
+1. **Clé Gemini, PUIS vérifie le RAG (étape clé).** La clé n'est **jamais** là au moment de
+   l'installation (elle ne transite ni par le chat ni par la CLI) → le cerveau n'est pas encore vérifié.
    **Guide activement l'utilisateur** : (a) **ouvre TOI-MÊME le `.env` dans son éditeur** —
    c.-à-d. **LANCE-le via une commande shell (Bash)**. N'utilise **PAS** l'outil Read et ne te
    contente **pas** d'en afficher le contenu dans le chat : « ouvrir » veut dire faire
@@ -151,7 +151,7 @@ node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
 
 - **Commande exacte** de l'étape 3 — copie-la, ne l'invente/ne la paraphrase pas.
 - **La clé Gemini n'est JAMAIS un argument** ni un message de chat — toujours `.env`.
-- **Le launcher reste en lecture seule** : le bootstrap n'écrit jamais dedans (il crée un dossier
+- **Le launcher reste en lecture seule** : l'installeur n'écrit jamais dedans (il crée un dossier
   cerveau à part). Pour générer un autre cerveau, relance avec un **autre `--name`** (ou `--dest`).
 - **Refus si le dossier existe** : relancer avec le **même nom + emplacement** échoue proprement
   (sortie non-zéro, rien n'est modifié). Pour recommencer : autre nom/emplacement, ou supprime le dossier.

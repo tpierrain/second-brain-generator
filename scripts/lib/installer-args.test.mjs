@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { join } from "node:path";
-import { parseAnswers, resolveTargetDir } from "./bootstrap-args.mjs";
+import { parseAnswers, resolveTargetDir } from "./installer-args.mjs";
 
 test("parseAnswers — forme --x=v", () => {
   const r = parseAnswers(["--name=mon-cerveau"], {}, {});

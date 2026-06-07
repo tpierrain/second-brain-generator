@@ -14,7 +14,7 @@
 
 > ⚙️ **Node via `nvm`/Homebrew ? C'est géré.** L'app Claude Desktop lance les hooks avec un PATH
 > minimal où un `node` installé par `nvm` ou Homebrew serait introuvable (les hooks tomberaient
-> alors **en silence** — l'auto-commit ne sauvegarderait plus tes notes). Le bootstrap génère un
+> alors **en silence** — l'auto-commit ne sauvegarderait plus tes notes). L'installeur génère un
 > petit lanceur `scripts/run-node.*` qui retrouve `node` tout seul avant chaque hook, et **vérifie
 > à l'install** qu'il y arrive — en **simulant le PATH minimal** de l'app, pour que la preuve soit
 > réelle (sinon l'install échoue bruyamment). Tu n'as rien à configurer.
@@ -38,7 +38,7 @@ quelques clics.
 3. Laisse AI Studio **créer un projet automatiquement** (ou choisis-en un existant) — tu n'as rien
    d'autre à configurer.
 4. **Copie la clé** (elle ressemble à `AIza…`).
-5. Colle-la quand `node bootstrap.mjs` te la demande (ou dans `.env`, variable `GEMINI_API_KEY`).
+5. Colle-la quand `node installer.mjs` te la demande (ou dans `.env`, variable `GEMINI_API_KEY`).
 
 C'est tout : le **palier gratuit est actif immédiatement**, aucune carte bancaire requise pour
 démarrer.
@@ -52,15 +52,15 @@ démarrer.
 
 ## 2. Installation
 
-> **Un launcher, un cerveau — deux dossiers.** Le bootstrap s'exécute depuis le **launcher** (ce
+> **Un launcher, un cerveau — deux dossiers.** L'installeur s'exécute depuis le **launcher** (ce
 > dépôt cloné) et **crée un dossier cerveau séparé** où il génère toute ta config. Le launcher reste
 > **en lecture seule** et **réutilisable** (plusieurs cerveaux depuis un même launcher). Le nom du
 > cerveau = `--name` (ou la question « Nom du cerveau ») ; son emplacement = `--dest` (défaut : ton
-> home → `~/<nom>`). Le bootstrap **refuse si le dossier cible existe déjà** — c'est lui qui le crée.
+> home → `~/<nom>`). L'installeur **refuse si le dossier cible existe déjà** — c'est lui qui le crée.
 
 ```bash
 cd second-brain-generator   # le launcher cloné
-node bootstrap.mjs          # interactif : demande nom, emplacement, ton nom, langue
+node installer.mjs          # interactif : demande nom, emplacement, ton nom, langue
 ```
 
 Le script :
@@ -77,12 +77,12 @@ Le script :
 9. indexe le vault d'exemple ;
 10. **smoke-test MCP** : vérifie que Claude Code pourra parler au serveur `vault-rag` (cf. §8).
 
-**Refus si le dossier existe.** Pour ne jamais écraser un cerveau, le bootstrap **refuse** quand le
+**Refus si le dossier existe.** Pour ne jamais écraser un cerveau, l'installeur **refuse** quand le
 dossier cible existe déjà (sortie non-zéro, rien n'est touché). Pour recommencer : choisis un autre
 `--name`/`--dest`, ou supprime le dossier. Le **launcher**, lui, reste réutilisable à l'infini.
 
 ### Installation manuelle (si tu préfères)
-> Le bootstrap **crée le dossier cerveau** pour toi (copie + génération + `git init`). En manuel,
+> L'installeur **crée le dossier cerveau** pour toi (copie + génération + `git init`). En manuel,
 > crée d'abord un dossier vide à part, puis depuis le launcher :
 1. Copie tout le contenu du launcher dans ton nouveau dossier cerveau (hors `.git`, `node_modules`,
    `DEVELOPING.md`).
@@ -93,16 +93,16 @@ dossier cible existe déjà (sortie non-zéro, rien n'est touché). Pour recomme
    **cerveau** en slashes `/`, et `{{TMP_DIR}}` = dossier temp de l'OS).
 4. `git init` dans le cerveau, puis `cd rag && npm install && npm run index`.
 
-> En pratique, `node bootstrap.mjs` fait tout ça pour toi, sur tous les OS — préfère-le.
+> En pratique, `node installer.mjs` fait tout ça pour toi, sur tous les OS — préfère-le.
 
 ### Installation non-interactive (flags) & démarrage piloté par Claude
 
-Le bootstrap accepte un **mode non-interactif** : utile pour scripter l'install, et c'est ce qui
+L'installeur accepte un **mode non-interactif** : utile pour scripter l'install, et c'est ce qui
 permet le **démarrage assisté par Claude** (cf. README « Option A »). Claude récolte les réponses
 en chat, puis appelle **une seule commande** :
 
 ```bash
-node bootstrap.mjs --non-interactive --name "second-brain" --owner "Jane Doe" --lang "français"
+node installer.mjs --non-interactive --name "second-brain" --owner "Jane Doe" --lang "français"
 # → crée ~/second-brain. Ajoute --dest <dossier-parent> pour choisir l'emplacement.
 ```
 
@@ -114,7 +114,7 @@ node bootstrap.mjs --non-interactive --name "second-brain" --owner "Jane Doe" --
 - **La clé Gemini n'est JAMAIS un argument** (sécurité : pas de secret en ligne de commande). En
   mode non-interactif elle est **toujours différée** → renseigne-la ensuite dans `<cerveau>/.env` ;
   l'index se construit au 1er démarrage du serveur MCP.
-- **Aucun lien vers le launcher, par construction.** Le bootstrap **crée un dossier neuf**, y copie
+- **Aucun lien vers le launcher, par construction.** L'installeur **crée un dossier neuf**, y copie
   les fichiers suivis (jamais le `.git` du launcher), puis y fait `git init` + 1er commit. Le cerveau
   n'a donc **aucun remote** — rien à détacher, aucune chirurgie git. Le launcher n'est jamais modifié.
 - **Aucune fuite possible : le push est opt-in.** Le hook auto-commit **ne pousse que si tu as
@@ -126,7 +126,7 @@ node bootstrap.mjs --non-interactive --name "second-brain" --owner "Jane Doe" --
   risque.
 
 > ⚠️ En mode non-interactif, les étapes **connecteurs** (§6) et **purge des notes d'exemple** sont
-> sautées (elles restent interactives) — tu les feras à la main ou en relançant le bootstrap **vers
+> sautées (elles restent interactives) — tu les feras à la main ou en relançant l'installeur **vers
 > un nouveau cerveau**.
 
 ## 3. Premier test
@@ -136,7 +136,7 @@ node bootstrap.mjs --non-interactive --name "second-brain" --owner "Jane Doe" --
 > répondre. (Au démarrage, le hook de statut **te prévient** si la clé manque.)
 
 ```bash
-cd <emplacement>/<nom>   # le dossier cerveau créé par le bootstrap (ex. ~/second-brain)
+cd <emplacement>/<nom>   # le dossier cerveau créé par l'installeur (ex. ~/second-brain)
 claude
 ```
 Puis : *« Dans la boîte qui aide les gens à arrêter de se surmener, quel salarié a été mis à
@@ -208,12 +208,12 @@ serveur que tu branches dans `.mcp.json`. Catalogue complet et détaillé : [CON
 > produits par Meet/Gemini. On les attrape via le **Calendar** (lien dans l'événement) et le
 > **Drive** (le doc de transcription). Pas besoin d'un MCP de meeting-bot tiers pour démarrer.
 
-### (a) Le wizard du bootstrap — *recommandé*
+### (a) Le wizard de l'installeur — *recommandé*
 
-Pendant `node bootstrap.mjs`, l'étape **5/9 « Brancher des sources externes »** te propose un
+Pendant `node installer.mjs`, l'étape **5/9 « Brancher des sources externes »** te propose un
 petit catalogue. Pour chaque connecteur **MCP** que tu acceptes, le script fusionne tout seul
 son bloc serveur dans `.mcp.json` **et** ses permissions dans `.claude/settings.json`, puis
-t'affiche le rappel credentials à renseigner. C'est **idempotent** : relancer le bootstrap ne
+t'affiche le rappel credentials à renseigner. C'est **idempotent** : relancer l'installeur ne
 crée jamais de doublon. Reste à mettre tes vrais credentials à la place des placeholders `<…>`.
 
 ### (b) À la main — *si tu préfères tout contrôler*
@@ -259,7 +259,7 @@ git config secondbrain.autopush true   # ← active le push automatique du hook
 ```
 Le hook auto-commit pushera ensuite à chaque modif. Sur l'autre machine : `git clone <ton-repo-privé>`
 puis, **dans le dossier cloné**, `cd rag && npm install` et re-renseigne la clé dans `.env` (l'index
-se reconstruit au 1er démarrage). *(Pas besoin du bootstrap ici : il sert à **générer** un cerveau,
+se reconstruit au 1er démarrage). *(Pas besoin de l'installeur ici : il sert à **générer** un cerveau,
 pas à ré-hydrater un cerveau déjà existant.)* En cours de session, le skill `/sync` récupère les
 changements de l'autre machine.
 
@@ -274,8 +274,8 @@ changements de l'autre machine.
 | Recherches vides | Index pas construit / pas de clé | `cd rag && npm run index` après avoir mis la clé |
 | `RESOURCE_EXHAUSTED` / 429 | Quota Gemini du jour atteint | reprise auto au reset (minuit Pacifique), ou monte `MAX_EMBED_REQUESTS_PER_DAY` |
 | Statut RAG « indisponible » au démarrage | Moteur RAG pas encore installé / DB en cours d'écriture | `cd rag && npm install` ; le statut se rétablit une fois l'index construit |
-| Le serveur MCP n'apparaît pas | `.mcp.json` absent / mauvais chemin | relance `node bootstrap.mjs`, accepte le serveur dans Claude Code |
-| **Smoke-test MCP ❌** en fin de bootstrap (« connexion MCP KO ») | `rag/` pas installé, `.mcp.json` mal généré, ou `npx`/`tsx` indisponible | `cd rag && npm install` puis relance `node bootstrap.mjs` ; vérifie que `.mcp.json` pointe `npx tsx rag/src/index.ts` avec le bon `cwd`. Test manuel : `npx tsx rag/src/index.ts` doit démarrer sans crash (la clé Gemini n'est **pas** requise pour ce test). |
+| Le serveur MCP n'apparaît pas | `.mcp.json` absent / mauvais chemin | relance `node installer.mjs`, accepte le serveur dans Claude Code |
+| **Smoke-test MCP ❌** en fin d'installation (« connexion MCP KO ») | `rag/` pas installé, `.mcp.json` mal généré, ou `npx`/`tsx` indisponible | `cd rag && npm install` puis relance `node installer.mjs` ; vérifie que `.mcp.json` pointe `npx tsx rag/src/index.ts` avec le bon `cwd`. Test manuel : `npx tsx rag/src/index.ts` doit démarrer sans crash (la clé Gemini n'est **pas** requise pour ce test). |
 
 ## 9. Confidentialité des données
 

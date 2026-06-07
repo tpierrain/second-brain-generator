@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Vrai si une ligne `GOOGLE_GEMINI_API_KEY=<valeur non vide>` est présente.
-// (Même règle que le bootstrap : la ligne seule avec valeur vide ne compte pas.)
+// (Même règle que l'installeur : la ligne seule avec valeur vide ne compte pas.)
 export function hasGeminiKey(envContent) {
   if (!envContent) return false;
   return /^GOOGLE_GEMINI_API_KEY=.+/m.test(envContent);

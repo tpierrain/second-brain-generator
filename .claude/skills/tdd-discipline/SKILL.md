@@ -14,7 +14,7 @@ origin: use-case-driven-harness
 La discipline TDD de base, **agnostique langage**, qui s'applique à **tout type de code** :
 petites libs, simples tools, helpers, algorithmes isolés comme services et applications.
 Dans ce repo, elle régit **tout le code** sans exception : le moteur RAG (`rag/`) **comme** le
-harnais d'installation (`bootstrap.mjs` et ses helpers `scripts/lib/*.mjs`) — tous testés via
+harnais d'installation (`installer.mjs` et ses helpers `scripts/lib/*.mjs`) — tous testés via
 `node --test`. Pas seulement le moteur.
 
 ## Baby steps, PAS test-first batch

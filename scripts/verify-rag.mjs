@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
 // verify-rag.mjs — à lancer DEPUIS le dossier cerveau, APRÈS avoir collé la clé
-// Gemini dans .env (la clé n'est jamais là au moment du bootstrap).
+// Gemini dans .env (la clé n'est jamais là au moment de l'installation).
 //
 // (Ré)indexe le vault d'exemple, puis prouve de façon DÉTERMINISTE et BRUYANTE que
 // la question de démo répond DEPUIS le vault — en exigeant le token canari unique
@@ -56,7 +56,7 @@ try {
   const mcp = JSON.parse(readFileSync(join(ROOT, ".mcp.json"), "utf8"));
   srv = mcp.mcpServers?.["vault-rag"];
 } catch (e) {
-  err(`.mcp.json illisible (${e.message}) — relance le bootstrap depuis le launcher ?`);
+  err(`.mcp.json illisible (${e.message}) — relance l'installeur depuis le launcher ?`);
   process.exit(1);
 }
 if (!srv) {

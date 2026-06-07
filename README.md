@@ -207,10 +207,10 @@ Pour lever les doutes qu'on a tous au début :
 
 - **Le launcher n'est pas ton cerveau** : c'est l'outil qui le **produit**. Garde-le pour en
   générer d'autres, ou jette-le — ton cerveau vit dans **son propre dossier**.
-- **Aucun lien vers le launcher**, par construction : le bootstrap **copie** les fichiers dans un
+- **Aucun lien vers le launcher**, par construction : l'installeur **copie** les fichiers dans un
   dossier neuf puis y fait `git init` (0 remote). Rien à « détacher » toi-même.
 - **`--name` = le nom du dossier cerveau créé** ; son emplacement se choisit avec `--dest` (par
-  défaut, ton home → `~/<nom>`). Le bootstrap **refuse si le dossier existe déjà**.
+  défaut, ton home → `~/<nom>`). L'installeur **refuse si le dossier existe déjà**.
 - Le cerveau naît **sans dépôt distant** : pour un backup / multi-machine, tu branches TON dépôt
   plus tard (push opt-in, cf. geste 2 ci-dessus).
 
@@ -265,7 +265,7 @@ son propre cerveau. On ne partage pas un second cerveau à plusieurs — on part
 C'est aussi pour ça que le `CLAUDE.md` (les règles que Claude suit) est **ta constitution**,
 propre à *tes* usages : l'installateur le **génère** sur mesure pour toi. Le launcher ne contient
 qu'une **amorce** qui signale à Claude qu'il est encore un générateur (et te guide vers
-l'installateur) ; le bootstrap **génère ta vraie constitution dans le dossier cerveau** — et ne
+l'installateur) ; l'installeur **génère ta vraie constitution dans le dossier cerveau** — et ne
 touche **jamais** à l'amorce du launcher (qui reste réutilisable).
 
 ## Sûr par construction : il observe, il répond
@@ -353,11 +353,11 @@ seulement si tu as branché un dépôt distant — *opt-in*).
 |---|---|---|
 | **`rag/`** | Moteur RAG (serveur MCP TypeScript) : chunking, embeddings Gemini, recherche sémantique, garde-fous quota | ✅ prêt à l'emploi |
 | **`vault/`** | Ton contenu Markdown (notes d'exemple fournies) | 🔧 à remplir |
-| **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🌱 amorce dans le launcher → le bootstrap en **génère** une version perso **dans le cerveau**, puis à adapter |
+| **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🌱 amorce dans le launcher → l'installeur en **génère** une version perso **dans le cerveau**, puis à adapter |
 | **`.claude/skills/`** | Skills livrées (voir ci-dessous) + idées d'autres skills | 🔧 à étoffer |
 | **`.claude/settings.json`** | Hooks (auto-commit, statut au démarrage) + permissions | ✅ généré |
 | **`scripts/*.mjs`** | Hooks Node multi-OS : état repo + RAG au démarrage, commit auto | ✅ prêt |
-| **`bootstrap.mjs`** | Installateur : **crée le dossier cerveau** à partir du launcher (macOS / Linux / Windows) | ✅ |
+| **`installer.mjs`** | Installateur : **crée le dossier cerveau** à partir du launcher (macOS / Linux / Windows) | ✅ |
 
 ### Les skills que tu appelles
 
@@ -387,7 +387,7 @@ détaillées dans [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md). Pa
 `rapport-etonnement`, `weekly-review`.
 
 > **Skill ≠ connecteur.** Slack, Drive, Notion, Calendar sont des **connecteurs** (sources de
-> données), pas des skills. Tu les branches au bootstrap ([SETUP §6](SETUP.md)). Une *skill* est
+> données), pas des skills. Tu les branches à l'installeur ([SETUP §6](SETUP.md)). Une *skill* est
 > une procédure qui exploite ces sources — à toi de l'écrire.
 
 ### Le vocabulaire en 30 secondes
@@ -404,7 +404,7 @@ détaillées dans [`.claude/skills/EXAMPLES.md`](.claude/skills/EXAMPLES.md). Pa
   **natif** (activé dans les réglages de ton compte Claude) ou **MCP** (un serveur déclaré dans `.mcp.json`).
 - **Harnais** — l'ensemble des règles (`CLAUDE.md`) + skills que tu personnalises.
 - **Hook** — une action automatique déclenchée par un événement (ex. sauvegarder à chaque modif).
-- **Bootstrap** — l'installateur qui prépare tout pour toi.
+- **Installeur** — le programme qui prépare tout pour toi.
 - **Repo / git** — l'endroit versionné où tout est stocké et sauvegardé.
 
 </details>
@@ -424,7 +424,7 @@ sources** (mail, agenda, Notion, fichiers, chat…), tu branches des **connecteu
   Google Calendar, Slack, Google Drive, Notion.
 - **Serveur _MCP_ (communautaire)** — un petit programme (souvent un paquet `npm`) que **tu déclares
   toi-même** dans le fichier `.mcp.json` de ton cerveau, avec tes identifiants. Plus de choix et de
-  contrôle, mais un peu plus de configuration. Le wizard du bootstrap peut l'ajouter pour toi.
+  contrôle, mais un peu plus de configuration. Le wizard de l'installeur peut l'ajouter pour toi.
 
 > 👉 Quand une source existe **dans les deux formes** (Notion, Drive…), commence par le **natif** :
 > moins de friction. Passe au **MCP** si tu veux une variante précise ou un outil sans connecteur natif.
@@ -446,7 +446,7 @@ Quelques idées pour démarrer — *à toi de choisir selon tes outils* :
 > sur ton **Google Drive** (→ via le **Drive**). Tu les attrapes donc en branchant **ces deux
 > connecteurs**, pas un outil de meeting-bot tiers.
 
-Le **wizard du bootstrap** (étape 5/9) te propose de brancher tout ça en te montrant, pour chaque
+Le **wizard de l'installeur** (étape 5/9) te propose de brancher tout ça en te montrant, pour chaque
 source, *à quoi elle sert*. Le menu complet et le détail des credentials sont dans
 [**CONNECTORS.md**](CONNECTORS.md) et [SETUP §6](SETUP.md).
 
