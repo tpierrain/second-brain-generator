@@ -37,6 +37,7 @@ import {
   buildNodeRunnerSh,
   buildNodeRunnerCmd,
   nodeHookCommand,
+  minimalPathEnv,
 } from "./scripts/lib/rag-launcher.mjs";
 import { DEMO_QUESTION as DEMO, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
 
@@ -272,20 +273,30 @@ writeFileSync(runNodeSh, buildNodeRunnerSh());
 writeFileSync(join(TARGET, "scripts", "run-node.cmd"), buildNodeRunnerCmd());
 ok("lanceurs self-heal node pour les hooks générés (run-node.sh + run-node.cmd)");
 
-// Smoke-test du lanceur (principe « le script juge lui-même ») : si run-node.sh ne
-// retrouve pas node, les hooks resteront muets → échec d'install BRUYANT, pas un
-// warning. Sur Windows on teste run-node.cmd. Argument anodin : -e "process.exit(0)".
+// Smoke-test du lanceur (principe « le script juge lui-même »). PREUVE EN CONDITIONS
+// RÉELLES : on lance run-node avec un PATH APPAUVRI (minimalPathEnv) façon app desktop
+// — sinon le test hériterait du PATH riche du shell d'install (node toujours trouvable)
+// et répondrait à « node existe quelque part ? » au lieu de « le wrapper, SEUL,
+// retrouve-t-il node en PATH minimal ? » (quasi-faux-positif). Si run-node échoue ici,
+// les hooks resteront muets au runtime → échec d'install BRUYANT, pas un warning.
 {
   const runner =
     process.platform === "win32"
       ? { command: "cmd", args: ["/c", join(TARGET, "scripts", "run-node.cmd")] }
       : { command: "/bin/sh", args: [runNodeSh] };
-  const smoke = run(runner.command, [...runner.args, "-e", "process.exit(0)"], { cwd: TARGET });
-  if (smoke.ok) ok("smoke-test run-node OK — node est résolu par le lanceur de hooks");
+  const smoke = run(runner.command, [...runner.args, "-e", "process.exit(0)"], {
+    cwd: TARGET,
+    env: minimalPathEnv(process.platform, process.env),
+  });
+  if (smoke.ok) ok("smoke-test run-node OK — node résolu par le lanceur même en PATH appauvri");
   else {
     err(
-      "run-node n'a pas pu lancer node (PATH self-heal insuffisant) → les hooks seraient " +
-        "muets (auto-commit cassé). Vérifie l'installation de node. Détail :\n" + smoke.out,
+      "run-node n'a pas retrouvé node en PATH appauvri (conditions réelles de l'app desktop) → " +
+        "les hooks seraient muets au runtime (auto-commit cassé). Ton node est probablement dans " +
+        "un emplacement INHABITUEL. Le self-heal couvre : /usr/bin, /usr/local/bin, " +
+        "/opt/homebrew/bin, asdf, nvm, volta, nodenv, fnm (et côté Windows : nodejs, npm, Volta, " +
+        "NVM_SYMLINK). Ajoute ton emplacement à scripts/lib/rag-launcher.mjs (pathPrependSh/Cmd) " +
+        "ou signale le cas. Détail :\n" + smoke.out,
     );
     process.exit(1);
   }
