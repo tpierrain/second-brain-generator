@@ -18,10 +18,15 @@
 // l'appelant avec sa commande (`exec npx …` ou `exec node "$@"`).
 export function pathPrependSh() {
   return `add() { [ -d "$1" ] && PATH="$1:$PATH"; }
+add /usr/bin
 add /usr/local/bin
 add /opt/homebrew/bin
 add "$HOME/.asdf/shims"
+add "$HOME/.volta/bin"
+add "$HOME/.nodenv/shims"
 for d in "$HOME"/.nvm/versions/node/*/bin; do add "$d"; done
+for d in "$HOME"/.local/share/fnm/node-versions/*/installation/bin; do add "$d"; done
+for d in "$HOME/Library/Application Support/fnm"/node-versions/*/installation/bin; do add "$d"; done
 export PATH`;
 }
 
@@ -31,6 +36,7 @@ export function pathPrependCmd() {
   return `if exist "%ProgramFiles%\\nodejs" set "PATH=%ProgramFiles%\\nodejs;%PATH%"
 if exist "%ProgramFiles(x86)%\\nodejs" set "PATH=%ProgramFiles(x86)%\\nodejs;%PATH%"
 if exist "%APPDATA%\\npm" set "PATH=%APPDATA%\\npm;%PATH%"
+if exist "%LOCALAPPDATA%\\Volta\\bin" set "PATH=%LOCALAPPDATA%\\Volta\\bin;%PATH%"
 if exist "%NVM_SYMLINK%" set "PATH=%NVM_SYMLINK%;%PATH%"`;
 }
 
@@ -83,6 +89,23 @@ REM les dossiers existants (aucun chemin baké). Relaie node + tous les args du 
 ${pathPrependCmd()}
 node %*
 `;
+}
+
+// Renvoie une COPIE de baseEnv où seul PATH est neutralisé (le reste — HOME,
+// ProgramFiles, APPDATA, LOCALAPPDATA, NVM_SYMLINK… — est préservé car le
+// self-heal en a besoin). Sert au smoke-test d'install : prouver que le wrapper
+// retrouve node TOUT SEUL, dans le PATH appauvri façon app desktop (sinon le test
+// hérite du PATH riche du shell d'install → quasi-faux-positif).
+export function minimalPathEnv(platform, baseEnv) {
+  if (platform === "win32") {
+    // cmd.exe doit rester trouvable (le smoke-test l'invoque) → on conserve juste
+    // System32 ; node, lui, viendra du self-heal de run-node.cmd.
+    const systemRoot = baseEnv.SystemRoot || "C:\\Windows";
+    return { ...baseEnv, PATH: `${systemRoot}\\System32` };
+  }
+  // posix : sh est lancé en absolu (/bin/sh) → PATH vide, node ne viendra QUE du
+  // self-heal → preuve que le wrapper est auto-suffisant.
+  return { ...baseEnv, PATH: "" };
 }
 
 // Construit la valeur de remplacement {{NODE}} des commandes de hook dans
