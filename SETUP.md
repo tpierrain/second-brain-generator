@@ -16,7 +16,12 @@
 > minimal où un `node` installé par `nvm` ou Homebrew serait introuvable (les hooks tomberaient
 > alors **en silence** — l'auto-commit ne sauvegarderait plus tes notes). Le bootstrap génère un
 > petit lanceur `scripts/run-node.*` qui retrouve `node` tout seul avant chaque hook, et **vérifie
-> à l'install** qu'il y arrive (sinon l'install échoue bruyamment). Tu n'as rien à configurer.
+> à l'install** qu'il y arrive — en **simulant le PATH minimal** de l'app, pour que la preuve soit
+> réelle (sinon l'install échoue bruyamment). Tu n'as rien à configurer.
+> Si l'install **recale** à ce smoke-test, c'est que ton `node` est dans un emplacement
+> **inhabituel** (le lanceur couvre `/usr/bin`, `/usr/local/bin`, `/opt/homebrew/bin`, asdf, nvm,
+> volta, nodenv, fnm — et côté Windows nodejs, npm, Volta, `NVM_SYMLINK`). Solution : réinstalle
+> `node` via l'une de ces voies (p. ex. `nvm` ou Homebrew), ou signale ton cas pour qu'on l'ajoute.
 
 > 🔒 **Confidentialité** : sur le **palier gratuit**, Gemini peut utiliser tes contenus pour
 > améliorer ses produits (relecture humaine possible). Pour un vault **confidentiel**, active la

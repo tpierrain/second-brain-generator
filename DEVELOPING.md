@@ -65,6 +65,18 @@ En complément, `scripts/session-status.mjs` **crie au démarrage** (via `script
 si des notes du vault sont restées **non committées** — transformant un futur échec d'auto-commit en
 alerte visible plutôt qu'en silence.
 
+**Smoke-test en PATH appauvri (preuve réelle, pas faux positif).** Le smoke-test ne lance plus
+`run-node` avec le PATH riche du shell d'install (où `node` est toujours trouvable → il ne testait
+en fait que « node existe quelque part ? »). Il passe désormais par `minimalPathEnv(platform, env)`
+(`scripts/lib/rag-launcher.mjs`) qui **neutralise le PATH** (posix : `""` ; Windows : juste
+`System32` pour garder `cmd.exe`) tout en préservant `HOME`/`LOCALAPPDATA`/etc. dont le self-heal a
+besoin. On prouve ainsi, **à l'install et en conditions réelles d'app desktop**, que le wrapper SEUL
+retrouve node — et un gestionnaire **non couvert** échoue **bruyamment et tôt** (message actionnable
+listant les emplacements pris en charge) plutôt qu'en silence au runtime. La **couverture** du
+self-heal est une **liste curée** (POSIX : `/usr/bin`, `/usr/local/bin`, `/opt/homebrew/bin`, asdf,
+nvm, volta, nodenv, fnm Linux+macOS ; Windows : nodejs, npm, Volta, `NVM_SYMLINK`) — pas une
+énumération exhaustive : le smoke-test appauvri est le **filet** pour tout le reste.
+
 ## Règles de dev
 
 1. **Commits manuels.** Pas de hook auto-commit dans ce repo (il n'existe que dans

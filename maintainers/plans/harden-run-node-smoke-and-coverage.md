@@ -1,6 +1,7 @@
 # Plan — Durcir `run-node` : preuve en PATH appauvri + couverture élargie
 
-> **État : À EXÉCUTER** (plan validé, code non commencé). Document auto-suffisant :
+> **État : LIVRÉ** (2026-06-07, en TDD baby-steps ; suite verte 74/74, bootstrap frais
+> validé en PATH appauvri — non encore committé). Document auto-suffisant :
 > il contient tout le contexte nécessaire pour exécuter dans une session neuve.
 > Discipline : **TDD baby-steps** (skill `tdd-discipline`) — un test à la fois,
 > red→green→refactor. Le launcher est un outil Node/JS (pas un back-end Hive).
