@@ -267,6 +267,11 @@ if (geminiKey) {
 // vers le launcher par construction (on a copié les fichiers suivis, jamais le
 // .git du launcher). L'anti-fuite vient du push opt-in du hook (secondbrain.autopush).
 run("git", ["init", "-q"], { cwd: TARGET });
+// Branche principale = `main` (jamais `master`, trop connoté historiquement).
+// `symbolic-ref` est portable sur toutes les versions de git (contrairement à
+// `git init -b main`, ≥ 2.28) et pointe HEAD sur main AVANT le premier commit,
+// donc l'historique entier naît sur `main` — pas de rename a posteriori.
+run("git", ["symbolic-ref", "HEAD", "refs/heads/main"], { cwd: TARGET });
 run("git", ["add", "-A"], { cwd: TARGET });
 const commit = run(
   "git",
