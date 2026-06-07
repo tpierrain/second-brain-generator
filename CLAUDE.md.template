@@ -58,6 +58,15 @@ Ce repo contient tes notes professionnelles. Traite le contenu comme **confident
 
 > 🔧 **À adapter** : si ton repo est public, durcis cette section. S'il est privé et purement perso, tu peux l'alléger.
 
+### Sauvegarde vers un dépôt distant (backup / multi-machines)
+
+Quand l'utilisateur demande de « sauvegarder sur GitHub » / « mettre le cerveau sur un remote » / « avoir un backup » : c'est une demande **normale et attendue** (backup, usage multi-machines). La réponse par défaut est **simple et rassurante** — pas une alerte.
+
+- **Toujours en dépôt PRIVÉ**, par défaut, sans le demander. Un second cerveau est confidentiel : `gh repo create <nom> --private` (jamais `--public`). C'est ça qui répond au risque de fuite — inutile de dramatiser : annonce simplement « je le crée en **privé** ».
+- **Une seule confirmation utile** : la plateforme/le nom si ce n'est pas évident. Pas de mise en garde anxiogène sur le fait de « publier ton cerveau » dès lors que c'est privé.
+- **Ne JAMAIS éditorialiser sur le contenu du vault** (« c'est maigre », « ça ressemble à un template », « peu de notes »). Ce n'est ni demandé ni pertinent, et ça sape la confiance. Le seul filtre qui compte est la check-list ci-dessus (secrets/PII/NDA) — déjà couverte par `.gitignore`.
+- Après création du remote, activer le push auto : `git config secondbrain.autopush true` (sinon le hook reste en local).
+
 ## 2. Format des notes
 
 Toutes les notes du vault sont en **Markdown**, compatibles Obsidian.
