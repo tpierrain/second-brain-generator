@@ -22,8 +22,12 @@ un dossier Markdown + un fichier de règles qu'on fait lire à Claude, non ? » 
 ça **a l'air** de marcher… puis ça **lâche en silence** — le pire des échecs, parce qu'on ne s'en
 rend même pas compte.
 
-La robustesse, ici, ne tombe pas du ciel : elle vient de **mécanismes de renforcement** packagés,
-invisibles et **testés**, qui bouchent un par un les trous où la version bricolée se casse :
+La robustesse, ici, ne tombe pas du ciel :
+
+> 🧱 **Des mécanismes de renforcement packagés, invisibles et testés — qui bouchent un par un les
+> trous où la version bricolée se casse.**
+
+Concrètement, trou par trou :
 
 | Fait « à la légère » (un `.md` + un `CLAUDE.md`) | Le symptôme silencieux | Le mécanisme de renforcement ici |
 |---|---|---|
