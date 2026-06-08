@@ -8,7 +8,8 @@
 Cette fiche complète la section « En quoi c'est différent de ChatGPT, Claude, Notion AI… » du
 [README](README.md) : elle prend du recul sur **tout le paysage** des « seconds cerveaux » et
 détaille ce qui rend cette démarche singulière — sur le **cerveau** lui-même, son **fonctionnement**,
-son **installation/packaging**, et le **RAG à la carte**.
+le fait qu'il y ait **presque rien à faire tout en restant robuste**, son **installation/packaging**,
+et le **RAG à la carte**.
 
 ---
 
@@ -98,7 +99,53 @@ Question
 
 ---
 
-## 5. L'installation & le packaging : auto-suffisant, sans dépendance amont
+## 5. Presque rien à faire — et pourtant ça tient (l'affordance)
+
+C'est un point fort qu'on sous-estime **parce qu'il est invisible**. Une fois le setup passé (une
+seule fois, ~15 min, guidé), **tu n'as plus rien à faire** : tu poses des questions, tu lis des
+réponses. Tout le reste tourne tout seul.
+
+- **Sauvegarde** : chaque modif est **commitée automatiquement** (et **poussée** si tu as branché
+  un dépôt distant). Tu n'as jamais à savoir que git existe.
+- **Indexation** : l'index sémantique se **reconstruit seul**, incrémentalement, dès que le vault
+  change.
+- **Fraîcheur** : à chaque question, le delta des sources externes est aspiré en arrière-plan.
+- **Tu n'as à comprendre ni comment c'est fait, ni comment c'est rangé** — ni git, ni MCP, ni
+  embeddings, ni hooks.
+
+C'est de l'**affordance** au sens propre : la conception rend le bon comportement **automatique** et
+**cache la complexité**, au lieu de te la refiler.
+
+### Pourquoi « un `CLAUDE.md` + quelques notes » ne suffirait pas
+
+On pourrait croire qu'un second cerveau, c'est juste « un dossier Markdown + un fichier de règles
+qu'on lit ». Fait **à la légère**, ça **a l'air** de marcher… puis ça **lâche en silence** — le pire
+des échecs, parce qu'on ne s'en rend pas compte. La robustesse ici vient de **mécanismes de
+renforcement** packagés, invisibles, et **testés** :
+
+| Fait « à la légère » (un `.md` + un `CLAUDE.md`) | Le symptôme silencieux | Le mécanisme de renforcement ici |
+|---|---|---|
+| Pas de persistance automatique | Tes réponses/notes ne sont **jamais sauvées** ; tout se perd | **Hook auto-commit** (+ push *opt-in*) |
+| Pas d'indexation | La recherche **invente** au lieu de chercher dans tes notes | **Réindexation incrémentale** automatique du RAG |
+| Conversation pas « rootée » dans le cerveau | Hooks muets, réponses hors-vault — *et ça semble marcher* | Onboarding qui **force l'ouverture au bon endroit** + vérif `pwd` |
+| `node` installé via nvm, invisible des hooks GUI | Auto-commit **silencieusement KO** | Wrapper **`run-node`** qui re-résout la toolchain à chaque exécution |
+| Install sur une machine nue | État **« Frankenstein »** semi-fonctionnel, indiagnosticable | **Vérification « fail-loud »** à l'install — prouve ou échoue franchement |
+
+> 🛡️ **Le fil rouge : échouer bruyamment plutôt que faire semblant.** À l'install, une vérification
+> déterministe (`verify-rag`) **prouve** que la démo répond *depuis ton vault* (le canari
+> « Mollecuisse », introuvable ailleurs). Tant que ce n'est pas vert, on ne te dit pas que c'est
+> prêt. C'est l'exact inverse du « ça a l'air de marcher ».
+
+Et **tout ça est packagé** : tu n'as ni à connaître ces garde-fous, ni à les assembler. Le
+générateur les pose pour toi ; l'usage, lui, reste « pose ta question, c'est tout ».
+
+> 📌 *Épisode/décision de fond :* l'anecdote fondatrice (la machine nue de Richard, l'état
+> « Frankenstein ») et le renversement « confiance à Claude + échec bruyant » sont dans l'ADR
+> [`0005`](maintainers/decisions/0005-support-onglet-code-desktop.md).
+
+---
+
+## 6. L'installation & le packaging : auto-suffisant, sans dépendance amont
 
 | | Approche habituelle | Ici |
 |---|---|---|
@@ -118,7 +165,7 @@ poussé tant que tu ne l'as pas demandé).
 
 ---
 
-## 6. Le RAG « à la carte » : tu choisis ton moteur selon **tes** contraintes
+## 7. Le RAG « à la carte » : tu choisis ton moteur selon **tes** contraintes
 
 C'est sans doute le différenciateur le plus structurant — et le moins répandu ailleurs. La plupart
 des outils t'**imposent** un moteur de recherche (souvent une API cloud unique). Ici, le moteur RAG
@@ -145,7 +192,7 @@ budget, puissance machine, OS, friction d'install) — **sans casser** ni tes no
 
 ---
 
-## 7. Ce que ce **n'est pas** (les limites assumées)
+## 8. Ce que ce **n'est pas** (les limites assumées)
 
 L'honnêteté fait partie de la démarche :
 
@@ -164,7 +211,7 @@ L'honnêteté fait partie de la démarche :
 
 ---
 
-## 8. Alors, c'est pour qui — et quand préférer autre chose ?
+## 9. Alors, c'est pour qui — et quand préférer autre chose ?
 
 **Cette démarche brille si** tu veux **posséder** ta mémoire (format ouvert, ton repo), la vouloir
 **transverse** à tous tes outils, **sourcée** et **persistante**, et la **façonner** à tes usages
