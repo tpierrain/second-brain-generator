@@ -1,4 +1,4 @@
-# En quoi c'est différent des autres « seconds cerveaux » / « LLM wikis » ?
+# En quoi c'est différent — de la recette qu'on bricole soi-même comme des autres « seconds cerveaux » / « LLM wikis » ?
 
 > **En une phrase.** Tu peux te bricoler un « second cerveau » avec un `CLAUDE.md` et quelques
 > notes — comme les recettes qui circulent sur les réseaux. Ici, tu as **la même idée, mais rendue
@@ -8,9 +8,10 @@
 
 Le vrai comparatif que tu cherches n'est probablement pas « ce projet *vs* Notion AI ». C'est
 **« ce projet *vs* la recette `CLAUDE.md` + quelques notes que j'ai vue passer sur les réseaux »** —
-alors c'est par là qu'on commence. Suivent ce qui rend la démarche singulière (le **cerveau**, son
-**fonctionnement**, son **installation/packaging**, le **RAG à la carte**), ses **limites assumées**,
-et — tout en bas, pour mémoire — un coup d'œil au **paysage des apps du marché**.
+alors c'est par là qu'on commence. Suivent ce qui rend la démarche singulière — un **générateur, pas
+un produit**, le **cerveau** lui-même, son **fonctionnement**, son **installation/packaging**, le
+**RAG à la carte** —, ses **limites assumées**, et — tout en bas, pour mémoire — un coup d'œil au
+**paysage des apps du marché**.
 
 ---
 
