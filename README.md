@@ -76,14 +76,16 @@ quel que soit son niveau technique :
 Et surtout : ce n'est pas **un** produit unique pour tout le monde. C'est une **méthode** pour te
 fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un générateur et pas un produit fini ?* »).
 
-> 🛠️ **« Mais un second cerveau, c'est bien juste un dossier Markdown + un fichier de règles qu'on
-> fait lire à Claude, non ? »** Fait à la légère, ça **a l'air** de marcher… puis ça **lâche en
-> silence** — le pire des échecs, parce qu'on ne s'en rend même pas compte (rien n'est sauvé, la
-> recherche **invente** au lieu de chercher dans tes notes, la session n'est pas branchée au bon
-> endroit…). Ici, des **garde-fous packagés et testés** bouchent ces trous : une fois installé, **tu
-> n'as plus rien à faire** — sauvegarde, indexation et fraîcheur tournent toutes seules. C'est de
-> l'**affordance** : la complexité est **cachée, pas refilée**.
->
+## En quoi c'est différent des « LLM wikis » et seconds cerveaux bricolés qu'on voit passer sur les réseaux ?
+
+🛠️ **« Mais un second cerveau, c'est bien juste un dossier Markdown + un fichier de règles qu'on
+fait lire à Claude, non ? »** Fait à la légère, ça **a l'air** de marcher… puis ça **lâche en
+silence** — le pire des échecs, parce qu'on ne s'en rend même pas compte (rien n'est sauvé, la
+recherche **invente** au lieu de chercher dans tes notes, la session n'est pas branchée au bon
+endroit…). Ici, des **garde-fous packagés et testés** bouchent ces trous : une fois installé, **tu
+n'as plus rien à faire** — sauvegarde, indexation et fraîcheur tournent toutes seules. C'est de
+l'**affordance** : la complexité est **cachée, pas refilée**.
+
 > 📄 Le détail (et le paysage complet, le cerveau, son fonctionnement, l'installation, le **RAG à la
 > carte**) : fiche [**En quoi c'est différent**](EN-QUOI-C-EST-DIFFERENT.md).
 
