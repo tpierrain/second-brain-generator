@@ -79,6 +79,36 @@ remonter à Thomas** : soit le packaging respecte 0003 (chaque cerveau garde SA 
 jour = geste explicite opt-in non destructif), soit ça demande un addendum à 0003. **On ne tranche
 pas ici.**
 
+## Addendum (2026-06-08) — Swap d'embedder = confirm-gate, jamais de réindex silencieux
+
+Précision actée avec Thomas en concrétisant cet ADR (plan
+[`../plans/embedder-spi.md`](../plans/embedder-spi.md)) : **comment** un cerveau déjà déployé
+réagit quand son embedder change (le « au pire l'utilisateur ré-indexe » ci-dessus).
+
+**Constat technique :** l'index stocke les vecteurs en BLOB `Float32` brut **sans aucune trace du
+modèle qui les a produits** (ni provider, ni modèle, ni **dimension**). Comme chaque embedder a sa
+dimension propre (Gemini ≈ 3072, Mistral 1024, local ~768), un swap **sans** réindex rend la
+recherche **silencieusement fausse** (comparaison de vecteurs de dimensions incompatibles). Rien ne
+le détecte aujourd'hui.
+
+**Décision :**
+
+1. **L'index est estampillé** d'une **identité d'embedder** (`providerId` / `model` / `dimension`).
+2. Au moment d'une recherche, si l'identité courante **diffère** de celle stampée (ou est absente),
+   le RAG **ne renvoie pas de résultats faux** : il remonte un **signal « index périmé »**.
+3. **Confirm-gate en langage naturel, jamais de réindex dans le dos.** Claude **explique** à
+   l'utilisateur que la config de recherche a changé, qu'il faut **ré-indexer les documents**
+   (inchangés — juste ré-encodés), que **ça prend un peu de temps**, et **attend une confirmation
+   explicite**. **Par défaut : on ne réindexe rien** (« on ne va pas indexer pour rien »).
+4. **Aucune nouvelle surface MCP :** le signal passe par le retour de `search_vault`, et le réindex
+   par l'outil `reindex` existant — **appelé seulement après le « oui »**. Le port MCP reste donc le
+   contrat stable de cet ADR (zéro breaking change, zéro provider-leak dans les schémas ; le message
+   nomme les modèles **dynamiquement** via l'identité, rien codé en dur « Gemini »).
+
+C'est l'application directe de la posture **fail-loud + opt-in budget** du projet (cf. ADR 0005
+révisé) : un refus explicite et actionnable plutôt qu'une recherche qui ment, et jamais de
+consommation de budget d'embeddings sans accord humain.
+
 ## Alternatives écartées
 
 - **Coupler le harnais directement à Gemini / au schéma SQLite** (rapide à court terme) — re-couple

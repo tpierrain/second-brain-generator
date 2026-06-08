@@ -37,9 +37,17 @@
 - **`plans/`** — plans d'implémentation, avec un `STATUT` en tête (LIVRÉ / EN COURS / ABANDONNÉ).
   Les plans **livrés** sont déplacés dans **`plans/archived/`** ; seuls les plans encore **ouverts**
   restent à la racine de `plans/`.
+  - [`etude-rag-local-criteres-et-veille.md`](plans/etude-rag-local-criteres-et-veille.md) — **étude/veille**
+    pour sortir le RAG de Gemini : critères (gratuit, privacy/local, Mac+PC, poste bureautique, offre
+    tiered) + veille embedders locaux (bge-m3 / nomic / Qwen3), LightRAG/GraphRAG, Contextual
+    Retrieval, eval-first. **STATUT : 🔬 ÉTUDE — rien d'acté.** *(alimente le plan ci-dessous)*
+  - [`embedder-spi.md`](plans/embedder-spi.md) — abstraire l'embedder du RAG derrière un port SPI
+    `Embedder` + estampiller l'index d'une identité (provider/modèle/dimension) pour rendre un swap
+    **sûr** (confirm-gate en langage naturel, jamais de réindex silencieux). Concrétise l'ADR 0006 +
+    son addendum. **STATUT : À FAIRE.** *(garde Gemini comme seule impl ; 2ᵉ embedder = discussion à venir)*
   - [`translate-to-english.md`](plans/translate-to-english.md) — traduction complète FR → EN du
     générateur (docs, skills, code, démo), tests rendus agnostiques de la langue, sur branche
-    dédiée. **STATUT : À FAIRE — repoussé en TOUTE FIN.** *(seul plan encore ouvert)*
+    dédiée. **STATUT : À FAIRE — repoussé en TOUTE FIN.**
   - **`plans/archived/`** — plans livrés (archive, conservés pour le détail des étapes) :
     - [`onglet-code-desktop.md`](plans/archived/onglet-code-desktop.md) — fiabiliser l'install/usage
       depuis l'**app desktop Claude (onglet Code)** : confiance à Claude + échec bruyant + démo
