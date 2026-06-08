@@ -17,6 +17,17 @@ test("filterCopyable — exclut DEVELOPING.md (fichier du launcher uniquement)",
   );
 });
 
+test("filterCopyable — exclut EN-QUOI-C-EST-DIFFERENT.md (fiche de positionnement du launcher)", () => {
+  assert.deepEqual(
+    filterCopyable([
+      "README.md",
+      "EN-QUOI-C-EST-DIFFERENT.md",
+      "rag/src/index.ts",
+    ]),
+    ["README.md", "rag/src/index.ts"],
+  );
+});
+
 test("filterCopyable — exclut tout le dossier maintainers/ (contexte de dev du générateur)", () => {
   assert.deepEqual(
     filterCopyable([

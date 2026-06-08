@@ -76,6 +76,10 @@ quel que soit son niveau technique :
 Et surtout : ce n'est pas **un** produit unique pour tout le monde. C'est une **méthode** pour te
 fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un générateur et pas un produit fini ?* »).
 
+> 📄 **Tu veux le détail** — face aux apps de notes IA, aux « chat with your notes » et aux GPT « à
+> connaissance » ? La fiche [**En quoi c'est différent**](EN-QUOI-C-EST-DIFFERENT.md) déroule le
+> paysage complet, le cerveau, son fonctionnement, l'installation et le **RAG à la carte**.
+
 ## Ce que ça change pour toi, concrètement
 
 - **Réponse immédiate.** En quelques secondes, pas le temps d'aller faire un café.

@@ -14,8 +14,10 @@ export function parseLsFilesZ(output) {
 // listés par `ls-files`) et voyagent entre les machines du mainteneur, mais ne
 // doivent jamais atterrir chez l'utilisateur final.
 //   - DEVELOPING.md : la notice de dev à la racine.
+//   - EN-QUOI-C-EST-DIFFERENT.md : fiche de positionnement du générateur (pour qui
+//     évalue le launcher) — renvoie aux ADR de maintainers/, sans intérêt dans un cerveau.
 //   - maintainers/  : tout le contexte de dev (décisions, plans, archives).
-const DEV_ONLY_FILES = new Set(["DEVELOPING.md"]);
+const DEV_ONLY_FILES = new Set(["DEVELOPING.md", "EN-QUOI-C-EST-DIFFERENT.md"]);
 const DEV_ONLY_DIRS = ["maintainers/"];
 
 // Retient, parmi les chemins suivis, ceux à copier dans le cerveau généré.
