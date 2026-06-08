@@ -8,10 +8,10 @@
 
 Le vrai comparatif que tu cherches n'est probablement pas « ce projet *vs* Notion AI ». C'est
 **« ce projet *vs* la recette `CLAUDE.md` + quelques notes que j'ai vue passer sur les réseaux »** —
-alors c'est par là qu'on commence. Suivent ce qui rend la démarche singulière — un **générateur, pas
-un produit**, le **cerveau** lui-même, son **fonctionnement**, son **installation/packaging**, le
-**RAG à la carte** —, ses **limites assumées**, et — tout en bas, pour mémoire — un coup d'œil au
-**paysage des apps du marché**.
+alors c'est par là qu'on commence. Suivent ce qui rend la démarche singulière — son
+**fonctionnement**, le fait que ce soit un **générateur, pas un produit**, le **cerveau** lui-même,
+son **installation/packaging**, le **RAG à la carte** —, ses **limites assumées**, et — tout en bas,
+pour mémoire — un coup d'œil au **paysage des apps du marché**.
 
 ---
 
@@ -71,7 +71,31 @@ question, c'est tout ».
 
 ---
 
-## 2. La différence de fond : un *générateur*, pas un produit
+## 2. Comment il fonctionne : « répondre tout de suite, vérifier ensuite »
+
+Là où beaucoup d'outils te font **attendre** qu'une recherche se termine, ici le parti-pris est
+**l'expérience d'abord** — le pattern *stale-while-revalidate* du web appliqué à ta mémoire :
+
+```
+Question
+   │
+   ▼  PHASE 1 — Réponse immédiate depuis le vault (recherche sémantique)
+   ├──▶ PHASE 2 — (optionnel) Sync des sources externes en arrière-plan
+   ▼  PHASE 3 — Amender la réponse si du nouveau est trouvé
+   ▼  PHASE 4 — Persistance : tout est sauvé dans le vault + commit auto
+```
+
+- **Recherche sémantique** (RAG) : il retrouve une note **par le sens**, même formulée autrement —
+  pas par mots-clés exacts. Tu peux questionner en français des notes rédigées en anglais.
+- **Delta, en arrière-plan** : à chaque question il n'aspire que **les nouveautés** des sources, et
+  re-vérifie pendant que tu lis — la fraîcheur suit sans pénaliser la rapidité.
+- **Moteur = serveur MCP standard.** Le RAG est un serveur **MCP** (protocole **ouvert**), pas une
+  boîte noire couplée à un fournisseur. Le vault (Markdown pur) et le moteur (MCP) sont **déjà
+  agnostiques** — ce qui garde la porte du multi-client ouverte à faible coût.
+
+---
+
+## 3. La différence de fond : un *générateur*, pas un produit
 
 C'est le pivot qui explique tout le reste.
 
@@ -94,7 +118,7 @@ en t'en servant : tes notes, tes règles (`CLAUDE.md`), tes skills.
 
 ---
 
-## 3. Le cerveau lui-même : 4 propriétés que les autres n'ont pas toutes
+## 4. Le cerveau lui-même : 4 propriétés que les autres n'ont pas toutes
 
 1. **Il est à toi, en format ouvert.** Le substrat n'est pas une base propriétaire : c'est un
    dossier de fichiers **Markdown** reliés par des `[[wikilinks]]`, **compatible Obsidian**, dans
@@ -113,30 +137,6 @@ en t'en servant : tes notes, tes règles (`CLAUDE.md`), tes skills.
 Et une posture rare : **sûr par construction.** Le cerveau **ne prend aucune action** sur tes
 outils — il **lit et répond**, point. Rien ne part en ton nom. (On peut lui ajouter des capacités
 d'action plus tard, **délibérément et sous ton contrôle**, jamais par défaut.)
-
----
-
-## 4. Comment il fonctionne : « répondre tout de suite, vérifier ensuite »
-
-Là où beaucoup d'outils te font **attendre** qu'une recherche se termine, ici le parti-pris est
-**l'expérience d'abord** — le pattern *stale-while-revalidate* du web appliqué à ta mémoire :
-
-```
-Question
-   │
-   ▼  PHASE 1 — Réponse immédiate depuis le vault (recherche sémantique)
-   ├──▶ PHASE 2 — (optionnel) Sync des sources externes en arrière-plan
-   ▼  PHASE 3 — Amender la réponse si du nouveau est trouvé
-   ▼  PHASE 4 — Persistance : tout est sauvé dans le vault + commit auto
-```
-
-- **Recherche sémantique** (RAG) : il retrouve une note **par le sens**, même formulée autrement —
-  pas par mots-clés exacts. Tu peux questionner en français des notes rédigées en anglais.
-- **Delta, en arrière-plan** : à chaque question il n'aspire que **les nouveautés** des sources, et
-  re-vérifie pendant que tu lis — la fraîcheur suit sans pénaliser la rapidité.
-- **Moteur = serveur MCP standard.** Le RAG est un serveur **MCP** (protocole **ouvert**), pas une
-  boîte noire couplée à un fournisseur. Le vault (Markdown pur) et le moteur (MCP) sont **déjà
-  agnostiques** — ce qui garde la porte du multi-client ouverte à faible coût.
 
 ---
 
