@@ -42,6 +42,11 @@
 - **`plans/`** — plans d'implémentation, avec un `STATUT` en tête (LIVRÉ / EN COURS / ABANDONNÉ).
   Les plans **livrés** sont déplacés dans **`plans/archived/`** ; seuls les plans encore **ouverts**
   restent à la racine de `plans/`.
+  - [`rag-embedder-plan-action.md`](plans/rag-embedder-plan-action.md) — **🗺️ plan d'action**
+    qui **orchestre** le chantier embedder en **étapes autoporteuses** (port → eval-set → adaptateur
+    compatible-OpenAI → mesure → onboarding → leviers conditionnels), avec **tableau d'avancement**
+    pour piloter session par session (un `/clear` entre chaque). Couche au-dessus du plan SPI + étude
+    + ADR 0007. **STATUT : 🗺️ PLAN D'ACTION.**
   - [`etude-rag-local-criteres-et-veille.md`](plans/etude-rag-local-criteres-et-veille.md) — **étude/veille** :
     offrir un **éventail d'alternatives RAG selon les besoins/contraintes** des gens (privacy, budget,
     puissance machine, OS, friction d'install). Profils bureautique / grosse machine / endpoint API +
