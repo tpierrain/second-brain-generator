@@ -38,6 +38,30 @@ l'embedder est un **SPI interchangeable** derrière un contrat MCP stable ; il r
 → **3 options à proposer, mais potentiellement 2 seules impls à coder** (Gemini natif + compatible-
 OpenAI). Le local **réutilise** l'adaptateur n°2 — moins de pièces mobiles, moins de bugs.
 
+```
+          ┌──────────────────────────────────────────────┐
+          │   PORT  Embedder  (le contrat interne, UNIQUE) │
+          │   • embedDocuments(textes) → vecteurs           │
+          │   • embedQuery(texte)      → vecteur             │
+          │   • identity (provider / modèle / dimension)    │
+          └──────────────────────────────────────────────┘
+                 ▲                ▲                ▲
+                 │ implémente     │ implémente     │ (réutilise n°2)
+        ┌────────┴─────┐  ┌───────┴─────────┐  ┌───┴───────────────┐
+        │GeminiEmbedder│  │OpenAiCompatible │  │ LOCAL = n°2 pointé │
+        │ = SDK Google │  │ Embedder        │  │ http://localhost…  │
+        │  (l'ACTUEL)  │  │ URL + clé config│  │ (Ollama, sans clé) │
+        └──────────────┘  │ OpenAI · Azure ·│  └────────────────────┘
+                          │ passerelle ·    │
+                          │ Mistral · …     │
+                          └─────────────────┘
+
+   Les CONSOMMATEURS (indexation via index-manager, recherche via search-vault)
+   ne connaissent QUE le port → changer d'adaptateur ne touche ni eux, ni le
+   contrat MCP (ADR 0006). Les spécificités fournisseur (taskType…) vivent
+   DANS chaque adaptateur, sans fuiter dans le port.
+```
+
 ### 2. On **garde** le `GeminiEmbedder` natif — on ne le remplace pas par du compatible-OpenAI
 
 Pour de l'embedding « brut », SDK natif et porte compatible-OpenAI rendent la même chose (un
