@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkIndexFreshness } from "./index-freshness.js";
+import { checkIndexFreshness, shouldStamp } from "./index-freshness.js";
 import type { EmbedderIdentity } from "./vector-store.js";
 
 const gemini: EmbedderIdentity = {
@@ -31,4 +31,16 @@ test("index sans estampille (d'avant ce plan) → périmé, stamped = null", () 
   const verdict = checkIndexFreshness(null, gemini);
 
   assert.deepEqual(verdict, { fresh: false, stamped: null, current: gemini });
+});
+
+test("reindex force → on (ré)estampille (tout est ré-encodé avec l'embedder courant)", () => {
+  assert.equal(shouldStamp(true, gemini), true);
+});
+
+test("incrémental sur index déjà estampillé → on n'estampille PAS (on ne maquille pas)", () => {
+  assert.equal(shouldStamp(false, gemini), false);
+});
+
+test("incrémental sur index vierge d'estampille → on estampille (install neuve / migration)", () => {
+  assert.equal(shouldStamp(false, null), true);
 });
