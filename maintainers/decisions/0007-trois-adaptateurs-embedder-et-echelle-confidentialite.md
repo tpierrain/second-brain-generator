@@ -55,6 +55,14 @@ configurable couvre presque tout l'écosystème (OpenAI, Azure, passerelle inter
 local). On change de backend **en changeant une URL dans `.env`**, sans une ligne de code en plus.
 C'est donc le **premier candidat** de 2ᵉ impl à implémenter (après le port `Embedder` du plan SPI).
 
+**Jusqu'où va ce standard — l'enveloppe vs la lettre.** Ce qui a convergé, c'est l'**enveloppe** :
+requête `{ model, input }` → réponse `{ data: [{ embedding: [...] }] }`. C'est *ça* qui rend
+l'adaptateur unique possible. Restent **non** standardisés : (a) les **réglages fins** propres à un
+fournisseur (p. ex. le « type de tâche » document-vs-requête de Gemini/Cohere), accessibles seulement
+via le SDK natif → **justifie de garder l'adaptateur Gemini natif** (§2) ; (b) le **contenu** des
+vecteurs, propre à chaque modèle → **non interchangeable**, d'où le réindex obligatoire au swap (§5).
+Autrement dit : **on standardise *comment on se parle*, pas *ce que les nombres veulent dire*.**
+
 ### 4. La confidentialité est une propriété de l'**endpoint + du palier**, pas du code
 
 L'adaptateur est de la **tuyauterie neutre**. Le niveau de privacy est décidé par où on le pointe et
