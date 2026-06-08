@@ -2,8 +2,14 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { reindex } from "./lib/index-manager.js";
-import { embedQuery } from "./lib/embedder.js";
-import { searchSimilar, listDocuments, getStats } from "./lib/vector-store.js";
+import { createEmbedder } from "./lib/embedder.js";
+import {
+  searchSimilar,
+  listDocuments,
+  getStats,
+  currentIndexIdentity,
+} from "./lib/vector-store.js";
+import { checkIndexFreshness, staleIndexMessage } from "./lib/index-freshness.js";
 import {
   VAULT_DIR,
   SEARCH_DEFAULT_LIMIT,
@@ -45,9 +51,23 @@ server.tool(
     limit: z.number().optional().describe(`Nombre max de résultats (défaut : ${SEARCH_DEFAULT_LIMIT})`),
   },
   async ({ query, type, tags, limit }) => {
+    // Garde d'identité : si l'index a été rempli par un autre embedder que celui
+    // configuré aujourd'hui, on NE renvoie PAS de résultats faux (vecteurs de
+    // dimensions incompatibles). On retourne la prose du confirm-gate, que Claude
+    // relaie ; le ré-index n'a lieu qu'après le « oui » (outil reindex).
+    const embedder = createEmbedder();
+    const verdict = checkIndexFreshness(currentIndexIdentity(), embedder.identity);
+    if (!verdict.fresh) {
+      return {
+        content: [
+          { type: "text", text: staleIndexMessage(verdict.stamped, verdict.current) },
+        ],
+      };
+    }
+
     let queryEmbedding: number[];
     try {
-      queryEmbedding = await embedQuery(query);
+      queryEmbedding = await embedder.embedQuery(query);
     } catch (err) {
       const degraded = capExceededSearchMessage(err);
       if (degraded) {

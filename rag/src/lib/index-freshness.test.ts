@@ -1,6 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkIndexFreshness, shouldStamp } from "./index-freshness.js";
+import {
+  checkIndexFreshness,
+  shouldStamp,
+  staleIndexMessage,
+} from "./index-freshness.js";
 import type { EmbedderIdentity } from "./vector-store.js";
 
 const gemini: EmbedderIdentity = {
@@ -43,4 +47,37 @@ test("incrémental sur index déjà estampillé → on n'estampille PAS (on ne m
 
 test("incrémental sur index vierge d'estampille → on estampille (install neuve / migration)", () => {
   assert.equal(shouldStamp(false, null), true);
+});
+
+test("message de péremption : nomme les deux modèles dynamiquement + propose le ré-index", () => {
+  const stamped: EmbedderIdentity = {
+    providerId: "gemini",
+    model: "gemini-embedding-001",
+    dimension: 3072,
+  };
+  const current: EmbedderIdentity = {
+    providerId: "ollama",
+    model: "nomic-embed-text",
+    dimension: 768,
+  };
+
+  const msg = staleIndexMessage(stamped, current);
+
+  assert.ok(msg.includes("gemini-embedding-001"), "nomme le modèle stampé");
+  assert.ok(msg.includes("nomic-embed-text"), "nomme le modèle courant");
+  assert.match(msg, /ré-?index/i);
+});
+
+test("message de péremption sans estampille préalable : pas de « undefined », propose le ré-index", () => {
+  const current: EmbedderIdentity = {
+    providerId: "gemini",
+    model: "gemini-embedding-001",
+    dimension: 3072,
+  };
+
+  const msg = staleIndexMessage(null, current);
+
+  assert.ok(!msg.includes("undefined"), "aucun undefined dans la prose");
+  assert.ok(msg.includes("gemini-embedding-001"), "nomme le modèle courant");
+  assert.match(msg, /ré-?index/i);
 });
