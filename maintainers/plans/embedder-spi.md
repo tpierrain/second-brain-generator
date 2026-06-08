@@ -82,6 +82,17 @@ export interface EmbedderIdentity {
 }
 ```
 
+**Pourquoi deux méthodes (`embedDocuments` vs `embedQuery`) et pas un `embed()` générique ?** Le port
+capture l'**intention** de façon agnostique (« document à ranger » vs « question posée ») ; **chaque
+adaptateur traduit cette intention dans le dialecte natif de son fournisseur** — ou l'ignore si son
+backend n'a pas ce réglage. Les spécificités fournisseur vivent **dans** l'adaptateur, **jamais** dans
+la signature du port (cohérent avec l'« enveloppe vs lettre » de l'ADR 0007 §3).
+
+| Méthode du port | Intention agnostique | Traduction par l'adaptateur |
+|---|---|---|
+| `embedDocuments(...)` | « j'encode des **documents à ranger** » | `GeminiEmbedder` → `taskType=RETRIEVAL_DOCUMENT` ; `OpenAiCompatibleEmbedder` → pas ce bouton, **ignore** |
+| `embedQuery(...)` | « j'encode une **question** » | `GeminiEmbedder` → `taskType=RETRIEVAL_QUERY` ; `OpenAiCompatibleEmbedder` → **ignore** |
+
 - **`GeminiEmbedder implements Embedder`** = la seule impl concrète : tout le contenu actuel de
   `rag/src/lib/embedder.ts` (client `GoogleGenAI`, `embedWithRetry`/retry 429, `EMBEDDING_MODEL`)
   **déplacé derrière le port**, **sans changement de comportement** (les tests existants restent le
