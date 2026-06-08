@@ -2,12 +2,19 @@
 <!-- STATUT : 🔬 ÉTUDE / VEILLE (créé 2026-06-08) — RIEN D'ACTÉ, exploration.    -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
-# Étude — Sortir le RAG de Gemini : critères + veille (embedders locaux, GraphRAG, eval)
+# Étude — Offrir un éventail d'alternatives RAG selon les besoins et contraintes des gens
 
 > **STATUT : 🔬 ÉTUDE / VEILLE** (créé le 2026-06-08). **Rien n'est acté ici** — c'est la note
 > d'exploration qui alimentera des décisions (ADR) et le plan d'implémentation
-> [`embedder-spi.md`](embedder-spi.md). Le choix d'un 2ᵉ embedder/stratégie se fait **après
+> [`embedder-spi.md`](embedder-spi.md). Le choix concret d'un embedder/stratégie se fait **après
 > mesure** (cf. §6), pas sur intuition.
+>
+> **La thèse (recadrée avec Thomas, 2026-06-08).** L'objet n'est **pas** « sortir de Gemini » —
+> ça, c'est juste *un* cas. L'objet est : **proposer plusieurs alternatives RAG, et aider chacun à
+> choisir la bonne selon SES besoins et SES contraintes** (privacy, budget, puissance machine, OS,
+> type de corpus, tolérance à la friction d'install). « Sortir de Gemini » est *une* réponse parmi
+> d'autres, pour le profil gratuit + privé. Le port SPI `Embedder` est le mécanisme qui rend cet
+> **éventail** possible sans casser le harnais ni le contrat MCP.
 >
 > **Origine :** demande de **Dimitry Ernot** (« pouvoir utiliser autre chose que Google Gemini » —
 > Betclic a ChatGPT packagé + Claude Code ; sa femme un outil Mistral) + pistes de **Gaël Bernier**
@@ -16,22 +23,42 @@
 
 ---
 
-## 1. Les critères de l'étude (validés avec Thomas, 2026-06-08)
+## 1. Les axes de besoins / contraintes (ce qui pilote le choix)
 
-Par ordre d'importance. Un candidat doit **idéalement** tous les satisfaire (Thomas reconnaît que
-les cocher tous à la fois « va être compliqué » — d'où la mesure, et l'offre à plusieurs niveaux).
+L'étude ne cherche **pas** un « gagnant » unique : elle cherche à **mapper des profils
+d'utilisateurs sur des profils RAG**. Les axes qui font basculer le choix d'une personne :
 
-1. **Gratuit** — pas de paiement (sortir du tier payant Gemini).
-2. **Privacy** — local / **on-device** : le vault est encodé et fouillé **sur la machine de
-   l'utilisateur**, pas envoyé à une API cloud tierce.
-3. **Cross-plateforme — tourne sur Mac ET PC (Windows)** (et idéalement Linux). Pas de solution
-   Mac-only ou qui suppose un GPU NVIDIA.
-4. **Tourne sur un poste bureautique** — machine **modeste, sans GPU dédié** (le « Mac nu
-   d'Achille » est l'étalon). C'est le **profil par défaut** : il faut que ça marche pour un
-   non-dev sur un laptop standard.
-5. **Offre RAG à plusieurs niveaux (tiered).** On peut proposer un **profil RAG plus costaud**
-   (modèles plus gros, GraphRAG, reranking lourd) à ceux qui ont une **grosse machine** (GPU / RAM).
-   → Le profil par défaut reste bureautique ; le profil costaud est **opt-in**.
+- **Privacy** — le vault doit-il rester **on-device** (rien au cloud), ou un envoi à une API tierce
+  est-il acceptable ?
+- **Budget** — gratuit obligatoire, ou un coût d'API toléré ?
+- **Puissance machine** — poste **bureautique** modeste (sans GPU) vs **grosse machine** (GPU/RAM).
+- **OS** — doit tourner sur **Mac ET PC (Windows)** (idéalement Linux).
+- **Friction d'install** — **non-dev** (zéro install, « colle une clé ») vs **dev/power-user**
+  (prêt à installer Ollama, un modèle, etc.).
+- **Type de corpus & qualité visée** — corpus riche en entités/relations + besoin de raisonnement
+  multi-hop (→ GraphRAG) vs recherche sémantique simple ; exigence de qualité en **français**.
+
+### 1.1 — Le défaut visé par le générateur (les contraintes de Thomas, validées 2026-06-08)
+
+Le **profil par défaut** que le générateur doit servir (cœur de cible : non-dev type « Mac nu
+d'Achille ») coche **idéalement tout** ceci — Thomas reconnaît que les cocher *tous à la fois*
+« va être compliqué », d'où la **mesure** (§6) et l'**offre à plusieurs niveaux** (§1.2) :
+
+1. **Gratuit** — pas de paiement.
+2. **Privacy** — local / **on-device**.
+3. **Cross-plateforme** — Mac ET PC (Windows), pas de dépendance GPU NVIDIA.
+4. **Tourne sur un poste bureautique** — machine modeste, sans GPU dédié.
+
+### 1.2 — L'offre RAG à plusieurs niveaux (la vraie ambition)
+
+Plutôt qu'un choix unique, **un éventail de profils**, sélectionnable (via `.env` / installeur),
+chacun répondant à un jeu de contraintes :
+
+| Profil RAG | Pour qui (besoins/contraintes) | Stack pressentie |
+|---|---|---|
+| **Bureautique** (défaut) | Non-dev, gratuit, privé, machine modeste, Mac/PC | Embedder local léger (**bge-m3** / **nomic**) via Ollama, retrieval plat + reranker local |
+| **Grosse machine** (opt-in) | Dev/power-user, GPU/RAM, qualité max, gratuit+privé | Embedder local gros (**Qwen3**), reranking lourd, éventuellement **GraphRAG/LightRAG** local |
+| **Cloud-avec-clé** (opt-in, hors privacy) | Veut zéro install locale, accepte cloud+clé+coût | **Gemini** (actuel) ou autre API |
 
 > **Ce qui rend ça possible architecturalement :** le **port SPI `Embedder`** (plan
 > [`embedder-spi.md`](embedder-spi.md)) + l'estampille d'identité de l'index. C'est lui qui permet
@@ -76,7 +103,7 @@ d'identité + confirm-gate** (on explique, on attend le « oui », jamais de ré
 **À noter :** Gemini n'est même pas le meilleur en FR (66.2 < Qwen3 69.8). On ne sacrifie pas
 forcément la qualité en partant — **à mesurer, pas à supposer.**
 
-**Mapping sur l'offre tiered (critère 5) :**
+**Mapping sur l'offre à plusieurs niveaux (§1.2) :**
 - **Profil bureautique (défaut)** : `bge-m3` (ou `nomic` si priorité vitesse) via **Ollama** —
   gratuit, privé, Mac/PC, machine modeste.
 - **Profil grosse machine (opt-in)** : `Qwen3-Embedding` gros + reranking + éventuellement GraphRAG.

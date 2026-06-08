@@ -37,10 +37,11 @@
 - **`plans/`** — plans d'implémentation, avec un `STATUT` en tête (LIVRÉ / EN COURS / ABANDONNÉ).
   Les plans **livrés** sont déplacés dans **`plans/archived/`** ; seuls les plans encore **ouverts**
   restent à la racine de `plans/`.
-  - [`etude-rag-local-criteres-et-veille.md`](plans/etude-rag-local-criteres-et-veille.md) — **étude/veille**
-    pour sortir le RAG de Gemini : critères (gratuit, privacy/local, Mac+PC, poste bureautique, offre
-    tiered) + veille embedders locaux (bge-m3 / nomic / Qwen3), LightRAG/GraphRAG, Contextual
-    Retrieval, eval-first. **STATUT : 🔬 ÉTUDE — rien d'acté.** *(alimente le plan ci-dessous)*
+  - [`etude-rag-local-criteres-et-veille.md`](plans/etude-rag-local-criteres-et-veille.md) — **étude/veille** :
+    offrir un **éventail d'alternatives RAG selon les besoins/contraintes** des gens (privacy, budget,
+    puissance machine, OS, friction d'install). Profils bureautique / grosse machine / cloud-avec-clé +
+    veille embedders locaux (bge-m3 / nomic / Qwen3), LightRAG/GraphRAG, Contextual Retrieval,
+    eval-first. **STATUT : 🔬 ÉTUDE — rien d'acté.** *(alimente le plan ci-dessous)*
   - [`embedder-spi.md`](plans/embedder-spi.md) — abstraire l'embedder du RAG derrière un port SPI
     `Embedder` + estampiller l'index d'une identité (provider/modèle/dimension) pour rendre un swap
     **sûr** (confirm-gate en langage naturel, jamais de réindex silencieux). Concrétise l'ADR 0006 +
