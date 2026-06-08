@@ -9,7 +9,7 @@
 > **séquence** :
 > - le *pourquoi* → ADR [`../decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md`](../decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md)
 >   (+ [`../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md`](../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md)) ;
-> - le *comment* du port → plan [`embedder-spi.md`](embedder-spi.md) ;
+> - le *comment* du port → plan [`embedder-spi.md`](archived/embedder-spi.md) **(✅ LIVRÉ — archivé)** ;
 > - le *quoi mesurer* → étude [`etude-rag-local-criteres-et-veille.md`](etude-rag-local-criteres-et-veille.md).
 
 ## Comment utiliser ce plan (lecture obligatoire)
@@ -38,14 +38,14 @@
   - [ ] Tests croisés des 3 adaptateurs **ensemble** (Thomas + Claude), sur la base de la mesure (Étape 4)
   - [ ] Décider le défaut — **cible privilégiée : l'adaptateur PUREMENT LOCAL** (argument produit : on n'envoie aucune donnée à un provider), **si** la mesure le permet
   - [ ] Acter (addendum ADR 0007 ou nouvel ADR) avec le *pourquoi*
-- [ ] **Étape 1 — Port `Embedder` + index sûr** 🧪 TDD *(dépend de : —)* _(… · …)_
+- [x] **Étape 1 — Port `Embedder` + index sûr** 🧪 TDD *(dépend de : —)* _(2026-06-08 · 2ac9698→bf2ead8)_
   - [x] Estampille `index_meta` — round-trip (écrit à l'indexation, relu) _(2026-06-08 · 2ac9698)_
   - [x] Garde d'identité — identité divergente/absente → signal « index périmé », pas de résultats faux _(2026-06-08 · 7e9fdec)_
-  - [x] Extraire le port `Embedder` ; `GeminiEmbedder` implémente l'existant (comportement inchangé) _(2026-06-08 · à venir)_
-  - [ ] Injecter le port chez les 2 consommateurs (`index-manager` stampe ; `search-vault`/`index.ts` consulte le garde)
-  - [ ] Point de sélection unique `createEmbedder()` (`config.ts`) — sans `switch` multi-provider
-  - [ ] *(option)* `FakeEmbedder` déterministe + test
-  - [ ] `npm test` (dossier `rag/`) vert ; archiver `embedder-spi.md` → `plans/archived/`
+  - [x] Extraire le port `Embedder` ; `GeminiEmbedder` implémente l'existant (comportement inchangé) _(2026-06-08 · 9d3b869)_
+  - [x] Injecter le port chez les 2 consommateurs (`index-manager` stampe ; `search-vault`/`index.ts` consulte le garde) _(2026-06-08 · 99abe61, 7fc678b)_
+  - [x] Point de sélection unique `createEmbedder()` (dans `embedder.ts`, pas `config.ts` : cycle d'import) — sans `switch` multi-provider _(2026-06-08 · a49f861)_
+  - [x] *(option)* `FakeEmbedder` déterministe + test _(2026-06-08 · bf2ead8)_
+  - [x] `npm test` (dossier `rag/`) vert (91/91) ; `embedder-spi.md` archivé → `plans/archived/`
 - [ ] **Étape 2 — Eval-set local (juge = Claude)** 🧪 *(dépend de : —)* _(… · …)_
   - [ ] Choisir un vault représentatif (vrai cerveau ou échantillon riche en entités/relations)
   - [ ] Écrire 15-20 questions → réponse/passages attendus
@@ -110,7 +110,7 @@
 > impl réelle** (+ éventuel `FakeEmbedder` de test). **N'introduit AUCUN 2ᵉ adaptateur réel.**
 
 - **Pré-requis :** aucun (c'est la base).
-- **Charger :** plan [`embedder-spi.md`](embedder-spi.md) **en entier** (il est autoporteur) + les
+- **Charger :** plan [`embedder-spi.md`](archived/embedder-spi.md) **en entier** (il est autoporteur) + les
   fichiers qu'il cite (`rag/src/lib/embedder.ts`, `config.ts`, `vector-store.ts`, `index-manager.ts`,
   `tools/search-vault.ts`, `index.ts`, `tools/reindex.ts`, `embedder.test.ts`).
 - **Faire :** exécuter la carte de refactor TDD du plan (`embedder-spi.md` §5), dans l'ordre :

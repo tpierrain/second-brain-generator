@@ -59,14 +59,15 @@
     veille **rafraîchie** (EmbeddingGemma, bge-m3, Qwen3, E2GraphRAG…), **échelle de confidentialité
     par fournisseur**, vulgarisation « embedder ≠ LLM de chat », eval-first. **STATUT : 🔬 ÉTUDE — rien
     d'acté.** *(alimente le plan SPI + l'ADR 0007)*
-  - [`embedder-spi.md`](plans/embedder-spi.md) — abstraire l'embedder du RAG derrière un port SPI
-    `Embedder` + estampiller l'index d'une identité (provider/modèle/dimension) pour rendre un swap
-    **sûr** (confirm-gate en langage naturel, jamais de réindex silencieux). Concrétise l'ADR 0006 +
-    son addendum. **STATUT : À FAIRE.** *(garde Gemini comme seule impl ; 2ᵉ embedder = discussion à venir)*
   - [`translate-to-english.md`](plans/translate-to-english.md) — traduction complète FR → EN du
     générateur (docs, skills, code, démo), tests rendus agnostiques de la langue, sur branche
     dédiée. **STATUT : À FAIRE — repoussé en TOUTE FIN.**
   - **`plans/archived/`** — plans livrés (archive, conservés pour le détail des étapes) :
+    - [`embedder-spi.md`](plans/archived/embedder-spi.md) — abstraire l'embedder du RAG derrière un
+      port SPI `Embedder` + estampiller l'index d'une identité (provider/modèle/dimension) pour rendre
+      un swap **sûr** (confirm-gate en langage naturel, jamais de réindex silencieux). Concrétise
+      l'ADR 0006 + son addendum. **STATUT : ✅ LIVRÉ** (Étape 1 du plan d'action ; garde Gemini comme
+      seule impl + FakeEmbedder de test ; 2ᵉ embedder réel = Étape 3).
     - [`onglet-code-desktop.md`](plans/archived/onglet-code-desktop.md) — fiabiliser l'install/usage
       depuis l'**app desktop Claude (onglet Code)** : confiance à Claude + échec bruyant + démo
       sourcée. **STATUT : FAIT.** (ADR 0005 + 0006)

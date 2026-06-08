@@ -1,10 +1,15 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUT : 🔭 À FAIRE (créé 2026-06-08) — abstraction du port seulement.      -->
+<!-- STATUT : ✅ LIVRÉ (créé 2026-06-08, livré 2026-06-08) — port + index sûr.   -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Plan — Abstraire l'embedder du RAG derrière un port SPI
 
-> **STATUT : 🔭 À FAIRE** (créé le 2026-06-08).
+> **STATUT : ✅ LIVRÉ** (créé le 2026-06-08, livré le 2026-06-08 — Étape 1 du plan
+> d'action `rag-embedder-plan-action.md`). Commits : `2ac9698` (estampille round-trip),
+> `7e9fdec` (garde d'identité), `9d3b869` (port `Embedder`), `50b6fcd` (shouldStamp),
+> `a49f861` (createEmbedder), `99abe61` (index-manager câblé + estampille), `7fc678b`
+> (garde câblé sur la recherche), `bf2ead8` (FakeEmbedder). 91/91 tests verts, tsc OK.
+> Le contrat MCP n'a pas bougé.
 > Plan autoporteur : une session Claude vierge doit pouvoir l'exécuter en ne lisant QUE ce
 > fichier + les fichiers cités. Discipline **TDD** (skill `tdd-discipline`, et `outside-in-diamond-tdd`
 > pour le périmètre back-end/Hive), commits **manuels** en conventionnel + co-author Claude.
