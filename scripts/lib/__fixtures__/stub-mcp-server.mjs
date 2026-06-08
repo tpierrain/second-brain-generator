@@ -74,10 +74,13 @@ function handle(line) {
       });
       break;
     case "tools/call": {
+      const mode = env.STUB_SEARCH ?? "sourced";
       const text =
-        (env.STUB_SEARCH ?? "sourced") === "norag"
+        mode === "norag"
           ? "Aucun résultat trouvé dans le vault."
-          : "Résultat 1\n**Path:** `vault/decisions/0001-exemple.md`\nExtrait pertinent…";
+          : mode === "echo"
+            ? `query=${msg.params?.arguments?.query ?? ""}` // renvoie la query → test de corrélation
+            : "Résultat 1\n**Path:** `vault/decisions/0001-exemple.md`\nExtrait pertinent…";
       send({
         jsonrpc: "2.0",
         id: msg.id,
