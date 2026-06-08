@@ -34,14 +34,20 @@
     la surface MCP du RAG est un contrat public stable (port API) ; embedder/vector store/chunking
     = adaptateurs interchangeables (SPI). Permet de sortir de Gemini (→ local) sans casser les
     cerveaux. Complémentaire de 0003 ; généralisation de `vault_stats` actée.
+  - [`0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md`](decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md) —
+    trois choix d'embedder (Gemini natif **gardé** / **compatible-OpenAI** à URL configurable, qui
+    couvre OpenAI·Azure·passerelle entreprise·Mistral·Ollama / **local**), ~2 impls à coder ; échelle
+    de confidentialité par fournisseur ; au swap la base reste mais les vecteurs non (réindex).
+    Concrétise 0006, ouvre la « discussion 2ᵉ embedder » du plan SPI. **Défaut à l'install = ouvert.**
 - **`plans/`** — plans d'implémentation, avec un `STATUT` en tête (LIVRÉ / EN COURS / ABANDONNÉ).
   Les plans **livrés** sont déplacés dans **`plans/archived/`** ; seuls les plans encore **ouverts**
   restent à la racine de `plans/`.
   - [`etude-rag-local-criteres-et-veille.md`](plans/etude-rag-local-criteres-et-veille.md) — **étude/veille** :
     offrir un **éventail d'alternatives RAG selon les besoins/contraintes** des gens (privacy, budget,
-    puissance machine, OS, friction d'install). Profils bureautique / grosse machine / cloud-avec-clé +
-    veille embedders locaux (bge-m3 / nomic / Qwen3), LightRAG/GraphRAG, Contextual Retrieval,
-    eval-first. **STATUT : 🔬 ÉTUDE — rien d'acté.** *(alimente le plan ci-dessous)*
+    puissance machine, OS, friction d'install). Profils bureautique / grosse machine / endpoint API +
+    veille **rafraîchie** (EmbeddingGemma, bge-m3, Qwen3, E2GraphRAG…), **échelle de confidentialité
+    par fournisseur**, vulgarisation « embedder ≠ LLM de chat », eval-first. **STATUT : 🔬 ÉTUDE — rien
+    d'acté.** *(alimente le plan SPI + l'ADR 0007)*
   - [`embedder-spi.md`](plans/embedder-spi.md) — abstraire l'embedder du RAG derrière un port SPI
     `Embedder` + estampiller l'index d'une identité (provider/modèle/dimension) pour rendre un swap
     **sûr** (confirm-gate en langage naturel, jamais de réindex silencieux). Concrétise l'ADR 0006 +
