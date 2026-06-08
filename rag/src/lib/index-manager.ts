@@ -3,13 +3,16 @@ import { createHash } from "crypto";
 import { scanVault } from "./document-scanner.js";
 import { parseDocument } from "./frontmatter-parser.js";
 import { chunkMarkdown } from "./chunker.js";
-import { embedTexts } from "./embedder.js";
+import { createEmbedder, type Embedder } from "./embedder.js";
 import {
   getDocumentHash,
   indexDocument,
   removeDeletedDocs,
   getStats,
+  stampIndexIdentity,
+  currentIndexIdentity,
 } from "./vector-store.js";
+import { shouldStamp } from "./index-freshness.js";
 import { indexPreparedDocs, type PreparedDoc, type IndexPorts, type IndexRunResult } from "./indexer.js";
 import { ReindexLock } from "./reindex-lock.js";
 import { ReindexReporter } from "./reindex-reporter.js";
@@ -43,8 +46,8 @@ export interface IndexResult {
 export interface ReindexOptions {
   /** Verrou single-writer (défaut : lock fichier dans CACHE_DIR). */
   lock?: ReindexLock;
-  /** Fonction d'embedding (injectable pour les tests). */
-  embed?: typeof embedTexts;
+  /** Embedder (port SPI) — injectable pour les tests ; défaut createEmbedder(). */
+  embedder?: Embedder;
   /** Reporter d'avancement (défaut : persistance fichier dans CACHE_DIR). */
   reporter?: ReindexReporter;
 }
@@ -54,7 +57,7 @@ export async function reindex(
   opts: ReindexOptions = {}
 ): Promise<IndexResult> {
   const lock = opts.lock ?? new ReindexLock();
-  const embed = opts.embed ?? embedTexts;
+  const embedder = opts.embedder ?? createEmbedder();
   const reporter = opts.reporter ?? new ReindexReporter();
 
   // Single-writer : si un autre process indexe déjà, on s'efface (no-op) pour ne
@@ -71,7 +74,7 @@ export async function reindex(
   }
 
   try {
-    return await runReindex(force, embed, reporter);
+    return await runReindex(force, embedder, reporter);
   } finally {
     lock.release();
   }
@@ -79,7 +82,7 @@ export async function reindex(
 
 async function runReindex(
   force: boolean,
-  embed: typeof embedTexts,
+  embedder: Embedder,
   reporter: ReindexReporter
 ): Promise<IndexResult> {
   const files = await scanVault();
@@ -131,10 +134,19 @@ async function runReindex(
   // Chaque doc terminé est sauvé atomiquement ; au mur quota on s'arrête et
   // tout ce qui est fait est conservé (reprise gratuite au run suivant).
   // Instrumentée par le reporter (start/tick/finish) pour l'observabilité.
+  // Estampille d'identité : on (ré)pose l'identité de l'embedder courant SEULEMENT
+  // quand l'index la reflète vraiment (force, ou index vierge) — cf. shouldStamp.
+  // En incrémental sur index déjà estampillé, on n'y touche pas (on ne maquille
+  // jamais un index mixte en « frais »). Posé AVANT la phase : même un run coupé
+  // par le mur quota laisse un index cohérent en identité (tout = embedder courant).
+  if (shouldStamp(force, currentIndexIdentity())) {
+    stampIndexIdentity(embedder.identity);
+  }
+
   const runResult = await runIndexingPhase(
     toIndex,
     {
-      embed,
+      embed: (texts) => embedder.embedDocuments(texts),
       persist: (doc, embeddings) =>
         indexDocument(
           doc.relativePath,

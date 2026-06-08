@@ -82,6 +82,16 @@ function getDb(): Database.Database {
   return db;
 }
 
+/** Estampille l'identité de l'embedder sur l'index actif (singleton). */
+export function stampIndexIdentity(identity: EmbedderIdentity): void {
+  writeIndexIdentity(getDb(), identity);
+}
+
+/** Identité estampillée sur l'index actif, ou null si jamais estampillé. */
+export function currentIndexIdentity(): EmbedderIdentity | null {
+  return readIndexIdentity(getDb());
+}
+
 export function getDocumentHash(path: string): string | null {
   const row = getDb()
     .prepare("SELECT hash FROM documents WHERE path = ?")

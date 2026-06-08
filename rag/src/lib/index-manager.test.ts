@@ -5,6 +5,7 @@ import { ReindexLock, type LockState, type LockStorage } from "./reindex-lock.js
 import { ReindexReporter, type ProgressStorage } from "./reindex-reporter.js";
 import type { PreparedDoc, IndexPorts } from "./indexer.js";
 import type { RunProgress } from "./progress-report.js";
+import type { Embedder } from "./embedder.js";
 
 // Doc préparé minimal avec n chunks.
 function doc(path: string, nChunks: number): PreparedDoc {
@@ -66,12 +67,16 @@ test("reindex verrouillé par un autre process vivant : no-op, zéro embedding",
   });
 
   let embedCalls = 0;
-  const embedSpy = async (texts: string[]) => {
-    embedCalls++;
-    return texts.map(() => [0]);
+  const embedderSpy: Embedder = {
+    identity: { providerId: "fake", model: "spy", dimension: 2 },
+    embedDocuments: async (texts) => {
+      embedCalls++;
+      return texts.map(() => [0, 0]);
+    },
+    embedQuery: async () => [0, 0],
   };
 
-  const result = await reindex(false, { lock, embed: embedSpy });
+  const result = await reindex(false, { lock, embedder: embedderSpy });
 
   assert.equal(result.skippedLocked, true);
   assert.equal(embedCalls, 0); // l'embedding n'a jamais été déclenché
