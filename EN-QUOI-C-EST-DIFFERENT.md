@@ -116,6 +116,15 @@ réponses. Tout le reste tourne tout seul.
 C'est de l'**affordance** au sens propre : la conception rend le bon comportement **automatique** et
 **cache la complexité**, au lieu de te la refiler.
 
+> 🧬 **« Rangé pour toi » fait partie de l'ADN.** Le *« ni comment c'est rangé »* n'est pas un détail
+> qu'on cache : c'est un **parti-pris**. Tu n'as ni à concevoir une arborescence, ni à te demander
+> « où va cette note ? ». Le cerveau part de **conventions saines** (notes datées, fiches *people* /
+> *topics* / *décisions*, frontmatter, liens `[[wikilink]]`) puis **te propose et fait évoluer la
+> structure la mieux adaptée aux besoins que *tu* formules** : tu dis ce que tu veux suivre (tes
+> équipes, tes décisions produit, un domaine client…), il en déduit et maintient le rangement. C'est
+> l'esprit *use case driven* — la structure **émerge de tes usages**, elle ne t'est ni imposée
+> d'avance, ni laissée sur les bras.
+
 ### Pourquoi « un `CLAUDE.md` + quelques notes » ne suffirait pas
 
 On pourrait croire qu'un second cerveau, c'est juste « un dossier Markdown + un fichier de règles
