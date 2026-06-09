@@ -57,7 +57,7 @@
   - [x] Branché dans `createEmbedder()` via `.env` — fonction de sélection **pure** `selectEmbedder(env)` (testable) ; `EMBEDDING_PROVIDER` + `EMBEDDING_BASE_URL` + `EMBEDDING_API_KEY` + `EMBEDDING_MODEL_NAME` + `EMBEDDING_DIMENSION` ; documenté dans `.env.example` _(2026-06-09)_
   - [x] Auth Bearer si clé présente ; **aucun** header `Authorization` si clé vide (local) ; réponse non-ok → **erreur bruyante** (jamais de vecteur vide silencieux dans l'index) _(2026-06-09)_
   - [x] Testé sur un endpoint compatible-OpenAI **et** sur Ollama local (`localhost:11434/v1`) : enveloppe/headers/erreurs/sélection prouvés en tests unitaires (`openai-compatible-embedder.test.ts`, 98/98 vert) **ET smoke live réel fait à l'Étape 4** (Ollama installé via cask, `embeddinggemma`/`bge-m3` pullés, indexation+recherche du vault Flemmr 100 % en local prouvées par l'estampille `index_meta`) _(2026-06-09)_
-- [x] **Étape 4 — Brancher local + MESURER vs Gemini** 📊 *(dépend de : 1,2,3)* — **mesuré : local ≥ Gemini sur Flemmr FR (90 %/90 %/80 %), aucun malus qualité** _(2026-06-09 · 865536c)_
+- [x] **Étape 4 — Brancher local + MESURER vs Gemini** 📊 *(dépend de : 1,2,3)* — **mesuré : local ≥ Gemini sur Flemmr FR (90 %/90 %/80 %), aucun malus qualité** _(2026-06-09 · 2a5f63f)_
   - [x] Brancher EmbeddingGemma (via Ollama + adaptateur n°3) — `embeddinggemma` pullé, 768-dim, score **90 % (9/10)** _(2026-06-09)_
   - [x] Brancher bge-m3 — `bge-m3` pullé, 1024-dim, score **90 % (9/10)** _(2026-06-09)_
   - [x] Ré-indexer le vault représentatif pour chacun — DB purgée + réindex complet par modèle, estampille `index_meta` distincte (preuve anti-fallback) _(2026-06-09)_
