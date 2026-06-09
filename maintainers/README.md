@@ -84,6 +84,18 @@
       de nvm (résolu par `run-node`). **STATUT : LIVRÉ.**
     - [`rename-bootstrap-to-installer.md`](plans/archived/rename-bootstrap-to-installer.md) — renommage
       `bootstrap` → `installer`. **STATUT : LIVRÉ.**
+- **`retrospectives/`** — 📝 **rétros orientées *takeaways*** : le **récit** d'une session marquante
+  (la question de départ, le cheminement enquête→mesure→correctif, les leçons transférables). À
+  distinguer des ADR (le *pourquoi* d'une décision) et des plans (le *quoi/comment*) : ici c'est la
+  **matière à article**, le retour d'expérience. **Convention** : un fichier par session,
+  `retrospectives/takeaways-<sujet>-<AAAA-MM-JJ>.md` ; titre accrocheur + une ou plusieurs leçons en
+  **« Takeaway »** numérotés + une section **méta-leçons transférables**. Dev-only (préfixe
+  `maintainers/`), jamais copié dans un cerveau généré.
+  - [`takeaways-embedder-partage-2026-06-09.md`](retrospectives/takeaways-embedder-partage-2026-06-09.md) —
+    « Quand le *petit raffinement* d'archi révèle un ×50 sur la latence » : la question d'archi posée
+    **avant** câblage, le ×50 dû à `createEmbedder()` par requête, le correctif (session ONNX chaude
+    partagée), 7 méta-leçons (port ≠ garantie de perf ; amplitude du symptôme ≠ de la cause ; pondérer
+    le pire cas par sa fréquence…). *(Étape 4-quater du plan embedder.)*
 
 ## Historique
 
