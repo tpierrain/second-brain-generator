@@ -109,6 +109,40 @@ l'écart se creuse à l'échelle d'un vrai vault, l'encodage restant **ponctuel*
 > `EMBEDDING_PROVIDER=openai-compatible EMBEDDING_BASE_URL=http://localhost:11434/v1 EMBEDDING_API_KEY= EMBEDDING_MODEL_NAME=<embeddinggemma|bge-m3> EMBEDDING_DIMENSION=<768|1024> node scripts/run-eval.mjs`
 > ; sans les `EMBEDDING_*` = Gemini natif. Prérequis local : Ollama + `ollama pull <modèle>`.
 
+## Étape 4-bis — viabilité de l'in-process « Gemma inside » (SANS Ollama) _(2026-06-09)_
+
+Même harnais, même vault Flemmr, mais l'embedder tourne **dans le process Node du RAG**
+(Transformers.js v4 + EmbeddingGemma-300m **ONNX q8**), **sans serveur ni app** — branché par
+`EMBEDDING_PROVIDER=in-process` (ni URL ni clé). Verdict des **3 validations** :
+
+| Validation | Résultat | Détail mesuré (ce Mac, Apple Silicon) |
+|---|---|---|
+| **V1 — install cross-OS** | ✅ **OK Mac+Windows** | `npm i @huggingface/transformers` → `onnxruntime-node@1.24.3` **embarque** les binaires pré-buildés `win32/x64`, `win32/arm64`, `darwin/arm64`, `linux/x64+arm64` ; `requirements=[]` partout (seul le GPU CUDA Linux est distant) → **rien à compiler, rien à télécharger, offline-friendly**. ⚠️ **Mac Intel (darwin/x64) non supporté** par cette version (Apple Silicon ✅). |
+| **V2 — latence CPU** | ✅ **tenable** | Téléchargement des poids **~28 s une seule fois** (caché ensuite) ; démarrage à froid poids cachés = **675 ms** (load+1ᵉʳ embed) ; débit à chaud **8–9 ms/texte (~110/s)**, **sans GPU Metal** ; vecteur 768-dim **normalisé** (‖v‖=1). |
+| **V3 — qualité (quantifié)** | ✅ **parité Ollama (90 %)** | eval-set rejoué : **90 % (9/10)**, = EmbeddingGemma via Ollama, **> Gemini 80 %**. Seul raté : « série A » (idem Ollama). |
+
+**La leçon V3 (importante).** EmbeddingGemma **exige ses prompts de tâche** (`task: search result |
+query: …` côté recherche, `title: none | text: …` côté document). Ollama les applique en interne ;
+en in-process **c'est à nous**. Sans eux, q8 brut = **80 %** (et le canari *Mollecuisse* rate) ; avec
+eux, **90 %**. Donc l'écart venait du **mauvais usage du modèle, pas de la quantification** — la parité
+quantifié↔Ollama est **confirmée, pas supposée** (exactement ce que le plan demandait de vérifier).
+
+**Anti-fallback (prouvé)** : réindex complet (`7 indexés`) sous estampille `index_meta` =
+`transformers-js`/`embeddinggemma-300m-ONNX`/`768`, **0 appel réseau** pendant l'eval (offline).
+
+> **Verdict 4-bis → VIABLE comme défaut.** L'in-process lève la **seule** objection sérieuse du
+> tout-local (la friction Ollama) **sans rien céder** : install `npm`-only sur Mac (Apple Silicon) ET
+> Windows, latence ponctuelle tenable, qualité **à parité d'Ollama (90 %)** et au-dessus de Gemini.
+> → **candidat n°1 du défaut en D1.** Réserves honnêtes : (a) **Mac Intel** hors couverture
+> `onnxruntime-node` 1.24.3 ; (b) corpus Flemmr petit (90 vs 80 = une question, cf. limite ci-dessous) ;
+> (c) binaires pré-buildés **volatils** → re-vérifier la matrice à chaque bump d'`onnxruntime-node`.
+
+> **Reproduire** : `rm -f rag/.cache/vault.db*` puis
+> `EMBEDDING_PROVIDER=in-process node scripts/run-eval.mjs` (ni URL ni clé ; poids téléchargés au 1ᵉʳ
+> run puis cachés). Sans les `EMBEDDING_*` = Gemini natif. *(Le label « embedder courant : Gemini »
+> affiché par le script est cosmétique et codé en dur — la mesure est bien in-process, prouvée par
+> l'estampille et le réindex.)*
+
 ## Étape 4 — discriminer plus finement (limite connue)
 
 Le corpus Flemmr (7 notes) est petit → discrimination d'embedders **limitée** (le top-k ramène
