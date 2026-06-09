@@ -37,6 +37,10 @@ test("createEmbedder() : point de sélection unique → un Embedder Gemini par d
   assert.equal(createEmbedder().identity.providerId, "gemini");
 });
 
+test("createEmbedder() mémoïse : le même embedder est partagé entre appels (session ONNX chaude)", () => {
+  assert.equal(createEmbedder(), createEmbedder());
+});
+
 test("selectEmbedder : provider 'openai-compatible' → adaptateur compatible-OpenAI estampillé", () => {
   const embedder = selectEmbedder({
     EMBEDDING_PROVIDER: "openai-compatible",

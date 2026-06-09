@@ -75,7 +75,11 @@
   - [x] Sous-lots bornés dans **`InProcessEmbedder.embedDocuments`** (constante `EMBED_BATCH` + `batchSize?` configurable) — placé dans l'adaptateur car la contrainte RAM est **spécifique à l'ONNX in-process** (Gemini/OpenAI = réseau) → protège tous les appelants ; `embedQuery` inchangé _(2026-06-09)_
   - [x] Balayage **4/8/16** sur le corpus dense (264 notes) : **contre-intuitif — le petit lot gagne sur les 2 axes** (lot 4 = pic ~3,2 Go in-proc / 5,3 min / 8,5 ch/s ; lot 16 = 5,35 Go / 7,4 min). Qualité inchangée. Constante **figée à 4** ; script réutilisable `rag/scripts/measure-batch.mts` (dev-only, exclu du cerveau) _(2026-06-09)_
   - [x] `npm test` vert (rag 111/111 ; scripts 92/92) ; contrat MCP inchangé ; chiffres + caveat RSS in-proc/OS consignés [`../eval-set.md`](../eval-set.md#balayage-du-plafond-4--8--16-2026-06-09) ; **note pour Étape 5 : pic OS ~3,8-4 Go → seuil D1 à reconsidérer (12 Go voire 8 Go)** _(2026-06-09)_
-- [ ] **Étape 5 — Onboarding / install (choix à 3 + reco adaptative)** 🧪 *(dépend de : D1, 3, **4-ter**)* _(… · …)_
+- [x] **Étape 4-quater — Embedder partagé (mémoïsation process, durcissement in-process)** 🧪 TDD *(dépend de : 4-bis ; **BLOQUANT pour l'option 1 livrée en Étape 5**)* — **livré : `createEmbedder()` mémoïsé → 1 session ONNX chaude partagée, 112/112 vert, contrat MCP inchangé** _(2026-06-09)_
+  - [x] **Découverte (sonde `rag/scripts/measure-contention.mts`, dev-only)** : le serveur MCP réindexe DANS son process (auto-reindex démarrage + watcher) → recherche et indexation partagent CPU. Or `search_vault` appelait `createEmbedder()` **à chaque requête** → instance neuve, mémoïsation `private` vide → en in-process : **session ONNX rechargée à chaque recherche (~440 ms au repos)** et **2 sessions concurrentes** (recherche + indexation) sur-réservent les cœurs → **recherche jusqu'à ×50 (25 s !)**. Gemini ne le montrait pas (client gratuit, embed = réseau, zéro CPU local) _(2026-06-09)_
+  - [x] **Fix TDD (baby-step) : `createEmbedder()` mémoïse au niveau module** → recherche ET auto-reindex partagent la même instance/session chaude. Provider figé à la 1ʳᵉ sélection (swap = redémarrage Claude Code, déjà le cas) ; clé Gemini toujours lue **paresseusement** à l'embed (coller la clé après coup marche encore) _(2026-06-09)_
+  - [x] **Prouvé de bout en bout** via le vrai `createEmbedder()` : recherche au repos **510 → 35 ms (p95)**, recherche pendant indexation de fond **25 429 → 810 ms (p95)**. Le petit lot=4 (4-ter) aère naturellement l'event-loop. `worker_thread` jugé inutile (pas de sur-ingénierie : 0,7 s dans une fenêtre rare = indexation initiale, l'incrémental est sous la seconde) _(2026-06-09)_
+- [ ] **Étape 5 — Onboarding / install (choix à 3 + reco adaptative)** 🧪 *(dépend de : D1, 3, **4-ter**, **4-quater**)* _(… · …)_
   - [ ] **Détecter la machine** (RAM `os.totalmem()` + Mac Intel) → calculer la **reco** (16 Go+ → option 1 ⭐ ; ≤ 8 Go ou Mac Intel → option 2 ⭐). Seuil exact figé avec le pic RAM de 4-ter
   - [ ] **Présenter les 3 options** (option recommandée en tête « ⭐ pour ta machine ») ; **option 1 masquée sur Mac Intel** ; option 2 = « Gemini / OpenAI / **n'importe quel fournisseur, y c. entreprise** »
   - [ ] **Option 2** → afficher le cadrage **« gratuit ≠ privé »** (Gemini gratuit exploité / payant non / endpoint entreprise) **avant** la clé
@@ -275,6 +279,33 @@
   mesurée : lot 16 = pic **6,1 Go**, **7 min 27 s**, **6 chunks/s** ; sans plafond = explose). Figer la constante.
 - **Done :** index complet d'un vrai vault **sans explosion RAM** (cible : tenir sur 8 Go ?), pic + temps
   consignés ; `npm test` vert ; contrat MCP inchangé. Commits conventionnels par baby-step.
+
+---
+
+## Étape 4-quater — Embedder partagé : une seule session ONNX chaude 🧪
+
+> **Découvert en attaquant l'Étape 5 (question d'archi de Thomas).** Le serveur MCP réindexe DANS son
+> process (auto-reindex au démarrage + watcher fil-de-l'eau) → la **recherche partage le CPU avec
+> l'indexation**. Mesuré (`rag/scripts/measure-contention.mts`) : `search_vault` appelait
+> `createEmbedder()` **à chaque requête**, et la mémoïsation du pipeline étant `private` (par instance),
+> chaque recherche **rechargeait une session ONNX** (~440 ms même au repos) ; pire, recherche et reindex
+> créaient **deux sessions concurrentes** → sur-réservation des cœurs → **recherche jusqu'à ×50 (25 s)**.
+> Invisible avec Gemini (client gratuit, embed = réseau). **Correctif OBLIGATOIRE** : sans lui, l'option 1
+> par défaut donne une recherche poussive.
+
+- **Pré-requis :** **Étape 4-bis livrée** (`InProcessEmbedder`).
+- **Charger :** `rag/src/lib/embedder.ts` (`createEmbedder`/`selectEmbedder`) ; `rag/src/index.ts`
+  (`search_vault` ligne ~58) + `rag/src/lib/index-manager.ts` (`reindex` ligne ~60) — les 2 appelants.
+- **Faire (TDD, baby-step) :** **mémoïser `createEmbedder()` au niveau module** → un singleton process,
+  partagé par la recherche ET l'auto-reindex (une seule session ONNX chaude). Provider figé à la 1ʳᵉ
+  sélection (un swap passe déjà par un redémarrage de Claude Code) ; clé Gemini toujours lue
+  **paresseusement** à l'embed. **Ne touche ni au port ni au contrat MCP.**
+- **Prouver :** re-jouer la sonde via le **vrai** `createEmbedder()` → recherche au repos **510 → 35 ms
+  (p95)**, recherche pendant indexation de fond **25 429 → 810 ms (p95)**. Le lot=4 (4-ter) aère
+  naturellement l'event-loop entre sous-lots. `worker_thread` jugé inutile (0,7 s dans une fenêtre rare —
+  l'indexation initiale ; l'incrémental est sous la seconde).
+- **Done :** `createEmbedder()` mémoïsé ; `npm test` vert (rag 112/112) ; contrat MCP inchangé ; chiffres
+  consignés ici. Commits conventionnels par baby-step.
 
 ---
 

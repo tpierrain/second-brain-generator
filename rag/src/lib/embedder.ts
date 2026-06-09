@@ -202,17 +202,33 @@ export function selectEmbedder(env: EmbedderEnv): Embedder {
   return new GeminiEmbedder();
 }
 
+// Embedder mémoïsé au niveau process : choisi une fois, partagé par TOUS les
+// appelants (search_vault à chaque requête ET l'auto-reindex du serveur MCP). Sans
+// ce partage, l'in-process recrée une session ONNX par recherche → ~440 ms de
+// rechargement à CHAQUE requête, et deux sessions concurrentes (recherche +
+// indexation) sur-réservent les cœurs → recherche jusqu'à ×50 plus lente (mesuré,
+// cf. rag/scripts/measure-contention.mts). Une seule session chaude : recherche
+// ~40 ms au repos, ~0,7 s pendant une indexation de fond. Le provider est figé à
+// la 1ʳᵉ sélection ; un swap passe déjà par un redémarrage de Claude Code (nouvel
+// .env). La clé Gemini reste lue paresseusement à l'embed → coller la clé après
+// coup marche toujours.
+let memoizedEmbedder: Embedder | null = null;
+
 /**
  * Point de sélection UNIQUE de l'embedder (port `Embedder`). Lit l'environnement
  * et délègue à `selectEmbedder` — la bascule de provider vit ICI et NULLE PART
- * AILLEURS, sans toucher au harnais ni au port MCP.
+ * AILLEURS, sans toucher au harnais ni au port MCP. Mémoïsé (cf. ci-dessus) : le
+ * même embedder est rendu à tous les appels du process.
  *
  * Vit dans `embedder.ts` (et non `config.ts` comme esquissé au plan) pour éviter
  * un cycle d'import : `embedder.ts` dépend déjà de `config.ts`. Le foyer naturel
  * d'une fabrique reste de toute façon auprès des implémentations qu'elle choisit.
  */
 export function createEmbedder(): Embedder {
-  return selectEmbedder(process.env);
+  if (!memoizedEmbedder) {
+    memoizedEmbedder = selectEmbedder(process.env);
+  }
+  return memoizedEmbedder;
 }
 
 // Fonctions libres conservées le temps de la transition : elles délèguent au port

@@ -22,8 +22,9 @@ export function parseLsFilesZ(output) {
 //     Aucune valeur dans un cerveau utilisateur (notes Flemmr purgées → tout FAIL).
 //     Exclu par PRÉFIXE → couvre d'un coup les .mjs ET leurs .test.mjs.
 //   - rag/scripts/ : outillage de MESURE du moteur (measure-batch — caler EMBED_BATCH
-//     sur corpus dense). Dev-only : importe la source TS et vise par défaut un vault
-//     local confidentiel ; aucune valeur (ni place) dans un cerveau utilisateur.
+//     sur corpus dense ; measure-contention — prouver que recherche et indexation
+//     partagent une session chaude). Dev-only : importe la source TS et vise par défaut
+//     un vault local confidentiel ; aucune valeur (ni place) dans un cerveau utilisateur.
 const DEV_ONLY_FILES = new Set(["DEVELOPING.md", "EN-QUOI-C-EST-DIFFERENT.md"]);
 const DEV_ONLY_PREFIXES = [
   "maintainers/",
