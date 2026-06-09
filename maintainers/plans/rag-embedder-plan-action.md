@@ -34,10 +34,10 @@
 > Coche au fil de l'eau. Les **sous-cases** permettent de suivre la progression *pendant* qu'une étape
 > tourne (surtout les baby-steps TDD). Quand une étape est finie : cocher sa case + noter _(date · commit)_.
 
-- [ ] **D1 — Trancher le défaut à l'install** 🧭 *(décision Thomas, **APRÈS les Étapes 4 ET 4-bis** ; dépend de : 4, 4-bis)*
-  - [ ] Tests croisés des adaptateurs **ensemble** (Thomas + Claude), sur la base des mesures (Étapes 4 + 4-bis)
-  - [ ] Décider le défaut — **cible privilégiée : le LOCAL IN-PROCESS « Gemma inside »** (Étape 4-bis : zéro install séparée, on n'envoie aucune donnée à un provider), **si** sa viabilité est prouvée (install Mac+Windows, latence, qualité) ; sinon repli local-via-Ollama (power-user) ou endpoint API
-  - [ ] Acter (addendum ADR 0007 ou nouvel ADR) avec le *pourquoi*
+- [x] **D1 — Trancher le défaut à l'install** 🧭 *(décision Thomas, **APRÈS les Étapes 4 ET 4-bis** ; dépend de : 4, 4-bis)* — **TRANCHÉ : option C (choix explicite à 3), défaut recommandé = in-process « Gemma inside »** _(2026-06-09)_
+  - [x] Tests croisés des adaptateurs **ensemble** (Thomas + Claude), sur la base des mesures (Étapes 4 + 4-bis) _(2026-06-09)_
+  - [x] Décider le défaut — **in-process « Gemma inside »** retenu comme **défaut recommandé** (viabilité prouvée Étape 4-bis), présenté dans un **choix explicite à 3** (option C) : 1=in-process ⭐ / 2=clé d'API (Gemini ou endpoint entreprise) / 3=Ollama (avancé) ; garde-fou Mac Intel (option 1 masquée) _(2026-06-09)_
+  - [x] Acter (addendum ADR 0007) avec le *pourquoi* + le **cadrage clé gratuite/payante** obligatoire pour l'option 2 → [`../decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md`](../decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md#addendum-d1-2026-06-09--défaut-dembedder-à-linstallation--tranché) _(2026-06-09)_
 - [x] **Étape 1 — Port `Embedder` + index sûr** 🧪 TDD *(dépend de : —)* _(2026-06-08 · 2ac9698→bf2ead8)_
   - [x] Estampille `index_meta` — round-trip (écrit à l'indexation, relu) _(2026-06-08 · 2ac9698)_
   - [x] Garde d'identité — identité divergente/absente → signal « index périmé », pas de résultats faux _(2026-06-08 · 7e9fdec)_
