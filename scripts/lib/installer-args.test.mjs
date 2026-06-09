@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { join } from "node:path";
-import { parseAnswers, resolveTargetDir } from "./installer-args.mjs";
+import { parseAnswers, resolveTargetDir, resolveRunMode } from "./installer-args.mjs";
 
 test("parseAnswers — forme --x=v", () => {
   const r = parseAnswers(["--name=mon-cerveau"], {}, {});
@@ -39,6 +39,24 @@ test("parseAnswers — --embedder (formes v et =v, + env SB_EMBEDDER) → embedd
   assert.equal(parseAnswers([], {}, {}).embedder, undefined);
 });
 
+test("resolveRunMode — --help prime sur tout → 'help'", () => {
+  assert.equal(resolveRunMode({ isTTY: true, nonInteractive: true, help: true }), "help");
+  assert.equal(resolveRunMode({ isTTY: false, nonInteractive: false, help: true }), "help");
+});
+
+test("resolveRunMode — --non-interactive explicite → 'non-interactive' (avec ou sans TTY)", () => {
+  assert.equal(resolveRunMode({ isTTY: true, nonInteractive: true, help: false }), "non-interactive");
+  assert.equal(resolveRunMode({ isTTY: false, nonInteractive: true, help: false }), "non-interactive");
+});
+
+test("resolveRunMode — TTY sans --non-interactive → 'interactive'", () => {
+  assert.equal(resolveRunMode({ isTTY: true, nonInteractive: false, help: false }), "interactive");
+});
+
+test("resolveRunMode — ni TTY ni --non-interactive → 'refuse' (anti install fantôme)", () => {
+  assert.equal(resolveRunMode({ isTTY: false, nonInteractive: false, help: false }), "refuse");
+});
+
 test("resolveTargetDir — sans destParent → join(home, name)", () => {
   assert.equal(
     resolveTargetDir({ name: "perso", destParent: undefined, home: "/home/me" }),
@@ -65,6 +83,12 @@ test("parseAnswers — destParent : précédence flag (--dest) > env (SB_DEST) >
   assert.equal(parseAnswers(["--dest=/flag"], { SB_DEST: "/env" }, {}).destParent, "/flag");
   // défaut sinon
   assert.equal(parseAnswers([], {}, { destParent: "/def" }).destParent, "/def");
+});
+
+test("parseAnswers — --help / -h → help:true (sinon false)", () => {
+  assert.equal(parseAnswers(["--help"], {}, {}).help, true);
+  assert.equal(parseAnswers(["-h"], {}, {}).help, true);
+  assert.equal(parseAnswers(["--name=ok"], {}, {}).help, false);
 });
 
 test("parseAnswers — --non-interactive et ses alias → nonInteractive:true", () => {
@@ -99,5 +123,6 @@ test("parseAnswers — précédence flag > env > default", () => {
     destParent: undefined,
     embedder: undefined,
     nonInteractive: false,
+    help: false,
   });
 });

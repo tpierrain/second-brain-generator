@@ -16,11 +16,28 @@ const VALUE_FLAGS = ["name", "owner", "lang", "dest", "embedder"];
 // Flags booléens déclenchant le mode non-interactif (avec leurs alias).
 const NON_INTERACTIVE_FLAGS = ["non-interactive", "yes", "no-input"];
 
+// Décide le mode d'exécution de l'installeur à partir de signaux PURS (aucune
+// I/O — `isTTY` est injecté). Garde-fou central : on n'INSTALLE jamais avec des
+// défauts sans consentement explicite. Sans TTY ET sans --non-interactive →
+// "refuse" (ne pas deviner). Ceci évite l'install fantôme quand un agent lance
+// l'installeur (stdin non-TTY) sans passer --non-interactive.
+export function resolveRunMode({ isTTY, nonInteractive, help }) {
+  if (help) return "help";
+  if (nonInteractive) return "non-interactive";
+  if (isTTY) return "interactive";
+  return "refuse";
+}
+
 export function parseAnswers(argv, env, defaults) {
   const flags = {};
   let nonInteractive = false;
+  let help = false;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
+    if (arg === "--help" || arg === "-h") {
+      help = true;
+      continue;
+    }
     const eq = /^--([^=]+)=(.*)$/.exec(arg);
     if (eq) {
       flags[eq[1]] = eq[2];
@@ -45,5 +62,6 @@ export function parseAnswers(argv, env, defaults) {
     // Absent → l'installeur applique la reco adaptative selon la machine (D1).
     embedder: pick("embedder", "SB_EMBEDDER", defaults.embedder),
     nonInteractive,
+    help,
   };
 }
