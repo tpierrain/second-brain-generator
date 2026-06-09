@@ -191,7 +191,7 @@ sans imposer de trancher un sujet technique.
 
 | # | Libellé utilisateur | Adaptateur | Trade-off en une ligne |
 |---|---|---|---|
-| 1 ⭐ | **Tout sur ta machine, rien à installer** | `InProcessEmbedder` (in-process) | Privé + gratuit + offline ; ~1,5 Go RAM quand actif ; **Mac Apple Silicon / Windows** (pas Mac Intel) |
+| 1 ⭐ | **Tout sur ta machine, rien à installer** | `InProcessEmbedder` (in-process) | Privé + gratuit + offline ; ~1,5 Go RAM au repos, **~6 Go en indexation d'un vrai vault** (16 Go+ ; **exige le plafonnement de lot**, cf. plan Étape 4-ter) ; **Mac Apple Silicon / Windows** (pas Mac Intel) |
 | 2 | **Avec une clé d'API** (Gemini, ou endpoint entreprise) | `OpenAiCompatibleEmbedder` (ou Gemini natif) | Léger pour la machine ; **les notes transitent par le fournisseur** — voir cadrage gratuit/payant ci-dessous |
 | 3 | **Local via Ollama** *(avancé)* | n°2 pointé sur `localhost:11434` | Comme 1 (rien ne sort) mais **app séparée** ; utile Mac Intel / modèle précis |
 

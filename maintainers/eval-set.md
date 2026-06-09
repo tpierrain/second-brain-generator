@@ -144,9 +144,9 @@ quantifié↔Ollama est **confirmée, pas supposée** (exactement ce que le plan
 > **Verdict 4-bis → VIABLE comme défaut.** L'in-process lève la **seule** objection sérieuse du
 > tout-local (la friction Ollama) **sans rien céder** : install `npm`-only sur Mac (Apple Silicon) ET
 > Windows, latence ponctuelle tenable, qualité **à parité d'Ollama (90 %)** et au-dessus de Gemini.
-> → **candidat n°1 du défaut en D1.** Réserves honnêtes : (a) **RAM ~1,5 Go** quand actif — confortable
-> sur 16 Go+, jouable sur 8 Go, **facteur limitant** sur une machine vraiment modeste (vs ~0 pour
-> Gemini, distant) ; (b) **Mac Intel** hors couverture `onnxruntime-node` 1.24.3 ; (c) corpus Flemmr
+> → **candidat n°1 du défaut en D1.** Réserves honnêtes : (a) **RAM** — le ~1,5 Go n'est vrai qu'**au
+> repos/en recherche** ; **en indexation d'un corpus dense ça monte à ~6 Go** (cf. Étape 4-ter
+> ci-dessous), confortable 16 Go+, **swappe sur 8 Go** (vs ~0 pour Gemini, distant) ; (b) **Mac Intel** hors couverture `onnxruntime-node` 1.24.3 ; (c) corpus Flemmr
 > petit (90 vs 80 = une question, cf. limite ci-dessous) ; (d) binaires pré-buildés **volatils** →
 > re-vérifier la matrice à chaque bump d'`onnxruntime-node`.
 
@@ -155,6 +155,36 @@ quantifié↔Ollama est **confirmée, pas supposée** (exactement ce que le plan
 > run puis cachés). Sans les `EMBEDDING_*` = Gemini natif. *(Le label « embedder courant : Gemini »
 > affiché par le script est cosmétique et codé en dur — la mesure est bien in-process, prouvée par
 > l'estampille et le réindex.)*
+
+## Étape 4-ter — corpus dense : plafonnement de lot _(2026-06-09)_
+
+La viabilité 4-bis a été mesurée sur Flemmr (7 notes). **Test sur le vrai vault Inqom (264 notes,
+2709 chunks, moy. 10,3/note)** — copie temporaire, embedder **in-process** (rien ne sort), persistance
+neutre — corrige cette photo sur deux points et révèle un correctif obligatoire :
+
+| | **Prod actuelle** (lot = tous les chunks d'une note) | **Lot plafonné à 16 chunks** |
+|---|---|---|
+| Issue | ❌ **stall** (tué à ~12 min, coincé sur une note de 78 chunks) | ✅ **264/264 indexées** |
+| RAM résidente pic | **8,5 Go** et ça grimpait | **6,1 Go** (OS : 6,55 Go) |
+| Temps total | jamais fini | **7 min 27 s** |
+| Débit | — | **6 chunks/s** · 0,6 note/s · load 0,8 s · repos 1,67 Go |
+
+**Cause racine** : `embedDocuments` reçoit **tous les chunks d'une note d'un coup** (`indexer.ts:46`).
+Une note longue (transcript sync/1-1 = **78 chunks de ~2000 tokens**) crée un lot dont l'attention en
+**O(seq²)×batch** fait exploser onnxruntime. 17 notes du vault dépassent 20 chunks, 6 dépassent 50.
+
+**Trois leçons (invisibles sur Flemmr) :**
+1. **La prod actuelle n'est pas sûre sur un vrai vault** → **plafonner la taille de lot est OBLIGATOIRE**
+   (Étape 4-ter du plan, TDD, bloquant pour le défaut option 1).
+2. **RAM en indexation ≫ 1,5 Go** : ~6 Go même lot plafonné → OK 16 Go+, **swappe sur 8 Go**. Le ~1,5 Go
+   ne vaut qu'au repos/recherche.
+3. **Débit ≪ 110/s** : le « 8-9 ms/texte » était sur texte **court** ; les vrais chunks frôlent le
+   contexte max → **6 chunks/s (~18× plus lent)**. Index à froid d'un vrai vault ≈ **7,5 min**, **une
+   fois** (ensuite incrémental par hash).
+
+> **Verdict D1 révisé** : in-process viable comme défaut **sur 16 Go+ ET avec plafonnement de lot** ;
+> sur 8 Go / Mac modeste, l'option clé d'API (RAM ~0) reste raisonnable → **conforte le choix C (3
+> options explicites)**. Valeur du plafond à caler (balayer 4/8/16) au moment d'implémenter l'Étape 4-ter.
 
 ## Étape 4 — discriminer plus finement (limite connue)
 

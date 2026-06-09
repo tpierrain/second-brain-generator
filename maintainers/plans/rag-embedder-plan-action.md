@@ -71,7 +71,11 @@
   - [x] **V2 — latence CPU** : téléchargement poids ~28 s **une fois** (caché) ; démarrage à froid poids cachés **675 ms** ; débit à chaud **8–9 ms/texte (~110/s)** sans GPU Metal → tenable (encodage ponctuel) _(2026-06-09)_
   - [x] **V3 — qualité re-mesurée (quantifié)** : eval-set in-process q8 = **90 % (9/10)** = EmbeddingGemma via Ollama, **> Gemini 80 %**. **Parité confirmée, pas supposée.** Découverte : l'écart venait des **prompts de tâche EmbeddingGemma** (q8 brut = 80 % ; q8 + prompts = 90 %), pas de la quantification _(2026-06-09)_
   - [x] Tableau de viabilité + **verdict « VIABLE comme défaut »** consignés [`../eval-set.md`](../eval-set.md#étape-4-bis--viabilité-de-lin-process--gemma-inside--sans-ollama-2026-06-09) → alimente D1. `npm test` **vert (109/109)** ; contrat MCP **inchangé** _(2026-06-09)_
-- [ ] **Étape 5 — Onboarding / install (choix + pédagogie)** 🧪 *(dépend de : D1, 3)* _(… · …)_
+- [ ] **Étape 4-ter — Plafonnement de lot d'embedding (durcissement in-process)** 🧪 TDD *(dépend de : 4-bis ; **BLOQUANT pour l'option 1 livrée en Étape 5**)* _(… · …)_
+  - [ ] Découper l'embedding en **sous-lots bornés** (constante `EMBED_BATCH`, défaut à caler) au lieu d'envoyer tous les chunks d'une note d'un coup — dans `InProcessEmbedder.embedDocuments` (ou l'indexeur)
+  - [ ] Re-mesurer pic RAM + temps sur corpus dense ; **balayer lot 4/8/16** pour le sweet-spot RAM↔temps, figer la constante
+  - [ ] `npm test` vert ; contrat MCP inchangé ; consigner les chiffres dans `eval-set.md`
+- [ ] **Étape 5 — Onboarding / install (choix + pédagogie)** 🧪 *(dépend de : D1, 3, **4-ter**)* _(… · …)_
   - [ ] Implémenter le flux décidé en D1 (A/B/C)
   - [ ] Ne plus *forcer* la clé Gemini si un local sans clé est retenu
   - [ ] Réutiliser les tableaux pédagogiques (confidentialité / embedder≠LLM / réutilisable-au-swap)
@@ -233,6 +237,29 @@
 - **Sortie conditionnelle :** **viable** → candidat n°1 du défaut tout-local en D1 (Ollama relégué au
   power-user, endpoint API à l'entreprise). **Pas viable** (install KO sur un OS, latence rédhibitoire,
   ou qualité quantifiée en chute) → repli documenté sur local-via-Ollama et/ou endpoint API.
+
+---
+
+## Étape 4-ter — Plafonnement de lot d'embedding (durcissement in-process) 🧪
+
+> **Découvert par le test corpus dense (2026-06-09, vrai vault Inqom = 264 notes / 2709 chunks).** La
+> viabilité 4-bis a été mesurée sur Flemmr (7 notes) → photo trompeuse. Sur un vrai vault,
+> `embedDocuments` reçoit **tous les chunks d'une note d'un coup** : une note longue (transcript de
+> sync/1-1 = **78 chunks de ~2000 tokens**) crée un lot dont l'attention en O(seq²)×batch **fait
+> exploser onnxruntime** → **8,5 Go RSS et ça grimpe, stall** (process tué à ~12 min, coincé). C'est un
+> **correctif OBLIGATOIRE**, pas un edge-case : sans lui, le défaut option 1 plante chez un utilisateur
+> dense. Chiffres consignés [`../eval-set.md`](../eval-set.md#étape-4-ter--corpus-dense--plafonnement-de-lot-2026-06-09).
+
+- **Pré-requis :** **Étape 4-bis livrée** (`InProcessEmbedder`).
+- **Charger :** `rag/src/lib/in-process-embedder.ts` (`embedDocuments`) ; `rag/src/lib/indexer.ts`
+  (`indexPreparedDocs` appelle `ports.embed(tous les chunks du doc)`) ; les chiffres `eval-set.md`.
+- **Faire (TDD, baby-steps) :** découper l'embedding en **sous-lots bornés** (constante `EMBED_BATCH`,
+  valeur à caler) au lieu d'un lot par document. Au bon niveau : soit dans `InProcessEmbedder.embedDocuments`
+  (borne tout appel), soit dans l'indexeur (borne l'orchestration). **Ne touche ni au port ni au contrat MCP.**
+- **Mesurer :** re-jouer le corpus dense ; **balayer lot 4 / 8 / 16** pour le compromis RAM↔temps (réf.
+  mesurée : lot 16 = pic **6,1 Go**, **7 min 27 s**, **6 chunks/s** ; sans plafond = explose). Figer la constante.
+- **Done :** index complet d'un vrai vault **sans explosion RAM** (cible : tenir sur 8 Go ?), pic + temps
+  consignés ; `npm test` vert ; contrat MCP inchangé. Commits conventionnels par baby-step.
 
 ---
 
