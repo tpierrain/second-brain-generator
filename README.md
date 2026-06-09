@@ -1,10 +1,11 @@
 # Second Brain Generator
 
-**Retrouve n'importe quelle décision ou info de ton travail en quelques secondes — en posant la question en langage naturel, avec les sources à l'appui.**
+**Pose ta question comme à un assistant personnel — pas besoin d'être dev — et retrouve n'importe quelle décision ou info de ton travail en secondes, toujours avec les sources.**
+*Dans Claude Desktop comme en ligne de commande, au choix.*
 
-🔒 **Et il reste vraiment à toi.** Par défaut, tes notes sont indexées **sur ta propre machine — rien ne sort**. Sur petite config, délègue l'indexation à l'API de ton choix (**Gemini** pour quelques centimes, ou **l'endpoint de ton entreprise**) en changeant juste une **URL + clé**. 🛟 Et c'est **conçu production-ready** — sauvegarde, fraîcheur, récupération après pépin : **son** boulot, pas le tien. *Toi, tu n'as qu'à parler.*
+**🔒 Privé par défaut, recherche à la carte.** Tes notes sont indexées **sur ta machine par défaut — rien ne sort**. Ou délègue à l'API de ton choix, jusqu'à l'endpoint de ta boîte : **tu choisis qui touche tes données**.
 
-💬 *Pas besoin d'être dev : ça marche dans **Claude Desktop** (onglet Code) comme en ligne de commande — si tu sais discuter avec Claude, tu sais t'en servir.*
+**🛟 Increvable & zéro corvée.** Sauvegarde, fraîcheur, récupération après pépin : **son** boulot, pas le tien. *Toi, tu n'as qu'à parler.*
 
 > 🧑 *« On en est où sur le projet facturation — qui porte quoi, et qu'est-ce qui a été décidé ? »*
 >
@@ -21,9 +22,9 @@
 > *→ kickoff commercial du 12 février · → playbook sales »*
 
 Au lieu d'aller fouiller toi-même dans Slack, tes mails, Google Drive et tes comptes rendus de
-réunion, tu demandes — et ton **second cerveau** te répond tout de suite, en citant d'où vient
-l'info. Dans la langue de ton choix : il **retrouve par le sens**, donc tu peux questionner en
-français des notes rédigées en anglais (ou l'inverse).
+réunion, tu demandes — et ton **second cerveau** te répond tout de suite, sources à l'appui. Il
+**retrouve par le sens**, donc tu peux questionner en français des notes rédigées en anglais (ou
+l'inverse).
 
 > ⚠️ Ce repo n'est **pas** un cerveau tout fait : c'est un **générateur** qui te **produit** une
 > **graine** (un squelette) que tu fais pousser pour t'en construire **un à toi**. On explique
@@ -82,7 +83,7 @@ commande** (CLI), au choix.
 | **ChatGPT / Claude « nu »** | Ne connaît que ce que tu recolles à chaque conversation. Oublie tout ensuite. | Une **mémoire persistante**, qui grossit à chaque question. |
 | **Notion AI, recherche Slack…** | Cloisonné à **un seul outil**. | **Transversal** : Slack + Drive + mails + transcripts + tes notes, au même endroit. |
 | **N'importe quel SaaS** | Tes données chez un tiers, format fermé. | **Chez toi**, en Markdown, dans **ton** repo git privé. |
-| **Outils IA « cloud-only »** | Un **moteur de recherche imposé** : pour t'indexer, tes notes partent chez un tiers — sans alternative. | **RAG à la carte** : **100 % local par défaut** (rien ne sort de ta machine), ou délégué à l'API de ton choix — Gemini, OpenAI, **l'endpoint de ta boîte** — via une simple **URL + clé**. |
+| **Outils IA « cloud-only »** | Un **moteur de recherche imposé** : pour t'indexer, tes notes partent chez un tiers — sans alternative. | **Recherche sémantique à la carte** : **locale par défaut** (rien ne sort), ou déléguée à l'API de ton choix — [tu choisis](#comment-choisir-ma-recherche-sémantique-mon-rag-). |
 
 Et surtout : ce n'est pas **un** produit unique pour tout le monde. C'est une **méthode** pour te
 fabriquer **le tien**, calé sur *tes* usages (voir « *Pourquoi un générateur et pas un produit fini ?* »).
@@ -123,15 +124,11 @@ garde-fous : c'est **son** boulot — il a été conçu pour ça — **pas le ti
 - **Rien ne se perd.** Chaque modif est **commitée automatiquement en local**. Et si tu branches un
   **dépôt distant** (optionnel, ~2 min — push *opt-in*), tout est aussi sauvegardé **hors de ta
   machine** : laptop perdu ou volé, tu reprends ailleurs où tu en étais.
-- **Privé par défaut — et c'est toi qui choisis le moteur.** Sur une machine qui le permet, tes
-  notes sont indexées **100 % en local** : **aucune donnée d'embedding ne sort de ton ordinateur**.
-  Petit poste, ou envie de ne rien faire tourner chez toi ? **Sous-traite l'indexation** — à
-  **Gemini** (coût dérisoire, quelques centimes par an), à OpenAI, ou à **n'importe quel embedder
-  compatible OpenAI, y compris l'endpoint de ton entreprise**, en renseignant juste **une URL et une
-  clé**. *(Comment ça marche : [« le RAG à la carte »](#-le-rag-à-la-carte--tu-choisis-qui-vectorise-tes-notes).)*
-- **Zéro effort de ta part.** Tu n'as jamais à lancer une synchro, à déclencher quoi que ce soit
-  dans le bon ordre, ni même à savoir que git existe : **tu n'as à savoir ni comment c'est fait
-  dedans, ni comment c'est rangé.** Tu poses ta question, c'est tout.
+- **Privé par défaut — et c'est toi qui choisis.** Tes notes sont indexées **sur ta machine** par
+  défaut : rien ne sort. Petit poste ou Mac Intel ? Tu peux déléguer à l'API de ton choix. *(Pour
+  trancher : [« comment choisir ma recherche sémantique »](#comment-choisir-ma-recherche-sémantique-mon-rag-).)*
+- **Zéro effort de ta part.** Tu n'as jamais à lancer une synchro, ni même à savoir que git existe :
+  tu poses ta question, c'est tout.
 
 > 💡 Pour les curieux : ta réponse arrive tout de suite à partir de ce que ton cerveau a déjà en
 > mémoire, et se met à jour discrètement en arrière-plan s'il trouve du nouveau — un peu comme une
@@ -142,22 +139,35 @@ garde-fous : c'est **son** boulot — il a été conçu pour ça — **pas le ti
 
 ## Prêt à essayer ?
 
+### Comment choisir ma recherche sémantique (mon RAG) ?
+
+C'est **le** choix de confidentialité, et il tient en une question : *qui a le droit de lire tes
+notes pour les indexer ?* Trois réponses — et tu peux **changer d'avis quand tu veux** (on
+ré-indexe en quelques minutes, rien n'est perdu) :
+
+| Option | Pour qui | Confidentialité | Coût |
+|---|---|---|---|
+| 🟢 **Sur ta machine** *(défaut recommandé)* | Machine ≥ 12 Go de RAM, hors Mac Intel | **Rien ne sort** de ton ordinateur | Gratuit |
+| 🟡 **Avec une clé d'API** | Petite config, ou Mac Intel | Tes notes passent par le fournisseur — Gemini, OpenAI, **l'endpoint de ta boîte** | ~0,10 € / 1 000 notes · ~1 € / 10 000 |
+| 🟢 **Ollama, en local** *(avancé)* | À l'aise pour installer une app | **Rien ne sort** non plus | Gratuit |
+
+> 💶 En clé d'API, le palier **gratuit** de Gemini suffit pour démarrer — mais *gratuit ≠ privé* :
+> activer la facturation (quelques centimes par an) sort tes notes du périmètre d'entraînement.
+> Détails : [SETUP §9](SETUP.md).
+
+À l'installation, Claude te présente les 3 options et **recommande selon ta machine** ; sans
+préférence, le défaut local s'applique tout seul si la machine le permet. *(Le « comment ça
+marche » : [« le RAG à la carte »](#-le-rag-à-la-carte--tu-choisis-qui-vectorise-tes-notes).)*
+
 ### De quoi tu as besoin
 
 - **[Claude Code](https://claude.com/claude-code)**, **[Node.js](https://nodejs.org) ≥ 18** et
   **git**. *(L'installateur vérifie tout — s'il en manque un, il te le dit proprement.)*
-- **De quoi vectoriser tes notes** — au choix (cf. [« le RAG à la carte »](#-le-rag-à-la-carte--tu-choisis-qui-vectorise-tes-notes)) :
-  **rien à installer** si tu prends l'option **locale** (recommandée, ≥ 12 Go de RAM), ou une
-  **[clé API Gemini](https://aistudio.google.com/apikey)** si tu préfères l'option clé (palier
-  gratuit pour démarrer, ~2 min, 3 clics, sans carte bancaire — [SETUP §1.1](SETUP.md)).
+- **Pour la recherche sémantique** : rien de plus si tu prends l'option **locale** (le défaut
+  recommandé), ou une **[clé d'API](https://aistudio.google.com/apikey)** si tu choisis cette
+  option — voir [« comment choisir »](#comment-choisir-ma-recherche-sémantique-mon-rag-) ci-dessus.
 - **Tes sources d'information** (Slack, Drive, mails, Notion, transcripts…), à brancher selon
   *tes* outils. Optionnel au début. *(cf. [SETUP §6](SETUP.md))*
-
-> 💶 **Combien ça coûte ?** En option **tout-local**, l'indexation est **gratuite** (rien ne sort,
-> ça tourne sur ta machine). En option **clé d'API**, c'est quasi rien : indexer **~1 000 notes ≈
-> 0,10 €**, **~10 000 notes ≈ 1 €**, les questions sont négligeables. Le palier gratuit suffit pour
-> démarrer ; le payant (très bon marché) protège tes données (voir ci-dessous). *Vérifie le tarif
-> courant, il évolue.*
 
 ### Installation — Claude installe tout pour toi
 
@@ -185,13 +195,9 @@ soit elle va au bout et **te le prouve** (elle vérifie elle-même que la recher
 tes notes), soit elle **s'arrête net en disant pourquoi** — **jamais d'install fantôme** qui a l'air
 ok mais ne marche pas. Il te reste **3 gestes** :
 
-1. **Coller ta clé Gemini** dans `<cerveau>/.env` (ligne `GOOGLE_GEMINI_API_KEY=`) — jamais dans le chat.
-   **Seulement si tu as choisi l'option « clé d'API »** : avec l'option locale (« Gemma inside »),
-   **tu sautes ce geste**, rien à coller.
-   > 💡 **Idéalement avant le 1er démarrage** (geste 3). Si tu as déjà ouvert Claude Code sans la
-   > clé : colle-la dans `.env`, puis **repose simplement ta question** — le serveur RAG relit
-   > `.env` tout seul à la requête suivante. Si jamais ça résiste, reconnecte le serveur MCP
-   > (commande `/mcp` dans Claude Code) ou relance Claude Code.
+1. **Une clé à coller — seulement si tu as choisi l'option « clé d'API ».** Avec l'option locale
+   (le défaut), **tu sautes ce geste**, rien à coller. Sinon, Claude te guide pour coller ta clé
+   dans `.env` (jamais dans le chat) — détail [SETUP §1.1](SETUP.md).
 2. **Dépôt distant ?** Claude te demandera si tu veux un dépôt git **distant** (backup +
    multi-machine). **Dire non est sans risque** : tout reste versionné en local, rien ne se perd,
    et l'auto-commit **ne pousse nulle part** (push opt-in désactivé par défaut). Tu pourras en
@@ -313,15 +319,15 @@ transparents.
 
 ## Et la confidentialité de mes données ?
 
-Question légitime : ton vault peut être **confidentiel**. Selon ton option d'embedding, **un ou
-deux** services voient ton contenu — et **dans tous les cas, tu peux fermer la porte à leur
-exploitation** (et en tout-local, l'embedder ne voit **rien**) :
+Question légitime : ton vault peut être **confidentiel**. Selon l'option de recherche que tu as
+choisie, **un ou deux** services voient ton contenu — et **dans tous les cas, tu peux fermer la
+porte à leur exploitation** (et en tout-local, le moteur d'indexation ne voit **rien**) :
 
 - **Claude** (qui raisonne et répond) lit ton vault. En **API / Team / Enterprise**, tes données
   ne servent **pas** à l'entraînement. Sur le **grand public** (claude.ai Free/Pro/Max), va dans
   **Réglages → Confidentialité** et **décoche** l'usage de tes conversations pour l'amélioration
   des modèles.
-- **L'embedder** (qui indexe tes notes) reçoit le **texte de tes notes** — *uniquement* si tu as
+- **Le moteur d'indexation** reçoit le **texte de tes notes** — *uniquement* si tu as
   choisi l'option **clé d'API** (Gemini, OpenAI, endpoint entreprise). Avec l'option **locale** ou
   **Ollama**, **rien ne sort** : tes notes ne quittent jamais ta machine. ⚠️ Et si tu passes par
   **Gemini en palier gratuit**, Google **peut exploiter** ces contenus (relecture humaine possible) :
@@ -443,17 +449,11 @@ seulement si tu as branché un dépôt distant — *opt-in*).
 #### 🍽️ Le RAG à la carte — tu choisis qui vectorise tes notes
 
 La vectorisation (l'*embedding*) est **le seul moment** où le texte de tes notes peut sortir de ta
-machine — alors on en fait **un choix conscient**, pas un défaut subi. Trois options, **de la plus
-privée à la plus légère** (et tu peux **changer d'avis quand tu veux** : on ré-encode en quelques
-minutes, **aucune note n'est perdue**) :
-
-- 🟢 **Tout sur ta machine** *(« Gemma inside », recommandé)* — un petit modèle local vectorise tes
-  notes ; **rien ne quitte ton ordinateur**, gratuit et hors-ligne. *(≥ 12 Go de RAM, hors Mac Intel.)*
-- 🟡 **Avec une clé d'API** — rien à faire tourner chez toi. Branche **Gemini** (coût **dérisoire**,
-  quelques centimes), OpenAI, ou **n'importe quel endpoint compatible OpenAI — y compris celui de ton
-  entreprise** — en renseignant juste **une URL + une clé**. ⚠️ Tes notes transitent alors par le
-  fournisseur ; idéal sur petite config ou Mac Intel.
-- 🟢 **Ollama, en local** *(avancé)* — rien ne sort non plus, au prix d'**une app séparée à installer**.
+machine — alors on en fait **un choix conscient**, pas un défaut subi. Le **moteur d'embedding**
+(l'*embedder*) est interchangeable : un petit modèle **local** (par défaut), une **clé d'API**
+(Gemini, OpenAI, ou un endpoint compatible — y compris celui de ton entreprise), ou **Ollama** en
+local. Le tableau de décision est plus haut, dans
+[« comment choisir ma recherche sémantique »](#comment-choisir-ma-recherche-sémantique-mon-rag-).
 
 > 🧠 L'embedder n'est **pas** « ChatGPT chez toi » : c'est juste le bibliothécaire qui range tes
 > notes par sens. **Le cerveau qui raisonne et te répond reste Claude**, quel que soit ton choix.
