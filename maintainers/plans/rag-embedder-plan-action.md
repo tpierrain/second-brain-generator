@@ -51,11 +51,12 @@
   - [x] Questions écrites : **10** (corpus Flemmr petit → ~10 plutôt que 15-20 ; mix faciles + grep-résistantes ; 1ʳᵉ = canari `demo.mjs`) _(2026-06-09 · e64f2bb)_
   - [x] Script « recherche + jugement Claude » → score reproductible : `scripts/run-eval.mjs` + cœur pur testé ; juge `claude -p` **validé end-to-end** (PASS sur passage pertinent, FAIL sur hors-sujet) ; **dev-only** (exclu du cerveau) ; documenté [`../eval-set.md`](../eval-set.md) _(2026-06-09 · e64f2bb, 0448c03)_
   - [x] **Baseline Gemini mesurée et consignée** ✅ — **80 % (8/10)** sur le vault Flemmr, consignée dans [`../eval-set.md`](../eval-set.md#baseline-gemini--80-810-2026-06-09). Le blocage `claude -p` exit 1 était bien **environnemental** (quota/usage Claude de la veille, réinitialisé) — pas un bug code : `claude -p` refonctionne, l'eval s'est déroulée de bout en bout. Les 2 ratés sont de **vrais échecs de récupération** (réponse présente dans le vault, passages insuffisants) → baseline honnête, on ne la gonfle pas _(2026-06-09)_
-- [ ] **Étape 3 — Adaptateur compatible-OpenAI (URL+clé)** 🧪 TDD *(dépend de : 1)* _(… · …)_
-  - [ ] `OpenAiCompatibleEmbedder` : `{model,input}` → `data[].embedding` ; `embedDocuments`/`embedQuery`
-  - [ ] `identity` (provider/model/dimension) renseignée
-  - [ ] Branché dans `createEmbedder()` via `.env` (provider + base URL + clé)
-  - [ ] Testé sur un endpoint compatible-OpenAI **et** sur Ollama local (`localhost:11434/v1`) ; `npm test` vert
+- [x] **Étape 3 — Adaptateur compatible-OpenAI (URL+clé)** 🧪 TDD *(dépend de : 1)* — **livré, 98/98 vert** _(2026-06-09 · à committer)_
+  - [x] `OpenAiCompatibleEmbedder` : `{model,input}` → `data[].embedding` ; `embedDocuments`/`embedQuery` (helper `embed()` partagé ; `fetch` injecté pour tester l'enveloppe sans réseau) _(2026-06-09)_
+  - [x] `identity` (provider/model/dimension) renseignée depuis la config — `providerId="openai-compatible"` ; dimension = clé d'invalidation (lue **avant** tout embed car estampillée en amont) _(2026-06-09)_
+  - [x] Branché dans `createEmbedder()` via `.env` — fonction de sélection **pure** `selectEmbedder(env)` (testable) ; `EMBEDDING_PROVIDER` + `EMBEDDING_BASE_URL` + `EMBEDDING_API_KEY` + `EMBEDDING_MODEL_NAME` + `EMBEDDING_DIMENSION` ; documenté dans `.env.example` _(2026-06-09)_
+  - [x] Auth Bearer si clé présente ; **aucun** header `Authorization` si clé vide (local) ; réponse non-ok → **erreur bruyante** (jamais de vecteur vide silencieux dans l'index) _(2026-06-09)_
+  - [~] Testé sur un endpoint compatible-OpenAI **et** sur Ollama local (`localhost:11434/v1`) : **enveloppe/headers/erreurs/sélection prouvés en tests unitaires** (`openai-compatible-embedder.test.ts`, `npm test` 98/98 vert). **Smoke live** (vrai Ollama + modèle pull) **reporté à l'Étape 4** (Ollama pas encore installé ; son install fait partie de l'Étape 4 « brancher local ») — honnête : pas de faux « testé en live »
 - [ ] **Étape 4 — Brancher local + MESURER vs Gemini** 📊 *(dépend de : 1,2,3)* _(… · …)_
   - [ ] Brancher EmbeddingGemma (via Ollama + adaptateur n°3)
   - [ ] Brancher bge-m3

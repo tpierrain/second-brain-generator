@@ -6,6 +6,7 @@ import {
   QUERY_RESERVE,
 } from "./config.js";
 import { UsageTracker } from "./usage-tracker.js";
+import { OpenAiCompatibleEmbedder } from "./openai-compatible-embedder.js";
 
 /**
  * Le port SPI de l'embedding (contrat interne, agnostique fournisseur). Chaque
@@ -158,17 +159,44 @@ export class GeminiEmbedder implements Embedder {
   }
 }
 
+/** Variables d'environnement lues pour choisir/configurer l'embedder. */
+export interface EmbedderEnv {
+  EMBEDDING_PROVIDER?: string;
+  EMBEDDING_BASE_URL?: string;
+  EMBEDDING_API_KEY?: string;
+  EMBEDDING_MODEL_NAME?: string;
+  EMBEDDING_DIMENSION?: string;
+}
+
 /**
- * Point de sélection UNIQUE de l'embedder (port `Embedder`). Aujourd'hui : Gemini.
- * Demain, le `switch` sur `EMBEDDING_PROVIDER` (OpenAI-compatible / local) se
- * branchera ICI et NULLE PART AILLEURS — sans toucher au harnais ni au port MCP.
+ * Sélection PURE de l'embedder à partir d'une config (testable sans toucher à
+ * `process.env`). Défaut : Gemini natif. `EMBEDDING_PROVIDER=openai-compatible`
+ * bascule sur l'adaptateur à URL/clé configurables (OpenAI, Azure, passerelle,
+ * Mistral, ou Ollama local sur `http://localhost:11434/v1`).
+ */
+export function selectEmbedder(env: EmbedderEnv): Embedder {
+  if (env.EMBEDDING_PROVIDER === "openai-compatible") {
+    return new OpenAiCompatibleEmbedder({
+      baseURL: env.EMBEDDING_BASE_URL ?? "",
+      apiKey: env.EMBEDDING_API_KEY ?? "",
+      model: env.EMBEDDING_MODEL_NAME ?? "",
+      dimension: Number(env.EMBEDDING_DIMENSION ?? 0),
+    });
+  }
+  return new GeminiEmbedder();
+}
+
+/**
+ * Point de sélection UNIQUE de l'embedder (port `Embedder`). Lit l'environnement
+ * et délègue à `selectEmbedder` — la bascule de provider vit ICI et NULLE PART
+ * AILLEURS, sans toucher au harnais ni au port MCP.
  *
  * Vit dans `embedder.ts` (et non `config.ts` comme esquissé au plan) pour éviter
  * un cycle d'import : `embedder.ts` dépend déjà de `config.ts`. Le foyer naturel
  * d'une fabrique reste de toute façon auprès des implémentations qu'elle choisit.
  */
 export function createEmbedder(): Embedder {
-  return new GeminiEmbedder();
+  return selectEmbedder(process.env);
 }
 
 // Fonctions libres conservées le temps de la transition : elles délèguent au port

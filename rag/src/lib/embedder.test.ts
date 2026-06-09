@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   createEmbedder,
+  selectEmbedder,
   embedQuery,
   embedTexts,
   GeminiEmbedder,
@@ -34,6 +35,22 @@ test("GeminiEmbedder expose son identité (provider/modèle/dimension) pour l'es
 
 test("createEmbedder() : point de sélection unique → un Embedder Gemini par défaut", () => {
   assert.equal(createEmbedder().identity.providerId, "gemini");
+});
+
+test("selectEmbedder : provider 'openai-compatible' → adaptateur compatible-OpenAI estampillé", () => {
+  const embedder = selectEmbedder({
+    EMBEDDING_PROVIDER: "openai-compatible",
+    EMBEDDING_BASE_URL: "http://localhost:11434/v1",
+    EMBEDDING_API_KEY: "",
+    EMBEDDING_MODEL_NAME: "bge-m3",
+    EMBEDDING_DIMENSION: "1024",
+  });
+
+  assert.deepEqual(embedder.identity, {
+    providerId: "openai-compatible",
+    model: "bge-m3",
+    dimension: 1024,
+  });
 });
 
 test("embedQuery consomme en prioritaire (jamais bloqué par l'indexation)", async () => {
