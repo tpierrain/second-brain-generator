@@ -178,9 +178,21 @@ jargon. C'est le registre qui a marché ; on le standardise pour le RAG.
 > Résout la **Question ouverte n°1**, post-Étapes 4 + 4-bis (mesures consignées
 > [`../eval-set.md`](../eval-set.md)). Décision produit/UX de Thomas.
 
-**Décision : option C — choix explicite à 3 à l'install**, l'option 1 **recommandée par défaut**.
-On assume **une** question délibérée (exception consciente au « le moins de questions possible » du
-`CLAUDE.md`) : la confidentialité est un **vrai arbitrage utilisateur**, pas un détail technique.
+**Décision : option C — choix explicite à 3 à l'install**, avec une **recommandation ADAPTATIVE selon la
+machine** (et non un défaut fixe). On assume **une** question délibérée (exception consciente au « le moins
+de questions possible » du `CLAUDE.md`) : la confidentialité est un **vrai arbitrage utilisateur**, pas un
+détail technique.
+
+**🎚️ Recommandation adaptative (affinée 2026-06-09 après le test corpus dense).** L'install **détecte la
+machine** et met l'étoile ⭐ sur l'option adaptée :
+- **Poste capable (16 Go+ RAM, Apple Silicon / Windows)** → ⭐ **option 1 (in-process)** : privé, gratuit,
+  rien à installer.
+- **Petit poste (≤ 8 Go RAM) OU Mac Intel** → ⭐ **option 2 (clé d'API)** : Gemini, OpenAI, ou **n'importe
+  quel fournisseur, y compris l'endpoint de l'entreprise**. **Pourquoi** : l'in-process monte à **~6 Go en
+  indexation** (test vault réel) → swappe sur 8 Go, et il est **indisponible sur Mac Intel**. L'API = RAM
+  ~0, reste léger sur petite machine.
+- **Seuil exact** (8 / 12 / 16 Go) à **figer après l'Étape 4-ter** (plafonnement de lot → le pic RAM réel
+  en dépend).
 
 Le *pourquoi*, adossé aux chiffres : l'in-process « Gemma inside » (Étape 4-bis) est **viable comme
 défaut** — install `npm`-only (ni clé ni app), démarrage MCP non ralenti, qualité **90 % = Ollama,

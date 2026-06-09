@@ -34,7 +34,7 @@
 > Coche au fil de l'eau. Les **sous-cases** permettent de suivre la progression *pendant* qu'une étape
 > tourne (surtout les baby-steps TDD). Quand une étape est finie : cocher sa case + noter _(date · commit)_.
 
-- [x] **D1 — Trancher le défaut à l'install** 🧭 *(décision Thomas, **APRÈS les Étapes 4 ET 4-bis** ; dépend de : 4, 4-bis)* — **TRANCHÉ : option C (choix explicite à 3), défaut recommandé = in-process « Gemma inside »** _(2026-06-09)_
+- [x] **D1 — Trancher le défaut à l'install** 🧭 *(décision Thomas, **APRÈS les Étapes 4 ET 4-bis** ; dépend de : 4, 4-bis)* — **TRANCHÉ : option C (choix explicite à 3), reco ADAPTATIVE (16 Go+ → in-process ⭐ ; ≤ 8 Go ou Mac Intel → clé d'API ⭐)** _(2026-06-09)_
   - [x] Tests croisés des adaptateurs **ensemble** (Thomas + Claude), sur la base des mesures (Étapes 4 + 4-bis) _(2026-06-09)_
   - [x] Décider le défaut — **in-process « Gemma inside »** retenu comme **défaut recommandé** (viabilité prouvée Étape 4-bis), présenté dans un **choix explicite à 3** (option C) : 1=in-process ⭐ / 2=clé d'API (Gemini ou endpoint entreprise) / 3=Ollama (avancé) ; garde-fou Mac Intel (option 1 masquée) _(2026-06-09)_
   - [x] Acter (addendum ADR 0007) avec le *pourquoi* + le **cadrage clé gratuite/payante** obligatoire pour l'option 2 → [`../decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md`](../decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md#addendum-d1-2026-06-09--défaut-dembedder-à-linstallation--tranché) _(2026-06-09)_
@@ -75,11 +75,13 @@
   - [ ] Découper l'embedding en **sous-lots bornés** (constante `EMBED_BATCH`, défaut à caler) au lieu d'envoyer tous les chunks d'une note d'un coup — dans `InProcessEmbedder.embedDocuments` (ou l'indexeur)
   - [ ] Re-mesurer pic RAM + temps sur corpus dense ; **balayer lot 4/8/16** pour le sweet-spot RAM↔temps, figer la constante
   - [ ] `npm test` vert ; contrat MCP inchangé ; consigner les chiffres dans `eval-set.md`
-- [ ] **Étape 5 — Onboarding / install (choix + pédagogie)** 🧪 *(dépend de : D1, 3, **4-ter**)* _(… · …)_
-  - [ ] Implémenter le flux décidé en D1 (A/B/C)
-  - [ ] Ne plus *forcer* la clé Gemini si un local sans clé est retenu
+- [ ] **Étape 5 — Onboarding / install (choix à 3 + reco adaptative)** 🧪 *(dépend de : D1, 3, **4-ter**)* _(… · …)_
+  - [ ] **Détecter la machine** (RAM `os.totalmem()` + Mac Intel) → calculer la **reco** (16 Go+ → option 1 ⭐ ; ≤ 8 Go ou Mac Intel → option 2 ⭐). Seuil exact figé avec le pic RAM de 4-ter
+  - [ ] **Présenter les 3 options** (option recommandée en tête « ⭐ pour ta machine ») ; **option 1 masquée sur Mac Intel** ; option 2 = « Gemini / OpenAI / **n'importe quel fournisseur, y c. entreprise** »
+  - [ ] **Option 2** → afficher le cadrage **« gratuit ≠ privé »** (Gemini gratuit exploité / payant non / endpoint entreprise) **avant** la clé
+  - [ ] **Ne plus *forcer* la clé Gemini** : clé demandée **uniquement** si option 2 ; options 1/3 → écrire `EMBEDDING_PROVIDER` dans `.env`, sauter l'étape clé
   - [ ] Réutiliser les tableaux pédagogiques (confidentialité / embedder≠LLM / réutilisable-au-swap)
-  - [ ] `verify-rag` passe avec l'embedder retenu
+  - [ ] `verify-rag` passe avec l'embedder retenu (in-process inclus)
 - [ ] **Étape 6 — Reranker local** 🧪 *(conditionnel ; dépend de : 4 + plafond constaté)* _(… · …)_
   - [ ] Ajouter le reranking local derrière une abstraction propre
   - [ ] Mesurer le gain sur l'eval-set → embarquer seulement si gain chiffré
@@ -91,7 +93,20 @@
 
 ## Décision D1 — Trancher le défaut d'embedder à l'installation 🧭
 
-> **Type :** décision **produit/UX de Thomas** (pas de code). **Se prend APRÈS les Étapes 4 ET 4-bis**, à
+> **✅ RÉSOLU (2026-06-09) → option C : choix explicite à 3 à l'install**, **défaut recommandé de façon
+> ADAPTATIVE selon la machine** (cf. ci-dessous). Acté en **addendum ADR 0007**
+> ([lien](../decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md#addendum-d1-2026-06-09--défaut-dembedder-à-linstallation--tranché)).
+> La section ci-dessous est conservée comme **trace du raisonnement**. L'implémentation = **Étape 5**.
+>
+> **🎚️ Reco ADAPTATIVE (consigne Thomas, 2026-06-09) — l'install détecte la machine :**
+> - **Poste capable (16 Go+ RAM, Apple Silicon / Windows)** → ⭐ **option 1 (in-process)** : privé,
+>   gratuit, rien à installer. *(exige le plafonnement de lot, Étape 4-ter — sinon explose, cf. test dense.)*
+> - **Petit poste (≤ 8 Go RAM) OU Mac Intel** → ⭐ **option 2 (clé d'API)** : Gemini, OpenAI, ou **n'importe
+>   quel fournisseur, y compris l'endpoint de l'entreprise**. **Pourquoi** : l'in-process monte à **~6 Go en
+>   indexation** → swappe sur 8 Go ; et il est **indisponible sur Mac Intel**. L'API = RAM ~0, ça reste léger.
+> - **Seuil exact** (8/12/16 Go ?) à **finaliser après l'Étape 4-ter** (le pic RAM dépend du plafond de lot retenu).
+>
+> **Type :** décision **produit/UX de Thomas** (pas de code). Prise APRÈS les Étapes 4 ET 4-bis, à
 > l'issue de **tests faits ensemble** (Thomas + Claude) sur les adaptateurs. Ne bloque que l'Étape 5.
 >
 > **🎯 Préférence affichée par Thomas (2026-06-08, affinée 2026-06-09) :** le défaut **idéal est le
@@ -269,17 +284,33 @@
 > `gemini-key.mjs`, `.env.example`, amorce `CLAUDE.md` étape 4). Cette étape adapte le flux selon la
 > **Décision D1**, et **capitalise sur les artefacts pédagogiques** (exigence ADR 0007).
 
-- **Pré-requis :** **Décision D1 actée** + **Étape 3 livrée**.
-- **Charger :** Décision D1 (résultat) ; ADR 0007 §« Exigence pédagogique » ; étude §1.3 (embedder≠LLM),
-  §privacy (échelle), §2 (réutilisable-au-swap) ; mémoire `rag-adapters-pedagogy-requirement` ; les
-  fichiers d'onboarding listés ci-dessus ; le hors-scope du plan `embedder-spi.md` §7 (ce qui était
-  reporté à « quand une vraie 2ᵉ impl arrive » = maintenant).
-- **Faire :** implémenter le flux décidé en D1 (A/B/C). Si un embedder **local sans clé** est possible,
-  ne plus *forcer* la clé Gemini. **Réutiliser les tableaux pédagogiques** (échelle de confidentialité,
-  embedder≠LLM, réutilisable-au-swap) là où l'utilisateur rencontre le choix — toujours « tableau +
-  verdict en une phrase, zéro jargon ».
-- **Done :** un non-dev peut installer avec le défaut D1 sans friction ; le choix (s'il y en a un) est
-  expliqué clairement ; `verify-rag` passe avec l'embedder retenu. Commits conventionnels.
+- **Pré-requis :** **Décision D1 actée** (✅) + **Étape 3 livrée** (✅) + **Étape 4-ter livrée** (le
+  plafonnement de lot, sinon l'option 1 recommandée explose chez un utilisateur dense).
+- **Charger :** addendum **D1** de l'ADR 0007 (le tableau des 3 options + le cadrage clé gratuite/payante
+  + la reco adaptative) ; ADR 0007 §« Exigence pédagogique » ; étude §1.3 (embedder≠LLM), §privacy
+  (échelle), §2 (réutilisable-au-swap) ; mémoire `rag-adapters-pedagogy-requirement` +
+  `local-embedder-in-process-path` (chiffres footprint réels) ; les fichiers d'onboarding qui **forcent**
+  Gemini aujourd'hui (`installer.mjs`, `scripts/verify-rag.mjs`, `gemini-key.mjs`, `.env.example`, amorce
+  `CLAUDE.md` étape 4) ; `rag/src/lib/embedder.ts` (`selectEmbedder` — les `EMBEDDING_PROVIDER` déjà câblés).
+- **Faire — le flux d'install (option C, choix explicite à 3, reco ADAPTATIVE) :**
+  1. **Détecter la machine** : RAM totale (`os.totalmem()`) + OS/arch (Mac Intel `darwin/x64` = option 1
+     indisponible). En déduire la **reco** : poste **16 Go+** → ⭐ option 1 (in-process) ; **≤ 8 Go** ou
+     **Mac Intel** → ⭐ **option 2 (clé d'API)**. *(Seuil exact à figer avec le pic RAM de l'Étape 4-ter.)*
+  2. **Présenter les 3 options** (triées par confidentialité), l'option recommandée en tête avec « ⭐ recommandé
+     pour ta machine » : **1.** tout sur ta machine, rien à installer (in-process) ; **2.** avec une clé d'API —
+     **Gemini, OpenAI, ou n'importe quel fournisseur, y compris l'endpoint de ton entreprise** ; **3.** local
+     via Ollama (avancé). Sur Mac Intel, **masquer l'option 1**.
+  3. **Si option 2 choisie** : afficher le **cadrage « gratuit ≠ privé »** (Gemini gratuit = données
+     exploitées ; payant ~dizaines de centimes/mois = non-exploitation ; endpoint entreprise = tenant), puis
+     ouvrir `.env` pour la clé (logique actuelle, mais **conditionnée à ce choix**).
+  4. **Si option 1 ou 3 choisie** : **ne plus forcer** la clé Gemini — écrire `EMBEDDING_PROVIDER=in-process`
+     (ou la config Ollama) dans `.env`, **sauter** l'étape clé.
+  5. **Réutiliser les 3 tableaux pédagogiques** (échelle confidentialité / embedder≠LLM / réutilisable-au-swap)
+     au point de choix — toujours « tableau + verdict en une phrase, zéro jargon ».
+- **Done :** un non-dev installe avec la **reco adaptée à sa machine** sans friction ; sur petit poste, l'API
+  (Gemini/OpenAI/entreprise) est clairement recommandée et **expliquée** (pourquoi : RAM) ; la clé n'est
+  demandée **que** si option 2 ; **`verify-rag` passe avec l'embedder retenu** (in-process inclus — canari
+  Mollecuisse déjà prouvé). Commits conventionnels.
 
 ---
 
