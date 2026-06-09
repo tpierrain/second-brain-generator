@@ -2,13 +2,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { FakeEmbedder } from "./fake-embedder.js";
 
-test("FakeEmbedder : déterministe (même texte → même vecteur) et de dimension fixe", async () => {
+test("FakeEmbedder : discrimine deux textes et porte la dimension via son identité", async () => {
   const embedder = new FakeEmbedder(8);
 
-  const a = await embedder.embedQuery("Pélagie de Mollecuisse");
-  const b = await embedder.embedQuery("Pélagie de Mollecuisse");
+  const pelagie = await embedder.embedQuery("Pélagie de Mollecuisse");
+  const autre = await embedder.embedQuery("tout autre chose");
 
-  assert.deepEqual(a, b); // déterministe : aucun réseau, aucune clé
-  assert.equal(a.length, 8); // dimension fixe, portée par l'identité
-  assert.equal(embedder.identity.dimension, 8);
+  // Ce qui rend un fake utilisable comme double : deux textes différents
+  // donnent deux vecteurs différents (sinon le retrieval matcherait tout).
+  assert.notDeepEqual(pelagie, autre);
+  // Il reste déterministe : aucun réseau, aucune clé, fonction pure.
+  assert.deepEqual(pelagie, await embedder.embedQuery("Pélagie de Mollecuisse"));
+  // La dimension produite EST celle annoncée par l'identité (pivot du swap).
+  assert.equal(pelagie.length, embedder.identity.dimension);
 });
