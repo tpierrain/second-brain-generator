@@ -172,22 +172,28 @@ est conçu comme un **hexagone** : sa surface **MCP** (les outils `search_vault`
 est un **contrat stable** dont dépend tout le harnais, tandis que le **moteur d'embeddings, le
 vector store et le chunking sont des adaptateurs interchangeables** (port SPI `Embedder`).
 
-Conséquence visée : **un éventail de profils RAG**, sélectionnable selon tes besoins (privacy,
-budget, puissance machine, OS, friction d'install) — **sans casser** ni tes notes ni tes skills :
+Conséquence : **tu choisis ton moteur d'embedding à l'installation**, selon tes besoins (privacy,
+budget, puissance machine, OS) — **sans casser** ni tes notes ni tes skills (changer d'option
+ré-encode en quelques minutes, aucune note perdue). **Trois options livrées**, de la plus privée à
+la plus légère :
 
-| Profil RAG | Pour qui | Stack pressentie |
+| Option d'embedding | Pour qui | Stack |
 |---|---|---|
-| **Bureautique** (défaut visé) | Non-dev, gratuit, **privé**, machine modeste, Mac/PC | Embedder local léger (**bge-m3** / **nomic**) via Ollama |
-| **Grosse machine** (opt-in) | Dev/power-user, GPU/RAM, qualité max, gratuit+privé | Embedder local gros (**Qwen3**), reranking lourd, éventuellement **GraphRAG/LightRAG** |
-| **Cloud-avec-clé** (opt-in) | Veut zéro install locale, accepte cloud + clé + coût | **Gemini** (actuel) ou autre API |
+| **Tout sur ta machine** (« Gemma inside », défaut recommandé ≥ 12 Go RAM, hors Mac Intel) | Non-dev, gratuit, **privé**, rien à installer | `InProcessEmbedder` — **EmbeddingGemma** via Transformers.js, **in-process** (zéro app, zéro clé) |
+| **Avec une clé d'API** (recommandé sur petite machine / Mac Intel) | Veut zéro charge machine, accepte cloud + clé | `OpenAiCompatibleEmbedder` ou **Gemini** natif — clé + URL configurables (OpenAI, Azure, **endpoint entreprise**…) |
+| **Local via Ollama** *(avancé)* | Veut tout-local sur Mac Intel ou un modèle précis | adaptateur compatible-OpenAI pointé sur `localhost:11434` (**app séparée** à installer) |
 
-> 🔬 **Statut honnête.** L'**éventail** est une **ambition documentée** (étude + plan SPI), pas
-> encore livrée : aujourd'hui le moteur tourne avec **Gemini**. L'architecture (contrat MCP stable
-> + port SPI) est précisément ce qui rendra ces profils **sûrs à brancher** plus tard (estampille
-> d'identité de l'index + confirmation explicite, jamais de réindexation silencieuse). Voir
-> [`maintainers/plans/etude-rag-local-criteres-et-veille.md`](maintainers/plans/etude-rag-local-criteres-et-veille.md),
-> [`embedder-spi.md`](maintainers/plans/embedder-spi.md) et l'ADR
-> [`0006`](maintainers/decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md).
+> ✅ **Livré (2026-06-09).** Ce n'est plus une ambition : l'installeur **pose le choix** (option C de
+> l'ADR 0007) et la **recommandation s'adapte à la machine** (in-process si ≥ 12 Go & pas Mac Intel,
+> sinon clé). Mesuré : l'in-process « Gemma inside » fait **90 %** (= Ollama, > Gemini 80 %) sur
+> l'eval-set. L'architecture (contrat MCP stable + port SPI) est ce qui rend le swap **sûr** :
+> estampille d'identité de l'index + confirmation explicite, jamais de réindexation silencieuse. Voir
+> l'ADR [`0007`](maintainers/decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md)
+> (décision + addendum D1) et [`0006`](maintainers/decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md).
+>
+> 🔭 **Encore au stade ambition** (non livré) : le profil **« grosse machine »** opt-in (embedder
+> lourd type Qwen3, reranking, éventuellement GraphRAG/LightRAG — cf. ADR
+> [`0008`](maintainers/decisions/0008-lightrag-et-graph-rag-differes.md)).
 
 ---
 
@@ -195,12 +201,13 @@ budget, puissance machine, OS, friction d'install) — **sans casser** ni tes no
 
 L'honnêteté fait partie de la démarche :
 
-- **Ce n'est pas « 100 % privé » de bout en bout.** Le RAG (embeddings + index + recherche) peut
-  devenir **entièrement local**, mais le LLM qui **raisonne et répond reste Claude** (cloud). On ne
-  survend pas : le morceau qu'on peut rendre on-device, c'est la recherche, pas la génération.
+- **Ce n'est pas « 100 % privé » de bout en bout.** Le RAG (embeddings + index + recherche) est
+  **entièrement local par défaut** (option « Gemma inside »), mais le LLM qui **raisonne et répond
+  reste Claude** (cloud). On ne survend pas : le morceau on-device, c'est la recherche, pas la génération.
 - **Ce n'est pas zéro-install ni zéro-compétence pour démarrer.** L'**usage** quotidien ne demande
-  aucune compétence ; l'**installation** (une fois, ~15 min) suppose git + Node + une clé API —
-  guidée pas à pas, vérifiée par l'installeur.
+  aucune compétence ; l'**installation** (une fois, ~15 min) suppose git + Node (et une clé API
+  *seulement* si tu choisis l'option clé — l'option tout-local n'en demande pas) — guidée pas à pas,
+  vérifiée par l'installeur.
 - **Ce n'est pas (encore) multi-IA.** C'est **Claude-only** pour l'instant (couche de pilotage :
   hooks, skills, constitution). Le vault et le moteur restent agnostiques pour ne pas fermer la
   porte — mais le cross-plateforme n'est pas livré.

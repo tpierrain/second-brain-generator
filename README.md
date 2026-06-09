@@ -62,8 +62,9 @@ quel que soit son niveau technique :
   contexte client.
 
 > ⚠️ L'**usage au quotidien ne demande aucune compétence technique** : tu poses des questions, tu
-> lis des réponses. Seule l'**installation** (une fois, ~15 min) suppose d'avoir git, Node et une
-> clé API — on te guide pas à pas, et un installateur vérifie tout pour toi.
+> lis des réponses. Seule l'**installation** (une fois, ~15 min) suppose d'avoir git et Node (et,
+> *si* tu choisis l'option clé d'API, une clé) — on te guide pas à pas, et un installateur vérifie
+> tout pour toi.
 
 ## En quoi c'est différent de ChatGPT, Claude, Notion AI ou de la recherche Slack ?
 
@@ -120,10 +121,11 @@ aies à penser à les faire. C'est de l'**affordance** : la complexité est **ca
 - **Tes sources d'information** (Slack, Drive, mails, Notion, transcripts…), à brancher selon
   *tes* outils. Optionnel au début. *(cf. [SETUP §6](SETUP.md))*
 
-> 💶 **Combien ça coûte ?** Quasi rien. Indexer **~1 000 notes ≈ 0,10 €**, **~10 000 notes ≈ 1 €**,
-> les questions sont négligeables. Le gratuit suffit pour démarrer ; le payant (très bon marché)
-> sert pour les gros volumes — et protège tes données (voir ci-dessous). *Vérifie le tarif courant,
-> il évolue.*
+> 💶 **Combien ça coûte ?** En option **tout-local**, l'indexation est **gratuite** (rien ne sort,
+> ça tourne sur ta machine). En option **clé d'API**, c'est quasi rien : indexer **~1 000 notes ≈
+> 0,10 €**, **~10 000 notes ≈ 1 €**, les questions sont négligeables. Le palier gratuit suffit pour
+> démarrer ; le payant (très bon marché) protège tes données (voir ci-dessous). *Vérifie le tarif
+> courant, il évolue.*
 
 ### Installation — Claude installe tout pour toi
 
@@ -276,8 +278,9 @@ transparents.
 
 ## Et la confidentialité de mes données ?
 
-Question légitime : ton vault peut être **confidentiel**. Deux services voient ton contenu — et
-**dans les deux cas, tu peux fermer la porte à leur exploitation** :
+Question légitime : ton vault peut être **confidentiel**. Selon ton option d'embedding, **un ou
+deux** services voient ton contenu — et **dans tous les cas, tu peux fermer la porte à leur
+exploitation** (et en tout-local, l'embedder ne voit **rien**) :
 
 - **Claude** (qui raisonne et répond) lit ton vault. En **API / Team / Enterprise**, tes données
   ne servent **pas** à l'entraînement. Sur le **grand public** (claude.ai Free/Pro/Max), va dans

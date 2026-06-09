@@ -185,14 +185,14 @@ détail technique.
 
 **🎚️ Recommandation adaptative (affinée 2026-06-09 après le test corpus dense).** L'install **détecte la
 machine** et met l'étoile ⭐ sur l'option adaptée :
-- **Poste capable (16 Go+ RAM, Apple Silicon / Windows)** → ⭐ **option 1 (in-process)** : privé, gratuit,
+- **Poste capable (≥ 12 Go RAM, Apple Silicon / Windows)** → ⭐ **option 1 (in-process)** : privé, gratuit,
   rien à installer.
-- **Petit poste (≤ 8 Go RAM) OU Mac Intel** → ⭐ **option 2 (clé d'API)** : Gemini, OpenAI, ou **n'importe
-  quel fournisseur, y compris l'endpoint de l'entreprise**. **Pourquoi** : l'in-process monte à **~6 Go en
-  indexation** (test vault réel) → swappe sur 8 Go, et il est **indisponible sur Mac Intel**. L'API = RAM
-  ~0, reste léger sur petite machine.
-- **Seuil exact** (8 / 12 / 16 Go) à **figer après l'Étape 4-ter** (plafonnement de lot → le pic RAM réel
-  en dépend).
+- **Petit poste (< 12 Go RAM) OU Mac Intel** → ⭐ **option 2 (clé d'API)** : Gemini, OpenAI, ou **n'importe
+  quel fournisseur, y compris l'endpoint de l'entreprise**. **Pourquoi** : l'in-process monte à **~4–6 Go en
+  indexation** (test vault réel, après plafonnement de lot Étape 4-ter) → swappe sur petite machine, et il
+  est **indisponible sur Mac Intel**. L'API = RAM ~0, reste léger sur petite machine.
+- **Seuil FIGÉ à 12 Go** (décision Thomas, post-Étape 4-ter — plafonnement de lot livré, pic OS ~3,8–4 Go en
+  `EMBED_BATCH=4`). Implémenté dans `scripts/lib/embedder-choice.mjs` (`IN_PROCESS_MIN_RAM_BYTES = 12 Go`).
 
 Le *pourquoi*, adossé aux chiffres : l'in-process « Gemma inside » (Étape 4-bis) est **viable comme
 défaut** — install `npm`-only (ni clé ni app), démarrage MCP non ralenti, qualité **90 % = Ollama,
@@ -203,7 +203,7 @@ sans imposer de trancher un sujet technique.
 
 | # | Libellé utilisateur | Adaptateur | Trade-off en une ligne |
 |---|---|---|---|
-| 1 ⭐ | **Tout sur ta machine, rien à installer** | `InProcessEmbedder` (in-process) | Privé + gratuit + offline ; ~1,5 Go RAM au repos, **~6 Go en indexation d'un vrai vault** (16 Go+ ; **exige le plafonnement de lot**, cf. plan Étape 4-ter) ; **Mac Apple Silicon / Windows** (pas Mac Intel) |
+| 1 ⭐ | **Tout sur ta machine, rien à installer** | `InProcessEmbedder` (in-process) | Privé + gratuit + offline ; ~1,5 Go RAM au repos, **~4–6 Go en indexation d'un vrai vault** (≥ 12 Go ; plafonnement de lot `EMBED_BATCH=4` livré, Étape 4-ter) ; **Mac Apple Silicon / Windows** (pas Mac Intel) |
 | 2 | **Avec une clé d'API** (Gemini, ou endpoint entreprise) | `OpenAiCompatibleEmbedder` (ou Gemini natif) | Léger pour la machine ; **les notes transitent par le fournisseur** — voir cadrage gratuit/payant ci-dessous |
 | 3 | **Local via Ollama** *(avancé)* | n°2 pointé sur `localhost:11434` | Comme 1 (rien ne sort) mais **app séparée** ; utile Mac Intel / modèle précis |
 

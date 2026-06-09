@@ -15,7 +15,7 @@ donnée perso, aucun nom d'entreprise, aucun nom de personne réel.
 
 ## Architecture en 3 couches
 
-- 🟢 **Moteur** (`rag/`) — MCP server TypeScript : chunking, embeddings Gemini, recherche
+- 🟢 **Moteur** (`rag/`) — MCP server TypeScript : chunking, embeddings **à la carte** (in-process / clé / Ollama), recherche
   sémantique, garde-fous quota, lock single-writer. Générique. Tests : `cd rag && npm test`
   (doit rester vert), typecheck : `cd rag && npx tsc --noEmit`.
 - 🟡 **Harnais** — fichiers `*.template` (`CLAUDE.md.template`, `.mcp.json.template`,
@@ -128,10 +128,11 @@ nvm, volta, nodenv, fnm Linux+macOS ; Windows : nodejs, npm, Volta, `NVM_SYMLINK
   5/8 de l'installeur (catalogue `scripts/lib/connectors-catalog.mjs` + merge idempotent
   `connectors-merge.mjs`/`connectors-apply.mjs`), doc `SETUP.md §6`. Suite : enrichir le
   catalogue (plus de connecteurs MCP communautaires) au fil des besoins.
-- **Embedder local (mode 100 % privé)** : permettre de remplacer Gemini par un modèle
-  d'embeddings local (Ollama / open-source) via `EMBEDDING_MODEL` (`rag/src/lib/config.ts` +
-  `embedder.ts`), pour que rien ne sorte de la machine. Aujourd'hui seulement documenté
-  (README/SETUP §9 : palier payant Gemini = données hors entraînement).
+- ~~Embedder local (mode 100 % privé)~~ ✅ livré (D1, ADR 0007) : choix d'embedder à l'install
+  (tout-local in-process **EmbeddingGemma** / clé d'API / Ollama) via `EMBEDDING_PROVIDER`
+  (`rag/src/lib/config.ts` + adaptateurs `in-process-embedder.ts` / `openai-compatible-embedder.ts`),
+  reco adaptative selon la machine (`scripts/lib/embedder-choice.mjs`, seuil 12 Go). Rien ne sort en
+  tout-local/Ollama. Suite **non livrée** : profil « grosse machine » (reranker, GraphRAG — ADR 0008).
 - ~~Installeur : option `--non-interactive`~~ ✅ livré : `parseAnswers` (`scripts/lib/installer-args.mjs`)
   → flags `--name/--owner/--lang` (+ env `SB_*`, précédence flag > env > défaut),
   `--non-interactive`/`--yes`/`--no-input` ; **jamais la clé Gemini** (différée en `.env`).

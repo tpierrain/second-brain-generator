@@ -47,7 +47,8 @@ quelques clics.
 3. Laisse AI Studio **créer un projet automatiquement** (ou choisis-en un existant) — tu n'as rien
    d'autre à configurer.
 4. **Copie la clé** (elle ressemble à `AIza…`).
-5. Colle-la quand `node installer.mjs` te la demande (ou dans `.env`, variable `GEMINI_API_KEY`).
+5. Colle-la dans `<cerveau>/.env`, sur la ligne `GOOGLE_GEMINI_API_KEY=` (jamais dans le chat ni en
+   argument de commande — cf. garde-fous §troubleshooting).
 
 C'est tout : le **palier gratuit est actif immédiatement**, aucune carte bancaire requise pour
 démarrer.
@@ -75,7 +76,8 @@ node installer.mjs          # interactif : demande nom, emplacement, ton nom, la
 Le script :
 1. vérifie les prérequis (et s'arrête proprement s'il en manque) ;
 2. te demande **nom du cerveau / emplacement / ton nom / langue** ;
-3. te demande ta clé Gemini (ou plus tard) ;
+3. te fait **choisir ton embedder** (tout-local « Gemma inside » / clé d'API / Ollama — reco selon ta
+   machine, cf. §1) ; la clé Gemini ne te sera demandée **que** si tu prends l'option clé d'API ;
 4. **crée le dossier cerveau** (`<emplacement>/<nom>`, **refus s'il existe**) et y **copie les
    fichiers suivis du launcher**, puis génère tes fichiers personnalisés dedans : `CLAUDE.md` (qui
    **remplace l'amorce**), `.mcp.json`, `.claude/settings.json`, `.env` ;
@@ -95,7 +97,9 @@ dossier cible existe déjà (sortie non-zéro, rien n'est touché). Pour recomme
 > crée d'abord un dossier vide à part, puis depuis le launcher :
 1. Copie tout le contenu du launcher dans ton nouveau dossier cerveau (hors `.git`, `node_modules`,
    `DEVELOPING.md`).
-2. Dans le cerveau : copie `.env.example` → `.env` et renseigne ta clé Gemini.
+2. Dans le cerveau : copie `.env.example` → `.env`. Pour l'option **tout-local**, mets
+   `EMBEDDING_PROVIDER=in-process` (ni clé ni app) ; pour l'option **clé d'API**, renseigne
+   `GOOGLE_GEMINI_API_KEY` ; pour **Ollama**, suis le bloc `openai-compatible` du `.env.example`.
 3. Copie chaque `*.template` vers son fichier final (`CLAUDE.md.template` → `CLAUDE.md`,
    `.mcp.json.template` → `.mcp.json`, `.claude/settings.json.template` → `.claude/settings.json`)
    puis remplace les placeholders `{{...}}` (notamment `{{PROJECT_ROOT}}` = chemin absolu du
@@ -140,9 +144,10 @@ node installer.mjs --non-interactive --name "second-brain" --owner "Jane Doe" --
 
 ## 3. Premier test
 
-> ⚠️ **Renseigne ta clé Gemini dans `.env` AVANT ce premier démarrage.** Le serveur MCP `vault-rag`
-> est lancé une fois à l'ouverture de Claude Code : s'il démarre sans clé, le RAG ne pourra pas
-> répondre. (Au démarrage, le hook de statut **te prévient** si la clé manque.)
+> ⚠️ **Option clé d'API seulement : renseigne ta clé Gemini dans `.env` AVANT ce premier démarrage.**
+> Le serveur MCP `vault-rag` est lancé une fois à l'ouverture de Claude Code : s'il démarre sans clé
+> alors que tu es sur l'option Gemini, le RAG ne pourra pas répondre. (Au démarrage, le hook de statut
+> **te prévient** si la clé manque.) En **tout-local** ou **Ollama**, **aucune clé** : saute ce point.
 
 ```bash
 cd <emplacement>/<nom>   # le dossier cerveau créé par l'installeur (ex. ~/second-brain)
@@ -172,12 +177,14 @@ prouve aussi la recherche **par le sens**, pas un grep.
 > relance Claude Code.
 
 > Si Claude ne « voit » pas le serveur RAG : vérifie que `.mcp.json` existe et pointe le bon
-> chemin, accepte le serveur MCP au démarrage de Claude Code, et que `.env` contient la clé.
+> chemin, accepte le serveur MCP au démarrage de Claude Code, et — *en option clé d'API* — que
+> `.env` contient la clé.
 
 ## 4. Le moteur RAG en bref
 
 - Découpe chaque `.md` en **chunks** (un par section `#`/`##`/`###`).
-- Embedde chaque chunk (modèle `gemini-embedding-001`) → vecteur stocké dans `rag/.cache/vault.db` (SQLite).
+- Embedde chaque chunk avec l'embedder choisi (in-process **EmbeddingGemma** par défaut, ou
+  `gemini-embedding-001` en option clé, ou Ollama) → vecteur stocké dans `rag/.cache/vault.db` (SQLite).
 - Une recherche embedde la question et remonte les chunks les plus proches par similarité.
 - **Incrémental** : seuls les fichiers modifiés (hash de contenu) sont ré-indexés. Au démarrage du serveur MCP, un reindex de fond rattrape les nouveautés sans bloquer les recherches.
 - **Garde-fous quota** : plafond `MAX_EMBED_REQUESTS_PER_DAY` + réserve `QUERY_RESERVE` (les recherches ne sont jamais bloquées par l'indexation). Surchargeables dans `.env`.
@@ -298,11 +305,15 @@ Claude Code lit ton vault pour répondre.
 - **Grand public** (claude.ai Free/Pro/Max) : va dans **Réglages → Confidentialité** et **désactive**
   l'utilisation de tes conversations pour l'amélioration des modèles.
 
-### Gemini (le RAG / embeddings)
+### L'embedder (le RAG / embeddings)
 
-Le moteur envoie le **texte de tes notes** (et de tes requêtes) à l'API Gemini pour calculer les
-**embeddings** — c'est tout : Gemini ne « répond » jamais, et les vecteurs sont stockés **en local**
-(`rag/.cache`).
+> Cette sous-section ne concerne que l'**option clé d'API (Gemini)**. En **tout-local** (« Gemma
+> inside ») ou **Ollama**, **rien ne sort** : le texte de tes notes ne quitte jamais ta machine, et
+> il n'y a ni clé, ni coût, ni caveat fournisseur.
+
+En option **Gemini**, le moteur envoie le **texte de tes notes** (et de tes requêtes) à l'API Gemini
+pour calculer les **embeddings** — c'est tout : Gemini ne « répond » jamais, et les vecteurs sont
+stockés **en local** (`rag/.cache`).
 - **Palier gratuit** : ⚠️ Google **peut utiliser ces contenus pour améliorer ses produits**, et une
   **relecture humaine** est possible. À éviter pour du confidentiel.
 - **Palier payant** (facturation activée sur ta clé / projet Google) : Google s'engage à **ne pas**
@@ -322,11 +333,15 @@ tokens indexés) :
 > est quasi nul. Bilan : pour le prix d'un café (sur toute une année), tu sors tes données du
 > périmètre d'entraînement.
 
-### Pour aller plus loin (100 % local)
+### 100 % local — **livré** (défaut recommandé)
 
-Pour que **rien** ne sorte de ta machine, on pourrait brancher un **modèle d'embeddings local**
-(Ollama / open-source) à la place de Gemini. Le moteur est modulaire (`EMBEDDING_MODEL` dans
-`rag/src/lib/config.ts` + `embedder.ts`), mais cette option **n'est pas livrée** aujourd'hui.
+Pour que **rien** ne sorte de ta machine, l'embedder **tout-local** est **livré et recommandé par
+défaut** (D1, ADR 0007) : `InProcessEmbedder` fait tourner **EmbeddingGemma** *in-process* (via
+Transformers.js, ni clé ni app à installer — `EMBEDDING_PROVIDER=in-process` dans `.env`). Mesuré à
+**90 %** sur l'eval-set (= Ollama, > Gemini 80 %). Recommandé dès **12 Go de RAM** (hors Mac Intel ;
+pic OS ~4 Go en indexation, `EMBED_BATCH=4`). Variante **Ollama** (`EMBEDDING_PROVIDER=ollama`) pour
+Mac Intel ou un modèle précis. Le moteur reste modulaire (port SPI `Embedder`) : changer d'option
+ré-encode en quelques minutes, **sans perdre une note**.
 
 > Les conditions d'Anthropic et de Google **évoluent** : vérifie-les au moment où tu lis (Anthropic
 > Privacy Center · *Gemini API Additional Terms of Service*).
