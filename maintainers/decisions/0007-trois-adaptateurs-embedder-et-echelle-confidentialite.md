@@ -1,8 +1,9 @@
 # ADR 0007 — Trois adaptateurs d'embedder (Gemini natif / compatible-OpenAI / local) + échelle de confidentialité
 
 - **STATUT :** ACTÉ (2026-06-08) pour la **direction** (les trois adaptateurs + l'échelle de
-  confidentialité). **Ouvert / différé :** le **défaut d'embedder à l'installation** (cf. §Questions
-  ouvertes) — à trancher par Thomas (décision produit/UX).
+  confidentialité). **Question ouverte n°1 (défaut d'embedder à l'installation) → TRANCHÉE le
+  2026-06-09** : cf. **Addendum D1** en fin d'ADR (choix explicite à 3, défaut recommandé =
+  in-process « Gemma inside »).
 - **Lié :** [`0006-le-mcp-du-rag-est-un-contrat-stable.md`](0006-le-mcp-du-rag-est-un-contrat-stable.md)
   (cet ADR **concrétise** son SPI « embedder interchangeable » en nommant les adaptateurs visés),
   [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md) (le LLM qui répond reste
@@ -171,3 +172,65 @@ jargon. C'est le registre qui a marché ; on le standardise pour le RAG.
   le dialecte OpenAI est le standard de fait, un seul adaptateur à URL configurable suffit. Refusé.
 - **Imposer un choix de fournisseur à chaque non-dev à l'install** — friction, et frotte avec la
   philosophie d'install générique. Écarté comme *défaut* (reste l'option C, ouverte).
+
+## Addendum D1 (2026-06-09) — défaut d'embedder à l'installation : TRANCHÉ
+
+> Résout la **Question ouverte n°1**, post-Étapes 4 + 4-bis (mesures consignées
+> [`../eval-set.md`](../eval-set.md)). Décision produit/UX de Thomas.
+
+**Décision : option C — choix explicite à 3 à l'install**, avec une **recommandation ADAPTATIVE selon la
+machine** (et non un défaut fixe). On assume **une** question délibérée (exception consciente au « le moins
+de questions possible » du `CLAUDE.md`) : la confidentialité est un **vrai arbitrage utilisateur**, pas un
+détail technique.
+
+**🎚️ Recommandation adaptative (affinée 2026-06-09 après le test corpus dense).** L'install **détecte la
+machine** et met l'étoile ⭐ sur l'option adaptée :
+- **Poste capable (16 Go+ RAM, Apple Silicon / Windows)** → ⭐ **option 1 (in-process)** : privé, gratuit,
+  rien à installer.
+- **Petit poste (≤ 8 Go RAM) OU Mac Intel** → ⭐ **option 2 (clé d'API)** : Gemini, OpenAI, ou **n'importe
+  quel fournisseur, y compris l'endpoint de l'entreprise**. **Pourquoi** : l'in-process monte à **~6 Go en
+  indexation** (test vault réel) → swappe sur 8 Go, et il est **indisponible sur Mac Intel**. L'API = RAM
+  ~0, reste léger sur petite machine.
+- **Seuil exact** (8 / 12 / 16 Go) à **figer après l'Étape 4-ter** (plafonnement de lot → le pic RAM réel
+  en dépend).
+
+Le *pourquoi*, adossé aux chiffres : l'in-process « Gemma inside » (Étape 4-bis) est **viable comme
+défaut** — install `npm`-only (ni clé ni app), démarrage MCP non ralenti, qualité **90 % = Ollama,
+> Gemini 80 %**, **rien ne sort de la machine**. Il offre donc « gratuit + privé + zéro friction »
+sans imposer de trancher un sujet technique.
+
+**Les 3 options présentées** (triées par confidentialité décroissante) :
+
+| # | Libellé utilisateur | Adaptateur | Trade-off en une ligne |
+|---|---|---|---|
+| 1 ⭐ | **Tout sur ta machine, rien à installer** | `InProcessEmbedder` (in-process) | Privé + gratuit + offline ; ~1,5 Go RAM au repos, **~6 Go en indexation d'un vrai vault** (16 Go+ ; **exige le plafonnement de lot**, cf. plan Étape 4-ter) ; **Mac Apple Silicon / Windows** (pas Mac Intel) |
+| 2 | **Avec une clé d'API** (Gemini, ou endpoint entreprise) | `OpenAiCompatibleEmbedder` (ou Gemini natif) | Léger pour la machine ; **les notes transitent par le fournisseur** — voir cadrage gratuit/payant ci-dessous |
+| 3 | **Local via Ollama** *(avancé)* | n°2 pointé sur `localhost:11434` | Comme 1 (rien ne sort) mais **app séparée** ; utile Mac Intel / modèle précis |
+
+**Garde-fous d'implémentation (pour l'Étape 5) :**
+- **Mac Intel** : l'option 1 (in-process) **n'apparaît pas** (`onnxruntime-node` 1.24.3 ne couvre pas
+  darwin/x64) → choix réduit à 2 (clé / Ollama). À **détecter automatiquement**.
+- **Ne plus *forcer* la clé Gemini** : l'étape « ouvrir le `.env` / coller la clé » ne se déclenche que
+  pour l'**option 2** (aujourd'hui `installer.mjs` / `verify-rag.mjs` / `gemini-key.mjs` / amorce
+  `CLAUDE.md` étape 4 l'exigent toujours).
+- **`verify-rag` doit passer** avec l'embedder retenu (canari Mollecuisse déjà OK en in-process).
+- **Réutiliser les 3 artefacts pédagogiques** (échelle confidentialité / embedder≠LLM /
+  réutilisable-au-swap) au point de choix.
+
+**Cadrage « clé gratuite vs payante » (OBLIGATOIRE si l'utilisateur choisit l'option 2).** Le piège à
+désamorcer : **« gratuit » ≠ « privé ».** Avec une clé, le **texte des notes** est envoyé au
+fournisseur ; ce qui change tout, c'est le **palier** :
+
+- **Gemini GRATUIT** ⚠️ — limité (quotas) **ET Google peut exploiter tes données d'embedding**. À
+  éviter pour un vault un peu confidentiel (palier 🔴 5 de l'échelle).
+- **Gemini PAYANT** ✅ — **quelques dizaines de centimes/mois** en usage perso (quasi rien), et **c'est
+  précisément ce qui garantit que Google n'exploite PAS tes données** (pas d'entraînement, rétention
+  ~30 j → palier 🟡 3). **Le passage payant = la confidentialité.**
+- **Endpoint entreprise** (Azure / passerelle) ✅ — données dans le **tenant de la boîte** (palier 🟢 2).
+
+Verdict d'une phrase : **« gratuit » ne veut pas dire « privé » ; pour une clé d'API, payer quelques
+centimes c'est ce qui rend tes données privées — et si tu veux du vraiment-rien-ne-sort gratuit, c'est
+l'option 1.**
+
+> **Suite :** l'Étape 5 du plan [`../plans/rag-embedder-plan-action.md`](../plans/rag-embedder-plan-action.md)
+> implémente ce flux. D1 cochée.

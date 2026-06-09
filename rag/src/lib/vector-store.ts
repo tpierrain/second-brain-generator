@@ -2,36 +2,94 @@ import Database from "better-sqlite3";
 import { mkdirSync } from "fs";
 import { dirname } from "path";
 import { DB_PATH } from "./config.js";
+import type { EmbedderIdentity } from "./embedder.js";
+
+export type { EmbedderIdentity };
 
 let db: Database.Database | null = null;
+
+/** Crée le schéma (idempotent) sur une DB donnée — testable en in-memory. */
+export function applySchema(database: Database.Database): void {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS documents (
+      path TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      type TEXT NOT NULL,
+      tags TEXT NOT NULL DEFAULT '[]',
+      hash TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS chunks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      doc_path TEXT NOT NULL,
+      section TEXT NOT NULL,
+      content TEXT NOT NULL,
+      chunk_index INTEGER NOT NULL,
+      embedding BLOB NOT NULL,
+      FOREIGN KEY (doc_path) REFERENCES documents(path) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_chunks_doc ON chunks(doc_path);
+    CREATE TABLE IF NOT EXISTS index_meta (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      provider_id TEXT NOT NULL,
+      model TEXT NOT NULL,
+      dimension INTEGER NOT NULL
+    );
+  `);
+}
+
+/** Estampille l'identité de l'embedder courant (ligne unique, upsert). */
+export function writeIndexIdentity(
+  database: Database.Database,
+  identity: EmbedderIdentity
+): void {
+  database
+    .prepare(
+      `INSERT INTO index_meta (id, provider_id, model, dimension)
+       VALUES (1, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         provider_id = excluded.provider_id,
+         model = excluded.model,
+         dimension = excluded.dimension`
+    )
+    .run(identity.providerId, identity.model, identity.dimension);
+}
+
+/** Relit l'identité estampillée, ou null si l'index n'a jamais été estampillé. */
+export function readIndexIdentity(
+  database: Database.Database
+): EmbedderIdentity | null {
+  const row = database
+    .prepare("SELECT provider_id, model, dimension FROM index_meta WHERE id = 1")
+    .get() as
+    | { provider_id: string; model: string; dimension: number }
+    | undefined;
+  if (!row) return null;
+  return {
+    providerId: row.provider_id,
+    model: row.model,
+    dimension: row.dimension,
+  };
+}
 
 function getDb(): Database.Database {
   if (!db) {
     mkdirSync(dirname(DB_PATH), { recursive: true });
     db = new Database(DB_PATH);
     db.pragma("journal_mode = WAL");
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS documents (
-        path TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        type TEXT NOT NULL,
-        tags TEXT NOT NULL DEFAULT '[]',
-        hash TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS chunks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        doc_path TEXT NOT NULL,
-        section TEXT NOT NULL,
-        content TEXT NOT NULL,
-        chunk_index INTEGER NOT NULL,
-        embedding BLOB NOT NULL,
-        FOREIGN KEY (doc_path) REFERENCES documents(path) ON DELETE CASCADE
-      );
-      CREATE INDEX IF NOT EXISTS idx_chunks_doc ON chunks(doc_path);
-    `);
+    applySchema(db);
   }
   return db;
+}
+
+/** Estampille l'identité de l'embedder sur l'index actif (singleton). */
+export function stampIndexIdentity(identity: EmbedderIdentity): void {
+  writeIndexIdentity(getDb(), identity);
+}
+
+/** Identité estampillée sur l'index actif, ou null si jamais estampillé. */
+export function currentIndexIdentity(): EmbedderIdentity | null {
+  return readIndexIdentity(getDb());
 }
 
 export function getDocumentHash(path: string): string | null {

@@ -20,7 +20,7 @@ import {
 } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { tmpdir, homedir } from "node:os";
+import { tmpdir, homedir, totalmem } from "node:os";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { smokeTestMcp } from "./scripts/lib/mcp-smoke.mjs";
@@ -40,6 +40,12 @@ import {
   minimalPathEnv,
 } from "./scripts/lib/rag-launcher.mjs";
 import { DEMO_QUESTION as DEMO, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
+import {
+  buildEmbedderOptions,
+  recommendedEmbedderKey,
+  envConfigForEmbedder,
+  embedderReady,
+} from "./scripts/lib/embedder-choice.mjs";
 
 // ROOT = le LAUNCHER (ce dépôt cloné). Source en LECTURE SEULE, réutilisable :
 // l'installeur n'y écrit JAMAIS. Il CRÉE ailleurs un dossier cerveau (TARGET),
@@ -194,21 +200,128 @@ for (const rel of tracked) {
 }
 ok(`dossier cerveau créé : ${TARGET} (${tracked.length} fichiers copiés depuis le launcher)`);
 
-// ── 3. Clé Gemini ───────────────────────────────────────────────────────────
-step("3/9 · Clé API Google Gemini (pour le RAG)");
-warn(
-  "Confidentialité : sur le palier GRATUIT, Google peut exploiter tes contenus (amélioration produit, relecture humaine). Pour un vault confidentiel, active la FACTURATION (palier payant) — quelques centimes. Détails : SETUP §9.",
-);
-let geminiKey = "";
+// ── 3. Moteur d'embedding (privé local / clé d'API) ──────────────────────────
+// Décision D1 (ADR 0007) : choix explicite à 3, reco ADAPTATIVE selon la machine.
+// On ne FORCE plus la clé Gemini : elle n'est demandée que si l'utilisateur choisit
+// l'option « clé d'API + Gemini ». Le reste écrit EMBEDDING_PROVIDER dans .env.
+step("3/9 · Moteur d'embedding du RAG (le choix de confidentialité)");
 const envPath = join(TARGET, ".env");
-const envHasKey =
-  existsSync(envPath) && /^GOOGLE_GEMINI_API_KEY=.+/m.test(readFileSync(envPath, "utf8"));
-if (envHasKey) {
-  ok(".env existe déjà avec une clé — conservée.");
-} else {
-  console.log(`Clé gratuite : ${c.C}https://aistudio.google.com/apikey${c.X}`);
-  geminiKey = await ask("Colle ta clé Gemini (ou Entrée pour configurer plus tard)");
+
+// Libellés du menu (réutilisent les artefacts pédagogiques validés — ADR 0007).
+const EMBEDDER_LABELS = {
+  "in-process": {
+    title: "Tout sur ta machine, rien à installer (« Gemma inside »)",
+    hint: "🟢 privé + gratuit + offline. ~1,5 Go RAM au repos, jusqu'à ~6 Go en indexation (16 Go+ conseillé). Apple Silicon / Windows.",
+  },
+  api: {
+    title: "Avec une clé d'API (Gemini, OpenAI, ou l'endpoint de ton entreprise)",
+    hint: "🟡 léger pour la machine, mais tes notes transitent par le fournisseur — « gratuit ≠ privé » (voir ci-dessous).",
+  },
+  ollama: {
+    title: "Local via Ollama (avancé)",
+    hint: "🟢 rien ne sort non plus, mais une app séparée à installer + un modèle à télécharger.",
+  },
+};
+
+const machine = {
+  platform: process.platform,
+  arch: process.arch,
+  totalMemBytes: totalmem(),
+};
+const options = buildEmbedderOptions(machine);
+const recoOption = options.find((o) => o.recommended);
+const ramGo = Math.round(machine.totalMemBytes / 1024 ** 3);
+console.log(
+  `Machine détectée : ${c.C}${ramGo} Go de RAM, ${machine.platform}/${machine.arch}${c.X}` +
+    (machine.platform === "darwin" && machine.arch === "x64"
+      ? ` ${c.Y}(Mac Intel → option « tout-local » indisponible)${c.X}`
+      : ""),
+);
+
+// Pédagogie (interactif) : l'embedder ≠ un LLM de chat + l'échelle de confidentialité.
+function printEmbedderEducation() {
+  console.log(`\n${c.B}Repère utile :${c.X} l'embedder n'est PAS « ChatGPT chez toi ».`);
+  console.log(
+    "  C'est un petit modèle qui transforme tes notes en vecteurs pour la recherche —",
+  );
+  console.log("  léger (≈ quelques centaines de Mo), pas un gros LLM. Le LLM qui RÉPOND reste Claude.");
+  console.log(`\n${c.B}Échelle de confidentialité :${c.X}`);
+  console.log("  🟢 tout-local (option 1/3) — rien ne sort de ta machine. Gratuit, privacy max.");
+  console.log("  🟡 clé d'API payante / endpoint entreprise — sort, mais 0 entraînement (contractuel).");
+  console.log("  🔴 clé d'API GRATUITE (Gemini gratuit inclus) — souvent exploitée. Payer ≈ rend privé.");
+  console.log(`\n${c.B}Et tes notes ?${c.X} jamais perdues : changer d'embedder ré-encode (quelques minutes), c'est tout.`);
 }
+
+// Résout le choix → providerKey ∈ {in-process, gemini, openai-compatible, ollama}
+// + collecte les secrets (jamais en argument : saisis ici, écrits dans .env).
+let providerKey;
+let providerDetails = {};
+let geminiKey = "";
+let apiKey = "";
+
+if (interactive) {
+  printEmbedderEducation();
+  console.log(`\n${c.B}Quel moteur d'embedding ?${c.X}`);
+  for (const o of options) {
+    const lbl = EMBEDDER_LABELS[o.key];
+    const star = o.recommended ? `  ${c.G}⭐ recommandé pour ta machine${c.X}` : "";
+    console.log(`  ${c.B}${o.num}.${c.X} ${lbl.title}${star}`);
+    console.log(`     ${c.C}↳ ${lbl.hint}${c.X}`);
+  }
+  const pick = await ask(`Ton choix`, String(recoOption.num));
+  const chosen = options.find((o) => String(o.num) === pick.trim()) ?? recoOption;
+
+  if (chosen.key === "in-process") {
+    providerKey = "in-process";
+  } else if (chosen.key === "ollama") {
+    providerKey = "ollama";
+    providerDetails.model = await ask("  Modèle Ollama (déjà pull)", "embeddinggemma");
+    providerDetails.dimension = await ask("  Dimension du modèle", "768");
+  } else {
+    // Option « clé d'API » → sous-choix Gemini (simple) ou endpoint compatible-OpenAI.
+    const sub = await ask(
+      "  a) clé Gemini (simple)   b) endpoint compatible-OpenAI (OpenAI / Azure / entreprise)",
+      "a",
+    );
+    if (/^b/i.test(sub)) {
+      providerKey = "openai-compatible";
+      providerDetails.baseURL = await ask("  URL de base (ex. https://api.openai.com/v1)");
+      providerDetails.model = await ask("  Nom du modèle (ex. text-embedding-3-small)");
+      providerDetails.dimension = await ask("  Dimension du modèle (ex. 1536)");
+      apiKey = await ask("  Clé d'API (Entrée si l'endpoint n'en exige pas)");
+    } else {
+      providerKey = "gemini";
+      // Cadrage « gratuit ≠ privé » AVANT de demander la clé (exigence ADR 0007).
+      console.log(
+        `\n  ${c.Y}⚠️ « gratuit ≠ privé »${c.X} : avec une clé Gemini, le texte de tes notes est envoyé à Google.`,
+      );
+      console.log(`     • palier ${c.B}GRATUIT${c.X} → ⚠️ Google peut exploiter tes données (à éviter pour un vault confidentiel).`);
+      console.log(`     • palier ${c.B}PAYANT${c.X} → quelques dizaines de centimes/mois, et c'est ce qui garantit la non-exploitation.`);
+      console.log(`     ${c.C}Le passage payant = la confidentialité. Pour du vraiment-rien-ne-sort gratuit : choisis l'option 1.${c.X}`);
+      console.log(`     Clé gratuite : ${c.C}https://aistudio.google.com/apikey${c.X}`);
+      geminiKey = await ask("  Colle ta clé Gemini (ou Entrée pour configurer plus tard)");
+    }
+  }
+} else {
+  // Non-interactif (install pilotée par Claude) : flag --embedder, sinon reco machine.
+  // Valeurs acceptées sans saisie : in-process | gemini | ollama (l'endpoint OpenAI
+  // exige URL/modèle/clé → réservé à l'interactif ou à une config .env manuelle).
+  const fallback = recommendedEmbedderKey(machine) === "in-process" ? "in-process" : "gemini";
+  const chosen = (cli.embedder ?? fallback) === "api" ? "gemini" : cli.embedder ?? fallback;
+  if (!["in-process", "gemini", "ollama"].includes(chosen)) {
+    err(
+      `--embedder « ${chosen} » non géré en non-interactif (valeurs : in-process | gemini | ollama). ` +
+        "Pour un endpoint OpenAI/entreprise, configure EMBEDDING_* dans .env après l'install.",
+    );
+    process.exit(1);
+  }
+  providerKey = chosen;
+  warn(`Mode non interactif — embedder : ${providerKey}${cli.embedder ? "" : " (reco machine)"}.`);
+}
+
+const embedderCfg = envConfigForEmbedder(providerKey, providerDetails);
+const providerLines = embedderCfg.lines;
+ok(`embedder retenu : ${c.B}${providerKey}${c.X}${embedderCfg.needsGeminiKey ? " (clé Gemini)" : " (sans clé Gemini)"}`);
 
 // ── 4. Génération des fichiers ──────────────────────────────────────────────
 step("4/9 · Génération des fichiers personnalisés");
@@ -307,13 +420,25 @@ if (!existsSync(envPath)) {
   copyFileSync(join(TARGET, ".env.example"), envPath);
   ok("généré : .env (depuis .env.example)");
 }
-if (geminiKey) {
+// Remplace une ligne `KEY=…` existante, sinon l'ajoute en fin de fichier.
+function setEnvVar(env, key, value) {
+  const re = new RegExp(`^${key}=.*$`, "m");
+  return re.test(env) ? env.replace(re, `${key}=${value}`) : `${env}\n${key}=${value}\n`;
+}
+{
   let env = readFileSync(envPath, "utf8");
-  env = /^GOOGLE_GEMINI_API_KEY=/m.test(env)
-    ? env.replace(/^GOOGLE_GEMINI_API_KEY=.*$/m, `GOOGLE_GEMINI_API_KEY=${geminiKey}`)
-    : `${env}\nGOOGLE_GEMINI_API_KEY=${geminiKey}\n`;
+  // Lignes de sélection d'embedder (EMBEDDING_PROVIDER…) : écrites SAUF pour Gemini
+  // natif (provider par défaut, aucune ligne à poser → `providerLines` vide).
+  for (const line of providerLines) {
+    const [k, ...rest] = line.split("=");
+    env = setEnvVar(env, k, rest.join("="));
+  }
+  if (geminiKey) env = setEnvVar(env, "GOOGLE_GEMINI_API_KEY", geminiKey);
+  if (apiKey) env = setEnvVar(env, "EMBEDDING_API_KEY", apiKey);
   writeFileSync(envPath, env);
-  ok("clé Gemini enregistrée dans .env");
+  if (providerLines.length) ok(`embedder configuré dans .env (${providerKey})`);
+  if (geminiKey) ok("clé Gemini enregistrée dans .env");
+  if (apiKey) ok("clé d'API endpoint enregistrée dans .env");
 }
 
 // Dépôt git DU CERVEAU — socle de l'auto-commit. Dossier NEUF → `git init`
@@ -402,16 +527,25 @@ else {
   process.exit(1);
 }
 
-// ── 7. Indexation initiale (si clé présente) ────────────────────────────────
+// ── 7. Indexation initiale (si l'embedder est prêt) ──────────────────────────
+// « Prêt » dépend de l'embedder choisi (cf. embedderReady) : Gemini → clé présente ;
+// in-process → toujours (les poids se téléchargent au 1er usage, ~28 s une fois) ;
+// endpoint OpenAI/Ollama → base URL renseignée. L'option tout-local s'auto-vérifie
+// donc dès l'install, sans aucune clé.
 step("8/9 · Indexation initiale du vault d'exemple");
-const keyReady =
-  existsSync(envPath) && /^GOOGLE_GEMINI_API_KEY=.+/m.test(readFileSync(envPath, "utf8"));
-if (keyReady) {
+const envNow = existsSync(envPath) ? readFileSync(envPath, "utf8") : null;
+const embedderIsReady = embedderReady(envNow);
+if (embedderIsReady) {
+  if (providerKey === "in-process") {
+    console.log("  (1ʳᵉ fois en tout-local : téléchargement des poids du modèle ~28 s, puis offline.)");
+  }
   const idx = run(NPM, ["run", "--silent", "index"], { cwd: rag, stdio: "inherit" });
   if (idx.ok) ok("vault d'exemple indexé");
-  else warn("Indexation interrompue (quota/clé ?) — elle reprendra au prochain démarrage de Claude Code.");
-} else {
+  else warn("Indexation interrompue (quota/clé/endpoint ?) — elle reprendra au prochain démarrage de Claude Code.");
+} else if (embedderCfg.needsGeminiKey) {
   warn("Pas de clé Gemini → indexation reportée. Ajoute la clé dans .env puis : cd rag && npm run index");
+} else {
+  warn("Embedder pas encore configuré (.env) → indexation reportée. Complète .env puis : cd rag && npm run index");
 }
 
 // ── 8. Post-flight — vérification que le cerveau répond DEPUIS le vault ───────
@@ -441,31 +575,38 @@ try {
       args: srv.args ?? [],
       cwd: srv.cwd ?? TARGET,
       expectTools: EXPECT_TOOLS,
-      timeoutMs: 30000,
-      // Probe fonctionnel uniquement si la clé est prête (sinon search_vault
-      // throw « GOOGLE_GEMINI_API_KEY is not set » — l'index n'existe pas encore).
-      ...(keyReady
+      // L'in-process recharge une session ONNX dans le process MCP du smoke → on
+      // laisse plus de marge (le repli reste 30 s pour les embedders réseau).
+      timeoutMs: providerKey === "in-process" ? 60000 : 30000,
+      // Probe fonctionnel uniquement si l'embedder est prêt (sinon search_vault
+      // échoue car l'index n'existe pas encore — clé Gemini absente, ou endpoint
+      // non configuré). En in-process : prêt sans aucune clé → le canari tourne.
+      ...(embedderIsReady
         ? { probe: { tool: "search_vault", args: { query: DEMO }, expectText: DEMO_EXPECT } }
         : {}),
     });
-    if (keyReady) {
+    if (embedderIsReady) {
       if (res.ok) {
         ok("post-flight OK — le RAG retrouve un fait introuvable hors-vault (canari Pélagie de Mollecuisse).");
       } else {
         err(`POST-FLIGHT ÉCHEC — le cerveau ne répond PAS depuis le vault : ${res.error ?? "raison inconnue"}`);
         err("Refus de déclarer l'install réussie (un cerveau qui répond à côté du vault est pire qu'un cerveau en panne).");
-        err("Dépannage : SETUP.md §8 (clé .env, index, connexion MCP), puis relance l'installeur.");
+        err("Dépannage : SETUP.md §8 (.env, index, connexion MCP), puis relance l'installeur.");
         process.exit(1); // FAIL BRUYANT — avant toute bannière de succès
       }
     } else {
-      // Pas de clé → on ne peut pas prouver le retrieval ; structurel seul, KO = warn.
+      // Embedder pas prêt → on ne peut pas prouver le retrieval ; structurel seul, KO = warn.
       if (res.ok) {
         ok(`connexion MCP OK — ${res.tools.length} outils exposés (${EXPECT_TOOLS.join(", ")}).`);
       } else {
         warn(`connexion MCP KO : ${res.error ?? "raison inconnue"}`);
         warn("Claude Code pourrait ne pas voir le vault. Dépannage : SETUP.md §8.");
       }
-      warn("Check démo REPORTÉ (pas de clé) — étape suivante : colle ta clé Gemini dans .env,");
+      if (embedderCfg.needsGeminiKey) {
+        warn("Check démo REPORTÉ (pas de clé) — étape suivante : colle ta clé Gemini dans .env,");
+      } else {
+        warn("Check démo REPORTÉ (embedder à finir de configurer) — complète .env,");
+      }
       warn("puis valide le RAG avec :  node scripts/verify-rag.mjs  (verdict bruyant, sourcé du vault).");
     }
   }
@@ -476,8 +617,10 @@ try {
 // ── Fin ─────────────────────────────────────────────────────────────────────
 console.log(`\n${c.B}${c.G}✓ Installation terminée.${c.X}\n`);
 console.log(`Ton second cerveau a été créé dans : ${c.C}${TARGET}${c.X}`);
-const keyMissing = !envHasKey && !geminiKey;
-if (keyMissing) {
+// Bannière clé : seulement si l'embedder choisi EST Gemini et que la clé manque
+// encore (option tout-local / endpoint → aucune clé Gemini à réclamer).
+const geminiKeyMissing = embedderCfg.needsGeminiKey && !geminiKey;
+if (geminiKeyMissing) {
   console.log(
     `\n${c.B}⚠️ Clé Gemini pas encore renseignée.${c.X} Avant d'ouvrir Claude Code, colle-la dans`
   );

@@ -39,15 +39,45 @@ défaut des notes**.
 > sont des **exemples d'usage**, pas des options d'installation.
 
 > ⚠️ **Ne demande PAS la clé Gemini.** Elle ne transite **jamais** par le chat ni par la ligne de
-> commande (elle ira directement dans `.env`, cf. étape 4).
+> commande (elle ira directement dans `.env`, cf. étape 4) — **et elle n'est même utile que si
+> l'utilisateur choisit l'option « clé d'API Gemini » ci-dessous.**
+
+### 2.bis — Le choix du moteur d'embedding (LE choix de confidentialité, à présenter)
+
+C'est un **vrai arbitrage utilisateur** (décision D1, ADR 0007) : pose-le **clairement, en langage
+simple**, puis passe le résultat via `--embedder` à l'étape 3. Présente **3 options** (de la plus
+privée à la moins) et **recommande selon la machine** :
+
+- **1. Tout sur ta machine, rien à installer** (« Gemma inside », `in-process`) — 🟢 privé + gratuit
+  + hors-ligne ; rien ne quitte l'ordinateur. **⭐ recommandé si la machine a ≥ 12 Go de RAM et n'est
+  PAS un Mac Intel** (sinon indisponible / trop juste en RAM). `--embedder in-process`.
+- **2. Avec une clé d'API** — Gemini, OpenAI, ou **l'endpoint de l'entreprise**. 🟡 léger pour la
+  machine, mais **tes notes transitent par le fournisseur**. **⭐ recommandé sur petite machine
+  (≤ 8 Go) ou Mac Intel.** ⚠️ Dis le cadrage **« gratuit ≠ privé »** : le palier **gratuit** de Gemini
+  peut **exploiter** tes données ; **payer quelques centimes/mois = ce qui rend privé**. `--embedder gemini`
+  (pour un endpoint OpenAI/entreprise : lance plutôt l'installeur **en interactif**, ou configure
+  `EMBEDDING_*` dans `.env` après coup — cf. `.env.example`).
+- **3. Local via Ollama** (avancé) — 🟢 rien ne sort non plus, mais **une app séparée à installer**.
+  `--embedder ollama`.
+
+> 🧭 **Tu peux détecter la machine pour fiabiliser ta reco** (RAM/arch) :
+> `node -e "const o=require('os');console.log(Math.round(o.totalmem()/1024**3),o.platform,o.arch)"`.
+> Si l'utilisateur **n'a pas de préférence**, tu peux **omettre `--embedder`** : l'installeur
+> applique alors **tout seul** la reco adaptative (in-process si la machine est capable, sinon clé).
+> Mais **présente quand même les 3 options** — la confidentialité mérite un choix conscient.
+> L'embedder n'est **pas** « ChatGPT chez toi » : c'est un petit modèle de vectorisation ; le LLM qui
+> répond reste Claude. Et **tes notes ne sont jamais perdues** : changer d'embedder ré-encode (quelques minutes).
 
 ## Étape 3 — Lancer LA commande exacte (copier, ne pas paraphraser)
 
 ```bash
-node installer.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>" --owner "<nom user>" --lang "<langue>"
+node installer.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>" --owner "<nom user>" --lang "<langue>" --embedder "<in-process|gemini|ollama>"
 ```
 
 - `--dest` est **optionnel** : sans lui, le cerveau est créé sous le home (`~/<nom>`).
+- `--embedder` est **optionnel** : avec la valeur choisie en 2.bis (`in-process` / `gemini` / `ollama`) ;
+  **omis** → l'installeur applique la **reco adaptative** selon la machine (in-process si ≥ 12 Go &
+  pas Mac Intel, sinon `gemini`). Un endpoint OpenAI/entreprise se règle en interactif ou via `.env`.
 - `--non-interactive` est **obligatoire** (sinon le script attend le clavier et bloque ta session).
 - Le script **CRÉE le dossier cerveau** (`<emplacement-parent>/<nom>`) et **refuse si ce dossier
   existe déjà** (sortie non-zéro) — garantit que c'est bien lui qui le crée.
@@ -59,37 +89,46 @@ node installer.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>
 
 > Le script affiche le chemin du cerveau créé (`<emplacement-parent>/<nom>`). Utilise-le ci-dessous.
 
-1. **Clé Gemini, PUIS vérifie le RAG (étape clé).** La clé n'est **jamais** là au moment de
-   l'installation (elle ne transite ni par le chat ni par la CLI) → le cerveau n'est pas encore vérifié.
-   **Guide activement l'utilisateur** : (a) **ouvre TOI-MÊME le `.env` dans son éditeur** —
-   c.-à-d. **LANCE-le via une commande shell (Bash)**. N'utilise **PAS** l'outil Read et ne te
-   contente **pas** d'en afficher le contenu dans le chat : « ouvrir » veut dire faire
-   apparaître une **fenêtre d'éditeur côté utilisateur** (`.env` est un fichier *caché* qu'un
-   lambda ne saura pas localiser seul). Emploie un **chemin absolu** (ou `$HOME/…`), **jamais un
-   `~` entre guillemets** (il ne s'étend pas dans le shell). Commande selon l'OS :
-   ```bash
-   open -t "$HOME/<sous-chemin>/.env"   # macOS — ouvre TextEdit (vérifié terrain)
-   notepad "<chemin>\.env"              # Windows
-   xdg-open "<chemin>/.env"             # Linux (ou : ${EDITOR:-nano} "<chemin>/.env")
-   ```
-   Puis dis-lui exactement quoi faire : « J'ai ouvert ton `.env` dans TextEdit — colle ta clé
-   juste après `GOOGLE_GEMINI_API_KEY=`, enregistre (⌘S), et dis-moi quand c'est fait. »
-   *(clé gratuite : https://aistudio.google.com/apikey ; pour un vault confidentiel, active la
-   facturation — cf. SETUP §9)*. **Si rien ne s'ouvre** (pas d'éditeur GUI, environnement
-   headless), enchaîne les fallbacks sans attendre : révéler dans le Finder
-   (`open -R "$HOME/<sous-chemin>/.env"`), ou ouvrir VS Code (`code "<chemin>/.env"`) ; en
-   dernier recours seulement, donne le chemin complet + la ligne à compléter pour une édition
-   manuelle. **La clé reste éditée dans `.env` par l'utilisateur — jamais collée dans le chat ni
-   passée en argument.** Puis (b) **lance, depuis le dossier cerveau, la vérification
-   déterministe** :
-   ```bash
-   node scripts/verify-rag.mjs
-   ```
-   Elle (ré)indexe et **prouve bruyamment** que la démo répond DEPUIS le vault (canari : la réponse
-   contient « Mollecuisse », fait introuvable hors-vault). **`exit 0` = cerveau opérationnel** → tu peux
-   l'annoncer. **`exit 1` = échec → relaie l'erreur telle quelle, ne fais PAS semblant que ça marche.**
-   *(Si l'utilisateur a déjà ouvert Claude Code sans clé : qu'il colle la clé puis repose sa
-   question — le serveur relit `.env` à la volée ; au pire `/mcp` ou relance Claude Code.)*
+1. **Vérifie le RAG — et clé Gemini SEULEMENT si l'option Gemini a été choisie.** Ce que tu fais
+   ici **dépend de l'embedder retenu en 2.bis** (l'installeur l'a affiché : « embedder retenu : … »).
+
+   - **CAS A — tout-local (`in-process`) ou endpoint déjà configuré (Ollama / OpenAI complété).**
+     **Aucune clé Gemini à demander.** Mieux : l'installeur s'est **déjà auto-vérifié** (le post-flight
+     a retrouvé le canari « Mollecuisse » DEPUIS le vault, sans aucune clé). Tu peux donc l'**annoncer
+     directement**. Si tu veux re-confirmer de façon déterministe, lance depuis le dossier cerveau
+     `node scripts/verify-rag.mjs` (**`exit 0` = opérationnel** ; `exit 1` = relaie l'erreur, ne fais
+     pas semblant). *(En in-process, la 1ʳᵉ indexation a téléchargé les poids du modèle ~28 s, puis
+     tout est hors-ligne.)* **Passe au point 2.**
+
+   - **CAS B — option « clé d'API Gemini ».** Là, et là seulement, la clé manque (elle ne transite
+     **jamais** par le chat ni la CLI) → le cerveau n'est pas encore vérifié. **Guide activement
+     l'utilisateur** : (a) **ouvre TOI-MÊME le `.env` dans son éditeur** — c.-à-d. **LANCE-le via une
+     commande shell (Bash)**. N'utilise **PAS** l'outil Read et ne te contente **pas** d'en afficher le
+     contenu dans le chat : « ouvrir » veut dire faire apparaître une **fenêtre d'éditeur côté
+     utilisateur** (`.env` est un fichier *caché* qu'un lambda ne saura pas localiser seul). Emploie un
+     **chemin absolu** (ou `$HOME/…`), **jamais un `~` entre guillemets** (il ne s'étend pas dans le shell) :
+     ```bash
+     open -t "$HOME/<sous-chemin>/.env"   # macOS — ouvre TextEdit (vérifié terrain)
+     notepad "<chemin>\.env"              # Windows
+     xdg-open "<chemin>/.env"             # Linux (ou : ${EDITOR:-nano} "<chemin>/.env")
+     ```
+     Puis dis-lui exactement quoi faire : « J'ai ouvert ton `.env` dans TextEdit — colle ta clé juste
+     après `GOOGLE_GEMINI_API_KEY=`, enregistre (⌘S), et dis-moi quand c'est fait. » *(clé gratuite :
+     https://aistudio.google.com/apikey ; **rappelle le cadrage « gratuit ≠ privé »** — pour un vault
+     confidentiel, active la facturation, cf. SETUP §9 ; ou bascule en option 1 tout-local.)* **Si rien
+     ne s'ouvre** (pas d'éditeur GUI, headless), enchaîne les fallbacks sans attendre : révéler dans le
+     Finder (`open -R "$HOME/<sous-chemin>/.env"`), ou VS Code (`code "<chemin>/.env"`) ; en dernier
+     recours seulement, donne le chemin + la ligne à compléter. **La clé reste éditée dans `.env` par
+     l'utilisateur — jamais collée dans le chat ni passée en argument.** Puis (b) **lance, depuis le
+     dossier cerveau, la vérification déterministe** :
+     ```bash
+     node scripts/verify-rag.mjs
+     ```
+     Elle (ré)indexe et **prouve bruyamment** que la démo répond DEPUIS le vault (canari « Mollecuisse »,
+     introuvable hors-vault). **`exit 0` = cerveau opérationnel** → tu peux l'annoncer. **`exit 1` =
+     échec → relaie l'erreur telle quelle, ne fais PAS semblant que ça marche.** *(Si l'utilisateur a
+     déjà ouvert Claude Code sans clé : qu'il colle la clé puis repose sa question — le serveur relit
+     `.env` à la volée ; au pire `/mcp` ou relance Claude Code.)*
 2. **Dépôt distant (optionnel)** : demande — *« Veux-tu un dépôt git **distant** pour que ton
    second cerveau ait un **backup**, voire soit **utilisable depuis plusieurs machines** ? »*
    - **Si non** → ne fais rien. Tout reste versionné en local, rien ne se perd ; le hook

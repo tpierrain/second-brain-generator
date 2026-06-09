@@ -4,9 +4,9 @@
 > Ce dossier voyage entre les machines du **mainteneur** (sync git entre laptops) et reste
 > visible dans le launcher cloné. Mais il est **exclu de la copie bootstrap** : il n'atterrit
 > **jamais** dans un cerveau généré. L'exclusion est codée dans
-> [`scripts/lib/tracked-files.mjs`](../scripts/lib/tracked-files.mjs) (`DEV_ONLY_DIRS`), testée
-> dans `tracked-files.test.mjs`. Il n'est pas non plus auto-chargé par Claude (seuls `CLAUDE.md`
-> et les skills le sont).
+> [`scripts/lib/tracked-files.mjs`](../scripts/lib/tracked-files.mjs) (`DEV_ONLY_PREFIXES` — qui
+> exclut aussi l'**outillage d'eval-set**, cf. ci-dessous), testée dans `tracked-files.test.mjs`.
+> Il n'est pas non plus auto-chargé par Claude (seuls `CLAUDE.md` et les skills le sont).
 >
 > **Donc :** tout ce qui ne doit servir qu'au développement du générateur — et surtout pas
 > polluer le cerveau d'un utilisateur — va ici. Rien de secret pour autant (pas de clés : voir
@@ -45,6 +45,10 @@
     un adaptateur d'embedder → **orthogonal** au chantier en cours. Réservé à l'**Étape 7**
     (grosse machine, opt-in, conditionnel), **à départager par eval-set FR** ; **E2GraphRAG préféré**
     sur machine modeste. Décision de séquencement, pas un rejet.
+- **[`eval-set.md`](eval-set.md)** — 🧪 **outil dev** : l'eval-set RAG (Étape 2 du plan embedder).
+  Mesure la qualité de récupération de l'embedder courant en un **score reproductible** (juge =
+  Claude via `claude -p`), sur le vault Flemmr → **baseline Gemini** à rejouer sur les embedders
+  locaux (Étape 4). `node scripts/run-eval.mjs`. **Dev-only** (exclu du cerveau généré).
 - **`plans/`** — plans d'implémentation, avec un `STATUT` en tête (LIVRÉ / EN COURS / ABANDONNÉ).
   Les plans **livrés** sont déplacés dans **`plans/archived/`** ; seuls les plans encore **ouverts**
   restent à la racine de `plans/`.
@@ -59,14 +63,15 @@
     veille **rafraîchie** (EmbeddingGemma, bge-m3, Qwen3, E2GraphRAG…), **échelle de confidentialité
     par fournisseur**, vulgarisation « embedder ≠ LLM de chat », eval-first. **STATUT : 🔬 ÉTUDE — rien
     d'acté.** *(alimente le plan SPI + l'ADR 0007)*
-  - [`embedder-spi.md`](plans/embedder-spi.md) — abstraire l'embedder du RAG derrière un port SPI
-    `Embedder` + estampiller l'index d'une identité (provider/modèle/dimension) pour rendre un swap
-    **sûr** (confirm-gate en langage naturel, jamais de réindex silencieux). Concrétise l'ADR 0006 +
-    son addendum. **STATUT : À FAIRE.** *(garde Gemini comme seule impl ; 2ᵉ embedder = discussion à venir)*
   - [`translate-to-english.md`](plans/translate-to-english.md) — traduction complète FR → EN du
     générateur (docs, skills, code, démo), tests rendus agnostiques de la langue, sur branche
     dédiée. **STATUT : À FAIRE — repoussé en TOUTE FIN.**
   - **`plans/archived/`** — plans livrés (archive, conservés pour le détail des étapes) :
+    - [`embedder-spi.md`](plans/archived/embedder-spi.md) — abstraire l'embedder du RAG derrière un
+      port SPI `Embedder` + estampiller l'index d'une identité (provider/modèle/dimension) pour rendre
+      un swap **sûr** (confirm-gate en langage naturel, jamais de réindex silencieux). Concrétise
+      l'ADR 0006 + son addendum. **STATUT : ✅ LIVRÉ** (Étape 1 du plan d'action ; garde Gemini comme
+      seule impl + FakeEmbedder de test ; 2ᵉ embedder réel = Étape 3).
     - [`onglet-code-desktop.md`](plans/archived/onglet-code-desktop.md) — fiabiliser l'install/usage
       depuis l'**app desktop Claude (onglet Code)** : confiance à Claude + échec bruyant + démo
       sourcée. **STATUT : FAIT.** (ADR 0005 + 0006)
@@ -79,6 +84,31 @@
       de nvm (résolu par `run-node`). **STATUT : LIVRÉ.**
     - [`rename-bootstrap-to-installer.md`](plans/archived/rename-bootstrap-to-installer.md) — renommage
       `bootstrap` → `installer`. **STATUT : LIVRÉ.**
+- **`retrospectives/`** — 📝 **rétros orientées *takeaways*** : le **récit** d'une session marquante
+  (la question de départ, le cheminement enquête→mesure→correctif, les leçons transférables). À
+  distinguer des ADR (le *pourquoi* d'une décision) et des plans (le *quoi/comment*) : ici c'est la
+  **matière à article**, le retour d'expérience. **Convention** : un fichier par session,
+  `retrospectives/takeaways-<sujet>-<AAAA-MM-JJ>.md` ; titre accrocheur + une ou plusieurs leçons en
+  **« Takeaway »** numérotés + une section **méta-leçons transférables**. Dev-only (préfixe
+  `maintainers/`), jamais copié dans un cerveau généré.
+  - [`takeaways-embedder-partage-2026-06-09.md`](retrospectives/takeaways-embedder-partage-2026-06-09.md) —
+    « Quand le *petit raffinement* d'archi révèle un ×50 sur la latence » : la question d'archi posée
+    **avant** câblage, le ×50 dû à `createEmbedder()` par requête, le correctif (session ONNX chaude
+    partagée), 7 méta-leçons (port ≠ garantie de perf ; amplitude du symptôme ≠ de la cause ; pondérer
+    le pire cas par sa fréquence…). *(Étape 4-quater du plan embedder.)*
+  - [`takeaways-install-embedder-choix-2026-06-09.md`](retrospectives/takeaways-install-embedder-choix-2026-06-09.md) —
+    « Retirer une obligation a rendu l'install *mieux* vérifiée » : dé-forcer la clé Gemini → l'option
+    tout-local s'auto-prouve (canari sans clé) ; le noyau de décision pur/testé sous une coquille I/O ;
+    un gate unique (`geminiKeyRequired`) qui débusque un bug en périphérie (le hook de statut) ; un
+    nouveau défaut livré par **détection** (pas par flip global). 6 méta-leçons. *(Étape 5 du plan embedder.)*
+
+- **`benchmarks/`** — 📊 **mesures reproductibles** (volumes, débits, RAM, latences) : les chiffres
+  bruts d'un run, avec protocole rejouable. À distinguer des rétros (le récit/les leçons).
+  - [`stress-test-in-process-vault-reel-2026-06-09.md`](benchmarks/stress-test-in-process-vault-reel-2026-06-09.md) —
+    1ᵉʳ stress-test de l'embedder **tout-local in-process** sur un **vrai vault dense** (271 notes /
+    2 764 chunks) : **~5 min 48 s**, **pic RAM ~2,9 Go** (plafonnement de lot tenu, vs 8,5 Go sans),
+    **0 erreur**, qualité retrieval **3/3** (fait isolé / nuance / multi-hop). Protocole rejouable +
+    pièges de mesure. *(Valide le défaut tout-local hors démo.)*
 
 ## Historique
 

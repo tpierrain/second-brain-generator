@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { smokeTestMcp } from "./lib/mcp-smoke.mjs";
-import { hasGeminiKey } from "./lib/gemini-key.mjs";
+import { hasGeminiKey, geminiKeyRequired } from "./lib/gemini-key.mjs";
 import { DEMO_QUESTION, DEMO_EXPECT } from "./lib/demo.mjs";
 
 const tty = process.stdout.isTTY;
@@ -30,10 +30,14 @@ const rag = join(ROOT, "rag");
 const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
 const EXPECT_TOOLS = ["search_vault", "get_document", "list_documents", "vault_stats"];
 
-// 1. Clé présente ? (la vérif n'a aucun sens sans elle)
+// 1. Clé présente ? — UNIQUEMENT si l'embedder choisi est Gemini. Les embedders
+//    locaux (in-process « Gemma inside » / Ollama) et les endpoints compatibles-
+//    OpenAI n'ont pas de clé Gemini : la vérif a alors tout son sens sans elle
+//    (le canari Mollecuisse passe aussi en in-process). On délègue à l'index la
+//    détection d'une config alternative incomplète (échec bruyant à l'étape 2).
 const envPath = join(ROOT, ".env");
 const envContent = existsSync(envPath) ? readFileSync(envPath, "utf8") : null;
-if (!hasGeminiKey(envContent)) {
+if (geminiKeyRequired(envContent) && !hasGeminiKey(envContent)) {
   err("Pas de clé Gemini dans .env — impossible de vérifier le RAG.");
   err(`Colle ta clé dans ${envPath} (ligne GOOGLE_GEMINI_API_KEY=) puis relance : node scripts/verify-rag.mjs`);
   process.exit(1);

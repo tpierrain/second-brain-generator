@@ -39,3 +39,30 @@ test("filterCopyable — exclut tout le dossier maintainers/ (contexte de dev du
     ["README.md", "rag/src/index.ts"],
   );
 });
+
+test("filterCopyable — exclut l'outillage de mesure rag/scripts/ (dev-only : caler EMBED_BATCH, défaut = vault confidentiel)", () => {
+  assert.deepEqual(
+    filterCopyable([
+      "rag/src/index.ts", // moteur RAG : copié
+      "rag/scripts/measure-batch.mts",
+    ]),
+    ["rag/src/index.ts"],
+  );
+});
+
+test("filterCopyable — exclut l'outillage d'eval-set (dev-only : sert à choisir l'embedder du launcher)", () => {
+  assert.deepEqual(
+    filterCopyable([
+      "scripts/verify-rag.mjs", // reste copié (utilisé dans le cerveau)
+      "scripts/run-eval.mjs",
+      "scripts/lib/eval-judge.mjs",
+      "scripts/lib/eval-judge.test.mjs",
+      "scripts/lib/eval-run.mjs",
+      "scripts/lib/eval-set.mjs",
+      "scripts/lib/mcp-search.mjs",
+      "scripts/lib/mcp-search.test.mjs",
+      "rag/src/index.ts",
+    ]),
+    ["scripts/verify-rag.mjs", "rag/src/index.ts"],
+  );
+});

@@ -21,7 +21,7 @@ import { createRequire } from "node:module";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { hasGeminiKey } from "./lib/gemini-key.mjs";
+import { hasGeminiKey, geminiKeyRequired } from "./lib/gemini-key.mjs";
 import { repoStatusLine, countVaultUncommitted } from "./lib/repo-status.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -121,9 +121,11 @@ if (docs === null || scanned === 0) {
 // Lue à chaque démarrage : si l'utilisateur a lancé Claude Code AVANT de coller
 // sa clé, on le signale et on rappelle qu'il suffit de la coller puis de reposer
 // sa question (le serveur relit .env à la volée — pas besoin de reconnecter).
+// On n'alerte QUE si l'embedder choisi a besoin d'une clé Gemini : un vault en
+// in-process (« Gemma inside ») ou sur endpoint compatible-OpenAI n'en a aucune.
 let keyLine = null;
 const envContent = existsSync(ENV_PATH) ? readFileSync(ENV_PATH, "utf8") : null;
-if (!hasGeminiKey(envContent)) {
+if (geminiKeyRequired(envContent) && !hasGeminiKey(envContent)) {
   keyLine =
     "⚠️ Clé Gemini absente de .env → le RAG ne peut pas répondre. Colle-la dans " +
     ".env (GOOGLE_GEMINI_API_KEY=…) puis repose ta question (le serveur la relit " +

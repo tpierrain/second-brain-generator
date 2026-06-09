@@ -29,6 +29,13 @@ export interface StatusReportInput {
   quotaMax: number;
   reserve: number;
   lock: LockState | null;
+  /**
+   * Identité du provider d'embedding actif (`embedder.identity.providerId`).
+   * Le quota journalier n'est propre qu'à Gemini : pour tout autre embedder
+   * (in-process, endpoint compatible-OpenAI…) on n'affiche pas de quota Gemini.
+   * Absent → traité comme Gemini (rétro-compat).
+   */
+  providerId?: string;
   /** État du dernier run de rattrapage (ou en cours), s'il existe. */
   progress?: RunProgress | null;
   /** Instant courant ISO (requis pour l'ETA d'un run `running`). */
@@ -37,7 +44,7 @@ export interface StatusReportInput {
 
 /** Construit un rapport d'état du RAG en langage naturel (fonction pure, sans I/O). */
 export function buildStatusReport(input: StatusReportInput): string {
-  const lines = [indexLine(input), quotaLine(input)];
+  const lines = [indexLine(input), embeddingLine(input)];
   const lock = lockLine(input);
   if (lock) lines.push(lock);
   const progress = progressLine(input);
@@ -69,6 +76,31 @@ function indexLine(input: StatusReportInput): string {
     incompleteIndexWarning(input) ??
     `Index à jour : ${input.docCount}/${input.scannedCount} fichiers indexés.`
   );
+}
+
+/**
+ * Ligne d'embedding : le quota journalier n'est propre qu'à Gemini (plafond free
+ * tier). Pour un embedder local/alternatif, afficher ce quota mentirait — on émet
+ * une ligne honnête à la place. Provider absent → Gemini (rétro-compat).
+ */
+function embeddingLine(input: StatusReportInput): string {
+  const providerId = input.providerId;
+  // Provider absent → Gemini (rétro-compat). Seul Gemini a le quota journalier.
+  if (providerId === undefined || providerId === "gemini") return quotaLine(input);
+  return localEmbeddingLine(providerId);
+}
+
+function localEmbeddingLine(providerId: string): string {
+  // In-process « Gemma inside » : vraiment local → on peut promettre hors-ligne.
+  if (providerId === "transformers-js") {
+    return "Embeddings locaux (in-process) : illimité, hors-ligne — pas de quota d'API.";
+  }
+  // Endpoint compatible-OpenAI (Ollama local OU service distant) : pas de quota
+  // Gemini, mais on ne promet pas l'hors-ligne (peut être un endpoint réseau).
+  if (providerId === "openai-compatible") {
+    return "Embeddings via endpoint compatible-OpenAI : pas de quota Gemini suivi.";
+  }
+  return `Embeddings via ${providerId} : pas de quota Gemini suivi.`;
 }
 
 function quotaLine(input: StatusReportInput): string {

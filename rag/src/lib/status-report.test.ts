@@ -172,3 +172,41 @@ test("C.13 — pas de progress → pas de section Rattrapage", () => {
 
   assert.doesNotMatch(report, /rattrapage/i);
 });
+
+test("3.1e — embedder in-process : ligne locale honnête, AUCUN quota Gemini", () => {
+  const report = buildStatusReport({
+    docCount: 7,
+    scannedCount: 7,
+    quotaUsed: 0,
+    quotaMax: 7600,
+    reserve: 50,
+    lock: null,
+    providerId: "transformers-js",
+  });
+
+  // Le quota journalier est propre à Gemini : il NE doit pas apparaître en local.
+  assert.doesNotMatch(report, /quota\s*:/i);
+  assert.doesNotMatch(report, /7600/);
+  assert.doesNotMatch(report, /aujourd'hui/i);
+  // À la place, une ligne locale honnête qui nomme l'embedder et dit l'illimité.
+  assert.match(report, /in-process/i);
+  assert.match(report, /illimité/i);
+});
+
+test("3.1f — embedder compatible-OpenAI : pas de quota Gemini, sans promettre hors-ligne", () => {
+  const report = buildStatusReport({
+    docCount: 7,
+    scannedCount: 7,
+    quotaUsed: 0,
+    quotaMax: 7600,
+    reserve: 50,
+    lock: null,
+    providerId: "openai-compatible",
+  });
+
+  assert.doesNotMatch(report, /7600/);
+  assert.doesNotMatch(report, /aujourd'hui/i);
+  // Endpoint nommé, mais on ne promet PAS « hors-ligne » (peut être distant).
+  assert.match(report, /compatible-OpenAI/i);
+  assert.doesNotMatch(report, /hors-ligne/i);
+});

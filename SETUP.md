@@ -7,7 +7,16 @@
 | **Node.js ≥ 18** | Fait tourner le moteur RAG **et** tout le harnais (installateur + hooks sont en Node, multi-OS) | https://nodejs.org (macOS : `brew install node` · Windows : `winget install OpenJS.NodeJS`) |
 | **git** | Versionnement + portabilité entre machines | https://git-scm.com |
 | **Claude Code** | L'agent qui interroge le vault | https://claude.com/claude-code |
-| **Clé Gemini** | Embeddings + recherche sémantique (gratuit pour démarrer) | https://aistudio.google.com/apikey |
+| **Clé Gemini** *(optionnelle)* | Embeddings — **uniquement si tu choisis l'embedder Gemini** (cf. note ci-dessous) | https://aistudio.google.com/apikey |
+
+> 🧩 **La clé Gemini n'est plus obligatoire (D1, ADR 0007).** À l'install, tu choisis ton **moteur
+> d'embedding** parmi 3 options, avec une **reco adaptée à ta machine** :
+> **1. Tout sur ta machine** (« Gemma inside », `in-process`) — 🟢 privé + gratuit + hors-ligne,
+> **rien à installer** (recommandé si ≥ 12 Go de RAM et pas un Mac Intel) ;
+> **2. Clé d'API** — Gemini, OpenAI, ou l'endpoint de ton entreprise (⚠️ « gratuit ≠ privé » : le
+> palier gratuit de Gemini peut exploiter tes données ; payer quelques centimes/mois rend privé) ;
+> **3. Local via Ollama** (avancé). Seule l'option 2-Gemini demande la clé ci-dessus ; les options
+> 1 et 3 écrivent `EMBEDDING_PROVIDER` dans `.env` (cf. `.env.example`) et **sautent l'étape clé**.
 
 > **Multi-OS** : macOS, Linux et Windows (cmd ou PowerShell). L'installateur et les hooks
 > sont en Node — pas besoin de bash, `jq` ni `sqlite3`. Node est le seul prérequis runtime.

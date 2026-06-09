@@ -210,6 +210,97 @@ n'est pas reconstruite de zéro.
   réponse directe au cas **entreprise de Dimitry** (OpenAI/Azure validé par la boîte = le défaut
   naturel pour ce public). Cf. encart §1.2.
 
+### 3 bis — ✅ MESURE Étape 4 (2026-06-09) : les locaux **ne dégradent pas** la qualité FR
+
+> **Ce qui était « à benchmarker » ci-dessus l'est désormais.** Premier chiffrage réel sous notre
+> propre harnais (eval-set, juge = Claude) sur le vault FR Flemmr, via Ollama + l'adaptateur
+> compatible-OpenAI. Détail + repro : [`../eval-set.md`](../eval-set.md#étape-4--résultats-mesurés-local-vs-gemini-2026-06-09).
+
+| Embedder | Lieu | Dim | **Score FR** | Index 7 notes (warm) | Disque | RAM |
+|---|---|---|---|---|---|---|
+| **EmbeddingGemma** | 🟢 local | 768 | **90 % (9/10)** | ~1,3 s | 621 Mo | ~0,67 Go |
+| **bge-m3** | 🟢 local | 1024 | **90 % (9/10)** | ~1,7 s | 1,2 Go | ~0,66 Go |
+| **Gemini** (baseline) | 🔴 cloud | 3072 | **80 % (8/10)** | ~20,8 s | 0 | 0 |
+
+- **Conclusion robuste** : **aucun malus qualité** à passer en local sur ce corpus FR — les deux locaux
+  sont **au moins à parité** avec Gemini (ils le dépassent même d'une question). Le profil par défaut
+  visé (gratuit + privé + on-device, §1.1) est **viable côté qualité** : la mesure valide l'intuition,
+  elle ne la contredit pas.
+- **Caveat assumé** (ne pas survendre) : corpus minuscule → le 90 vs 80 = **1 question d'écart**, dans
+  le bruit (variance juge + top-k qui ramène presque tout) ; chaque modèle rate une question
+  *différente*. ⇒ **« local à parité »** est défendable, **« local > Gemini » ne l'est pas encore**.
+  Pour **départager EmbeddingGemma vs bge-m3** (le choix fin de D1), refaire la mesure sur un **corpus
+  riche** (cf. `eval-set.md` §discriminer). À score égal, **EmbeddingGemma** part favori du défaut
+  bureautique : 2× plus léger sur disque, vecteurs plus petits (index plus compact), conçu on-device.
+- **Footprint réel validé** : les deux modèles tiennent dans **~0,65 Go de RAM** (GPU Metal sur Mac
+  Apple Silicon), très loin du laptop saturé — confirme §1.3 (embedder ≠ LLM de chat).
+
+#### Réponse chiffrée à Dimitry (sortir de Gemini)
+
+> *« Oui, on peut faire tourner le RAG **sans Google**, et sans perdre en qualité. Mesuré chez nous
+> (eval-set FR maison) : un embedder **100 % local** (EmbeddingGemma ou bge-m3, via Ollama) score
+> **9/10** contre **8/10** pour Gemini — donc **au moins à parité**, en restant **gratuit, on-device,
+> zéro clé, zéro donnée envoyée à un provider**. Footprint : ~0,6 Go de RAM, indexation quasi
+> instantanée sur un Mac/PC banal. Pour ton cas **entreprise** (OpenAI/Azure déjà validés par la
+> boîte), le **même** code bascule sur ton endpoint en changeant une URL dans `.env` — l'adaptateur
+> est neutre. Le seul niveau où *rien* ne sort de la machine reste le local (cf. échelle de
+> confidentialité §privacy). »*
+
+### 3 ter — 🔎 Piste « local SANS Ollama » (embedding **in-process**) — veille 2026-06-09
+
+> **Pourquoi cette piste.** Le seul vrai prix du tout-local (§3 bis) n'est pas la qualité (mesurée ≥
+> Gemini) ni le footprint (~0,65 Go) — c'est la **friction d'install d'Ollama** (app séparée + `ollama
+> pull`) pour un non-dev (le « Mac nu d'Achille »). Question creusée : peut-on faire tourner l'embedder
+> local **dans le process Node du RAG lui-même**, sans serveur ni app à installer ? **Réponse : oui.**
+
+**Le mécanisme.** Au lieu de parler HTTP à un serveur local (Ollama), un adaptateur charge le modèle
+**en mémoire dans le process** via un runtime ONNX. Les poids se téléchargent **une fois** (cache
+local) au 1ᵉʳ usage, puis tout est offline. Côté archi : c'est **un 4ᵉ adaptateur derrière le port
+`Embedder`** déjà en place (Étape 1) — il ne parle pas le dialecte OpenAI HTTP, il appelle le modèle
+directement. **Zéro changement du harnais ni du contrat MCP.**
+
+| Runtime local | Install pour un non-dev | Modèles utiles dispo | Accélération | Maintenu | Verdict |
+|---|---|---|---|---|---|
+| **Ollama** (serveur) — *testé Étape 4* | ⚠️ **app séparée** (cask) + `ollama pull` | EmbeddingGemma, bge-m3 (mesurés 90 %) | **GPU Metal** ✅ | ✅ actif | Marche, **mais friction app séparée** |
+| **Transformers.js v4** (`@huggingface/transformers`) — *in-process* | ✅ **`npm i` only** (déjà fait par l'installeur) ; binaires `onnxruntime-node` **pré-buildés Windows (x64+arm64), macOS (x64+arm64), Linux (x64+arm64)** — CPU partout, **pas de build tools** ; modèle auto-téléchargé+caché | **EmbeddingGemma-300m-ONNX** (q4/q8) ✅ + `Xenova/bge-m3` ✅ | CPU (WebGPU en Node encore jeune) | ✅ actif (HF, v4 nov. 2025) | **🎯 piste la plus prometteuse pour « tout-local SANS friction »** |
+| **fastembed-js** (`fastembed`) — *in-process* | ✅ `npm i` (bindings natifs précompilés) | bge-small/base, all-MiniLM, **multilingual-e5-large** ; ❌ **pas bge-m3 ni EmbeddingGemma** | CPU | ❌ **archivé 15/01/2026** (read-only) | Repli possible, mais **non maintenu** + pas nos meilleurs modèles → écarté |
+
+**Ce que ça changerait pour le défaut d'install** : plus d'Ollama du tout. L'embedder local devient
+une **dépendance npm** que l'installeur tire déjà, + un **téléchargement de poids transparent** au
+1ᵉʳ lancement (~150–300 Mo en q8). Pour un non-dev : *« tu n'installes rien de plus, ça marche tout
+seul »* — exactement ce qui débloque la cible §1.1 (gratuit + privé + on-device, **sans** le mur Ollama).
+
+**Cross-platform (exigence DURE — Thomas, 2026-06-09) : Mac ET Windows à parité.** Sur le papier c'est
+acquis — `onnxruntime-node` publie des binaires pré-buildés pour **Windows x64+arm64, macOS x64+arm64,
+Linux x64+arm64** (CPU partout), donc *aucun* build tool ni sur Mac ni sur Windows. Le contrat MCP et
+le port `Embedder` sont déjà OS-agnostiques. ⚠️ Builds **volatils** → revérifier la matrice de
+plateformes à la version d'`onnxruntime-node` réellement épinglée (cf. réserves de méthode §8).
+
+**⚠️ À VALIDER avant d'en faire le défaut D1 (honnête : recherché, PAS encore testé chez nous) :**
+1. **Install réelle sur Mac nu ET Windows nu** : confirmer que `onnxruntime-node` tire bien le binaire
+   pré-buildé sans build tools dans l'environnement appauvri de l'onglet Code (cf.
+   [[achille-bare-mac-desktop-path]]) — **les deux OS**, pas seulement le Mac de dev.
+2. **Latence CPU** : sans GPU Metal (qu'Ollama utilisait), l'encodage CPU est plus lent — à mesurer
+   (acceptable a priori, l'encodage étant **ponctuel** ; q8/q4 aident).
+3. **Re-mesurer la qualité sous ce runtime** : même modèle, mais **quantifié** (q8/q4) → rejouer
+   l'eval-set avec l'adaptateur in-process pour **confirmer la parité** avec les 90 % mesurés via Ollama
+   (ne pas supposer que quantifié = identique).
+
+**Synthèse intégrée — le paysage complet du choix d'embedder par défaut :**
+
+| Option | Statut chez nous | Abo/coût | Données sortent ? | Friction non-dev | Qualité FR |
+|---|---|---|---|---|---|
+| **Gemini** (actuel) | ✅ testé (baseline) | payant | oui (cloud) | ~nulle (coller clé) | 80 % |
+| **Local via Ollama** (EmbeddingGemma/bge-m3) | ✅ **testé Étape 4** | gratuit | **non** | ⚠️ app Ollama + pull | **90 %** (mesuré) |
+| **Local in-process** (Transformers.js + EmbeddingGemma) | 🔎 **envisagé** (veille OK, à tester) | gratuit | **non** | ✅ **npm only, rien à installer** | à confirmer (≈ parité attendue) |
+| **Endpoint API** (OpenAI/Azure/Mistral) | ✅ adaptateur livré (Ét. 3) | payant | oui (tenant boîte pour Azure) | nulle (URL+clé) | ≈ cloud |
+
+→ **Recommandation pour D1** : si la piste **in-process** passe les 3 validations ci-dessus, c'est
+**le meilleur candidat pour le défaut « tout-local »** (lève la seule objection sérieuse, la friction
+Ollama). L'adaptateur Ollama-compatible reste utile pour le **power-user** (GPU Metal, modèles plus
+gros) et l'endpoint API pour l'**entreprise**. Prochain pas concret possible : un **spike adaptateur
+in-process + re-run eval-set** pour transformer « envisagé » en « mesuré ».
+
 ---
 
 ## 4. LightRAG / GraphRAG (repo pointé par Thomas : <https://github.com/HKUDS/LightRAG>)
@@ -324,6 +415,13 @@ de Thomas (valider empiriquement, pas de sur-ingénierie contre un risque non pr
 - [E2GraphRAG — arXiv 2505.24226](https://arxiv.org/html/2505.24226v1) — extraction SpaCy, ~10× plus rapide ; [nano-graphrag FAQ](https://github.com/gusye1234/nano-graphrag/blob/main/docs/FAQ.md) — piège `num_ctx`, graphes vides
 - [Bench GraphRAG local 2026 — arXiv 2605.20815](https://arxiv.org/html/2605.20815) — GPU NVIDIA discret, indexation 88–211 min
 - [RTEB — arXiv 2508.21038](https://arxiv.org/abs/2508.21038) — MTEB critiqué comme prédicteur du retrieval réel
+
+**Veille « local sans Ollama » (2026-06-09) :**
+- [Transformers.js v4 — blog HF](https://huggingface.co/blog/transformersjs-v4) · [doc installation](https://huggingface.co/docs/transformers.js/installation) — `npm i @huggingface/transformers`, tourne en Node/Bun/Deno, runtime WebGPU C++ réécrit
+- [onnx-community/embeddinggemma-300m-ONNX](https://huggingface.co/onnx-community/embeddinggemma-300m-ONNX) — variantes fp32/q8/q4 (pas fp16), conçu pour Transformers.js ; [demo « no server required »](https://github.com/glaforge/embedding-gemma-semantic-search)
+- [Xenova/bge-m3](https://huggingface.co/Xenova/bge-m3) · [aapot/bge-m3-onnx](https://huggingface.co/aapot/bge-m3-onnx) — bge-m3 en ONNX pour Transformers.js
+- [onnxruntime-node — npm](https://www.npmjs.com/package/onnxruntime-node) · [README officiel js/node](https://github.com/microsoft/onnxruntime/blob/main/js/node/README.md) — postinstall `prebuild-install` ; binaires pré-buildés **Windows x64+arm64, macOS x64+arm64, Linux x64+arm64** (CPU partout ; WebGPU EP pas encore sur linux-arm64) ; fallback compile si absent
+- [fastembed-js (`fastembed`)](https://github.com/Anush008/fastembed-js) — in-process ONNX, **archivé 15/01/2026** (v2.1.0) ; bge-small/base, all-MiniLM, multilingual-e5-large ; pas bge-m3/EmbeddingGemma
 
 > **Réserves de méthode (issues de la vérification)** : (1) classements MTEB **volatils** — revalider
 > à la date d'usage ; (2) métriques **non équivalentes** (Mean-Task multilingue ≠ score FR ≠ retrieval
