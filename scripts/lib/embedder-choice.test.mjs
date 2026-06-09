@@ -5,6 +5,7 @@ import {
   recommendedEmbedderKey,
   buildEmbedderOptions,
   envConfigForEmbedder,
+  embedderReady,
 } from "./embedder-choice.mjs";
 
 const GiB = 1024 ** 3;
@@ -132,4 +133,22 @@ test("envConfigForEmbedder — ollama : modèle/dimension surchargeables", () =>
 
 test("envConfigForEmbedder — clé inconnue : échec bruyant (pas de config silencieuse)", () => {
   assert.throws(() => envConfigForEmbedder("bidon"), /bidon/);
+});
+
+test("embedderReady — Gemini : prêt seulement si la clé est là", () => {
+  assert.equal(embedderReady("GOOGLE_GEMINI_API_KEY=AIza\n"), true);
+  assert.equal(embedderReady("QUERY_RESERVE=50\n"), false);
+  assert.equal(embedderReady(null), false);
+});
+
+test("embedderReady — in-process : toujours prêt (poids téléchargés au 1er usage)", () => {
+  assert.equal(embedderReady("EMBEDDING_PROVIDER=in-process\n"), true);
+});
+
+test("embedderReady — openai-compatible : prêt si une base URL est renseignée", () => {
+  assert.equal(
+    embedderReady("EMBEDDING_PROVIDER=openai-compatible\nEMBEDDING_BASE_URL=http://localhost:11434/v1\n"),
+    true,
+  );
+  assert.equal(embedderReady("EMBEDDING_PROVIDER=openai-compatible\nEMBEDDING_BASE_URL=\n"), false);
 });

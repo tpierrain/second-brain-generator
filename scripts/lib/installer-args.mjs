@@ -12,7 +12,7 @@ export function resolveTargetDir({ name, destParent, home }) {
 }
 
 // Flags porteurs d'une valeur (formes `--x=v` ET `--x v`).
-const VALUE_FLAGS = ["name", "owner", "lang", "dest"];
+const VALUE_FLAGS = ["name", "owner", "lang", "dest", "embedder"];
 // Flags booléens déclenchant le mode non-interactif (avec leurs alias).
 const NON_INTERACTIVE_FLAGS = ["non-interactive", "yes", "no-input"];
 
@@ -41,6 +41,9 @@ export function parseAnswers(argv, env, defaults) {
     ownerName: pick("owner", "SB_OWNER_NAME", defaults.ownerName),
     language: pick("lang", "SB_LANGUAGE", defaults.language),
     destParent: pick("dest", "SB_DEST", defaults.destParent),
+    // Choix d'embedder pour le mode non-interactif (in-process | gemini | ollama).
+    // Absent → l'installeur applique la reco adaptative selon la machine (D1).
+    embedder: pick("embedder", "SB_EMBEDDER", defaults.embedder),
     nonInteractive,
   };
 }

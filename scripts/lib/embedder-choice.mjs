@@ -3,6 +3,7 @@
 // Aucune I/O : reçoit { platform, arch, totalMemBytes }, rend la reco, le menu
 // des 3 options et les lignes .env correspondantes. Décision D1 (ADR 0007).
 // ═══════════════════════════════════════════════════════════════════════════
+import { hasGeminiKey, geminiKeyRequired } from "./gemini-key.mjs";
 
 // L'embedder in-process (Transformers.js + onnxruntime-node 1.24.3) n'a PAS de
 // binaire pré-buildé pour Mac Intel (darwin/x64) → option indisponible là-bas.
@@ -71,4 +72,16 @@ export function envConfigForEmbedder(key, details = {}) {
     });
   }
   throw new Error(`Choix d'embedder inconnu : ${key}`);
+}
+
+// L'embedder décrit par ce .env est-il en état d'indexer ? Gemini → il faut la clé ;
+// in-process → toujours (poids tirés au 1er usage) ; openai-compatible → il faut au
+// moins une base URL (la clé peut être vide en local/Ollama). Sert à l'installeur
+// pour lancer (ou différer) l'indexation initiale et le post-flight sans dépendre de
+// la seule clé Gemini.
+export function embedderReady(envContent) {
+  if (geminiKeyRequired(envContent)) return hasGeminiKey(envContent);
+  const provider = /^EMBEDDING_PROVIDER=(.+)$/m.exec(envContent ?? "")?.[1]?.trim();
+  if (provider === "in-process") return true;
+  return /^EMBEDDING_BASE_URL=.+/m.test(envContent ?? "");
 }

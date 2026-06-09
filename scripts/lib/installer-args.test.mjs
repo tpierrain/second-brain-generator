@@ -31,6 +31,14 @@ test("parseAnswers — aucune clé/secret n'est jamais reconnue (sécurité)", (
   assert.equal(parseAnswers(["--gemini-key", "SECRET", "--name", "ok"], {}, {}).projectName, "ok");
 });
 
+test("parseAnswers — --embedder (formes v et =v, + env SB_EMBEDDER) → embedder", () => {
+  assert.equal(parseAnswers(["--embedder", "in-process"], {}, {}).embedder, "in-process");
+  assert.equal(parseAnswers(["--embedder=gemini"], {}, {}).embedder, "gemini");
+  assert.equal(parseAnswers([], { SB_EMBEDDER: "ollama" }, {}).embedder, "ollama");
+  // absent → undefined (l'installeur appliquera la reco machine)
+  assert.equal(parseAnswers([], {}, {}).embedder, undefined);
+});
+
 test("resolveTargetDir — sans destParent → join(home, name)", () => {
   assert.equal(
     resolveTargetDir({ name: "perso", destParent: undefined, home: "/home/me" }),
@@ -89,6 +97,7 @@ test("parseAnswers — précédence flag > env > default", () => {
     ownerName: "def-owner",
     language: "def-lang",
     destParent: undefined,
+    embedder: undefined,
     nonInteractive: false,
   });
 });
