@@ -113,9 +113,10 @@ aies à penser à les faire. C'est de l'**affordance** : la complexité est **ca
 
 - **[Claude Code](https://claude.com/claude-code)**, **[Node.js](https://nodejs.org) ≥ 18** et
   **git**. *(L'installateur vérifie tout — s'il en manque un, il te le dit proprement.)*
-- **Une [clé API Gemini](https://aistudio.google.com/apikey)** (Google) pour la recherche. Le
-  **palier gratuit suffit pour démarrer** — ~2 min, 3 clics, sans toucher à la console Google
-  Cloud ni sortir de carte bancaire. *(Pas à pas : [SETUP §1.1](SETUP.md).)*
+- **De quoi vectoriser tes notes** — au choix (cf. [« le RAG à la carte »](#-le-rag-à-la-carte--tu-choisis-qui-vectorise-tes-notes)) :
+  **rien à installer** si tu prends l'option **locale** (recommandée, ≥ 12 Go de RAM), ou une
+  **[clé API Gemini](https://aistudio.google.com/apikey)** si tu préfères l'option clé (palier
+  gratuit pour démarrer, ~2 min, 3 clics, sans carte bancaire — [SETUP §1.1](SETUP.md)).
 - **Tes sources d'information** (Slack, Drive, mails, Notion, transcripts…), à brancher selon
   *tes* outils. Optionnel au début. *(cf. [SETUP §6](SETUP.md))*
 
@@ -148,6 +149,8 @@ l'installateur en mode non-interactif — qui **crée le dossier cerveau** et fa
 fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 gestes** :
 
 1. **Coller ta clé Gemini** dans `<cerveau>/.env` (ligne `GOOGLE_GEMINI_API_KEY=`) — jamais dans le chat.
+   **Seulement si tu as choisi l'option « clé d'API »** : avec l'option locale (« Gemma inside »),
+   **tu sautes ce geste**, rien à coller.
    > 💡 **Idéalement avant le 1er démarrage** (geste 3). Si tu as déjà ouvert Claude Code sans la
    > clé : colle-la dans `.env`, puis **repose simplement ta question** — le serveur RAG relit
    > `.env` tout seul à la requête suivante. Si jamais ça résiste, reconnecte le serveur MCP
@@ -280,13 +283,16 @@ Question légitime : ton vault peut être **confidentiel**. Deux services voient
   ne servent **pas** à l'entraînement. Sur le **grand public** (claude.ai Free/Pro/Max), va dans
   **Réglages → Confidentialité** et **décoche** l'usage de tes conversations pour l'amélioration
   des modèles.
-- **Gemini** (qui fait la recherche) reçoit le **texte de tes notes** pour les indexer. ⚠️ Sur le
-  **palier gratuit**, Google **peut exploiter** ces contenus (relecture humaine possible).
-  **Activer la facturation = le geste qui protège** : Google s'engage alors à **ne pas** s'en
-  servir pour l'entraînement.
+- **L'embedder** (qui indexe tes notes) reçoit le **texte de tes notes** — *uniquement* si tu as
+  choisi l'option **clé d'API** (Gemini, OpenAI, endpoint entreprise). Avec l'option **locale** ou
+  **Ollama**, **rien ne sort** : tes notes ne quittent jamais ta machine. ⚠️ Et si tu passes par
+  **Gemini en palier gratuit**, Google **peut exploiter** ces contenus (relecture humaine possible) :
+  **activer la facturation = le geste qui protège** (Google s'engage alors à **ne pas** s'en servir
+  pour l'entraînement).
 
-**Pour le prix d'un café à l'année, tes données sortent du périmètre d'entraînement.** Détails et
-abaque : [SETUP §9](SETUP.md). *(Les conditions des deux fournisseurs évoluent : vérifie-les.)*
+**Le plus privé est aussi le défaut recommandé** (tout-local) ; et même en option clé, pour le prix
+d'un café à l'année tes données sortent du périmètre d'entraînement. Détails et abaque :
+[SETUP §9](SETUP.md). *(Les conditions des fournisseurs évoluent : vérifie-les.)*
 
 ---
 
@@ -384,15 +390,31 @@ Question
 ```
 
 Le **moteur RAG** découpe chaque note en *chunks* (un par section), les transforme en vecteurs
-(*embeddings* Gemini) et retrouve les passages les plus proches du **sens** de ta question. L'index
+(*embeddings*) et retrouve les passages les plus proches du **sens** de ta question. L'index
 se reconstruit seul, incrémentalement ; un hook git **committe** à chaque modification (et **pousse**
 seulement si tu as branché un dépôt distant — *opt-in*).
+
+#### 🍽️ Le RAG à la carte — tu choisis qui vectorise tes notes
+
+La vectorisation (l'*embedding*) est **le seul moment** où le texte de tes notes peut sortir de ta
+machine — alors on en fait **un choix conscient**, pas un défaut subi. Trois options, **de la plus
+privée à la plus légère** (et tu peux **changer d'avis quand tu veux** : on ré-encode en quelques
+minutes, **aucune note n'est perdue**) :
+
+- 🟢 **Tout sur ta machine** *(« Gemma inside », recommandé)* — un petit modèle local vectorise tes
+  notes ; **rien ne quitte ton ordinateur**, gratuit et hors-ligne. *(≥ 12 Go de RAM, hors Mac Intel.)*
+- 🟡 **Avec une clé d'API** *(Gemini, OpenAI ou l'endpoint de ton entreprise)* — léger pour la
+  machine, mais **tes notes transitent par le fournisseur** ; idéal sur petite config ou Mac Intel.
+- 🟢 **Ollama, en local** *(avancé)* — rien ne sort non plus, au prix d'**une app séparée à installer**.
+
+> 🧠 L'embedder n'est **pas** « ChatGPT chez toi » : c'est juste le bibliothécaire qui range tes
+> notes par sens. **Le cerveau qui raisonne et te répond reste Claude**, quel que soit ton choix.
 
 ### Ce qu'il y a dans la boîte
 
 | Élément | Rôle | Statut |
 |---|---|---|
-| **`rag/`** | Moteur RAG (serveur MCP TypeScript) : chunking, embeddings Gemini, recherche sémantique, garde-fous quota | ✅ prêt à l'emploi |
+| **`rag/`** | Moteur RAG (serveur MCP TypeScript) : chunking, embeddings **à la carte** (local / clé d'API / Ollama), recherche sémantique, garde-fous quota | ✅ prêt à l'emploi |
 | **`vault/`** | Ton contenu Markdown (notes d'exemple fournies) | 🔧 à remplir |
 | **`CLAUDE.md`** | Les règles que Claude suit (flux 4 phases, conventions, posture) | 🌱 amorce dans le launcher → l'installeur en **génère** une version perso **dans le cerveau**, puis à adapter |
 | **`.claude/skills/`** | Skills livrées (voir ci-dessous) + idées d'autres skills | 🔧 à étoffer |
