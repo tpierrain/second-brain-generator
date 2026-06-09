@@ -21,12 +21,16 @@ export function parseLsFilesZ(output) {
 //     l'instrument qui sert à CHOISIR l'embedder du launcher (mesure Gemini vs locaux).
 //     Aucune valeur dans un cerveau utilisateur (notes Flemmr purgées → tout FAIL).
 //     Exclu par PRÉFIXE → couvre d'un coup les .mjs ET leurs .test.mjs.
+//   - rag/scripts/ : outillage de MESURE du moteur (measure-batch — caler EMBED_BATCH
+//     sur corpus dense). Dev-only : importe la source TS et vise par défaut un vault
+//     local confidentiel ; aucune valeur (ni place) dans un cerveau utilisateur.
 const DEV_ONLY_FILES = new Set(["DEVELOPING.md", "EN-QUOI-C-EST-DIFFERENT.md"]);
 const DEV_ONLY_PREFIXES = [
   "maintainers/",
   "scripts/run-eval.mjs",
   "scripts/lib/eval-",
   "scripts/lib/mcp-search",
+  "rag/scripts/",
 ];
 
 // Retient, parmi les chemins suivis, ceux à copier dans le cerveau généré.

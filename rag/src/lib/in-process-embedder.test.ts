@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   InProcessEmbedder,
   promptsForModel,
+  EMBED_BATCH,
   type FeatureExtractor,
 } from "./in-process-embedder.js";
 
@@ -61,6 +62,47 @@ test("embedDocuments : encode le lot et renvoie les vecteurs dans l'ordre", asyn
     [0, 1],
   ]);
   assert.deepEqual(calls[0].input, ["doc A", "doc B"]);
+});
+
+test("embedDocuments : plafonne la taille de lot — découpe en sous-lots bornés, concatène dans l'ordre", async () => {
+  // Fake qui renvoie un vecteur par texte d'entrée (echo numérique), et capture
+  // chaque sous-lot reçu : on prouve à la fois le découpage et l'ordre de sortie.
+  const calls: string[][] = [];
+  const load: () => Promise<FeatureExtractor> = async () => async (input) => {
+    const slice = input as string[];
+    calls.push(slice);
+    return { tolist: () => slice.map((s) => [Number(s)]) };
+  };
+  const embedder = new InProcessEmbedder(
+    { model: "m", dimension: 1, batchSize: 2 },
+    load
+  );
+
+  const vectors = await embedder.embedDocuments(["1", "2", "3", "4", "5"]);
+
+  // 5 textes, lot plafonné à 2 → 3 sous-lots : [1,2] [3,4] [5]
+  assert.deepEqual(calls, [["1", "2"], ["3", "4"], ["5"]]);
+  // vecteurs reconcaténés dans l'ordre d'origine (rien ne se perd ni ne se mélange)
+  assert.deepEqual(vectors, [[1], [2], [3], [4], [5]]);
+});
+
+test("embedDocuments : sans batchSize configuré, applique le plafond par défaut EMBED_BATCH (chemin de prod)", async () => {
+  const calls: string[][] = [];
+  const load: () => Promise<FeatureExtractor> = async () => async (input) => {
+    const slice = input as string[];
+    calls.push(slice);
+    return { tolist: () => slice.map(() => [0]) };
+  };
+  // selectEmbedder construit l'adaptateur SANS batchSize → c'est le défaut qui doit protéger.
+  const embedder = new InProcessEmbedder({ model: "m", dimension: 1 }, load);
+
+  const texts = Array.from({ length: EMBED_BATCH + 1 }, (_, i) => String(i));
+  await embedder.embedDocuments(texts);
+
+  // un de plus que le plafond → 2 sous-lots, le 1ᵉʳ plein
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].length, EMBED_BATCH);
+  assert.equal(calls[1].length, 1);
 });
 
 test("chargement du modèle impossible → erreur claire (modèle nommé), jamais un vecteur vide", async () => {

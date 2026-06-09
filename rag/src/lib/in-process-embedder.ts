@@ -13,12 +13,24 @@ export interface TaskPrompts {
   document: string;
 }
 
+/**
+ * Plafond de lot par défaut. L'attention ONNX est en O(seq²)×batch : envoyer tous
+ * les chunks d'une note longue d'un coup fait exploser la RAM (mesuré : note de 78
+ * chunks → 8,5 Go et stall). Balayage 4/8/16 sur corpus dense (264 notes) : le PETIT
+ * lot gagne sur les deux axes (RAM ET temps) — 4 = pic ~3,2 Go / 5,3 min, vs 16 =
+ * 5,4 Go / 7,4 min. La qualité est inchangée (chaque texte est embeddé
+ * indépendamment). Voir plan Étape 4-ter + eval-set.md.
+ */
+export const EMBED_BATCH = 4;
+
 /** Config de l'adaptateur in-process (modèle ONNX + dimension + quantification + prompts). */
 export interface InProcessConfig {
   model: string;
   dimension: number;
   dtype?: Dtype;
   prompts?: TaskPrompts;
+  /** Taille max d'un sous-lot envoyé au pipeline (borne la RAM). Défaut : `EMBED_BATCH`. */
+  batchSize?: number;
 }
 
 /** Tenseur de sortie minimal dont l'adaptateur a besoin (sous-ensemble de Transformers.js). */
@@ -103,11 +115,23 @@ export class InProcessEmbedder implements Embedder {
     return vectors[0];
   }
 
-  /** Un passage par le pipeline : pooling moyen + normalisation L2 (vecteurs comparables au cosinus). */
-  private async embed(input: string | string[]): Promise<number[][]> {
+  /**
+   * Encode les textes par **sous-lots bornés** (pooling moyen + normalisation L2).
+   * Le plafond évite l'explosion RAM d'onnxruntime sur les notes longues ; les
+   * vecteurs sont reconcaténés dans l'ordre d'origine.
+   */
+  private async embed(texts: string[]): Promise<number[][]> {
     const extractor = await this.getExtractor();
-    const tensor = await extractor(input, { pooling: "mean", normalize: true });
-    return tensor.tolist();
+    const batchSize = this.config.batchSize ?? EMBED_BATCH;
+    const vectors: number[][] = [];
+    for (let i = 0; i < texts.length; i += batchSize) {
+      const tensor = await extractor(texts.slice(i, i + batchSize), {
+        pooling: "mean",
+        normalize: true,
+      });
+      vectors.push(...tensor.tolist());
+    }
+    return vectors;
   }
 
   /**
