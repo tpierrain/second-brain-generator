@@ -44,6 +44,25 @@ node scripts/run-eval.mjs
 > est binaire et objective (les passages suffisent-ils, oui/non) → variance faible. Suffisant pour
 > départager des embedders (étude §6 : un script local donne 90 % de la valeur, sans infra lourde).
 
+## Baseline Gemini — **80 % (8/10)** _(2026-06-09)_
+
+Premier chiffre de référence, embedder courant **Gemini**, sur le vault d'exemple Flemmr (7 notes) :
+
+| | Questions | Score |
+|---|---|---|
+| **Gemini (baseline)** | 8 PASS / 10 | **80,0 %** |
+
+Les **2 ratés** sont de **vrais échecs de récupération** (pas un bug d'eval-set) : la réponse
+existe bien dans le vault, mais les passages remontés n'ont pas suffi au juge.
+
+- *« Combien Flemmr a-t-elle levé en série A… ? »* — fait présent dans `vault/topics/flemmr.md`.
+- *« Quel est le slogan de Flemmr ? »* — slogan présent dans le **même** fichier.
+
+> C'est exactement le signal qu'un eval-set doit capturer : on **ne corrige pas** la question ni le
+> vault pour faire monter le chiffre — ce serait vider la mesure de son sens. 80 % est la **vérité
+> terrain** que les embedders locaux (Étape 4) devront égaler ou dépasser, **sous le même harnais**.
+> (Note : corpus petit → un seul run ; si l'Étape 4 demande plus de finesse, moyenner quelques runs.)
+
 ## Ajouter / modifier une question
 
 Éditer [`../scripts/lib/eval-set.mjs`](../scripts/lib/eval-set.mjs) : un item =

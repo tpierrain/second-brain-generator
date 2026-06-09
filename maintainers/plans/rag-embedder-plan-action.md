@@ -46,11 +46,11 @@
   - [x] Point de sélection unique `createEmbedder()` (dans `embedder.ts`, pas `config.ts` : cycle d'import) — sans `switch` multi-provider _(2026-06-08 · a49f861)_
   - [x] *(option)* `FakeEmbedder` déterministe + test _(2026-06-08 · bf2ead8)_
   - [x] `npm test` (dossier `rag/`) vert (91/91) ; `embedder-spi.md` archivé → `plans/archived/`
-- [ ] **Étape 2 — Eval-set local (juge = Claude)** 🧪 *(dépend de : —)* — **instrument LIVRÉ ; baseline chiffrée à produire (clé Gemini requise)** _(2026-06-09 · e64f2bb, 0448c03)_
+- [x] **Étape 2 — Eval-set local (juge = Claude)** 🧪 *(dépend de : —)* — **instrument + baseline Gemini 80 % (8/10) LIVRÉS** _(2026-06-09 · e64f2bb, 0448c03)_
   - [x] Vault représentatif choisi : **vault d'exemple Flemmr** (inventé → public-safe, versionné, **rejouable par tous**). Corpus plus riche = reporté à l'Étape 4 (décidé avec Thomas) _(2026-06-09)_
   - [x] Questions écrites : **10** (corpus Flemmr petit → ~10 plutôt que 15-20 ; mix faciles + grep-résistantes ; 1ʳᵉ = canari `demo.mjs`) _(2026-06-09 · e64f2bb)_
   - [x] Script « recherche + jugement Claude » → score reproductible : `scripts/run-eval.mjs` + cœur pur testé ; juge `claude -p` **validé end-to-end** (PASS sur passage pertinent, FAIL sur hors-sujet) ; **dev-only** (exclu du cerveau) ; documenté [`../eval-set.md`](../eval-set.md) _(2026-06-09 · e64f2bb, 0448c03)_
-  - [ ] **Baseline Gemini mesurée et consignée** ⏳🐞 — clé posée dans `.env`, **indexation OK (7 notes)**, mais le juge plante : `« claude -p a échoué (code 1) »`, **stderr vide**. ⚠️ un smoke isolé (2 jugements, même appel) marchait → suspecter **quota/usage Claude** (limite de tokens tapée la veille) ou logguer la **stdout** du juge. **À débugger avant le chiffre.** (détail : mémoire `etape2-eval-baseline-blocker`)
+  - [x] **Baseline Gemini mesurée et consignée** ✅ — **80 % (8/10)** sur le vault Flemmr, consignée dans [`../eval-set.md`](../eval-set.md#baseline-gemini--80-810-2026-06-09). Le blocage `claude -p` exit 1 était bien **environnemental** (quota/usage Claude de la veille, réinitialisé) — pas un bug code : `claude -p` refonctionne, l'eval s'est déroulée de bout en bout. Les 2 ratés sont de **vrais échecs de récupération** (réponse présente dans le vault, passages insuffisants) → baseline honnête, on ne la gonfle pas _(2026-06-09)_
 - [ ] **Étape 3 — Adaptateur compatible-OpenAI (URL+clé)** 🧪 TDD *(dépend de : 1)* _(… · …)_
   - [ ] `OpenAiCompatibleEmbedder` : `{model,input}` → `data[].embedding` ; `embedDocuments`/`embedQuery`
   - [ ] `identity` (provider/model/dimension) renseignée
