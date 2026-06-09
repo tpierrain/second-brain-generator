@@ -120,6 +120,17 @@ Même harnais, même vault Flemmr, mais l'embedder tourne **dans le process Node
 | **V1 — install cross-OS** | ✅ **OK Mac+Windows** | `npm i @huggingface/transformers` → `onnxruntime-node@1.24.3` **embarque** les binaires pré-buildés `win32/x64`, `win32/arm64`, `darwin/arm64`, `linux/x64+arm64` ; `requirements=[]` partout (seul le GPU CUDA Linux est distant) → **rien à compiler, rien à télécharger, offline-friendly**. ⚠️ **Mac Intel (darwin/x64) non supporté** par cette version (Apple Silicon ✅). |
 | **V2 — latence CPU** | ✅ **tenable** | Téléchargement des poids **~28 s une seule fois** (caché ensuite) ; démarrage à froid poids cachés = **675 ms** (load+1ᵉʳ embed) ; débit à chaud **8–9 ms/texte (~110/s)**, **sans GPU Metal** ; vecteur 768-dim **normalisé** (‖v‖=1). |
 | **V3 — qualité (quantifié)** | ✅ **parité Ollama (90 %)** | eval-set rejoué : **90 % (9/10)**, = EmbeddingGemma via Ollama, **> Gemini 80 %**. Seul raté : « série A » (idem Ollama). |
+| **V4 — empreinte (disque + RAM)** | ⚖️ **prix local assumé** | **Disque** : +~550 Mo dans `node_modules` (binaires onnxruntime tous OS ; ~35 Mo réellement chargés sur Mac) + ~150–300 Mo de poids en cache HF au 1ᵉʳ usage. **RAM** : modèle chargé = **~1,1–1,6 Go résident** (variance des arènes onnxruntime CPU), **stable** quelle que soit la taille du vault (l'indexeur embed **doc par doc**, `indexer.ts:46`). |
+
+**Le démarrage du MCP n'est PAS ralenti (mesuré).** Boot → handshake « MCP running on stdio » =
+**~0,5–0,7 s**, **identique** en défaut Gemini et en `in-process`. Raisons : `server.connect()` se fait
+**avant** tout embedding (`index.ts:257`) ; le modèle n'est **jamais importé statiquement** (seul un
+`await import("@huggingface/transformers")` **paresseux** + pipeline **mémoïsé**) ; il ne se charge qu'à
+la **1ʳᵉ recherche** (ou au reindex de fond, non bloquant). En défaut Gemini, `InProcessEmbedder` n'est
+même pas instancié → **impact nul**. Le coût (~675 ms de chargement par lancement du process, poids
+cachés) est donc **payé à la 1ʳᵉ recherche, pas au boot**. Seul gonflement RAM possible (~2,1 Go) : une
+**unique note** de plusieurs centaines de chunks encodée en un seul lot — edge case, traitable par
+tranchage si ça mord un jour.
 
 **La leçon V3 (importante).** EmbeddingGemma **exige ses prompts de tâche** (`task: search result |
 query: …` côté recherche, `title: none | text: …` côté document). Ollama les applique en interne ;
@@ -133,9 +144,11 @@ quantifié↔Ollama est **confirmée, pas supposée** (exactement ce que le plan
 > **Verdict 4-bis → VIABLE comme défaut.** L'in-process lève la **seule** objection sérieuse du
 > tout-local (la friction Ollama) **sans rien céder** : install `npm`-only sur Mac (Apple Silicon) ET
 > Windows, latence ponctuelle tenable, qualité **à parité d'Ollama (90 %)** et au-dessus de Gemini.
-> → **candidat n°1 du défaut en D1.** Réserves honnêtes : (a) **Mac Intel** hors couverture
-> `onnxruntime-node` 1.24.3 ; (b) corpus Flemmr petit (90 vs 80 = une question, cf. limite ci-dessous) ;
-> (c) binaires pré-buildés **volatils** → re-vérifier la matrice à chaque bump d'`onnxruntime-node`.
+> → **candidat n°1 du défaut en D1.** Réserves honnêtes : (a) **RAM ~1,5 Go** quand actif — confortable
+> sur 16 Go+, jouable sur 8 Go, **facteur limitant** sur une machine vraiment modeste (vs ~0 pour
+> Gemini, distant) ; (b) **Mac Intel** hors couverture `onnxruntime-node` 1.24.3 ; (c) corpus Flemmr
+> petit (90 vs 80 = une question, cf. limite ci-dessous) ; (d) binaires pré-buildés **volatils** →
+> re-vérifier la matrice à chaque bump d'`onnxruntime-node`.
 
 > **Reproduire** : `rm -f rag/.cache/vault.db*` puis
 > `EMBEDDING_PROVIDER=in-process node scripts/run-eval.mjs` (ni URL ni clé ; poids téléchargés au 1ᵉʳ
