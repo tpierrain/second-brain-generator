@@ -4,6 +4,8 @@
 
 🔒 **Et il reste vraiment à toi.** Par défaut, tes notes sont indexées **sur ta propre machine — rien ne sort**. Sur petite config, délègue l'indexation à l'API de ton choix (**Gemini** pour quelques centimes, ou **l'endpoint de ton entreprise**) en changeant juste une **URL + clé**. 🛟 Et c'est **conçu production-ready** — sauvegarde, fraîcheur, récupération après pépin : **son** boulot, pas le tien. *Toi, tu n'as qu'à parler.*
 
+💬 *Pas besoin d'être dev : ça marche dans **Claude Desktop** (onglet Code) comme en ligne de commande — si tu sais discuter avec Claude, tu sais t'en servir.*
+
 > 🧑 *« On en est où sur le projet facturation — qui porte quoi, et qu'est-ce qui a été décidé ? »*
 >
 > 🧠 *« Au point d'équipe du 15 janvier : la base de données a été tranchée (PostgreSQL plutôt que
@@ -62,6 +64,11 @@ quel que soit son niveau technique :
   du « pourquoi on a tranché comme ça ».
 - **Consultants, chercheurs, freelances** — consolider un domaine métier, ne rien perdre d'un
   contexte client.
+
+👉 **Pas besoin d'être un geek.** Ce cerveau est pensé pour des gens qui **ne maîtrisent pas la
+technique** mais qui travaillent déjà avec **Claude Desktop** (onglet Code). Si tu sais *discuter*
+avec Claude, tu sais t'en servir — et il marche **aussi bien sur Claude Desktop qu'en ligne de
+commande** (CLI), au choix.
 
 > ⚠️ L'**usage au quotidien ne demande aucune compétence technique** : tu poses des questions, tu
 > lis des réponses. Seule l'**installation** (une fois, ~15 min) suppose d'avoir git et Node (et,
@@ -173,7 +180,10 @@ C'est tout : pas besoin de préciser « ne touche pas au launcher » ni « ne de
 dossier neuf sans lien distant, clé jamais demandée en chat). Claude clone le **launcher**, te pose
 **en chat** les quelques questions (nom du cerveau, emplacement, ton nom, langue), puis lance
 l'installateur en mode non-interactif — qui **crée le dossier cerveau** et fait **tout** (copie,
-fichiers générés, `git init`, moteur RAG, vérification). Il te reste **3 gestes** :
+fichiers générés, `git init`, moteur RAG, vérification). L'install ne peut pas **réussir à moitié** :
+soit elle va au bout et **te le prouve** (elle vérifie elle-même que la recherche répond bien depuis
+tes notes), soit elle **s'arrête net en disant pourquoi** — **jamais d'install fantôme** qui a l'air
+ok mais ne marche pas. Il te reste **3 gestes** :
 
 1. **Coller ta clé Gemini** dans `<cerveau>/.env` (ligne `GOOGLE_GEMINI_API_KEY=`) — jamais dans le chat.
    **Seulement si tu as choisi l'option « clé d'API »** : avec l'option locale (« Gemma inside »),
@@ -357,6 +367,14 @@ tranquille à adopter.
 
 Un second cerveau ne vaut que **calé sur ton activité** : tes besoins, le type de questions que tu
 poses, le type d'échange que tu veux avoir avec lui. C'est *toi* qui définis ça.
+
+Il **arrive déjà équipé** de quelques **skills prêtes à l'emploi** — par exemple un **coach
+« vénère »** dans l'esprit *Radical Candor* (brutalement honnête **et** bienveillant), qui te
+challenge quand tu as la tête dans le guidon. Mais ce ne sont que des **points de départ** : tout
+l'intérêt, c'est qu'il reste **souple**. Notes en **Markdown ouvert**, skills, constitution
+`CLAUDE.md` — **toute sa structure a été pensée et rangée pour être remodelée** à *tes* usages : tu
+ajoutes, modifies ou retires des skills, tu affines ses règles, au fil de l'eau. Il **grandit avec
+toi** ; il ne te force pas dans un moule.
 
 **Exemple — pour Thomas Pierrain, *Head of Engineering*** — son second cerveau l'aide à :
 
