@@ -210,6 +210,42 @@ n'est pas reconstruite de zéro.
   réponse directe au cas **entreprise de Dimitry** (OpenAI/Azure validé par la boîte = le défaut
   naturel pour ce public). Cf. encart §1.2.
 
+### 3 bis — ✅ MESURE Étape 4 (2026-06-09) : les locaux **ne dégradent pas** la qualité FR
+
+> **Ce qui était « à benchmarker » ci-dessus l'est désormais.** Premier chiffrage réel sous notre
+> propre harnais (eval-set, juge = Claude) sur le vault FR Flemmr, via Ollama + l'adaptateur
+> compatible-OpenAI. Détail + repro : [`../eval-set.md`](../eval-set.md#étape-4--résultats-mesurés-local-vs-gemini-2026-06-09).
+
+| Embedder | Lieu | Dim | **Score FR** | Index 7 notes (warm) | Disque | RAM |
+|---|---|---|---|---|---|---|
+| **EmbeddingGemma** | 🟢 local | 768 | **90 % (9/10)** | ~1,3 s | 621 Mo | ~0,67 Go |
+| **bge-m3** | 🟢 local | 1024 | **90 % (9/10)** | ~1,7 s | 1,2 Go | ~0,66 Go |
+| **Gemini** (baseline) | 🔴 cloud | 3072 | **80 % (8/10)** | ~20,8 s | 0 | 0 |
+
+- **Conclusion robuste** : **aucun malus qualité** à passer en local sur ce corpus FR — les deux locaux
+  sont **au moins à parité** avec Gemini (ils le dépassent même d'une question). Le profil par défaut
+  visé (gratuit + privé + on-device, §1.1) est **viable côté qualité** : la mesure valide l'intuition,
+  elle ne la contredit pas.
+- **Caveat assumé** (ne pas survendre) : corpus minuscule → le 90 vs 80 = **1 question d'écart**, dans
+  le bruit (variance juge + top-k qui ramène presque tout) ; chaque modèle rate une question
+  *différente*. ⇒ **« local à parité »** est défendable, **« local > Gemini » ne l'est pas encore**.
+  Pour **départager EmbeddingGemma vs bge-m3** (le choix fin de D1), refaire la mesure sur un **corpus
+  riche** (cf. `eval-set.md` §discriminer). À score égal, **EmbeddingGemma** part favori du défaut
+  bureautique : 2× plus léger sur disque, vecteurs plus petits (index plus compact), conçu on-device.
+- **Footprint réel validé** : les deux modèles tiennent dans **~0,65 Go de RAM** (GPU Metal sur Mac
+  Apple Silicon), très loin du laptop saturé — confirme §1.3 (embedder ≠ LLM de chat).
+
+#### Réponse chiffrée à Dimitry (sortir de Gemini)
+
+> *« Oui, on peut faire tourner le RAG **sans Google**, et sans perdre en qualité. Mesuré chez nous
+> (eval-set FR maison) : un embedder **100 % local** (EmbeddingGemma ou bge-m3, via Ollama) score
+> **9/10** contre **8/10** pour Gemini — donc **au moins à parité**, en restant **gratuit, on-device,
+> zéro clé, zéro donnée envoyée à un provider**. Footprint : ~0,6 Go de RAM, indexation quasi
+> instantanée sur un Mac/PC banal. Pour ton cas **entreprise** (OpenAI/Azure déjà validés par la
+> boîte), le **même** code bascule sur ton endpoint en changeant une URL dans `.env` — l'adaptateur
+> est neutre. Le seul niveau où *rien* ne sort de la machine reste le local (cf. échelle de
+> confidentialité §privacy). »*
+
 ---
 
 ## 4. LightRAG / GraphRAG (repo pointé par Thomas : <https://github.com/HKUDS/LightRAG>)

@@ -84,9 +84,35 @@ faible décroche sur les secondes.
 | `scripts/lib/mcp-search.mjs` | N requêtes `search_vault` sur **une** session MCP | ✅ (stub MCP) |
 | `scripts/run-eval.mjs` | Exécutable : câble index + MCP réel + `claude -p` | — (I/O, comme `verify-rag`) |
 
-## Étape 4 — discriminer finement
+## Étape 4 — résultats mesurés (local vs Gemini) _(2026-06-09)_
 
-Le corpus Flemmr (~5 notes) est petit → discrimination d'embedders **limitée** (le top-k ramène
-presque tout). Pour la mesure fine de l'Étape 4, pointer le même harnais sur un corpus **plus
-riche** (le vrai cerveau de Thomas, ou un échantillon réaliste) : seul le jeu de questions change,
-le reste de l'instrument est inchangé.
+Trois embedders, **même harnais**, même vault Flemmr, **même session** (sur secteur), via Ollama +
+l'adaptateur compatible-OpenAI (`EMBEDDING_PROVIDER=openai-compatible`, `EMBEDDING_BASE_URL=http://localhost:11434/v1`) :
+
+| Embedder | Lieu | Dim | **Score FR** | Raté(s) | Index 7 notes (warm) | Disque | RAM résidente |
+|---|---|---|---|---|---|---|---|
+| **EmbeddingGemma** | 🟢 local | 768 | **90 % (9/10)** | série A | ~1,3 s | 621 Mo | ~0,67 Go (GPU Metal) |
+| **bge-m3** | 🟢 local | 1024 | **90 % (9/10)** | Q1 (employé oisif) | ~1,7 s | 1,2 Go | ~0,66 Go (GPU Metal) |
+| **Gemini** (baseline) | 🔴 cloud | 3072 | **80 % (8/10)** | série A + slogan | ~20,8 s | 0 | 0 (clé+quota+réseau) |
+
+**Anti-fallback (prouvé)** : estampilles d'index distinctes (`index_meta` = provider/modèle/dimension),
+vecteurs stockés à la bonne dimension, **0 appel Gemini** durant les runs locaux (compteur quota figé).
+
+**Lecture honnête** — le signal robuste est **« aucun malus qualité à passer en local »** : les deux
+locaux **égalent ou dépassent** Gemini ici. Mais le 90 vs 80 = **une seule question d'écart**, dans le
+bruit (variance juge LLM + **corpus minuscule** où le top-k ramène presque tout), et **chaque modèle
+rate une question différente** → la conclusion défendable est **« local au moins à parité »**, pas
+« local bat Gemini ». Latence : sur 7 notes le local indexe ~15× plus vite (pas de réseau/throttle) ;
+l'écart se creuse à l'échelle d'un vrai vault, l'encodage restant **ponctuel**.
+
+> **Reproduire** : `rm -f rag/.cache/vault.db*` puis, pour un local,
+> `EMBEDDING_PROVIDER=openai-compatible EMBEDDING_BASE_URL=http://localhost:11434/v1 EMBEDDING_API_KEY= EMBEDDING_MODEL_NAME=<embeddinggemma|bge-m3> EMBEDDING_DIMENSION=<768|1024> node scripts/run-eval.mjs`
+> ; sans les `EMBEDDING_*` = Gemini natif. Prérequis local : Ollama + `ollama pull <modèle>`.
+
+## Étape 4 — discriminer plus finement (limite connue)
+
+Le corpus Flemmr (7 notes) est petit → discrimination d'embedders **limitée** (le top-k ramène
+presque tout, d'où le coude-à-coude ci-dessus). Pour départager **vraiment** EmbeddingGemma vs bge-m3
+(et trancher D1 sur des chiffres qui séparent), pointer le même harnais sur un corpus **plus riche**
+(le vrai cerveau de Thomas, ou un échantillon réaliste) : seul le jeu de questions change, le reste de
+l'instrument est inchangé.

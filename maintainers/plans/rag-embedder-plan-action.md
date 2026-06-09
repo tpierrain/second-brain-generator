@@ -56,14 +56,14 @@
   - [x] `identity` (provider/model/dimension) renseignée depuis la config — `providerId="openai-compatible"` ; dimension = clé d'invalidation (lue **avant** tout embed car estampillée en amont) _(2026-06-09)_
   - [x] Branché dans `createEmbedder()` via `.env` — fonction de sélection **pure** `selectEmbedder(env)` (testable) ; `EMBEDDING_PROVIDER` + `EMBEDDING_BASE_URL` + `EMBEDDING_API_KEY` + `EMBEDDING_MODEL_NAME` + `EMBEDDING_DIMENSION` ; documenté dans `.env.example` _(2026-06-09)_
   - [x] Auth Bearer si clé présente ; **aucun** header `Authorization` si clé vide (local) ; réponse non-ok → **erreur bruyante** (jamais de vecteur vide silencieux dans l'index) _(2026-06-09)_
-  - [~] Testé sur un endpoint compatible-OpenAI **et** sur Ollama local (`localhost:11434/v1`) : **enveloppe/headers/erreurs/sélection prouvés en tests unitaires** (`openai-compatible-embedder.test.ts`, `npm test` 98/98 vert). **Smoke live** (vrai Ollama + modèle pull) **reporté à l'Étape 4** (Ollama pas encore installé ; son install fait partie de l'Étape 4 « brancher local ») — honnête : pas de faux « testé en live »
-- [ ] **Étape 4 — Brancher local + MESURER vs Gemini** 📊 *(dépend de : 1,2,3)* _(… · …)_
-  - [ ] Brancher EmbeddingGemma (via Ollama + adaptateur n°3)
-  - [ ] Brancher bge-m3
-  - [ ] Ré-indexer le vault représentatif pour chacun
-  - [ ] Lancer l'eval-set sur chacun, vs Gemini (baseline)
-  - [ ] Tableau de résultats chiffrés (qualité FR + footprint/latence)
-  - [ ] **Décision du défaut bureautique** consignée + réponse chiffrée à Dimitry
+  - [x] Testé sur un endpoint compatible-OpenAI **et** sur Ollama local (`localhost:11434/v1`) : enveloppe/headers/erreurs/sélection prouvés en tests unitaires (`openai-compatible-embedder.test.ts`, 98/98 vert) **ET smoke live réel fait à l'Étape 4** (Ollama installé via cask, `embeddinggemma`/`bge-m3` pullés, indexation+recherche du vault Flemmr 100 % en local prouvées par l'estampille `index_meta`) _(2026-06-09)_
+- [x] **Étape 4 — Brancher local + MESURER vs Gemini** 📊 *(dépend de : 1,2,3)* — **mesuré : local ≥ Gemini sur Flemmr FR (90 %/90 %/80 %), aucun malus qualité** _(2026-06-09 · 865536c)_
+  - [x] Brancher EmbeddingGemma (via Ollama + adaptateur n°3) — `embeddinggemma` pullé, 768-dim, score **90 % (9/10)** _(2026-06-09)_
+  - [x] Brancher bge-m3 — `bge-m3` pullé, 1024-dim, score **90 % (9/10)** _(2026-06-09)_
+  - [x] Ré-indexer le vault représentatif pour chacun — DB purgée + réindex complet par modèle, estampille `index_meta` distincte (preuve anti-fallback) _(2026-06-09)_
+  - [x] Lancer l'eval-set sur chacun, vs Gemini (baseline re-mesurée même session = **80 % (8/10)**, reproduit hier) _(2026-06-09)_
+  - [x] Tableau de résultats chiffrés (qualité FR + footprint/latence) → consigné [`../eval-set.md`](../eval-set.md#étape-4--résultats-mesurés-local-vs-gemini-2026-06-09) _(2026-06-09)_
+  - [~] **Décision du défaut bureautique** : mesure + **reco consignée** (local viable, EmbeddingGemma léger candidat naturel) ; réponse chiffrée à Dimitry rédigée. **Décision finale = D1 (Thomas)** — corpus petit ⇒ départage fin EmbeddingGemma vs bge-m3 à refaire sur corpus riche avant d'acter
 - [ ] **Étape 5 — Onboarding / install (choix + pédagogie)** 🧪 *(dépend de : D1, 3)* _(… · …)_
   - [ ] Implémenter le flux décidé en D1 (A/B/C)
   - [ ] Ne plus *forcer* la clé Gemini si un local sans clé est retenu
