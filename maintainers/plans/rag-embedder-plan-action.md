@@ -71,10 +71,10 @@
   - [x] **V2 — latence CPU** : téléchargement poids ~28 s **une fois** (caché) ; démarrage à froid poids cachés **675 ms** ; débit à chaud **8–9 ms/texte (~110/s)** sans GPU Metal → tenable (encodage ponctuel) _(2026-06-09)_
   - [x] **V3 — qualité re-mesurée (quantifié)** : eval-set in-process q8 = **90 % (9/10)** = EmbeddingGemma via Ollama, **> Gemini 80 %**. **Parité confirmée, pas supposée.** Découverte : l'écart venait des **prompts de tâche EmbeddingGemma** (q8 brut = 80 % ; q8 + prompts = 90 %), pas de la quantification _(2026-06-09)_
   - [x] Tableau de viabilité + **verdict « VIABLE comme défaut »** consignés [`../eval-set.md`](../eval-set.md#étape-4-bis--viabilité-de-lin-process--gemma-inside--sans-ollama-2026-06-09) → alimente D1. `npm test` **vert (109/109)** ; contrat MCP **inchangé** _(2026-06-09)_
-- [ ] **Étape 4-ter — Plafonnement de lot d'embedding (durcissement in-process)** 🧪 TDD *(dépend de : 4-bis ; **BLOQUANT pour l'option 1 livrée en Étape 5**)* _(… · …)_
-  - [ ] Découper l'embedding en **sous-lots bornés** (constante `EMBED_BATCH`, défaut à caler) au lieu d'envoyer tous les chunks d'une note d'un coup — dans `InProcessEmbedder.embedDocuments` (ou l'indexeur)
-  - [ ] Re-mesurer pic RAM + temps sur corpus dense ; **balayer lot 4/8/16** pour le sweet-spot RAM↔temps, figer la constante
-  - [ ] `npm test` vert ; contrat MCP inchangé ; consigner les chiffres dans `eval-set.md`
+- [x] **Étape 4-ter — Plafonnement de lot d'embedding (durcissement in-process)** 🧪 TDD *(dépend de : 4-bis ; **BLOQUANT pour l'option 1 livrée en Étape 5**)* — **livré : `EMBED_BATCH=4` (sweet-spot mesuré), 111/111 vert, contrat MCP inchangé** _(2026-06-09)_
+  - [x] Sous-lots bornés dans **`InProcessEmbedder.embedDocuments`** (constante `EMBED_BATCH` + `batchSize?` configurable) — placé dans l'adaptateur car la contrainte RAM est **spécifique à l'ONNX in-process** (Gemini/OpenAI = réseau) → protège tous les appelants ; `embedQuery` inchangé _(2026-06-09)_
+  - [x] Balayage **4/8/16** sur le corpus dense (264 notes) : **contre-intuitif — le petit lot gagne sur les 2 axes** (lot 4 = pic ~3,2 Go in-proc / 5,3 min / 8,5 ch/s ; lot 16 = 5,35 Go / 7,4 min). Qualité inchangée. Constante **figée à 4** ; script réutilisable `rag/scripts/measure-batch.mts` (dev-only, exclu du cerveau) _(2026-06-09)_
+  - [x] `npm test` vert (rag 111/111 ; scripts 92/92) ; contrat MCP inchangé ; chiffres + caveat RSS in-proc/OS consignés [`../eval-set.md`](../eval-set.md#balayage-du-plafond-4--8--16-2026-06-09) ; **note pour Étape 5 : pic OS ~3,8-4 Go → seuil D1 à reconsidérer (12 Go voire 8 Go)** _(2026-06-09)_
 - [ ] **Étape 5 — Onboarding / install (choix à 3 + reco adaptative)** 🧪 *(dépend de : D1, 3, **4-ter**)* _(… · …)_
   - [ ] **Détecter la machine** (RAM `os.totalmem()` + Mac Intel) → calculer la **reco** (16 Go+ → option 1 ⭐ ; ≤ 8 Go ou Mac Intel → option 2 ⭐). Seuil exact figé avec le pic RAM de 4-ter
   - [ ] **Présenter les 3 options** (option recommandée en tête « ⭐ pour ta machine ») ; **option 1 masquée sur Mac Intel** ; option 2 = « Gemini / OpenAI / **n'importe quel fournisseur, y c. entreprise** »
@@ -257,7 +257,7 @@
 
 ## Étape 4-ter — Plafonnement de lot d'embedding (durcissement in-process) 🧪
 
-> **Découvert par le test corpus dense (2026-06-09, vrai vault Inqom = 264 notes / 2709 chunks).** La
+> **Découvert par le test corpus dense (2026-06-09, vrai vault personnel = 264 notes / 2709 chunks).** La
 > viabilité 4-bis a été mesurée sur Flemmr (7 notes) → photo trompeuse. Sur un vrai vault,
 > `embedDocuments` reçoit **tous les chunks d'une note d'un coup** : une note longue (transcript de
 > sync/1-1 = **78 chunks de ~2000 tokens**) crée un lot dont l'attention en O(seq²)×batch **fait

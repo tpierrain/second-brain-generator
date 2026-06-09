@@ -158,7 +158,7 @@ quantifié↔Ollama est **confirmée, pas supposée** (exactement ce que le plan
 
 ## Étape 4-ter — corpus dense : plafonnement de lot _(2026-06-09)_
 
-La viabilité 4-bis a été mesurée sur Flemmr (7 notes). **Test sur le vrai vault Inqom (264 notes,
+La viabilité 4-bis a été mesurée sur Flemmr (7 notes). **Test sur un vrai vault personnel dense (264 notes,
 2709 chunks, moy. 10,3/note)** — copie temporaire, embedder **in-process** (rien ne sort), persistance
 neutre — corrige cette photo sur deux points et révèle un correctif obligatoire :
 
@@ -173,18 +173,44 @@ neutre — corrige cette photo sur deux points et révèle un correctif obligato
 Une note longue (transcript sync/1-1 = **78 chunks de ~2000 tokens**) crée un lot dont l'attention en
 **O(seq²)×batch** fait exploser onnxruntime. 17 notes du vault dépassent 20 chunks, 6 dépassent 50.
 
+### Balayage du plafond 4 / 8 / 16 _(2026-06-09, livré)_
+
+Plafonnement implémenté dans `InProcessEmbedder.embedDocuments` (TDD, constante `EMBED_BATCH`,
+`batchSize?` configurable) — au niveau de l'adaptateur, car la contrainte RAM est **spécifique à
+l'ONNX in-process** (Gemini/OpenAI passent par le réseau) ; protège ainsi **tous** les appelants.
+Balayage sur le même vault dense (264 notes / 2709 chunks), in-process, persistance neutre :
+
+| plafond de lot | pic RSS *(in-process)* | temps total | débit |
+|---|---|---|---|
+| 16 | 5,35 Go | 7,42 min | 6,1 chunks/s |
+| 8 | 3,82 Go | 6,52 min | 6,9 chunks/s |
+| **4 ✅ retenu** | **3,16 Go** | **5,31 min** | **8,5 chunks/s** |
+
+**Résultat contre-intuitif : le PETIT lot gagne sur les DEUX axes** (RAM *et* temps). Sur CPU, les gros
+lots × longues séquences gonflent l'attention sans mieux vectoriser ; les petits lots gardent un
+working-set cache-friendly. **La qualité est inchangée** (chaque texte est embeddé indépendamment — le
+batching ne touche pas les vecteurs ; le 90 % de 4-bis tient). → **`EMBED_BATCH = 4` figé.**
+
+> ⚠️ **RSS in-process vs OS** : ces pics sont lus via `process.memoryUsage().rss` **dans** le process —
+> ~0,7-0,8 Go sous le RSS OS externe (le lot 16 mesuré à 6,1 Go OS plus haut = 5,35 Go ici). **Pic OS réel
+> estimé du lot 4 ≈ 3,8-4 Go.** Reproduire (depuis `rag/`) : `node --import tsx scripts/measure-batch.mts <4|8|16>`
+> — vault dense via l'argument ou `$MEASURE_VAULT` ; sans rien = le vault d'exemple du repo.
+
 **Trois leçons (invisibles sur Flemmr) :**
 1. **La prod actuelle n'est pas sûre sur un vrai vault** → **plafonner la taille de lot est OBLIGATOIRE**
-   (Étape 4-ter du plan, TDD, bloquant pour le défaut option 1).
-2. **RAM en indexation ≫ 1,5 Go** : ~6 Go même lot plafonné → OK 16 Go+, **swappe sur 8 Go**. Le ~1,5 Go
-   ne vaut qu'au repos/recherche.
+   (Étape 4-ter du plan, TDD, bloquant pour le défaut option 1). **✅ Livré (lot=4).**
+2. **RAM en indexation ≫ 1,5 Go** : avec lot=4, **pic OS ≈ 3,8-4 Go** (vs ~6 Go au lot 16) → **rentre
+   confortablement sur 12 Go, et plausiblement sur 8 Go** (à confirmer machine réelle). Le ~1,5 Go ne
+   vaut qu'au repos/recherche.
 3. **Débit ≪ 110/s** : le « 8-9 ms/texte » était sur texte **court** ; les vrais chunks frôlent le
-   contexte max → **6 chunks/s (~18× plus lent)**. Index à froid d'un vrai vault ≈ **7,5 min**, **une
-   fois** (ensuite incrémental par hash).
+   contexte max → **8,5 chunks/s au lot 4** (~13× plus lent que la pub). Index à froid d'un vrai vault
+   ≈ **5,3 min**, **une fois** (ensuite incrémental par hash).
 
-> **Verdict D1 révisé** : in-process viable comme défaut **sur 16 Go+ ET avec plafonnement de lot** ;
-> sur 8 Go / Mac modeste, l'option clé d'API (RAM ~0) reste raisonnable → **conforte le choix C (3
-> options explicites)**. Valeur du plafond à caler (balayer 4/8/16) au moment d'implémenter l'Étape 4-ter.
+> **Verdict D1 — à reconsidérer pour l'Étape 5** : le lot 4 abaisse le pic OS de ~6 Go (lot 16) à
+> ~3,8-4 Go. Le seuil acté « 16 Go+ → in-process ⭐ / ≤ 8 Go → API ⭐ » était calé sur 6 Go ; avec ~4 Go,
+> **un seuil à 12 Go (voire 8 Go) devient défendable**. À trancher par Thomas au moment de figer le seuil
+> de détection machine (Étape 5) — la mesure ne décide pas seule l'UX. **N'invalide pas le choix C** (3
+> options explicites) ; l'option clé d'API (RAM ~0) reste pertinente sur très petit poste / Mac Intel.
 
 ## Étape 4 — discriminer plus finement (limite connue)
 
