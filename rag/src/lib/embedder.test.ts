@@ -53,6 +53,27 @@ test("selectEmbedder : provider 'openai-compatible' → adaptateur compatible-Op
   });
 });
 
+test("selectEmbedder : provider 'in-process' → adaptateur transformers-js, ni URL ni clé", () => {
+  const embedder = selectEmbedder({ EMBEDDING_PROVIDER: "in-process" });
+
+  assert.deepEqual(embedder.identity, {
+    providerId: "transformers-js",
+    model: "onnx-community/embeddinggemma-300m-ONNX",
+    dimension: 768,
+  });
+});
+
+test("selectEmbedder : 'in-process' accepte un modèle/dimension custom via l'env", () => {
+  const embedder = selectEmbedder({
+    EMBEDDING_PROVIDER: "in-process",
+    EMBEDDING_MODEL_NAME: "Xenova/bge-m3",
+    EMBEDDING_DIMENSION: "1024",
+  });
+
+  assert.equal(embedder.identity.model, "Xenova/bge-m3");
+  assert.equal(embedder.identity.dimension, 1024);
+});
+
 test("embedQuery consomme en prioritaire (jamais bloqué par l'indexation)", async () => {
   const guard = new SpyGuard();
   await embedQuery("q", { usage: guard, embedOne: async () => [1, 2, 3] });

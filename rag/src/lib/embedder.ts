@@ -7,6 +7,7 @@ import {
 } from "./config.js";
 import { UsageTracker } from "./usage-tracker.js";
 import { OpenAiCompatibleEmbedder } from "./openai-compatible-embedder.js";
+import { InProcessEmbedder, promptsForModel } from "./in-process-embedder.js";
 
 /**
  * Le port SPI de l'embedding (contrat interne, agnostique fournisseur). Chaque
@@ -174,7 +175,22 @@ export interface EmbedderEnv {
  * bascule sur l'adaptateur à URL/clé configurables (OpenAI, Azure, passerelle,
  * Mistral, ou Ollama local sur `http://localhost:11434/v1`).
  */
+// Défauts de l'adaptateur in-process « Gemma inside » : EmbeddingGemma-300m en ONNX,
+// 768 dimensions (cf. plan Étape 4-bis), quantif q8 portée par le chargeur par défaut.
+const IN_PROCESS_DEFAULT_MODEL = "onnx-community/embeddinggemma-300m-ONNX";
+const IN_PROCESS_DEFAULT_DIMENSION = 768;
+
 export function selectEmbedder(env: EmbedderEnv): Embedder {
+  if (env.EMBEDDING_PROVIDER === "in-process") {
+    const model = env.EMBEDDING_MODEL_NAME ?? IN_PROCESS_DEFAULT_MODEL;
+    return new InProcessEmbedder({
+      model,
+      dimension: Number(env.EMBEDDING_DIMENSION ?? IN_PROCESS_DEFAULT_DIMENSION),
+      // EmbeddingGemma exige ses prompts de tâche (Ollama les pose en interne) ; ici
+      // c'est à nous de les poser, sinon le modèle est mal utilisé (cf. model card).
+      prompts: promptsForModel(model),
+    });
+  }
   if (env.EMBEDDING_PROVIDER === "openai-compatible") {
     return new OpenAiCompatibleEmbedder({
       baseURL: env.EMBEDDING_BASE_URL ?? "",
