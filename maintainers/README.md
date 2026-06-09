@@ -96,6 +96,11 @@
     **avant** câblage, le ×50 dû à `createEmbedder()` par requête, le correctif (session ONNX chaude
     partagée), 7 méta-leçons (port ≠ garantie de perf ; amplitude du symptôme ≠ de la cause ; pondérer
     le pire cas par sa fréquence…). *(Étape 4-quater du plan embedder.)*
+  - [`takeaways-install-embedder-choix-2026-06-09.md`](retrospectives/takeaways-install-embedder-choix-2026-06-09.md) —
+    « Retirer une obligation a rendu l'install *mieux* vérifiée » : dé-forcer la clé Gemini → l'option
+    tout-local s'auto-prouve (canari sans clé) ; le noyau de décision pur/testé sous une coquille I/O ;
+    un gate unique (`geminiKeyRequired`) qui débusque un bug en périphérie (le hook de statut) ; un
+    nouveau défaut livré par **détection** (pas par flip global). 6 méta-leçons. *(Étape 5 du plan embedder.)*
 
 ## Historique
 
