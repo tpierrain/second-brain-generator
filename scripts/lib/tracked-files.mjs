@@ -38,7 +38,7 @@ const DEV_ONLY_PREFIXES = [
   "templates/",
 ];
 
-// Retient, parmi les chemins suivis, ceux à copier dans le cerveau généré.
+// Keeps, among the tracked paths, those to copy into the generated brain.
 export function filterCopyable(paths) {
   return paths.filter(
     (p) =>

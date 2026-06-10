@@ -42,7 +42,7 @@ import {
   nodeHookCommand,
   minimalPathEnv,
 } from "./scripts/lib/rag-launcher.mjs";
-import { DEMO_QUESTION as DEMO, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
+import { DEMO_BY_LOCALE, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
 import {
   buildEmbedderOptions,
   recommendedEmbedderKey,
@@ -79,9 +79,11 @@ const warn = (m) => console.log(`${c.Y}!${c.X} ${m}`);
 const err = (m) => console.error(`${c.R}✗${c.X} ${m}`);
 const step = (m) => console.log(`\n${c.B}━━ ${m}${c.X}`);
 
-// DEMO (canary question) + DEMO_EXPECT: imported from scripts/lib/demo.mjs (source
-// of truth shared with verify-rag.mjs). Used by the post-flight probe and the
-// final message ("ask a question, e.g. …").
+// DEMO (canary question) + DEMO_EXPECT: from scripts/lib/demo.mjs (source of truth
+// shared with verify-rag.mjs). Used by the post-flight probe and the final message
+// ("ask a question, e.g. …"). The question is resolved to the INSTALLED locale (see
+// `DEMO` below, once `locale` is known) so an fr brain probes with the fr question
+// against its fr vault — the launcher-root export would otherwise always be `en`.
 
 console.log(`${c.B}${c.C}`);
 console.log(`  ╔══════════════════════════════════════════════╗`);
@@ -266,6 +268,10 @@ if (chosenLocale) {
   overlayLocale({ templatesRoot, locale: chosenLocale, target: TARGET });
   ok(`localized artifacts overlaid: locale "${chosenLocale}" (requested: "${locale}")`);
 }
+// Canary question for the vault actually installed (the overlaid locale, or `en`
+// at the root when no overlay applies) — so an fr brain probes/suggests the fr
+// question, matching its fr vault and its demo-locale.mjs marker.
+const DEMO = DEMO_BY_LOCALE[chosenLocale ?? "en"] ?? DEMO_BY_LOCALE.en;
 
 // ── 3. Embedding engine (private local / API key) ────────────────────────────
 // Decision D1 (ADR 0007): explicit 3-way choice, ADAPTIVE recommendation per machine.
