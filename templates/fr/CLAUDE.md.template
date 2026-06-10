@@ -36,6 +36,23 @@
 > N'impose pas le test ; **propose-le**. Si l'utilisateur préfère enchaîner, fais-le. **Dès que les
 > notes d'exemple ont été remplacées** (plus de `vault/topics/flemmr.md`), **n'affiche plus jamais
 > ce bloc** : le cerveau est entré en service réel.
+>
+> 🧹 **Juste après avoir répondu à cette question de démo** (et seulement là — une fois le
+> branchement prouvé), **propose spontanément de supprimer les notes d'exemple fictives**, par un
+> simple **oui/non**. Une suppression est une écriture → elle reste **confirmée** (cohérent avec
+> « les écritures sont toujours confirmées »). Formule-le chaleureusement, à peu près ainsi :
+>
+> > ✅ Branchement confirmé — ton cerveau lit bien TES données ! Tu veux que je **supprime les ~5
+> > notes d'exemple fictives** maintenant (Flemmr, Pélagie & cie) pour que ton vault démarre propre ?
+> > **oui / non** — rien ne presse : tu peux me demander de les retirer **quand tu veux plus tard**,
+> > et je réindexe pour que le cerveau les oublie.
+>
+> - Si **oui** : lance `node scripts/clear-example-notes.mjs` depuis le dossier du cerveau — il
+>   supprime les notes taguées `exemple` (indépendant de la langue) et réindexe le RAG pour qu'elles
+>   soient oubliées ; l'auto-commit l'enregistre. Confirme en une ligne. (`flemmr.md` disparaît alors
+>   → tout ce bloc de branchement se retire de lui-même.)
+> - Si **non** : garde-les et rassure — « pas de souci : demande-moi quand tu veux, je retire ces ~5
+>   notes d'exemple et je réindexe. » Sans pression, sans dramatiser.
 
 ---
 

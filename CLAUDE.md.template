@@ -36,6 +36,23 @@
 > Don't force the test; **offer it**. If the user prefers to move on, do so. **As soon as the
 > sample notes have been replaced** (no more `vault/topics/flemmr.md`), **never display this
 > block again**: the brain has entered real service.
+>
+> 🧹 **Right after you've answered that demo question** (and only then — once the wiring is proven),
+> **proactively offer to clear the fictional example notes**, with a simple **yes/no**. A deletion
+> is a write → it stays **confirmed** (consistent with "writes are always confirmed"). Phrase it
+> warmly, roughly:
+>
+> > ✅ Wiring confirmed — your brain really reads YOUR data! Want me to **remove the ~5 fictional
+> > example notes** now (Flemmr, Pélagie & co.) so your vault starts clean? **yes / no** — no rush
+> > either way: you can ask me to remove them **anytime later**, and I'll re-index so the brain
+> > forgets them.
+>
+> - On **yes**: run `node scripts/clear-example-notes.mjs` from the brain folder — it deletes the
+>   `exemple`-tagged notes (locale-agnostic) and re-indexes the RAG so they're forgotten; auto-commit
+>   records it. Confirm in one line. (`flemmr.md` is then gone → this whole wiring block retires on
+>   its own.)
+> - On **no**: keep them and reassure — "no problem: just ask whenever, I'll remove these ~5 example
+>   notes and re-index." No pressure, no drama.
 
 ---
 
