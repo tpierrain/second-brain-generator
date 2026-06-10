@@ -1,12 +1,15 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🔭 TODO — plan REASSESSED & REFRESHED on 2026-06-10.                -->
+<!-- STATUS: ✅ DELIVERED 2026-06-10 — Lots 0-9 done (translation + E2E verified). -->
+<!-- Outward-facing release ceremony (PR / GitHub About / V2 tag) pending user OK. -->
 <!-- (created 2026-06-04; original inventory stale — see §0bis.)                 -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Plan — Translate the generator into English (FR → EN)
 
-> **STATUS: 🔭 TODO** (created 2026-06-04 after the `V1` tag on `200f035`; **reassessed and
-> refreshed on 2026-06-10** because a lot of code was delivered in the meantime — see §0bis).
+> **STATUS: ✅ DELIVERED 2026-06-10** (created 2026-06-04 after the `V1` tag on `200f035`;
+> reassessed 2026-06-10; **Lots 0-9 delivered** — full FR→EN translation + per-language E2E
+> verified. Only the outward-facing release ceremony (PR, GitHub "About", `V2` tag) is pending
+> the maintainer's go-ahead).
 > Self-contained plan: a fresh Claude session must be able to execute it reading ONLY this
 > file + the cited files. **TDD** discipline (skill `tdd-discipline`), **manual** conventional
 > commits + co-author Claude.

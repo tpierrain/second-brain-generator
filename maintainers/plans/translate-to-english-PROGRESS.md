@@ -28,8 +28,9 @@ cd rag && npm test                                     # RAG engine (Lot 6)
 - [x] **Lot 5** — scripts code + tests (`619599e`)
 - [x] **Lot 6** — RAG engine + agnostic tests (`2acbf7b`) ✅ suite 114/114, no residual FR in `rag/src`
 - [x] **Lot 7** — Demo vault (localized) + locale-aware canary (`a1251ca`) ✅ harness 132/132, grep-proof both locales
-- [ ] **Lot 8** — Maintainer internal
-- [ ] **Lot 9** — Final (full suite, E2E per language, residual grep, PR)
+- [x] **Lot 8** — Maintainer internal (`bbcd2cc`)
+- [x] **Lot 9 (verification)** — full suite + per-language E2E + residual grep (`1d9f9a9`) ✅
+- [ ] **Lot 9 (release ceremony)** — PR, GitHub "About" → EN, `V2` tag — **pending maintainer OK** (outward-facing)
 
 ## ✅ DONE (committed on the branch)
 
@@ -51,6 +52,19 @@ cd rag && npm test                                     # RAG engine (Lot 6)
   comments/JSDoc/strings/log/error messages + MCP tool descriptions + test names → EN; test assertions
   synced to EN wording where they checked French strings. `tsc --noEmit` clean; `cd rag && npm test`
   114/114 green; no residual FR in `rag/src` (proper nouns excepted).
+- **Lot 8 — Maintainer internal** (`bbcd2cc`). All `maintainers/**` prose → EN (ADRs 0001-0008, active +
+  archived plans, eval-set.md, retrospectives, benchmarks, README, the plan itself). Numeric-prefixed
+  filenames/slugs + cross-refs KEPT (decision: churn > value); commit-message strings + quoted-FR-subject
+  kept. Fixed a stray `</content>` corruption at the end of ADR 0008.
+- **Lot 9 — Verification** (`1d9f9a9`). Full suite green (harness 132/132, RAG 114/114, `node --check`,
+  JSON templates valid). **Per-language E2E**: throwaway `--lang en` AND `--lang fr` both exit 0 — verified
+  correct slugs (en: inertia-trophy/harness/personal; fr: trophee/harnais/perso), `demo-locale.mjs` marker,
+  NO en-slug orphans in the fr brain, stub replaced, localized constitution + skills, MCP smoke-test OK.
+  Final residual-FR content grep clean (only loanword "à la carte", links to FR Medium articles, and the
+  intentional `français` alias / fr stopwords remain). **Installer fix surfaced by the E2E**: the canary
+  question is now resolved to the INSTALLED locale (`DEMO_BY_LOCALE[chosenLocale]`) so an fr brain
+  probes/suggests the fr question against its fr vault (was always 'en' from the launcher-root export).
+  Remaining: outward-facing release ceremony (PR / GitHub About / V2 tag) — pending maintainer OK.
 - **Lot 7 — Demo vault + locale-aware canary** (`a1251ca`). Root `vault/**` → EN (Flemmr), FR preserved
   verbatim under `templates/fr/vault/**`. Slugs renamed at root (`inertia-trophy`, `harness`, `personal`;
   `flemmr`/`jean-kevin-de-la-glandee` kept = proper nouns). `demo.mjs` now locale-aware via a tiny
