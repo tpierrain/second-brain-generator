@@ -58,10 +58,18 @@ A few properties define it:
 
 > 📂 **An open, human-readable format.** The substrate of your second brain is just a set of
 > **Markdown (`.md`)** files — linked together with `[[wikilink]]` links where it makes sense (a
-> note points to a person, a decision, a topic…). Nothing proprietary, nothing locked in. And since
-> the structure is **[Obsidian](https://obsidian.md)-compatible**: on top of querying your brain via
-> Claude, you can **open the `vault/` folder in Obsidian** to browse your notes, follow the links and
-> visualize the graph of your knowledge.
+> note points to a person, a decision, a topic…). Nothing proprietary, nothing locked in.
+
+> 🪨 **Bonus — turn it into a full read/write app with [Obsidian](https://obsidian.md).** The vault
+> is **Obsidian-compatible by design**. Install Obsidian (free), point it at your `vault/` folder, and
+> you instantly get a **visual reading *and* writing interface** over **every Markdown note in your
+> brain**: browse and edit notes, follow the `[[wikilinks]]`, and explore the **graph** of your
+> knowledge. Best of all, it's the **exact same files** Claude works on — so whether you ask Claude or
+> edit directly in Obsidian, both stay perfectly in sync. Two front doors, one brain, zero lock-in.
+
+![Obsidian graph view of a real second brain: hundreds of Markdown notes (1-1s, decisions, meetings, people…) linked together into a knowledge graph, with the folder tree on the left](docs/img/obsidian-graph-view.png)
+
+> <sub>☝️ A real brain seen in Obsidian — each dot is a note, each line a `[[wikilink]]`. The folder tree on the left (decisions, meetings, people, prep-1-1…) and the graph are *exactly* what Claude reads and writes.</sub>
 
 ## Who is it for?
 
