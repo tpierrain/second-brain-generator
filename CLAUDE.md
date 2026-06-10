@@ -28,8 +28,27 @@ back to the launcher, by construction** (no inherited remote to remove). The bra
 
 ## Step 2 — Ask the questions IN CHAT (grouped)
 
-Ask, all at once: **brain name** (= name of the folder to create), **location** (parent folder;
-default: the user's home → `~/<name>`), **user's name**, **default language for the notes**.
+**Ask the brain name FIRST, on its own.** Then ask the remaining three **as one group**. Why split:
+every later option must **reuse the exact name the user just typed** — never show a literal `<name>`
+placeholder in the options or the recap. (If you asked all four at once you wouldn't have the name
+yet when building the location option, and you'd be stuck with `~/<name>`.)
+
+- **Q1 (alone): brain name** (= name of the folder to create). **Do NOT propose a default or suggested
+  name** — the user provides it; just capture exactly what they type.
+- **Q2–Q4 (grouped): location** (parent folder; default: the user's home → `~/<name>`), **user's
+  name**, **default language for the notes**. In every Q2–Q4 label, **substitute the exact name the
+  user typed at Q1** in place of `<name>` (e.g. if they typed `acme-notes`, the location option reads
+  `Home (~/acme-notes)`, never the literal `Home (~/<name>)`). That token is illustrative only —
+  **never suggest a name yourself**.
+
+> 🚫 **For the location: NEVER offer the current working directory, the launcher folder, or any
+> temp directory as an option** — and **especially not as the first/default option**. The brain must
+> be created **outside** the launcher (the launcher stays read-only and reusable). Do **NOT** derive
+> a location from `pwd` / the directory you happen to be running in (e.g. `~/tmp…`): nesting a brain
+> in or beside the launcher's working dir breaks rooting and invites accidental loss when a temp dir
+> is cleaned. When you present location choices, the **only** standing option is **Home (`~/<name>`, the default —
+> with the name they typed at Q1 substituted in)** plus a free-text **"Other"** for the user to type their own path. If they type a
+> path that is the launcher folder, the current working dir, or a temp dir, push back before running.
 
 > 🎯 **Install is always generic — no "profile" to choose.** Do NOT offer ANY preset or persona
 > (especially not a fake "generic install vs. Head of Engineering" choice), and do **not** ask for
@@ -50,14 +69,18 @@ to least) and **recommend based on the machine**:
 - **1. Everything on your machine, nothing to install** ("Gemma inside", `in-process`) — 🟢 private +
   free + offline; nothing leaves the computer. **⭐ recommended if the machine has ≥ 12 GB of RAM and
   is NOT an Intel Mac** (otherwise unavailable / too tight on RAM). `--embedder in-process`.
-- **2. With an API key** — Gemini, OpenAI, or **your company's endpoint**. 🟡 light on the machine,
-  but **your notes travel through the provider**. **⭐ recommended on a small machine (≤ 8 GB) or an
-  Intel Mac.** ⚠️ State the **"free ≠ private"** framing: Gemini's **free** tier may **exploit** your
-  data; **paying a few cents/month = what makes it private**. `--embedder gemini` (for an
-  OpenAI/company endpoint: better to run the installer **interactively**, or configure `EMBEDDING_*`
-  in `.env` afterwards — see `.env.example`).
-- **3. Local via Ollama** (advanced) — 🟢 nothing leaves here either, but **a separate app to
-  install**. `--embedder ollama`.
+- **2. Via an API (Gemini, OpenAI, Mistral, or your own endpoint)** — 🟡 light on the machine; the
+  text of your notes is sent to the provider's API. **Several providers possible** — Gemini, OpenAI,
+  Mistral, or your company's / own AI endpoint. **⭐ recommended on a small machine (≤ 8 GB) or an
+  Intel Mac.** 🛡️ **Don't dramatize**: in many cases your data is **NOT** used for training — it
+  depends on the provider and the plan. Tell the user that, **depending on the API they pick, they
+  must choose the right settings** (a paid tier, or the provider's "no-training" / data-controls
+  option) so their notes aren't used for training. `--embedder gemini` (for OpenAI / Mistral / your
+  own endpoint: run the installer **interactively**, or configure `EMBEDDING_*` in `.env` afterwards
+  — see `.env.example`).
+- **3. A model running locally on your machine, via Ollama** (`ollama`) — 🟢 nothing leaves here
+  either, but a **separate app (Ollama) to install** + an embedding model to pull. **Setup for the
+  most technically advanced users.** `--embedder ollama`.
 
 > 🧭 **You can detect the machine to firm up your recommendation** (RAM/arch):
 > `node -e "const o=require('os');console.log(Math.round(o.totalmem()/1024**3),o.platform,o.arch)"`.
@@ -141,30 +164,33 @@ node installer.mjs --non-interactive --name "<name>" --dest "<parent-location>" 
      git config secondbrain.autopush true
      ```
      GitHub = the simple case; other platforms = best-effort + guidance.
-3. **Open a NEW CONVERSATION rooted in the brain** (critical step, often missed).
-   ⚠️ **PRESENTATION MANDATORY — NEVER render this gesture as something small or a discreet gray
-   subtitle.** This is the most-often-missed step and without it **the brain doesn't work**. You must
-   display it as a **can't-miss alert block**: a heading in **UPPERCASE framed by ⚠️** (e.g.
-   `## ⚠️ FINAL STEP — REQUIRED — OPEN A NEW CONVERSATION ⚠️`), followed by a **short, bold,
-   imperative** instruction: "**CLOSE this conversation and open a NEW one in your brain's folder
-   (`<parent-location>/<name>`)**". Put this block **at the TOP of your final message** (before the
-   recap table, not after).
-   **ALWAYS give BOTH procedures, in this order (click mode FIRST — that's the primary target,
-   non-devs on Claude Desktop):**
-   - **🖱️ If you use Claude Desktop (Code tab) — the most common case**: **clickable** steps,
-     no terminal. "**Open a NEW conversation** (*New session* button). Then, at the bottom, just above
-     the input field, you'll see a **row of small chips**: `💻 Local`, a **folder chip** (often `tmp`),
-     and a `➕` button. **Click the FOLDER CHIP** (not the `➕`): a “Recent” menu opens, with a **✓ on
-     the current folder**. **Click your brain's folder (`<name>`)** in the list — if it's not there, take
-     **“Open folder…”** at the very bottom and navigate to `<parent-location>/<name>`. The **✓ must
-     jump to your brain's name**, and the bottom chip must show `<name>` (no more `tmp`). **ONLY THEN**,
-     write your first message."
-     ⚠️ **Explicitly warn about the trap**: the **`➕` “Add another folder” button is NOT the right
-     door** — it *adds* a folder **without replacing** the root, so the brain doesn't load. And
-     **switching the folder of an already-open conversation is NOT enough**: you need a new conversation.
-   - **⌨️ If you're comfortable with the terminal (CLI)**: `cd <parent-location>/<name> && claude`.
-   The technical detail below is for YOU; what the user needs to remember boils down to these two
-   prominent procedures, click first.
+3. **Open a NEW CONVERSATION rooted in the brain** — present this as the **TWO WAYS TO USE YOUR
+   SECOND BRAIN** (critical step, the most-often-missed; without it **the brain doesn't work**).
+   ⚠️ **PRESENTATION MANDATORY — NEVER collapse this to a single `cd … && claude` line**, and never
+   render it as a small / discreet grey subtitle. Put it **at the TOP of your final message** (before
+   the recap), as a **can't-miss block**: a heading in **UPPERCASE framed by ⚠️** (e.g.
+   `## ⚠️ FINAL STEP — OPEN A NEW CONVERSATION IN YOUR BRAIN ⚠️`), a one-line imperative ("**CLOSE
+   this conversation and open a NEW one rooted in `<parent-location>/<name>`**"), then the **TWO
+   options as two clearly-separated, bold/UPPERCASE sub-headers — Desktop FIRST** (it's what most
+   people, non-devs, will use), **CLI second**. **Substitute the user's actual brain name everywhere**
+   (the name typed at Q1 — never a literal `<name>`, and never a name you invented). Use this template:
+
+   > ### 🖱️ OPTION 1 — CLAUDE DESKTOP APP (the common case, no terminal)
+   > **Open a NEW conversation** (*New session*). At the bottom, just above the input field, you'll see
+   > a **row of chips**: `💻 Local`, a **folder chip** (often `tmp`), and a `➕`. **Click the FOLDER
+   > CHIP** (not the `➕`): a “Recent” menu opens with a **✓ on the current folder** → **click your
+   > brain `<name>`** (or “Open folder…” at the bottom → `<parent-location>/<name>`). The **✓ must jump
+   > to `<name>`** and the chip must show `<name>` (no more `tmp`). **ONLY THEN** write your first
+   > message.
+   > ⚠️ **Trap**: the `➕` “Add another folder” is **NOT** the right door (it adds without replacing the
+   > root → the brain doesn't load); and switching the folder of an already-open conversation is **not
+   > enough** — you need a NEW conversation.
+   >
+   > ### ⌨️ OPTION 2 — TERMINAL (CLI, for the more technical)
+   > `cd <parent-location>/<name> && claude`
+
+   The technical detail below is for YOU; what the user must remember is exactly these two prominent
+   options, **Desktop first**.
    The install runs in a session whose **working directory is NOT the brain** (often a temporary
    folder). But Claude — CLI **as well as** the Code tab of Claude Desktop — **freezes its working
    directory when the conversation starts** and loads `CLAUDE.md`, the `settings.json` allowlist, the
@@ -197,6 +223,9 @@ node installer.mjs --non-interactive --name "<name>" --dest "<parent-location>" 
 - **The Gemini key is NEVER an argument** nor a chat message — always `.env`.
 - **The launcher stays read-only**: the installer never writes into it (it creates a separate brain
   folder). To generate another brain, re-run with a **different `--name`** (or `--dest`).
+- **Never install into the working/launcher/temp dir**: the brain's location must be **outside** the
+  launcher — never the current working directory, the launcher folder, or a temp dir (e.g. `~/tmp…`),
+  and never offered as the first/default choice. Default is Home (`~/<name>`); see Step 2.
 - **Refusal if the folder exists**: re-running with the **same name + location** fails cleanly
   (non-zero exit, nothing is modified). To start over: different name/location, or delete the folder.
 - **Don't pretend**: if the script exits with an error, say so and relay the message.
