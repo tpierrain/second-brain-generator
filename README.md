@@ -140,6 +140,30 @@ The infra, the storage, the concurrency, the guardrails: that's **its** job — 
 > updates quietly in the background if it finds something new — a bit like a web page that displays
 > instantly then refreshes on its own. The details are in [under the hood](#under-the-hood).
 
+## Not sure what to ask it? Start here
+
+A few opening lines to get going — just talk to it the way you'd brief an assistant. Bonus: each one
+is also a quiet way to **confirm a connector is wired up** (the first time it reaches into a given
+tool, Claude asks permission — click **"Always allow"**, once).
+
+- **📅 Your calendar** — *"What do I have on tomorrow?"* · *"What does my week look like?"*
+  → checks it can reach your **calendar**.
+- **📝 Your meeting transcripts** — *"Can you give me a recap of yesterday's product sync — the
+  decisions and who owns what?"*
+  → checks it can pull in your **meeting transcripts**.
+- **✅ What's expected of you (across every source)** — *"What am I on the hook for this week?"* ·
+  *"What am I expected to deliver tomorrow?"*
+  → gathers the actions assigned to you **across Slack, meeting transcripts and emails**, in one shot.
+- **📧 Your emails** — *"Did I get an email from Acme about the renewal?"* · *"Anything I missed from
+  the client this week?"*
+  → checks it can reach your **inbox**.
+- **🧠 Your own notes & decisions** — *"Why did we settle on PostgreSQL?"* · *"Who owns the billing
+  project, and what's been decided?"*
+  → searches **your vault** — and always answers **with the sources**.
+
+> 💬 No magic keywords, no syntax to learn: phrase it however feels natural, in any language. If a
+> source isn't connected yet, it'll simply tell you — see [wiring up your sources](#wiring-up-your-sources-connectors).
+
 ---
 
 > 🚀 **Install in one paste — Claude does the rest.** Pick your privacy option, check what you need,
