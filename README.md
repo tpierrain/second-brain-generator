@@ -147,6 +147,15 @@ The infra, the storage, the concurrency, the guardrails: that's **its** job — 
 
 ## 🚀 Ready to try it? — install your brain in one paste
 
+**Your only hands-on move:** open Claude and paste this one sentence (adapt the name & URL).
+
+```text
+Install me a second brain named "second-brain" (name to be confirmed) from this generator: https://github.com/tpierrain/second-brain-generator
+```
+
+That's the whole manual part — **no cloning, no commands, no key to wrangle in chat.** Claude does
+everything else for you. Here's what happens behind the scenes 👇
+
 ![Install flow in four steps: clone the launcher → answer 4 questions in chat → the brain folder is created → open a new conversation rooted in it](docs/img/install-flow.svg)
 
 <a id="how-do-i-choose-my-semantic-search-my-rag"></a>
