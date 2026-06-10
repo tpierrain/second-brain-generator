@@ -41,7 +41,7 @@ export function readGeminiKey(): string {
 }
 export const EMBEDDING_MODEL = "gemini-embedding-001";
 export const CHUNK_MAX_CHARS = 8000;
-export const SEARCH_DEFAULT_LIMIT = 5;
+export const SEARCH_DEFAULT_LIMIT = 8;
 
 // Guardrail A: hard cap on embedding requests per day (resets at Pacific midnight).
 // Since moving to the PAID Gemini tier (2026-06-01), this is no longer aligned with the
