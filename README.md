@@ -606,3 +606,7 @@ You can use, modify and redistribute it freely, **including commercially**, prov
 attribution**: keep the copyright notice, the [`LICENSE`](LICENSE) file and the contents of the
 [`NOTICE`](NOTICE) file in any copy or derivative work, and flag the files you've modified. The
 license also includes a grant of patents.
+
+---
+
+<p align="center"><sub>Made with 🧠 by <strong>Thomas Pierrain</strong> — VP Tech at <a href="https://shodo.io/">shodo</a></sub></p>
