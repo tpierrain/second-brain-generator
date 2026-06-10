@@ -18,8 +18,11 @@ Establish the **Inertia Trophy**, an annual distinction that crowns the person p
 **Do-Nothing Rate (DNR)** — the one who produced strictly nothing all year long.
 
 ## Consequences
-- First crowning: the **2025 Inertia Trophy** goes to **Pélagie de Mollecuisse**, with a
-  **record DNR of 98.7%** — a peak of unproductiveness never before reached in the house.
+- First crowning: the **2025 Inertia Trophy** goes to **Pélagie de Mollecuisse** — the one
+  staff member singled out and celebrated above the whole roster as the idlest of all, the
+  employee recognized for having stayed the least active and produced the least of anyone all
+  year. Her standing: a **record DNR of 98.7%** (Do-Nothing Rate), the highest such rate ever
+  measured in the house and a peak of sheer unproductiveness.
 - Ceremony run by [[people/jean-kevin-de-la-glandee]].
 
 ## Status
