@@ -150,10 +150,10 @@ node installer.mjs --non-interactive --name "second-brain" --owner "Jane Doe" --
 cd <location>/<name>   # the brain folder created by the installer (e.g. ~/second-brain)
 claude
 ```
-Then: *"In the company that helps people stop overworking, which employee was honored for doing
-the least of all of them — and with what percentage?"*
-Claude should answer **Pélagie de Mollecuisse, winner of the Trophée de l'Inertie with a TRF of
-98.7%**, citing `[[decisions/2025-11-20-trophee-de-l-inertie]]`. This is a three-stage
+Then: *"At the outfit that helps folks quit overworking, which worker got publicly honored for
+having loafed the most of anyone — and at what percentage?"*
+Claude should answer **Pélagie de Mollecuisse, winner of the Inertia Trophy with a DNR of
+98.7%**, citing `[[decisions/2025-11-20-inertia-trophy]]`. This is a three-stage
 **canary**: the subject is **invented** (the company "Flemmr") → Claude has no answer in memory,
 it is *forced* to query the vault (**routing**); the fact is unfindable elsewhere (**provenance**
 — not the Internet; if it says it doesn't know the company, the RAG is down); and the question shares

@@ -2,17 +2,17 @@
 type: person
 created: 2026-01-15
 updated: 2026-01-15
-tags: [exemple, demo, equipe]
+tags: [exemple, demo, team]
 ---
 
 # Jean-Kévin de la Glandée
 
-> Fiche **fictive** (entreprise parodique) pour la démo. Une fiche `people/` est **vivante** : on y
-> append des sections datées au fil des interactions, pour retrouver le contexte d'une relation dans le temps.
+> **Fictional** note (parody company) for the demo. A `people/` note is **living**: we append dated
+> sections as interactions happen, to recover the context of a relationship over time.
 
-**Rôle** : fondateur & **Chief Inertia Officer** de [[topics/flemmr]] (fictif).
+**Role**: founder & **Chief Inertia Officer** of [[topics/flemmr]] (fictional).
 
 ## 2026-01-15
-A redéroulé sa thèse maison devant le comité : *« la valeur naît du repos »*. Porte personnellement
-le **Ralentissement Stratégique Augmenté™** et martèle que le seul indicateur digne d'un board est le
-**Taux de Rien Foutu**. Pilote la remise du [[decisions/2025-11-20-trophee-de-l-inertie|Trophée de l'Inertie]].
+Reran his in-house thesis before the board: *"value is born from rest"*. Personally champions the
+**Augmented Strategic Slowdown™** and hammers home that the only indicator worthy of a board is the
+**Do-Nothing Rate**. Runs the [[decisions/2025-11-20-inertia-trophy|Inertia Trophy]] award.

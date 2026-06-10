@@ -1,29 +1,29 @@
-# vault/ — Ton contenu
+# vault/ — Your content
 
-C'est ici que vivent **tes notes** : c'est le substrat que le RAG indexe et que Claude
-interroge. Tout est en Markdown, compatible Obsidian.
+This is where **your notes** live: the substrate the RAG indexes and Claude
+queries. Everything is Markdown, Obsidian-compatible.
 
-> Les notes ci-dessous (`daily/`, `people/`, `topics/`…) tournent autour d'une **entreprise
-> parodique inventée** (Flemmr, qui « industrialise la procrastination ») — volontairement
-> **impossibles à confondre** avec de vraies notes de travail. Elles servent juste à voir comment
-> ça marche dès la 1re question. Supprime-les quand tu commences ton vrai vault (efface les fichiers
-> de `vault/`) — ou garde-les comme gabarits.
+> The notes below (`daily/`, `people/`, `topics/`…) revolve around an **invented parody
+> company** (Flemmr, which "industrializes procrastination") — deliberately **impossible to
+> confuse** with real work notes. They just let you see how it works from the very first question.
+> Delete them when you start your real vault (remove the files under `vault/`) — or keep them as
+> templates.
 
-## Dossiers
+## Folders
 
-| Dossier | Pour quoi | Édition |
+| Folder | For what | Editing |
 |---|---|---|
-| `daily/` | Note du jour, une par jour (`YYYY-MM-DD.md`) | **Append-only** — jamais éditée a posteriori |
-| `people/` | Une fiche par personne (`prenom-nom.md`) | Vivante — on append des sections datées |
-| `topics/` | Une fiche par sujet (`sujet-kebab.md`) | Vivante |
-| `decisions/` | Une décision = un fichier (`YYYY-MM-DD-titre.md`) | Immuable (on supersède, on ne réécrit pas) |
-| `meetings/` | Comptes-rendus (`YYYY-MM-DD-titre.md`) | Immuable |
-| `backlog/` | Listes d'actions ouvertes/fermées | Vivante (on coche, on n'efface pas) |
+| `daily/` | The day's note, one per day (`YYYY-MM-DD.md`) | **Append-only** — never edited after the fact |
+| `people/` | One note per person (`first-last.md`) | Living — append dated sections |
+| `topics/` | One note per subject (`subject-kebab.md`) | Living |
+| `decisions/` | One decision = one file (`YYYY-MM-DD-title.md`) | Immutable (supersede, don't rewrite) |
+| `meetings/` | Minutes (`YYYY-MM-DD-title.md`) | Immutable |
+| `backlog/` | Lists of open/closed actions | Living (tick, don't erase) |
 
-Ajoute les dossiers dont tu as besoin — la structure est libre, le RAG indexe tout `.md`.
+Add whatever folders you need — the structure is free, the RAG indexes every `.md`.
 
 ## Workflow
 
-1. Tu écris / Claude écrit des notes ici.
-2. Le RAG les indexe (auto au démarrage, ou `cd rag && npm run reindex`).
-3. Tu poses des questions → Claude répond depuis le vault, sources citées en `[[backlinks]]`.
+1. You write / Claude writes notes here.
+2. The RAG indexes them (auto at startup, or `cd rag && npm run reindex`).
+3. You ask questions → Claude answers from the vault, sources cited as `[[backlinks]]`.

@@ -231,10 +231,10 @@ The setting is made with **the row of little chips at the bottom, just above the
 
 Once installed, try something like:
 
-> *"At the company that helps people stop overworking themselves, which employee was honored for doing the least work of all — and with what percentage?"*
+> *"At the outfit that helps folks quit overworking, which worker got publicly honored for having loafed the most of anyone — and at what percentage?"*
 
 Claude searches your vault and answers with links to the source notes. **Correct answer: Pélagie de
-Mollecuisse, winner of the Trophée de l'Inertie with a TRF of 98,7 %** — a fact **impossible to find
+Mollecuisse, winner of the Inertia Trophy with a DNR of 98.7%** — a fact **impossible to find
 outside your vault** (the company "Flemmr" is made up). If Claude gives you that, you have **proof**
 that it really queried your brain and not the Internet. If it answers that it doesn't know this
 company, then the RAG isn't running.

@@ -2,26 +2,26 @@
 type: topic
 created: 2026-01-12
 updated: 2026-01-15
-tags: [exemple, demo, archi]
+tags: [exemple, demo, architecture]
 ---
 
 # Flemmr™
 
-> Fiche topic **fictive** (entreprise parodique) pour la démo. Un topic est **vivant** : on append
-> des sections datées au fil de l'évolution du sujet.
+> **Fictional** topic note (parody company) for the demo. A topic is **living**: we append dated
+> sections as the subject evolves.
 
-## Principe
-Jeune pousse qui **industrialise la procrastination**. Slogan : *« Ne faites rien. On s'en occupe. »*
-Sa promesse : délivrer ses clients de l'injonction à la productivité et leur permettre de ne plus
-rien produire sans culpabiliser. A levé **14 M€ en série A pour ne rien produire**.
+## Principle
+Young startup that **industrializes procrastination**. Slogan: *"Do nothing. We've got it covered."*
+Its promise: free its clients from the injunction to be productive and let them produce nothing at
+all, guilt-free. Raised **€14M in Series A to produce nothing**.
 
-## Méthode & offre
-- **Ralentissement Stratégique Augmenté™** — pilotage par la donnée de l'inactivité. Indicateur
-  unique suivi en comité : le **Taux de Rien Foutu (TRF)**.
-- **Le Plaid Connecté™** — couverture lestée qui détecte les velléités de zèle et vous recouche.
-- **Hamac as a Service (HaaS)** — abonnement mensuel, le hamac reste, vous restez.
-- **Séminaire d'Immobilisme en résidentiel** — trois jours d'oisiveté encadrée, 12 000 € HT.
+## Method & offering
+- **Augmented Strategic Slowdown™** — data-driven steering of inactivity. The single indicator
+  tracked by the board: the **Do-Nothing Rate (DNR)**.
+- **The Connected Blanket™** — a weighted blanket that detects flickers of zeal and tucks you back in.
+- **Hammock as a Service (HaaS)** — monthly subscription; the hammock stays, you stay.
+- **Residential Immobilism Seminar** — three days of supervised idleness, €12,000 excl. tax.
 
 ## 2026-01-15
-Acté de consacrer chaque année la personne la plus oisive de l'effectif
-(cf. [[decisions/2025-11-20-trophee-de-l-inertie]]). Direction : [[people/jean-kevin-de-la-glandee]].
+Resolved to crown the most idle person on the roster every year
+(cf. [[decisions/2025-11-20-inertia-trophy]]). Leadership: [[people/jean-kevin-de-la-glandee]].

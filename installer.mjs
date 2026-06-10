@@ -18,7 +18,6 @@ import {
   copyFileSync,
   mkdirSync,
   readdirSync,
-  cpSync,
 } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,6 +32,7 @@ import { isInstallerStub } from "./scripts/lib/claude-md.mjs";
 import { parseAnswers, resolveTargetDir, resolveRunMode } from "./scripts/lib/installer-args.mjs";
 import { parseLsFilesZ, filterCopyable } from "./scripts/lib/tracked-files.mjs";
 import { resolveLocale, chooseLocale } from "./scripts/lib/locale.mjs";
+import { overlayLocale } from "./scripts/lib/locale-overlay.mjs";
 import {
   buildShLauncher,
   buildCmdLauncher,
@@ -263,7 +263,7 @@ const availableLocales = existsSync(templatesRoot)
   : [];
 const chosenLocale = chooseLocale(locale, availableLocales);
 if (chosenLocale) {
-  cpSync(join(templatesRoot, chosenLocale), TARGET, { recursive: true });
+  overlayLocale({ templatesRoot, locale: chosenLocale, target: TARGET });
   ok(`localized artifacts overlaid: locale "${chosenLocale}" (requested: "${locale}")`);
 }
 
@@ -564,7 +564,7 @@ if (interactive) {
 // right away. Once you're ready to switch to your real notes, better to
 // clear them: otherwise they pollute the RAG (answers citing fictional facts). We
 // offer the purge HERE, before indexing, so the index stays clean.
-// The machinery (vault/backlog/harnais.md) and the docs (README) are preserved.
+// The machinery (vault/backlog/harness.md) and the docs (README) are preserved.
 step("6/9 · Clean up the example notes (optional)");
 const vaultDir = join(TARGET, "vault");
 if (interactive) {

@@ -18,6 +18,19 @@ node --test scripts/**/*.test.mjs scripts/*.test.mjs   # harness: 128/128 green 
 cd rag && npm test                                     # RAG engine (Lot 6)
 ```
 
+## 📋 Lot checklist (tick as you go)
+
+- [x] **Lot 0** — locale mechanism (`1a0cc47`)
+- [x] **Lot 1** — public docs (`4e97310`)
+- [x] **Lot 2** — amorce + constitution (`84f8f2f`)
+- [x] **Lot 3** — skills (`d8c6eed`)
+- [x] **Lot 4** — RAG ADRs (`3a108ab`)
+- [x] **Lot 5** — scripts code + tests (`619599e`)
+- [x] **Lot 6** — RAG engine + agnostic tests (`2acbf7b`) ✅ suite 114/114, no residual FR in `rag/src`
+- [ ] **Lot 7** — Demo vault (localized) + demo canary
+- [ ] **Lot 8** — Maintainer internal
+- [ ] **Lot 9** — Final (full suite, E2E per language, residual grep, PR)
+
 ## ✅ DONE (committed on the branch)
 
 - **Lot 0 — locale mechanism** (`1a0cc47`). `scripts/lib/locale.mjs`: `resolveLocale(lang)` (en default,
@@ -34,6 +47,10 @@ cd rag && npm test                                     # RAG engine (Lot 6)
   no-daemon-session-trigger) + cross-links.
 - **Lot 5 — scripts code + tests** (`619599e`). All `installer.mjs` + `scripts/**` comments/strings/test
   names → EN; assertions kept language-agnostic. Suite 128/128.
+- **Lot 6 — RAG engine + agnostic tests** (`2acbf7b`). All `rag/src/**` (lib + tools + `index.ts`)
+  comments/JSDoc/strings/log/error messages + MCP tool descriptions + test names → EN; test assertions
+  synced to EN wording where they checked French strings. `tsc --noEmit` clean; `cd rag && npm test`
+  114/114 green; no residual FR in `rag/src` (proper nouns excepted).
 
 ## 🔑 KEY DECISIONS / refinements made during execution (carry these forward)
 
@@ -56,13 +73,6 @@ cd rag && npm test                                     # RAG engine (Lot 6)
    `gh repo edit --description "..."`, to avoid an EN-description / FR-content-on-main mismatch.
 
 ## 🔭 REMAINING
-
-### Lot 6 — RAG engine + agnostic tests (EN unique)
-`rag/src/**` (lib + tools) comments/strings → EN; make `*.test.ts` assertions agnostic. Files incl.
-`in-process-embedder`, `openai-compatible-embedder`, `fake-embedder`, `index-freshness`, `chunker`,
-`document-scanner`, `frontmatter-parser`, `index-manager`, `indexer`, `embedder`, `config`,
-`progress-report`, `reindex-*`, `search-degradation`, `status-report`, `usage-tracker`, `vector-store`,
-`vault-watcher`, `rag/src/tools/*`. Gate: `cd rag && npm test` green. (Note: large `node_modules` — ignore.)
 
 ### Lot 7 — Demo vault (localized) + demo canary
 - Root `vault/**` (Flemmr universe) → EN (the `en` default); preserve FR as `templates/fr/vault/**`.
