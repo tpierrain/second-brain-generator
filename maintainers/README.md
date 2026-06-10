@@ -1,120 +1,119 @@
-# `maintainers/` — contexte de dev du générateur
+# `maintainers/` — the generator's dev context
 
-> ⚠️ **Versionné, mais JAMAIS livré à l'utilisateur final.**
-> Ce dossier voyage entre les machines du **mainteneur** (sync git entre laptops) et reste
-> visible dans le launcher cloné. Mais il est **exclu de la copie bootstrap** : il n'atterrit
-> **jamais** dans un cerveau généré. L'exclusion est codée dans
-> [`scripts/lib/tracked-files.mjs`](../scripts/lib/tracked-files.mjs) (`DEV_ONLY_PREFIXES` — qui
-> exclut aussi l'**outillage d'eval-set**, cf. ci-dessous), testée dans `tracked-files.test.mjs`.
-> Il n'est pas non plus auto-chargé par Claude (seuls `CLAUDE.md` et les skills le sont).
+> ⚠️ **Versioned, but NEVER shipped to the end user.**
+> This folder travels between the **maintainer's** machines (git sync across laptops) and stays
+> visible in the cloned launcher. But it is **excluded from the bootstrap copy**: it **never**
+> lands in a generated brain. The exclusion is coded in
+> [`scripts/lib/tracked-files.mjs`](../scripts/lib/tracked-files.mjs) (`DEV_ONLY_PREFIXES` — which
+> also excludes the **eval-set tooling**, see below), tested in `tracked-files.test.mjs`.
+> It is also not auto-loaded by Claude (only `CLAUDE.md` and the skills are).
 >
-> **Donc :** tout ce qui ne doit servir qu'au développement du générateur — et surtout pas
-> polluer le cerveau d'un utilisateur — va ici. Rien de secret pour autant (pas de clés : voir
-> `.gitignore`).
+> **So:** anything that should only serve the development of the generator — and above all not
+> pollute a user's brain — goes here. Nothing secret for all that (no keys: see `.gitignore`).
 
-## Contenu
+## Contents
 
-- **`decisions/`** — les décisions d'architecture (ADR) : le *pourquoi*, pérenne.
-  - [`0001-launcher-vs-brain.md`](decisions/0001-launcher-vs-brain.md) — launcher réutilisable
-    en lecture seule vs cerveau créé ailleurs ; renommage `starter` → `generator`.
+- **`decisions/`** — the architecture decisions (ADRs): the *why*, durable.
+  - [`0001-launcher-vs-brain.md`](decisions/0001-launcher-vs-brain.md) — reusable read-only launcher
+    vs brain created elsewhere; rename `starter` → `generator`.
   - [`0002-installateur-maison-vs-plugin.md`](decisions/0002-installateur-maison-vs-plugin.md) —
-    installateur/générateur maison (pensé non-tech, guidé en chat) plutôt qu'un plugin Claude /
-    marketplace.
+    home-grown installer/generator (designed for non-tech users, chat-guided) rather than a Claude
+    plugin / marketplace.
   - [`0003-pas-upgrade-capacites-cerveaux.md`](decisions/0003-pas-upgrade-capacites-cerveaux.md) —
-    pas (encore) d'upgradabilité des capacités : complexité disproportionnée + itération locale
-    simple (skills maison) ; à rouvrir sur feedbacks.
+    no (yet) upgradability of capabilities: disproportionate complexity + simple local iteration
+    (home-grown skills); to be reopened on feedback.
   - [`0004-claude-only-pour-l-instant.md`](decisions/0004-claude-only-pour-l-instant.md) —
-    Claude-only pour l'instant (vault + RAG déjà agnostiques) ; cross-platform non exclu, sur
-    feedbacks, avec la couche pilotage à adapter.
+    Claude-only for now (vault + RAG already agnostic); cross-platform not ruled out, on
+    feedback, with the orchestration layer to adapt.
   - [`0005-support-onglet-code-desktop.md`](decisions/0005-support-onglet-code-desktop.md) —
-    l'onglet Code (app desktop Claude) devient une cible officielle (= même Claude Code, pas du
-    cross-IA). **Révisé 2026-06-06** : on renverse le gate d'install → **confiance à Claude pour
-    installer + échec bruyant** (panne A non prouvée ; on attrape au lieu de prévenir).
+    the Code tab (Claude desktop app) becomes an official target (= the same Claude Code, not
+    cross-AI). **Revised 2026-06-06**: we flip the install gate → **trust Claude to install +
+    fail loud** (failure A unproven; we catch instead of prevent).
   - [`0006-le-mcp-du-rag-est-un-contrat-stable.md`](decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md) —
-    la surface MCP du RAG est un contrat public stable (port API) ; embedder/vector store/chunking
-    = adaptateurs interchangeables (SPI). Permet de sortir de Gemini (→ local) sans casser les
-    cerveaux. Complémentaire de 0003 ; généralisation de `vault_stats` actée.
+    the RAG's MCP surface is a stable public contract (API port); embedder/vector store/chunking
+    = interchangeable adapters (SPI). Lets us move off Gemini (→ local) without breaking the
+    brains. Complements 0003; generalization of `vault_stats` enacted.
   - [`0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md`](decisions/0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md) —
-    trois choix d'embedder (Gemini natif **gardé** / **compatible-OpenAI** à URL configurable, qui
-    couvre OpenAI·Azure·passerelle entreprise·Mistral·Ollama / **local**), ~2 impls à coder ; échelle
-    de confidentialité par fournisseur ; au swap la base reste mais les vecteurs non (réindex).
-    Concrétise 0006, ouvre la « discussion 2ᵉ embedder » du plan SPI. **Défaut à l'install = ouvert.**
+    three embedder choices (native Gemini **kept** / **OpenAI-compatible** with configurable URL,
+    covering OpenAI·Azure·company gateway·Mistral·Ollama / **local**), ~2 impls to code; privacy
+    scale by provider; on swap the database stays but the vectors don't (reindex).
+    Concretizes 0006, opens the "2nd embedder discussion" of the SPI plan. **Default at install = open.**
   - [`0008-lightrag-et-graph-rag-differes.md`](decisions/0008-lightrag-et-graph-rag-differes.md) —
-    **LightRAG / graph-RAG différé** (intéressant mais pas maintenant) : c'est un **autre paradigme**
-    (LLM **par chunk** à l'indexation → coût + fuite de contenu, casse la cible non-dev/privacy), pas
-    un adaptateur d'embedder → **orthogonal** au chantier en cours. Réservé à l'**Étape 7**
-    (grosse machine, opt-in, conditionnel), **à départager par eval-set FR** ; **E2GraphRAG préféré**
-    sur machine modeste. Décision de séquencement, pas un rejet.
-- **[`eval-set.md`](eval-set.md)** — 🧪 **outil dev** : l'eval-set RAG (Étape 2 du plan embedder).
-  Mesure la qualité de récupération de l'embedder courant en un **score reproductible** (juge =
-  Claude via `claude -p`), sur le vault Flemmr → **baseline Gemini** à rejouer sur les embedders
-  locaux (Étape 4). `node scripts/run-eval.mjs`. **Dev-only** (exclu du cerveau généré).
-- **`plans/`** — plans d'implémentation, avec un `STATUT` en tête (LIVRÉ / EN COURS / ABANDONNÉ).
-  Les plans **livrés** sont déplacés dans **`plans/archived/`** ; seuls les plans encore **ouverts**
-  restent à la racine de `plans/`.
-  - [`rag-embedder-plan-action.md`](plans/rag-embedder-plan-action.md) — **🗺️ plan d'action**
-    qui **orchestre** le chantier embedder en **étapes autoporteuses** (port → eval-set → adaptateur
-    compatible-OpenAI → mesure → onboarding → leviers conditionnels), avec **tableau d'avancement**
-    pour piloter session par session (un `/clear` entre chaque). Couche au-dessus du plan SPI + étude
-    + ADR 0007. **STATUT : 🗺️ PLAN D'ACTION.**
-  - [`etude-rag-local-criteres-et-veille.md`](plans/etude-rag-local-criteres-et-veille.md) — **étude/veille** :
-    offrir un **éventail d'alternatives RAG selon les besoins/contraintes** des gens (privacy, budget,
-    puissance machine, OS, friction d'install). Profils bureautique / grosse machine / endpoint API +
-    veille **rafraîchie** (EmbeddingGemma, bge-m3, Qwen3, E2GraphRAG…), **échelle de confidentialité
-    par fournisseur**, vulgarisation « embedder ≠ LLM de chat », eval-first. **STATUT : 🔬 ÉTUDE — rien
-    d'acté.** *(alimente le plan SPI + l'ADR 0007)*
-  - [`translate-to-english.md`](plans/translate-to-english.md) — traduction complète FR → EN du
-    générateur (docs, skills, code, démo), tests rendus agnostiques de la langue, sur branche
-    dédiée. **STATUT : À FAIRE — repoussé en TOUTE FIN.**
-  - **`plans/archived/`** — plans livrés (archive, conservés pour le détail des étapes) :
-    - [`embedder-spi.md`](plans/archived/embedder-spi.md) — abstraire l'embedder du RAG derrière un
-      port SPI `Embedder` + estampiller l'index d'une identité (provider/modèle/dimension) pour rendre
-      un swap **sûr** (confirm-gate en langage naturel, jamais de réindex silencieux). Concrétise
-      l'ADR 0006 + son addendum. **STATUT : ✅ LIVRÉ** (Étape 1 du plan d'action ; garde Gemini comme
-      seule impl + FakeEmbedder de test ; 2ᵉ embedder réel = Étape 3).
-    - [`onglet-code-desktop.md`](plans/archived/onglet-code-desktop.md) — fiabiliser l'install/usage
-      depuis l'**app desktop Claude (onglet Code)** : confiance à Claude + échec bruyant + démo
-      sourcée. **STATUT : FAIT.** (ADR 0005 + 0006)
-    - [`claude-driven-install.md`](plans/archived/claude-driven-install.md) — onboarding « installe
-      mon second cerveau » piloté par Claude. **STATUT : LIVRÉ.**
-    - [`launcher-vs-brain.md`](plans/archived/launcher-vs-brain.md) — bascule du modèle d'install. **STATUT : LIVRÉ.**
+    **LightRAG / graph-RAG deferred** (interesting but not now): it's a **different paradigm**
+    (LLM **per chunk** at indexing → cost + content leakage, breaks the non-dev/privacy target), not
+    an embedder adapter → **orthogonal** to the current effort. Reserved for **Step 7**
+    (big machine, opt-in, conditional), **to be settled by the FR eval-set**; **E2GraphRAG preferred**
+    on a modest machine. Sequencing decision, not a rejection.
+- **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
+  Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
+  Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
+  embedders (Step 4). `node scripts/run-eval.mjs`. **Dev-only** (excluded from the generated brain).
+- **`plans/`** — implementation plans, with a `STATUS` at the top (SHIPPED / IN PROGRESS / ABANDONED).
+  **Shipped** plans are moved to **`plans/archived/`**; only the plans still **open** stay at the
+  root of `plans/`.
+  - [`rag-embedder-plan-action.md`](plans/rag-embedder-plan-action.md) — **🗺️ action plan**
+    that **orchestrates** the embedder effort into **self-contained steps** (port → eval-set →
+    OpenAI-compatible adapter → measurement → onboarding → conditional levers), with a **progress
+    table** to drive it session by session (a `/clear` between each). A layer above the SPI plan +
+    study + ADR 0007. **STATUS: 🗺️ ACTION PLAN.**
+  - [`etude-rag-local-criteres-et-veille.md`](plans/etude-rag-local-criteres-et-veille.md) — **study/watch**:
+    offer a **range of RAG alternatives according to people's needs/constraints** (privacy, budget,
+    machine power, OS, install friction). Office / big-machine / API-endpoint profiles +
+    **refreshed** watch (EmbeddingGemma, bge-m3, Qwen3, E2GraphRAG…), **privacy scale by
+    provider**, plain-language "embedder ≠ chat LLM", eval-first. **STATUS: 🔬 STUDY — nothing
+    enacted.** *(feeds the SPI plan + ADR 0007)*
+  - [`translate-to-english.md`](plans/translate-to-english.md) — full FR → EN translation of the
+    generator (docs, skills, code, demo), tests made language-agnostic, on a dedicated branch.
+    **STATUS: TODO — pushed to the VERY END.**
+  - **`plans/archived/`** — shipped plans (archive, kept for the detail of the steps):
+    - [`embedder-spi.md`](plans/archived/embedder-spi.md) — abstract the RAG's embedder behind an
+      `Embedder` SPI port + stamp the index with an identity (provider/model/dimension) to make a
+      swap **safe** (natural-language confirm-gate, never a silent reindex). Concretizes
+      ADR 0006 + its addendum. **STATUS: ✅ SHIPPED** (Step 1 of the action plan; keeps Gemini as the
+      only impl + a test FakeEmbedder; 2nd real embedder = Step 3).
+    - [`onglet-code-desktop.md`](plans/archived/onglet-code-desktop.md) — make install/usage from the
+      **Claude desktop app (Code tab)** reliable: trust Claude + fail loud + sourced demo.
+      **STATUS: DONE.** (ADR 0005 + 0006)
+    - [`claude-driven-install.md`](plans/archived/claude-driven-install.md) — "install my second
+      brain" onboarding driven by Claude. **STATUS: SHIPPED.**
+    - [`launcher-vs-brain.md`](plans/archived/launcher-vs-brain.md) — switch of the install model. **STATUS: SHIPPED.**
     - [`harden-run-node-smoke-and-coverage.md`](plans/archived/harden-run-node-smoke-and-coverage.md) —
-      durcir le wrapper `run-node` (smoke-test en PATH appauvri, couverture élargie). **STATUT : LIVRÉ.**
-    - [`fix-hooks-node-nvm.md`](plans/archived/fix-hooks-node-nvm.md) — hooks muets quand `node` vient
-      de nvm (résolu par `run-node`). **STATUT : LIVRÉ.**
-    - [`rename-bootstrap-to-installer.md`](plans/archived/rename-bootstrap-to-installer.md) — renommage
-      `bootstrap` → `installer`. **STATUT : LIVRÉ.**
-- **`retrospectives/`** — 📝 **rétros orientées *takeaways*** : le **récit** d'une session marquante
-  (la question de départ, le cheminement enquête→mesure→correctif, les leçons transférables). À
-  distinguer des ADR (le *pourquoi* d'une décision) et des plans (le *quoi/comment*) : ici c'est la
-  **matière à article**, le retour d'expérience. **Convention** : un fichier par session,
-  `retrospectives/takeaways-<sujet>-<AAAA-MM-JJ>.md` ; titre accrocheur + une ou plusieurs leçons en
-  **« Takeaway »** numérotés + une section **méta-leçons transférables**. Dev-only (préfixe
-  `maintainers/`), jamais copié dans un cerveau généré.
+      harden the `run-node` wrapper (smoke-test in an impoverished PATH, broadened coverage). **STATUS: SHIPPED.**
+    - [`fix-hooks-node-nvm.md`](plans/archived/fix-hooks-node-nvm.md) — silent hooks when `node` comes
+      from nvm (resolved by `run-node`). **STATUS: SHIPPED.**
+    - [`rename-bootstrap-to-installer.md`](plans/archived/rename-bootstrap-to-installer.md) — rename
+      `bootstrap` → `installer`. **STATUS: SHIPPED.**
+- **`retrospectives/`** — 📝 **takeaway-oriented retros**: the **story** of a notable session
+  (the starting question, the path investigation→measurement→fix, the transferable lessons). To be
+  distinguished from ADRs (the *why* of a decision) and plans (the *what/how*): here it's the
+  **raw material for an article**, the lessons learned. **Convention**: one file per session,
+  `retrospectives/takeaways-<topic>-<YYYY-MM-DD>.md`; catchy title + one or more lessons as
+  numbered **"Takeaway"** items + a section of **transferable meta-lessons**. Dev-only (prefix
+  `maintainers/`), never copied into a generated brain.
   - [`takeaways-embedder-partage-2026-06-09.md`](retrospectives/takeaways-embedder-partage-2026-06-09.md) —
-    « Quand le *petit raffinement* d'archi révèle un ×50 sur la latence » : la question d'archi posée
-    **avant** câblage, le ×50 dû à `createEmbedder()` par requête, le correctif (session ONNX chaude
-    partagée), 7 méta-leçons (port ≠ garantie de perf ; amplitude du symptôme ≠ de la cause ; pondérer
-    le pire cas par sa fréquence…). *(Étape 4-quater du plan embedder.)*
+    "When the *small architectural refinement* reveals a ×50 on latency": the architecture question
+    asked **before** wiring, the ×50 due to `createEmbedder()` per request, the fix (shared hot ONNX
+    session), 7 meta-lessons (port ≠ perf guarantee; the symptom's magnitude ≠ the cause's; weight
+    the worst case by its frequency…). *(Step 4-quater of the embedder plan.)*
   - [`takeaways-install-embedder-choix-2026-06-09.md`](retrospectives/takeaways-install-embedder-choix-2026-06-09.md) —
-    « Retirer une obligation a rendu l'install *mieux* vérifiée » : dé-forcer la clé Gemini → l'option
-    tout-local s'auto-prouve (canari sans clé) ; le noyau de décision pur/testé sous une coquille I/O ;
-    un gate unique (`geminiKeyRequired`) qui débusque un bug en périphérie (le hook de statut) ; un
-    nouveau défaut livré par **détection** (pas par flip global). 6 méta-leçons. *(Étape 5 du plan embedder.)*
+    "Removing an obligation made the install *better* verified": un-forcing the Gemini key → the
+    all-local option self-proves (canary without a key); the pure/tested decision core under an I/O
+    shell; a single gate (`geminiKeyRequired`) that flushes out a bug at the periphery (the status
+    hook); a new default shipped by **detection** (not by global flip). 6 meta-lessons. *(Step 5 of the embedder plan.)*
 
-- **`benchmarks/`** — 📊 **mesures reproductibles** (volumes, débits, RAM, latences) : les chiffres
-  bruts d'un run, avec protocole rejouable. À distinguer des rétros (le récit/les leçons).
+- **`benchmarks/`** — 📊 **reproducible measurements** (volumes, throughput, RAM, latencies): the raw
+  numbers of a run, with a replayable protocol. To be distinguished from the retros (the story/the lessons).
   - [`stress-test-in-process-vault-reel-2026-06-09.md`](benchmarks/stress-test-in-process-vault-reel-2026-06-09.md) —
-    1ᵉʳ stress-test de l'embedder **tout-local in-process** sur un **vrai vault dense** (271 notes /
-    2 764 chunks) : **~5 min 48 s**, **pic RAM ~2,9 Go** (plafonnement de lot tenu, vs 8,5 Go sans),
-    **0 erreur**, qualité retrieval **3/3** (fait isolé / nuance / multi-hop). Protocole rejouable +
-    pièges de mesure. *(Valide le défaut tout-local hors démo.)*
+    1st stress-test of the **all-local in-process** embedder on a **real dense vault** (271 notes /
+    2,764 chunks): **~5 min 48 s**, **peak RAM ~2.9 GB** (batch cap held, vs 8.5 GB without),
+    **0 errors**, retrieval quality **3/3** (isolated fact / nuance / multi-hop). Replayable protocol +
+    measurement pitfalls. *(Validates the all-local default outside the demo.)*
 
-## Historique
+## History
 
-Ce dossier remplace l'ancienne « mémoire » Claude (qui vivait hors du repo, dans
-`~/.claude/projects/…/memory/`, liée au chemin absolu de la machine → non portable entre laptops).
-Le contenu durable a été rapatrié ici pour être **versionné et synchronisable**. Les règles de
-travail réutilisables, elles, ont rejoint leur foyer naturel :
-- discipline de test (asserts non fragiles sur des strings) → skill `tdd-discipline` ;
-- exception de neutralité (nom de Thomas Pierrain) → [`DEVELOPING.md`](../DEVELOPING.md).
+This folder replaces the old Claude "memory" (which lived outside the repo, in
+`~/.claude/projects/…/memory/`, tied to the machine's absolute path → not portable across laptops).
+The durable content was brought back here to be **versioned and syncable**. The reusable working
+rules, for their part, have joined their natural home:
+- test discipline (non-brittle asserts on strings) → skill `tdd-discipline`;
+- neutrality exception (Thomas Pierrain's name) → [`DEVELOPING.md`](../DEVELOPING.md).

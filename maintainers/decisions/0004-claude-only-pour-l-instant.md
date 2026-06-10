@@ -1,64 +1,63 @@
-# ADR 0004 — Claude-only pour l'instant, cross-platform non exclu
+# ADR 0004 — Claude-only for now, cross-platform not excluded
 
-- **STATUT :** ACTÉ (2026-06-05).
-- **Lié :** [`0002-installateur-maison-vs-plugin.md`](0002-installateur-maison-vs-plugin.md),
+- **STATUS:** ACCEPTED (2026-06-05).
+- **Related:** [`0002-installateur-maison-vs-plugin.md`](0002-installateur-maison-vs-plugin.md),
   [`0003-pas-upgrade-capacites-cerveaux.md`](0003-pas-upgrade-capacites-cerveaux.md).
 
-## Contexte
+## Context
 
-Le générateur, et les cerveaux qu'il produit, sont aujourd'hui taillés pour **Claude Code et son
-écosystème** : constitution `CLAUDE.md`, skills `.claude/skills/`, **hooks** `settings.json`
-(`PostToolUse` auto-commit, `SessionStart`), onboarding piloté en chat par Claude.
+The generator, and the brains it produces, are today tailored for **Claude Code and its
+ecosystem**: `CLAUDE.md` constitution, `.claude/skills/` skills, `settings.json` **hooks**
+(`PostToolUse` auto-commit, `SessionStart`), onboarding driven in chat by Claude.
 
-Or, en regardant les couches, l'essentiel est **déjà agnostique de l'IA** :
+Yet, looking at the layers, the essential part is **already AI-agnostic**:
 
-- **Le substrat (vault)** = Markdown + frontmatter + `[[wikilinks]]`, format ouvert, compatible
-  Obsidian, lisible par n'importe quel outil.
-- **Le moteur (`rag/`)** = un serveur **MCP standard** (SDK officiel, transport stdio). MCP est un
-  **protocole ouvert** consommable par un éventail croissant de clients (Claude, et au-delà).
+- **The substrate (vault)** = Markdown + frontmatter + `[[wikilinks]]`, an open format, Obsidian-
+  compatible, readable by any tool.
+- **The engine (`rag/`)** = a **standard MCP server** (official SDK, stdio transport). MCP is an
+  **open protocol** consumable by a growing range of clients (Claude, and beyond).
 
-Ce qui est réellement couplé à Claude, c'est **la couche de pilotage** : hooks, skills, format de
-constitution, install conversationnelle.
+What's genuinely coupled to Claude is **the driving layer**: hooks, skills, constitution format,
+conversational install.
 
-## Décision
+## Decision
 
-Pour l'instant, on assume **Claude-only** : on ne cherche **pas** à rendre le générateur ni les
-cerveaux cross-platform. On ne complexifie pas le produit pour des clients qu'on ne sait pas encore
-utilisés. **Mais ce n'est pas exclu** : la décision de portage cross-IA sera prise **sur feedbacks
-réels** des utilisateurs.
+For now, we assume **Claude-only**: we do **not** seek to make the generator or the brains
+cross-platform. We don't complicate the product for clients we don't yet know are used. **But it's
+not excluded**: the decision to port cross-AI will be made **on real feedback** from users.
 
-## Conséquences
+## Consequences
 
-- **Garantit la simplicité et la cohérence :** une seule cible (Claude + ses hooks), pas de couche
-  d'abstraction multi-client à concevoir/tester/maintenir avant d'en avoir le besoin prouvé.
-- **Coûte la portabilité immédiate de l'expérience complète** : sur un autre client, on ne récupère
-  aujourd'hui que l'interrogation du cerveau (via MCP), pas l'auto-commit ni les skills.
-- **Invariant à préserver :** **ne pas ré-coupler** ce qui est déjà agnostique. Le **vault** doit
-  rester du Markdown pur, et le **serveur RAG** un MCP standard sans dépendance à une API
-  propriétaire Claude. C'est ce qui maintient la porte du cross-platform **ouverte à faible coût**.
+- **Guarantees simplicity and coherence:** a single target (Claude + its hooks), no multi-client
+  abstraction layer to design/test/maintain before the need is proven.
+- **Costs the immediate portability of the full experience**: on another client, today you only
+  get to query the brain (via MCP), not the auto-commit nor the skills.
+- **Invariant to preserve:** **do not re-couple** what's already agnostic. The **vault** must
+  stay pure Markdown, and the **RAG server** a standard MCP with no dependency on a proprietary
+  Claude API. That's what keeps the cross-platform door **open at low cost**.
 
-## Ce qui restera à adresser le jour du cross-platform
+## What will remain to address on cross-platform day
 
-Le gros est déjà multi-IA — il restera surtout la **couche de fiabilisation / ergonomie /
-automatisation** :
+The bulk is already multi-AI — what will remain is mostly the **reliability / ergonomics /
+automation layer**:
 
-1. **Déjà portable, rien à faire :**
-   - le **vault** (Markdown) — lisible par tout outil (Obsidian, autre RAG, upload, grep…) ;
-   - le **serveur `vault-rag`** — MCP pur, consommable tel quel par tout client MCP-capable.
-2. **À adapter par client (la couche de pilotage) :**
-   - **Constitution** : `CLAUDE.md` est la convention Claude. Prévoir un équivalent / une sortie
-     vers un format cross-outil émergent (p. ex. `AGENTS.md`) comme hedge le moins cher.
-   - **Hooks** (`PostToolUse` auto-commit, `SessionStart`) : ce sont des événements Claude Code.
-     Ailleurs → équivalent du client, **ou** déporter hors-IA. *Note : l'auto-commit pourrait
-     migrer dans le watcher de fichiers que le serveur RAG démarre déjà (`startVaultWatcher`),
-     ce qui le rendrait agnostique gratuitement.*
-   - **Skills** (`coach`, `sync-sources`, `prepare-1-1`…) et **onboarding piloté en chat** : format
-     et mécanique Claude → à re-exprimer dans la mécanique du client cible.
+1. **Already portable, nothing to do:**
+   - the **vault** (Markdown) — readable by any tool (Obsidian, another RAG, upload, grep…);
+   - the **`vault-rag` server** — pure MCP, consumable as-is by any MCP-capable client.
+2. **To adapt per client (the driving layer):**
+   - **Constitution**: `CLAUDE.md` is the Claude convention. Plan an equivalent / an output to an
+     emerging cross-tool format (e.g. `AGENTS.md`) as the cheapest hedge.
+   - **Hooks** (`PostToolUse` auto-commit, `SessionStart`): these are Claude Code events.
+     Elsewhere → the client's equivalent, **or** move them out of the AI. *Note: the auto-commit
+     could migrate into the file watcher the RAG server already starts (`startVaultWatcher`),
+     which would make it agnostic for free.*
+   - **Skills** (`coach`, `sync-sources`, `prepare-1-1`…) and **chat-driven onboarding**: Claude
+     format and mechanics → to re-express in the target client's mechanics.
 
-## Alternatives écartées
+## Rejected alternatives
 
-- **Abstraction multi-client dès maintenant** — surcoût de conception/maintenance pour des clients
-  hypothétiques ; prématuré sans signal d'usage. On préfère **attendre les feedbacks**.
-- **Verrouiller délibérément sur des API propriétaires Claude** (pour aller plus vite) — casserait
-  l'agnosticité déjà acquise du vault et du RAG, et fermerait la porte du cross-platform. Refusé :
-  voir l'invariant ci-dessus.
+- **Multi-client abstraction right now** — design/maintenance overhead for hypothetical clients;
+  premature without a usage signal. We prefer to **wait for feedback**.
+- **Deliberately locking onto proprietary Claude APIs** (to go faster) — would break the already-
+  acquired agnosticism of the vault and the RAG, and would close the cross-platform door.
+  Refused: see the invariant above.

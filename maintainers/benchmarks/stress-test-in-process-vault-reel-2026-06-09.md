@@ -1,137 +1,137 @@
-# Stress-test RAG in-process sur vault réel dense — 2026-06-09
+# In-process RAG stress-test on a real dense vault — 2026-06-09
 
-> **Matière à publication.** Premier stress-test de l'embedder **tout-local in-process**
-> (« Gemma inside ») sur un **vrai vault dense**, et non plus sur la démo Flemmr (7 notes).
-> But : prouver hors-démo que (a) le plafonnement de lot tient la RAM, (b) la qualité du
-> retrieval tient sur corpus dense réel. Run réalisé sur la branche `feat/rag-embedder-swappable`.
+> **Publication material.** First stress-test of the **all-local in-process** embedder
+> ("Gemma inside") on a **real dense vault**, no longer on the Flemmr demo (7 notes).
+> Goal: prove outside the demo that (a) the batch cap holds the RAM, (b) retrieval quality
+> holds on a real dense corpus. Run carried out on the `feat/rag-embedder-swappable` branch.
 
 ---
 
-## Protocole (reproductible)
+## Protocol (reproducible)
 
-> Remplacer `<VAULT_SOURCE>` par un vault dense réel (ici un vault personnel **non versionné**,
-> ~270 notes). Le cerveau de test est **jetable** : à supprimer après (`rm -rf`), il contient des
-> données privées dans son `.git`.
+> Replace `<VAULT_SOURCE>` with a real dense vault (here a personal **unversioned** vault,
+> ~270 notes). The test brain is **disposable**: to be deleted afterwards (`rm -rf`), it contains
+> private data in its `.git`.
 
-**1. Installer un cerveau jetable en in-process** (aucune clé, aucun réseau), depuis la branche :
+**1. Install a disposable brain in-process** (no key, no network), from the branch:
 ```bash
 node installer.mjs --non-interactive --name brain-pr-test --dest "$HOME" \
-  --owner "<nom>" --lang fr --embedder in-process
+  --owner "<name>" --lang fr --embedder in-process
 ```
 
-**2. Déverser le vault réel** (`.md` only, structure préservée, non destructif) :
+**2. Dump the real vault** (`.md` only, structure preserved, non-destructive):
 ```bash
 rsync -a --prune-empty-dirs --include='*/' --include='*.md' --exclude='*' \
   "<VAULT_SOURCE>/" "$HOME/brain-pr-test/vault/"
 ```
 
-**3. Déclencher l'indexation via le watcher** : ouvrir une **conversation Desktop (onglet Code)
-rootée dans `~/brain-pr-test`** — le MCP démarre, son watcher détecte les fichiers et auto-indexe.
-*(L'indexation se déclenche à la seconde où `rsync` dépose les fichiers, dès que le MCP tourne.)*
+**3. Trigger indexing via the watcher**: open a **Desktop conversation (Code tab)
+rooted in `~/brain-pr-test`** — the MCP starts, its watcher detects the files and auto-indexes.
+*(Indexing triggers the very second `rsync` drops the files, as soon as the MCP is running.)*
 
-**4. Échantillonner pendant le run** — RSS du process d'indexation **isolé** (sinon pollué par les
-~40 process « node » de Claude Desktop) + état du run :
+**4. Sample during the run** — RSS of the **isolated** indexing process (otherwise polluted by the
+~40 "node" processes of Claude Desktop) + run state:
 ```bash
-# pic RAM réel de l'indexeur (RSS OS, Mo)
+# real RAM peak of the indexer (OS RSS, MB)
 ps -A -o pid,rss,command | grep "rag/src/index.ts" | grep -v grep \
   | sort -k2 -rn | head -1 | awk '{printf "PID %s  %.0f Mo\n", $1, $2/1024}'
-# progression (status / doneChunks / totalChunks / errors)
+# progress (status / doneChunks / totalChunks / errors)
 cat "$HOME/brain-pr-test/rag/.cache/last-run.json"
 ```
 
-**5. Vérifier la libération mémoire** : fermer l'app Desktop (arrêt du MCP) → la RAM doit chuter.
+**5. Verify memory release**: close the Desktop app (MCP shutdown) → the RAM must drop.
 
-> ⚠️ Une indexation **CLI concurrente** (`cd rag && npm run index`) lancée en parallèle est
-> **correctement refusée** par le `ReindexLock` (`skippedLocked: true`) — garde-fou anti-double-index.
+> ⚠️ A **concurrent CLI** indexing (`cd rag && npm run index`) launched in parallel is
+> **correctly refused** by the `ReindexLock` (`skippedLocked: true`) — anti-double-index guardrail.
 
-## Environnement
+## Environment
 
 | | |
 |---|---|
-| Machine | MacBook (Apple Silicon **M4**), **24 Go** RAM, `darwin arm64` |
+| Machine | MacBook (Apple Silicon **M4**), **24 GB** RAM, `darwin arm64` |
 | Embedder | **in-process** — Transformers.js v4 (`@huggingface/transformers`), `onnxruntime-node` 1.24.3, CPU |
-| Modèle | **EmbeddingGemma-300m ONNX (q8)**, avec prompts de tâche |
-| Plafonnement de lot | `EMBED_BATCH = 4` (défaut, Étape 4-ter) |
-| Provider | `EMBEDDING_PROVIDER=in-process` ; `GOOGLE_GEMINI_API_KEY` **vide** |
+| Model | **EmbeddingGemma-300m ONNX (q8)**, with task prompts |
+| Batch cap | `EMBED_BATCH = 4` (default, Step 4-ter) |
+| Provider | `EMBEDDING_PROVIDER=in-process` ; `GOOGLE_GEMINI_API_KEY` **empty** |
 
 ## Corpus
 
 | | |
 |---|---|
-| Notes `.md` indexées | **271** (+ 6 notes démo skippées, inchangées ; 277 fichiers scannés) |
-| Poids markdown | ~2,8 Mo, **24 dossiers** |
-| Notes les plus longues | transcripts de **~85 à 103 Ko** pièce (`raw-sources/transcripts/`) |
-| Non-`.md` (json, py, txt, pptx, png…) | **ignorés** par le scanner (`.md` only) |
+| `.md` notes indexed | **271** (+ 6 demo notes skipped, unchanged; 277 files scanned) |
+| Markdown weight | ~2.8 MB, **24 folders** |
+| Longest notes | transcripts of **~85 to 103 KB** each (`raw-sources/transcripts/`) |
+| Non-`.md` (json, py, txt, pptx, png…) | **ignored** by the scanner (`.md` only) |
 
-## Résultats — indexation (mesuré dans ce run)
+## Results — indexing (measured in this run)
 
-| Métrique | Valeur |
+| Metric | Value |
 |---|---|
-| Chunks produits / indexés | **2 764 / 2 764** (100 %, `doneChunks == totalChunks`) |
-| Erreurs | **0** |
-| Durée totale | **~5 min 48 s** (21:10:12 → 21:16:00 UTC) |
-| Débit moyen | **~7,9 chunks/s** (~477 chunks/min ; ~47 notes/min) |
-| Chunks par note (moyenne) | ~10,2 |
-| **Pic RAM** (RSS OS, process d'indexation isolé) | **~2,9 Go** |
-| RAM en cours d'indexation (échantillons) | 2,44 Go (32 %) → 2,48 Go (57 %) → 2,92 Go (81 %) |
+| Chunks produced / indexed | **2,764 / 2,764** (100%, `doneChunks == totalChunks`) |
+| Errors | **0** |
+| Total duration | **~5 min 48 s** (21:10:12 → 21:16:00 UTC) |
+| Average throughput | **~7.9 chunks/s** (~477 chunks/min ; ~47 notes/min) |
+| Chunks per note (average) | ~10.2 |
+| **RAM peak** (OS RSS, isolated indexing process) | **~2.9 GB** |
+| RAM during indexing (samples) | 2.44 GB (32%) → 2.48 GB (57%) → 2.92 GB (81%) |
 
-**Lecture :** le RSS reste **quasi plat ~2,5 Go** sur l'essentiel du run et culmine à **~2,9 Go** —
-**jamais près des 4 Go**, et *très* loin des **8,5 Go (puis stall)** observés sur ce même type de
-corpus **sans** plafonnement de lot (cf. Étape 4-ter). Le plafonnement tient la RAM **bornée et
-découplée de la taille du vault**, sur corpus dense réel.
+**Reading:** the RSS stays **almost flat ~2.5 GB** for most of the run and peaks at **~2.9 GB** —
+**never near 4 GB**, and *very* far from the **8.5 GB (then stall)** observed on this same type of
+corpus **without** a batch cap (cf. Step 4-ter). The cap holds the RAM **bounded and
+decoupled from the vault's size**, on a real dense corpus.
 
-## Résultats — mémoire au repos (mesuré dans ce run)
+## Results — memory at rest (measured in this run)
 
-- Après indexation, le process MCP **conserve ~2,8 Go** : c'est l'**embedder partagé** (Étape
-  4-quater) **gardé chaud** pour des recherches rapides — **choix assumé, pas une fuite**.
-- **Confirmé empiriquement** : à la **fermeture de l'app Desktop** (donc arrêt du MCP), la **RAM
-  chute** immédiatement. L'index reste persistant sur disque (`rag/.cache/vault.db`) → réouverture
-  instantanée, **sans ré-indexation**.
+- After indexing, the MCP process **keeps ~2.8 GB**: this is the **shared embedder** (Step
+  4-quater) **kept hot** for fast searches — **deliberate choice, not a leak**.
+- **Empirically confirmed**: on **closing the Desktop app** (hence MCP shutdown), the **RAM
+  drops** immediately. The index stays persisted on disk (`rag/.cache/vault.db`) → instant
+  reopening, **without re-indexing**.
 
-## Résultats — qualité du retrieval (qualitatif, ce run)
+## Results — retrieval quality (qualitative, this run)
 
-3 questions-test **discriminantes** posées dans une conversation Desktop rootée — **3/3 réussies** :
+3 **discriminating** test questions asked in a rooted Desktop conversation — **3/3 passed**:
 
-1. **Fait isolé + chiffre** niché dans un tableau d'**une seule** note (score Resonance le moins
-   exprimé). → bonne note citée, bon chiffre.
-2. **Fait + piège de nuance** : squad porteuse d'un POC + périmètre, en **écartant un distracteur**
-   (« personne désignée *après* ≠ critère de choix »). → nuance correctement traitée.
-3. **Multi-hop** : réponse impossible depuis une seule note, obligeant à **croiser 2 notes**
-   (autocapture analytics × architecture micro-frontends). → les deux sources remontées.
+1. **Isolated fact + figure** nested in a table of a **single** note (least-expressed Resonance
+   score). → right note cited, right figure.
+2. **Fact + nuance trap**: squad owning a POC + scope, **ruling out a distractor**
+   ("person designated *afterwards* ≠ selection criterion"). → nuance handled correctly.
+3. **Multi-hop**: answer impossible from a single note, forcing a **cross between 2 notes**
+   (analytics auto-capture × micro-frontends architecture). → both sources surfaced.
 
-→ Précision **et** multi-hop tiennent sur 271 docs denses. **Aucun plafond qualité constaté** →
-les Étapes 6/7 (reranker) restent non nécessaires.
+→ Precision **and** multi-hop hold on 271 dense docs. **No quality ceiling observed** →
+Steps 6/7 (reranker) remain unnecessary.
 
-## Latence de recherche (référence — bench dédié, PAS ce run)
+## Search latency (reference — dedicated bench, NOT this run)
 
-La latence par requête n'a **pas** été instrumentée dans ce run (questions posées à la main).
-Chiffres pertinents issus du bench instrumenté de l'**Étape 4-quater** (embedder partagé), même
-embedder in-process :
+Per-request latency was **not** instrumented in this run (questions asked by hand).
+Relevant numbers from the instrumented bench of **Step 4-quater** (shared embedder), same
+in-process embedder:
 
-- Recherche au repos : **~510 ms → ~35 ms** après mémoïsation de `createEmbedder()` au niveau process.
-- Recherche **pendant** une indexation : **~25 400 ms → ~810 ms** (p95).
+- Search at rest: **~510 ms → ~35 ms** after memoizing `createEmbedder()` at the process level.
+- Search **during** an indexing: **~25,400 ms → ~810 ms** (p95).
 
-> La cause du pic était `createEmbedder()` rappelé à chaque recherche (rechargement d'une session
-> ONNX ~440 ms) + sur-réservation des cœurs ; le fix = embedder **singleton process**.
+> The cause of the peak was `createEmbedder()` recalled on every search (reload of an ONNX
+> session ~440 ms) + over-subscription of the cores; the fix = **process singleton** embedder.
 
-## Bonus — bug débusqué par ce test (et corrigé)
+## Bonus — bug flushed out by this test (and fixed)
 
-Le test d'install réel (in-process, sans clé) a fait sortir un **faux vert** invisible en démo :
-`vault_stats` affichait un **quota Gemini codé en dur** (« Quota : 0/7600 ») même en in-process,
-que le LLM aggravait en « clé Gemini fonctionnelle » alors qu'aucune clé n'existait. **Corrigé en
-TDD** (commit `2e2c320`) : le rapport reçoit le `providerId` de l'embedder actif et n'affiche le
-quota que pour Gemini ; ligne locale honnête sinon. **Leçon : seul un test d'install *réel* fait
-sortir ce genre de faux vert.**
+The real install test (in-process, no key) brought out a **false green** invisible in the demo:
+`vault_stats` displayed a **hard-coded Gemini quota** ("Quota: 0/7600") even in in-process,
+which the LLM aggravated into "Gemini key working" when no key existed at all. **Fixed in
+TDD** (commit `2e2c320`): the report receives the `providerId` of the active embedder and only
+displays the quota for Gemini; an honest local line otherwise. **Lesson: only a *real* install
+test brings out this kind of false green.**
 
-## Pièges de mesure (à réutiliser)
+## Measurement pitfalls (to reuse)
 
-- **`ps | grep node` est pollué** : Claude Desktop (Electron) lance des dizaines de process
-  « node » → la somme RSS ne reflète **pas** l'indexeur. **Isoler** `rag/src/index.ts`.
-- Le **watcher indexe à la seconde** où les fichiers sont déposés → toute indexation manuelle
-  concurrente est refusée par le lock (normal).
+- **`ps | grep node` is polluted**: Claude Desktop (Electron) launches dozens of "node"
+  processes → the RSS sum does **not** reflect the indexer. **Isolate** `rag/src/index.ts`.
+- The **watcher indexes the second** the files are dropped → any concurrent manual
+  indexing is refused by the lock (normal).
 
 ## Verdict
 
-L'embedder **in-process** tient **charge, RAM et qualité** sur un corpus dense réel (271 notes,
-2 764 chunks), **sans clé ni réseau**, sur une machine grand public (M4 / 24 Go), pic RAM **~2,9 Go**
-en **~5 min 48 s**. Le défaut « tout-local » est validé hors démo.
+The **in-process** embedder holds **load, RAM and quality** on a real dense corpus (271 notes,
+2,764 chunks), **without key or network**, on a consumer machine (M4 / 24 GB), RAM peak **~2.9 GB**
+in **~5 min 48 s**. The "all-local" default is validated outside the demo.

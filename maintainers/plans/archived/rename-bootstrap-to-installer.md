@@ -1,173 +1,174 @@
-# Plan — Renommer `bootstrap` → `installer` (clarté pour les gens)
+# Plan — Rename `bootstrap` → `installer` (clarity for people)
 
-> **État : ✅ LIVRÉ** (2026-06-07, commit `24f1240`). Renommage complet appliqué
-> (D1 `installer.mjs` · D2 complet · D3 marqueur `installer-stub` · D4 pas de shim).
-> Filet vérifié : suite **74/74 verte**, **E2E install exit 0** + connexion MCP OK,
-> et le `CLAUDE.md` généré ne porte **aucun marqueur** (preuve bout-en-bout
-> qu'`isInstallerStub` reconnaît la nouvelle valeur et écrase l'amorce). Seule
-> mention « bootstrap » restante : un usage générique dans le vault d'exemple
-> (volontaire). Archive — plus rien à reprendre.
+> **Status: ✅ SHIPPED** (2026-06-07, commit `24f1240`). Full rename applied
+> (D1 `installer.mjs` · D2 complete · D3 marker `installer-stub` · D4 no shim).
+> Net verified: suite **74/74 green**, **E2E install exit 0** + MCP connection OK,
+> and the generated `CLAUDE.md` carries **no marker** (end-to-end proof that
+> `isInstallerStub` recognizes the new value and overwrites the stub). Only
+> remaining mention of "bootstrap": a generic usage in the example vault
+> (intentional). Archive — nothing left to resume.
 
 ## Motivation (Thomas, 2026-06-07)
 
-« bootstrap » n'est pas limpide pour le grand public. **« installer / installeur »**
-est plus fidèle à ce que fait le script et **plus lisible pour les gens**. Le moteur
-du renommage est donc la **lisibilité côté utilisateur** → priorité absolue au
-**nom de fichier + commande + docs**. Le reste (identifiants internes, commentaires)
-suit pour la cohérence.
+"bootstrap" isn't crystal clear to a general audience. **"installer"** is more
+faithful to what the script does and **more readable for people**. The driver of
+the rename is therefore **user-facing readability** → absolute priority on the
+**file name + command + docs**. The rest (internal identifiers, comments) follows
+for consistency.
 
-> **Revu après le plan run-node (2026-06-07).** Les **compteurs d'occurrences
-> ci-dessous restent exacts** : la livraison `harden-run-node-smoke-and-coverage`
-> n'a introduit **aucune** nouvelle référence « bootstrap ». Seuls des **numéros de
-> ligne ont dérivé** (lignes ajoutées dans `SETUP.md` ≈ +5, `DEVELOPING.md` ≈ +12) —
-> les pivots ont été recalés dans les étapes 3-5. L'exécuteur reste invité à
-> **grepper** (étape 8) plutôt qu'à se fier aux numéros, qui restent un snapshot.
+> **Reviewed after the run-node plan (2026-06-07).** The **occurrence counts
+> below remain accurate**: the `harden-run-node-smoke-and-coverage` delivery
+> introduced **no** new "bootstrap" references. Only **line numbers drifted**
+> (lines added in `SETUP.md` ≈ +5, `DEVELOPING.md` ≈ +12) — the pivots have been
+> re-anchored in steps 3-5. The executor is still encouraged to **grep** (step 8)
+> rather than rely on line numbers, which remain a snapshot.
 
-## Inventaire des références (relevé 2026-06-07, `git ls-files`, hors `maintainers/`)
+## Inventory of references (surveyed 2026-06-07, `git ls-files`, excluding `maintainers/`)
 
-**Fichiers à renommer :**
-- `bootstrap.mjs` → `installer.mjs` (le script lui-même, 13 occurrences internes)
+**Files to rename:**
+- `bootstrap.mjs` → `installer.mjs` (the script itself, 13 internal occurrences)
 - `scripts/lib/bootstrap-args.mjs` → `scripts/lib/installer-args.mjs`
 - `scripts/lib/bootstrap-args.test.mjs` → `scripts/lib/installer-args.test.mjs`
 
-**Référence CRITIQUE (pivot du flux assisté) :**
-- `CLAUDE.md` (amorce, l.47) : la **commande exacte** `node bootstrap.mjs
-  --non-interactive --name … --dest … --owner … --lang …` que Claude **copie
-  telle quelle**. Toute coquille casse l'install pilotée par Claude.
+**CRITICAL reference (pivot of the assisted flow):**
+- `CLAUDE.md` (stub, l.47): the **exact command** `node bootstrap.mjs
+  --non-interactive --name … --dest … --owner … --lang …` that Claude **copies
+  verbatim**. Any typo breaks the Claude-driven install.
 
-**Docs user-facing (à balayer) :** `README.md` (9), `SETUP.md` (19, dont la commande
-non-interactive l.105 et le tableau de dépannage l.277-278 — recalés post run-node),
-`CONNECTORS.md` (2), `.env.example` (1, « fait par node bootstrap.mjs »).
+**User-facing docs (to sweep):** `README.md` (9), `SETUP.md` (19, including the
+non-interactive command l.105 and the troubleshooting table l.277-278 —
+re-anchored post run-node), `CONNECTORS.md` (2), `.env.example` (1, "done by node
+bootstrap.mjs").
 
-**Docs dev :** `DEVELOPING.md` (18, dont le snippet de test l.106 — recalé post
-run-node — `… && node bootstrap.mjs < /dev/null`), `.gitignore` (2, commentaires l.43/47).
+**Dev docs:** `DEVELOPING.md` (18, including the test snippet l.106 — re-anchored
+post run-node — `… && node bootstrap.mjs < /dev/null`), `.gitignore` (2, comments
+l.43/47).
 
-**Code (commentaires + 1 identifiant) :** `scripts/lib/rag-launcher.mjs` (5,
-commentaires « écrit par le bootstrap »), `scripts/lib/claude-md.mjs` (4, dont le
-**marqueur** — voir D3), `scripts/lib/demo.mjs`, `example-notes.mjs`,
-`gemini-key.mjs`, `mcp-smoke.mjs`, `connectors-catalog.mjs` (commentaires),
-`scripts/verify-rag.mjs` (2), `scripts/lib/claude-md.test.mjs` (6, noms de tests +
-marqueur), `bootstrap-args.test.mjs` (1).
+**Code (comments + 1 identifier):** `scripts/lib/rag-launcher.mjs` (5, comments
+"written by the bootstrap"), `scripts/lib/claude-md.mjs` (4, including the
+**marker** — see D3), `scripts/lib/demo.mjs`, `example-notes.mjs`,
+`gemini-key.mjs`, `mcp-smoke.mjs`, `connectors-catalog.mjs` (comments),
+`scripts/verify-rag.mjs` (2), `scripts/lib/claude-md.test.mjs` (6, test names +
+marker), `bootstrap-args.test.mjs` (1).
 
-**Mentions « tangentes » (à corriger si pertinent, sinon laisser) :**
+**"Tangential" mentions (fix if relevant, otherwise leave):**
 `vault/backlog/harnais.md` (1), `.claude/skills/tdd-discipline/SKILL.md` (1).
 
-> Le **marqueur** vit dans `scripts/lib/claude-md.mjs` :
+> The **marker** lives in `scripts/lib/claude-md.mjs`:
 > `BOOTSTRAP_STUB_MARKER = "<!-- second-brain-generator:bootstrap-stub -->"`,
-> testé par `isBootstrapStub()`. Voir **D3**.
+> tested by `isBootstrapStub()`. See **D3**.
 
-## Décisions à valider (avant d'exécuter)
+## Decisions to validate (before executing)
 
-- **D1 — Nom du fichier/commande.** Recommandé : **`installer.mjs`** (le « substantif
-  outil », cohérent avec le filename anglais existant) → `node installer.mjs …`.
-  Alternative : `install.mjs` (lecture « verbe/action »). *À trancher.*
-- **D2 — Portée.** Recommandé : **renommage complet** (fichier + commande + docs +
-  commentaires + identifiants de lib) → cohérence totale, plus de « bootstrap »
-  résiduel qui sèmerait la confusion pour un futur dev. Alternative « minimale »
-  (fichier + commande + docs seulement) = plus rapide mais laisse le code
-  incohérent. *Reco : complet.*
-- **D3 — Marqueur `bootstrap-stub` / `isBootstrapStub`.** Recommandé (si D2 complet) :
-  renommer en `installer-stub` / `isInstallerStub` /
+- **D1 — File/command name.** Recommended: **`installer.mjs`** (the "tool noun",
+  consistent with the existing English filename) → `node installer.mjs …`.
+  Alternative: `install.mjs` (reads as "verb/action"). *To be decided.*
+- **D2 — Scope.** Recommended: **full rename** (file + command + docs +
+  comments + lib identifiers) → total consistency, no residual "bootstrap"
+  that would confuse a future dev. The "minimal" alternative (file + command +
+  docs only) is faster but leaves the code inconsistent. *Reco: full.*
+- **D3 — Marker `bootstrap-stub` / `isBootstrapStub`.** Recommended (if D2 full):
+  rename to `installer-stub` / `isInstallerStub` /
   `INSTALLER_STUB_MARKER = "<!-- second-brain-generator:installer-stub -->"`.
-  ⚠️ Wrinkle bénin : un CLAUDE.md déjà généré portant l'ANCIEN marqueur ne serait
-  plus reconnu comme « amorce écrasable » — sans gravité (template + checker sont
-  renommés ensemble dans le même clone ; pas de cerveau « à moitié migré » réaliste).
-  Alternative : **garder** le marqueur tel quel (invisible pour l'utilisateur, zéro
-  churn). *À trancher — léger penchant pour renommer, par cohérence.*
-- **D4 — Shim de rétrocompat.** Garder un mince `bootstrap.mjs` qui ré-exécute
-  `installer.mjs` en affichant « renommé en installer.mjs » ? Recommandé : **non**
-  (projet jeune, pas de base installée à ménager → rename propre). *Reco : non.*
+  ⚠️ Benign wrinkle: an already-generated CLAUDE.md carrying the OLD marker would
+  no longer be recognized as an "overwritable stub" — no big deal (template +
+  checker are renamed together in the same clone; no realistic "half-migrated"
+  brain). Alternative: **keep** the marker as-is (invisible to the user, zero
+  churn). *To be decided — slight lean toward renaming, for consistency.*
+- **D4 — Back-compat shim.** Keep a thin `bootstrap.mjs` that re-runs
+  `installer.mjs` while printing "renamed to installer.mjs"? Recommended: **no**
+  (young project, no installed base to spare → clean rename). *Reco: no.*
 
-## Ordonnancement avec l'autre plan
+## Sequencing with the other plan
 
-Si le plan **`harden-run-node-smoke-and-coverage.md`** est aussi joué : exécuter ce
-renommage **EN DERNIER**. Il balaie tout le code, **y compris** les nouveaux
-commentaires/refs introduits par le plan run-node (sinon il faudrait re-balayer).
+If the **`harden-run-node-smoke-and-coverage.md`** plan is also played: run this
+rename **LAST**. It sweeps the entire codebase, **including** the new
+comments/refs introduced by the run-node plan (otherwise we'd have to re-sweep).
 
-## Étapes
+## Steps
 
-### 1. Renommer les fichiers (préserver l'historique)
+### 1. Rename the files (preserve history)
 - `git mv bootstrap.mjs installer.mjs`
-- (si D2 complet) `git mv scripts/lib/bootstrap-args.mjs scripts/lib/installer-args.mjs`
-  et le `.test.mjs` correspondant.
+- (if D2 full) `git mv scripts/lib/bootstrap-args.mjs scripts/lib/installer-args.mjs`
+  and the corresponding `.test.mjs`.
 
-### 2. Réparer les imports cassés par le renommage
-- `installer.mjs` importe `./scripts/lib/installer-args.mjs` (ex `bootstrap-args`).
-- Tout autre fichier qui importe `bootstrap-args` → pointer vers `installer-args`.
-- Lancer la suite : `node --test scripts/lib/*.test.mjs scripts/*.test.mjs` (les
-  imports cassés ressortent immédiatement = filet).
+### 2. Fix imports broken by the rename
+- `installer.mjs` imports `./scripts/lib/installer-args.mjs` (ex `bootstrap-args`).
+- Any other file importing `bootstrap-args` → point it at `installer-args`.
+- Run the suite: `node --test scripts/lib/*.test.mjs scripts/*.test.mjs` (broken
+  imports surface immediately = net).
 
-### 3. ⚠️ Commande d'amorce — `CLAUDE.md` l.47 (LE point critique)
-- Remplacer `node bootstrap.mjs --non-interactive …` par
-  `node installer.mjs --non-interactive …`. **Mot pour mot** : c'est la commande que
-  Claude copie pour piloter l'install. La tester en E2E (étape 8).
-- `CLAUDE.md.template` : **vérifié 2026-06-07 — la commande n'y figure PAS** (zéro
-  « bootstrap » dans le template) → rien à corriger ici, l'amorce-commande ne vit que
-  dans `CLAUDE.md`. (Re-grepper avant exécution au cas où ça aurait changé.)
+### 3. ⚠️ Stub command — `CLAUDE.md` l.47 (THE critical point)
+- Replace `node bootstrap.mjs --non-interactive …` with
+  `node installer.mjs --non-interactive …`. **Word for word**: this is the command
+  Claude copies to drive the install. Test it E2E (step 8).
+- `CLAUDE.md.template`: **verified 2026-06-07 — the command is NOT in it** (zero
+  "bootstrap" in the template) → nothing to fix here, the stub-command lives only
+  in `CLAUDE.md`. (Re-grep before executing in case it changed.)
 
-### 4. Docs user-facing
-- `README.md`, `SETUP.md` (dont l.63/105/211/277-278 — recalés post run-node ;
-  ex-l.58/100/208/272-273), `CONNECTORS.md`,
-  `.env.example` : remplacer `node bootstrap.mjs` → `node installer.mjs`, et les
-  formulations « le bootstrap » → « l'installeur ».
-- Garder le **français naturel** : le script = « l'installeur » (déjà « installateur
-  interactif » dans l'ancien en-tête) ; en code/commande = `installer.mjs`.
+### 4. User-facing docs
+- `README.md`, `SETUP.md` (including l.63/105/211/277-278 — re-anchored post
+  run-node; ex-l.58/100/208/272-273), `CONNECTORS.md`,
+  `.env.example`: replace `node bootstrap.mjs` → `node installer.mjs`, and the
+  phrasings "the bootstrap" → "the installer".
+- Keep the **natural French**: the script = "l'installeur" (already "installateur
+  interactif" in the old header); in code/command = `installer.mjs`.
 
-### 5. Docs dev
-- `DEVELOPING.md` (18 occurrences, dont le snippet de test l.106 — recalé post
-  run-node, ex-l.94 :
+### 5. Dev docs
+- `DEVELOPING.md` (18 occurrences, including the test snippet l.106 — re-anchored
+  post run-node, ex-l.94:
   `cp -R . /tmp/sbg-test && cd /tmp/sbg-test && node installer.mjs < /dev/null`).
-- `.gitignore` (commentaires l.43/47).
+- `.gitignore` (comments l.43/47).
 
-### 6. Commentaires de code
+### 6. Code comments
 - `rag-launcher.mjs`, `claude-md.mjs`, `demo.mjs`, `example-notes.mjs`,
-  `gemini-key.mjs`, `mcp-smoke.mjs`, `connectors-catalog.mjs`, `verify-rag.mjs` :
-  « le bootstrap » → « l'installeur ». L'en-tête de `installer.mjs` lui-même
-  (« installateur interactif du Second Brain Generator ») reste juste — vérifier la
-  cohérence du wording.
+  `gemini-key.mjs`, `mcp-smoke.mjs`, `connectors-catalog.mjs`, `verify-rag.mjs`:
+  "the bootstrap" → "the installer". The header of `installer.mjs` itself
+  ("interactive installer of the Second Brain Generator") stays right — check the
+  consistency of the wording.
 
-### 7. (Si D2 complet / D3) Identifiants & marqueur
+### 7. (If D2 full / D3) Identifiers & marker
 - `isBootstrapStub` → `isInstallerStub`, `BOOTSTRAP_STUB_MARKER` →
-  `INSTALLER_STUB_MARKER` (+ valeur `…:installer-stub`), dans `claude-md.mjs`,
-  ses imports (`installer.mjs`), et `claude-md.test.mjs` (noms de tests + assertions
-  sur la valeur du marqueur).
-- ⚠️ Si on change la **valeur** du marqueur, mettre à jour l'amorce (le CLAUDE.md /
-  template qui PORTE le commentaire-marqueur) pour qu'`isInstallerStub` la
-  reconnaisse. Tester que `gen()` écrase toujours l'amorce (cf. `claude-md.test`).
+  `INSTALLER_STUB_MARKER` (+ value `…:installer-stub`), in `claude-md.mjs`,
+  its imports (`installer.mjs`), and `claude-md.test.mjs` (test names + assertions
+  on the marker value).
+- ⚠️ If we change the **value** of the marker, update the stub (the CLAUDE.md /
+  template that CARRIES the marker comment) so that `isInstallerStub` recognizes
+  it. Test that `gen()` still overwrites the stub (cf. `claude-md.test`).
 
-### 8. Vérifications (le filet)
-- **Suite complète verte** : `node --test scripts/lib/*.test.mjs scripts/*.test.mjs`.
-- **Grep résiduel** (hors `maintainers/` = archives, et hors `.git`) :
+### 8. Checks (the net)
+- **Full suite green**: `node --test scripts/lib/*.test.mjs scripts/*.test.mjs`.
+- **Residual grep** (excluding `maintainers/` = archives, and excluding `.git`):
   `grep -rni bootstrap . --exclude-dir=maintainers --exclude-dir=.git
-  --exclude-dir=node_modules` → ne doit renvoyer **que** ce qu'on a sciemment gardé
-  (idéalement rien, hors choix D3/D4 documentés).
-- **E2E install (preuve de la commande d'amorce)** : `rm -rf /tmp/brain-rename-test
+  --exclude-dir=node_modules` → must return **only** what we knowingly kept
+  (ideally nothing, beyond documented D3/D4 choices).
+- **E2E install (proof of the stub command)**: `rm -rf /tmp/brain-rename-test
   && node installer.mjs --non-interactive --name brain-rename-test --dest /tmp
-  --owner Test --lang fr` → sortie 0, smoke MCP OK. Puis vérifier que l'amorce
-  **générée** dans le cerveau de test ne référence plus `bootstrap.mjs` (au cas où
-  une doc copiée la mentionnerait) et que tout pointe `installer.mjs`. Nettoyer.
+  --owner Test --lang fr` → exit 0, MCP smoke OK. Then verify that the stub
+  **generated** in the test brain no longer references `bootstrap.mjs` (in case a
+  copied doc mentions it) and that everything points to `installer.mjs`. Clean up.
 
-### 9. Mentions tangentes
-- `vault/backlog/harnais.md`, `.claude/skills/tdd-discipline/SKILL.md` : corriger
-  si la mention parle de NOTRE script ; laisser si c'est un usage générique du mot.
+### 9. Tangential mentions
+- `vault/backlog/harnais.md`, `.claude/skills/tdd-discipline/SKILL.md`: fix if
+  the mention refers to OUR script; leave if it's a generic usage of the word.
 
-## Garde-fous (à ne pas enfreindre)
-- **`git mv`** (pas delete+create) → l'historique des fichiers est préservé.
-- **La commande d'amorce est sacrée** : la prouver en E2E après renommage (étape 8).
-- **Renommage pur** : aucun changement de comportement, d'argument CLI, de chemin
-  généré. Si un test métier change de résultat → c'est un bug du renommage, pas une
-  évolution voulue.
-- **Ne pas réécrire l'historique** ni les archives `maintainers/plans/` (le présent
-  plan et le précédent parlent de « bootstrap » → normal, c'est daté).
-- **Neutralité / pas de fuite** : inchangé (`grep` de noms tiers reste vide).
+## Guardrails (not to be breached)
+- **`git mv`** (not delete+create) → file history is preserved.
+- **The stub command is sacred**: prove it E2E after the rename (step 8).
+- **Pure rename**: no change of behavior, CLI argument, or generated path. If a
+  business test changes its result → it's a bug in the rename, not an intended
+  change.
+- **Do not rewrite history** nor the `maintainers/plans/` archives (the present
+  plan and the previous one talk about "bootstrap" → normal, it's dated).
+- **Neutrality / no leak**: unchanged (`grep` for third-party names stays empty).
 
-## Hors périmètre
-- Tout changement fonctionnel (étapes d'install, smoke-tests, RAG…) : non, autre lot.
-- Renommer « bootstrap » là où il désignerait un concept générique non lié à notre
-  script (peu probable ici).
-- Rétrocompat élaborée (shim, alias) au-delà de D4.
+## Out of scope
+- Any functional change (install steps, smoke tests, RAG…): no, another lot.
+- Renaming "bootstrap" where it would denote a generic concept unrelated to our
+  script (unlikely here).
+- Elaborate back-compat (shim, alias) beyond D4.
 
-## Commits suggérés (séparés)
+## Suggested commits (separate)
 1. `refactor: renommer bootstrap.mjs → installer.mjs (+ lib args) via git mv`
 2. `refactor: commande d'amorce + docs (bootstrap → installeur)`
 3. `refactor: commentaires de code (bootstrap → installeur)`

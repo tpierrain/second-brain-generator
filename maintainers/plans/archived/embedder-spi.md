@@ -1,222 +1,222 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUT : ✅ LIVRÉ (créé 2026-06-08, livré 2026-06-08) — port + index sûr.   -->
+<!-- STATUS: ✅ SHIPPED (created 2026-06-08, shipped 2026-06-08) — safe port + index. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
-# Plan — Abstraire l'embedder du RAG derrière un port SPI
+# Plan — Abstract the RAG embedder behind an SPI port
 
-> **STATUT : ✅ LIVRÉ** (créé le 2026-06-08, livré le 2026-06-08 — Étape 1 du plan
-> d'action `rag-embedder-plan-action.md`). Commits : `2ac9698` (estampille round-trip),
-> `7e9fdec` (garde d'identité), `9d3b869` (port `Embedder`), `50b6fcd` (shouldStamp),
-> `a49f861` (createEmbedder), `99abe61` (index-manager câblé + estampille), `7fc678b`
-> (garde câblé sur la recherche), `bf2ead8` (FakeEmbedder). 91/91 tests verts, tsc OK.
-> Le contrat MCP n'a pas bougé.
-> Plan autoporteur : une session Claude vierge doit pouvoir l'exécuter en ne lisant QUE ce
-> fichier + les fichiers cités. Discipline **TDD** (skill `tdd-discipline`, et `outside-in-diamond-tdd`
-> pour le périmètre back-end/Hive), commits **manuels** en conventionnel + co-author Claude.
+> **STATUS: ✅ SHIPPED** (created 2026-06-08, shipped 2026-06-08 — Step 1 of the
+> action plan `rag-embedder-plan-action.md`). Commits: `2ac9698` (round-trip stamp),
+> `7e9fdec` (identity guard), `9d3b869` (port `Embedder`), `50b6fcd` (shouldStamp),
+> `a49f861` (createEmbedder), `99abe61` (index-manager wired + stamp), `7fc678b`
+> (guard wired on search), `bf2ead8` (FakeEmbedder). 91/91 tests green, tsc OK.
+> The MCP contract didn't move.
+> Self-sufficient plan: a fresh Claude session must be able to execute it reading ONLY this
+> file + the cited files. Discipline **TDD** (skill `tdd-discipline`, and `outside-in-diamond-tdd`
+> for the back-end/Hive scope), **manual** conventional commits + co-author Claude.
 >
-> **Concrétise l'ADR [`../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md`](../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md)**
-> (port MCP stable, embedder = SPI interchangeable) + son **addendum « confirm-gate »**.
+> **Realizes ADR [`../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md`](../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md)**
+> (stable MCP port, embedder = interchangeable SPI) + its **"confirm-gate" addendum**.
 
 ---
 
-## 0. Décisions prises (le « quoi » et le « pourquoi »)
+## 0. Decisions made (the "what" and the "why")
 
-Validé avec Thomas le 2026-06-08 (origine : demande de Dimitry Ernot — « pouvoir utiliser autre
-chose que Google Gemini ») :
+Validated with Thomas on 2026-06-08 (origin: request from Dimitry Ernot — "be able to use something
+other than Google Gemini"):
 
-1. **Ce plan abstrait l'embedder, point.** Il extrait un **port SPI `Embedder`** propre et rend
-   l'index **sûr face à un swap**. Il garde **Gemini comme seule impl concrète** (plus,
-   optionnellement, un `FakeEmbedder` de test). **Il n'introduit AUCUN second embedder réel**
+1. **This plan abstracts the embedder, period.** It extracts a clean **SPI port `Embedder`** and makes
+   the index **safe against a swap**. It keeps **Gemini as the only concrete impl** (plus,
+   optionally, a test `FakeEmbedder`). **It introduces NO second real embedder**
    (Mistral / OpenAI / local-Ollama).
 
-2. **Le choix d'un 2ᵉ embedder/indexeur se discute AVANT de l'implémenter.** Thomas a des idées ;
-   on en parle d'abord. ⛔ **Ne pas démarrer une 2ᵉ impl concrète sans cet échange.** Ce plan
-   prépare juste le terrain pour que ce soit ensuite un branchement local, sans toucher au harnais.
-   → Veille + critères du choix dans l'étude
-   [`etude-rag-local-criteres-et-veille.md`](etude-rag-local-criteres-et-veille.md) (gratuit,
-   privacy/local, Mac+PC, poste bureautique, offre tiered ; candidats bge-m3 / nomic / Qwen3 ;
-   décision **après mesure** via un eval-set local).
+2. **The choice of a 2nd embedder/indexer is discussed BEFORE implementing it.** Thomas has ideas;
+   we talk about it first. ⛔ **Do not start a 2nd concrete impl without that exchange.** This plan
+   just prepares the ground so that it's then a local plug-in, without touching the harness.
+   → Watch + selection criteria in the study
+   [`etude-rag-local-criteres-et-veille.md`](etude-rag-local-criteres-et-veille.md) (free,
+   privacy/local, Mac+PC, office machine, tiered offering; candidates bge-m3 / nomic / Qwen3;
+   decision **after measurement** via a local eval-set).
 
-3. **Swap d'embedder = confirm-gate en langage naturel, jamais de réindex dans le dos** (décision #1,
-   verrouillée — cf. §5 et l'addendum ADR 0006). Sur changement de modèle d'embedder, le cerveau
-   **explique à l'utilisateur** que sa config de recherche a changé et qu'il faut **ré-indexer les
-   documents** (eux ne bougent pas — juste ré-encodés), que **ça prend un peu de temps**, et **attend
-   une confirmation explicite**. Par défaut : **on ne réindexe rien.**
-
----
-
-## 1. Le constat technique qui commande tout le plan
-
-Les embeddings sont stockés en **BLOB `Float32` brut** ; la similarité lit `byteLength / 4`
-(`rag/src/lib/vector-store.ts` ~l.154). **L'index ne porte AUCUNE trace de qui l'a produit** :
-ni provider, ni modèle, ni **dimension**.
-
-Or chaque embedder a sa dimension propre (Gemini `gemini-embedding-001` ≈ 3072, `mistral-embed`
-= 1024, `nomic-embed-text` local = 768). Donc — **certitude mécanique, pas hypothèse** :
-
-> Le jour où on swappe l'embedder **sans réindexer**, `cosineSimilarity` compare un vecteur requête
-> neuf à des vecteurs d'une autre dimension → **résultats silencieusement faux** (ou crash). Rien ne
-> le détecte aujourd'hui.
-
-⇒ « Rendre l'embedder swappable » = **deux livrables indissociables** :
-1. **Le port `Embedder`** (extraire l'interface SPI — la partie facile).
-2. **L'estampille d'identité de l'index** (l'index sait quel embedder l'a rempli, et **refuse une
-   recherche périmée** → déclenche le confirm-gate — la partie qui rend le swap *sûr*).
-
-C'est l'esprit « au pire l'utilisateur ré-indexe » de l'ADR 0006 — sauf qu'aujourd'hui **rien ne
-déclenche ce ré-index**. C'est la dette cachée derrière la décision déjà actée.
+3. **Embedder swap = a natural-language confirm-gate, never a reindex behind your back** (decision #1,
+   locked — cf. §5 and the ADR 0006 addendum). On an embedder model change, the brain
+   **explains to the user** that its search config has changed and that the **documents must be
+   reindexed** (they don't move — just re-encoded), that **it takes a bit of time**, and **waits
+   for an explicit confirmation**. By default: **we reindex nothing.**
 
 ---
 
-## 2. Le port SPI `Embedder` (contrat interne, agnostique)
+## 1. The technical observation that drives the whole plan
 
-Une interface nommée, à l'altitude hexagonale (et non plus une fonction `embedOne` injectée
-seulement pour les tests, cf. `EmbedDeps` actuel) :
+The embeddings are stored as **raw `Float32` BLOB**; similarity reads `byteLength / 4`
+(`rag/src/lib/vector-store.ts` ~l.154). **The index carries NO trace of who produced it**:
+neither provider, nor model, nor **dimension**.
+
+Yet each embedder has its own dimension (Gemini `gemini-embedding-001` ≈ 3072, `mistral-embed`
+= 1024, `nomic-embed-text` local = 768). So — **mechanical certainty, not hypothesis**:
+
+> The day we swap the embedder **without reindexing**, `cosineSimilarity` compares a fresh query
+> vector to vectors of another dimension → **silently wrong results** (or a crash). Nothing
+> detects it today.
+
+⇒ "Make the embedder swappable" = **two inseparable deliverables**:
+1. **The `Embedder` port** (extract the SPI interface — the easy part).
+2. **The index identity stamp** (the index knows which embedder filled it, and **refuses a
+   stale search** → triggers the confirm-gate — the part that makes the swap *safe*).
+
+This is the "at worst the user reindexes" spirit of ADR 0006 — except that today **nothing
+triggers that reindex**. It's the hidden debt behind the already-decided decision.
+
+---
+
+## 2. The SPI port `Embedder` (internal, agnostic contract)
+
+A named interface, at the hexagonal altitude (and no longer an `embedOne` function injected
+only for the tests, cf. the current `EmbedDeps`):
 
 ```ts
 export interface Embedder {
-  readonly identity: EmbedderIdentity;                    // qui je suis (stampé dans l'index)
-  embedDocuments(texts: string[]): Promise<number[][]>;   // chemin indexation
-  embedQuery(text: string): Promise<number[]>;            // chemin recherche (prioritaire)
+  readonly identity: EmbedderIdentity;                    // who I am (stamped into the index)
+  embedDocuments(texts: string[]): Promise<number[][]>;   // indexing path
+  embedQuery(text: string): Promise<number[]>;            // search path (priority)
 }
 
 export interface EmbedderIdentity {
-  providerId: string;   // "gemini" | "fake" | … (futur : "mistral", "ollama")
+  providerId: string;   // "gemini" | "fake" | … (future: "mistral", "ollama")
   model: string;        // "gemini-embedding-001"
-  dimension: number;    // 3072 — la clé d'invalidation de l'index
+  dimension: number;    // 3072 — the index invalidation key
 }
 ```
 
-**Pourquoi deux méthodes (`embedDocuments` vs `embedQuery`) et pas un `embed()` générique ?** Le port
-capture l'**intention** de façon agnostique (« document à ranger » vs « question posée ») ; **chaque
-adaptateur traduit cette intention dans le dialecte natif de son fournisseur** — ou l'ignore si son
-backend n'a pas ce réglage. Les spécificités fournisseur vivent **dans** l'adaptateur, **jamais** dans
-la signature du port (cohérent avec l'« enveloppe vs lettre » de l'ADR 0007 §3).
+**Why two methods (`embedDocuments` vs `embedQuery`) and not a generic `embed()`?** The port
+captures the **intent** in an agnostic way ("document to file away" vs "question asked"); **each
+adapter translates that intent into its provider's native dialect** — or ignores it if its
+backend doesn't have that knob. Provider specifics live **inside** the adapter, **never** in
+the port signature (consistent with the "envelope vs letter" of ADR 0007 §3).
 
-| Méthode du port | Intention agnostique | Traduction par l'adaptateur |
+| Port method | Agnostic intent | Translation by the adapter |
 |---|---|---|
-| `embedDocuments(...)` | « j'encode des **documents à ranger** » | `GeminiEmbedder` → `taskType=RETRIEVAL_DOCUMENT` ; `OpenAiCompatibleEmbedder` → pas ce bouton, **ignore** |
-| `embedQuery(...)` | « j'encode une **question** » | `GeminiEmbedder` → `taskType=RETRIEVAL_QUERY` ; `OpenAiCompatibleEmbedder` → **ignore** |
+| `embedDocuments(...)` | "I'm encoding **documents to file away**" | `GeminiEmbedder` → `taskType=RETRIEVAL_DOCUMENT` ; `OpenAiCompatibleEmbedder` → no such button, **ignores** |
+| `embedQuery(...)` | "I'm encoding a **question**" | `GeminiEmbedder` → `taskType=RETRIEVAL_QUERY` ; `OpenAiCompatibleEmbedder` → **ignores** |
 
-- **`GeminiEmbedder implements Embedder`** = la seule impl concrète : tout le contenu actuel de
-  `rag/src/lib/embedder.ts` (client `GoogleGenAI`, `embedWithRetry`/retry 429, `EMBEDDING_MODEL`)
-  **déplacé derrière le port**, **sans changement de comportement** (les tests existants restent le
-  filet).
-- **Le garde-fou quota (`UsageTracker`) reste orthogonal** : c'est une préoccupation transverse
-  (anti-emballement), pas une spécificité Gemini. Il **décore** n'importe quel `Embedder`. Seuls ses
-  **défauts** sont Gemini-flavored (timezone `America/Los_Angeles`, message « minuit Pacifique ») →
-  **dette notée, hors scope** (cf. §7).
-- **`FakeEmbedder` (optionnel)** : impl déterministe (hash → vecteur, dimension fixe), sans réseau ni
-  clé. Sert en test ET prouve que le port tient. Ne PAS la confondre avec un « 2ᵉ embedder réel »
-  (décision §0.2).
-
----
-
-## 3. L'estampille d'identité de l'index (le livrable qui rend le swap *sûr*)
-
-- À l'**indexation** : écrire `identity` (provider/model/dimension) dans une **table `index_meta`**
-  de la DB (`vector-store.ts`).
-- À la **recherche** (et au reindex) : comparer l'identité de l'embedder courant à celle stampée.
-  - **Match** → on continue normalement.
-  - **Mismatch** (ou DB sans stamp = index d'avant ce plan) → **on ne renvoie PAS de résultats
-    faux** : on remonte un **signal « index périmé »** qui porte les **deux identités** (stampée vs
-    courante), pour déclencher le confirm-gate (§5).
-
-Cohérent avec la culture **fail-loud** du projet (cf. ADR 0005 révisé, plans `harden-run-node-*`) :
-mieux vaut un refus explicite et actionnable qu'une recherche qui ment en silence.
+- **`GeminiEmbedder implements Embedder`** = the only concrete impl: all the current content of
+  `rag/src/lib/embedder.ts` (`GoogleGenAI` client, `embedWithRetry`/retry 429, `EMBEDDING_MODEL`)
+  **moved behind the port**, **without behavior change** (the existing tests remain the
+  net).
+- **The quota guardrail (`UsageTracker`) stays orthogonal**: it's a cross-cutting concern
+  (anti-runaway), not a Gemini specific. It **decorates** any `Embedder`. Only its
+  **defaults** are Gemini-flavored (timezone `America/Los_Angeles`, "Pacific midnight" message) →
+  **noted debt, out of scope** (cf. §7).
+- **`FakeEmbedder` (optional)**: deterministic impl (hash → vector, fixed dimension), no network or
+  key. Serves in tests AND proves the port holds. Do NOT confuse it with a "2nd real embedder"
+  (decision §0.2).
 
 ---
 
-## 4. Le confirm-gate (où ça vit, et pourquoi le contrat MCP ne bouge pas)
+## 3. The index identity stamp (the deliverable that makes the swap *safe*)
 
-Le serveur MCP ne « demande » pas tout seul — il **retourne du texte** que Claude relaie. Découpage :
+- At **indexing**: write `identity` (provider/model/dimension) into an **`index_meta` table**
+  of the DB (`vector-store.ts`).
+- At **search** (and at reindex): compare the current embedder's identity to the stamped one.
+  - **Match** → continue normally.
+  - **Mismatch** (or DB with no stamp = an index from before this plan) → **do NOT return
+    wrong results**: surface a **"stale index" signal** carrying **both identities** (stamped vs
+    current), to trigger the confirm-gate (§5).
 
-| Acteur | Rôle |
+Consistent with the project's **fail-loud** culture (cf. revised ADR 0005, plans `harden-run-node-*`):
+better an explicit, actionable refusal than a search that silently lies.
+
+---
+
+## 4. The confirm-gate (where it lives, and why the MCP contract doesn't move)
+
+The MCP server doesn't "ask" on its own — it **returns text** that Claude relays. Breakdown:
+
+| Actor | Role |
 |---|---|
-| **Garde-d'identité** (hexagone RAG) | Détecte le mismatch au moment d'une recherche. |
-| **`search_vault`** (`src/tools/search-vault.ts`, `src/index.ts:50`) | Au lieu de résultats faux, **retourne le signal « index périmé »** (les deux identités) — actionnable, traduisible en langage naturel. |
-| **Claude** (couche conversationnelle) | Relaie le message ci-dessous **et attend la réponse de l'utilisateur**. |
-| **`reindex`** (`src/tools/reindex.ts` → `index-manager.reindex(force)`) | L'**action confirmée** : appelée **seulement après** le « oui ». |
+| **Identity guard** (RAG hexagon) | Detects the mismatch at search time. |
+| **`search_vault`** (`src/tools/search-vault.ts`, `src/index.ts:50`) | Instead of wrong results, **returns the "stale index" signal** (both identities) — actionable, translatable into natural language. |
+| **Claude** (conversational layer) | Relays the message below **and waits for the user's reply**. |
+| **`reindex`** (`src/tools/reindex.ts` → `index-manager.reindex(force)`) | The **confirmed action**: called **only after** the "yes". |
 
-**Message-type** (la prose nomme les modèles **dynamiquement** via l'`identity` — rien n'est codé en
-dur « Gemini ») :
+**Message template** (the prose names the models **dynamically** via the `identity` — nothing is
+hardcoded as "Gemini"):
 
-> « Mes capacités de recherche rapide et sémantique reposent sur un **indexeur/embedder** ; or **sa
-> configuration a changé** (avant : `<model stampé>`, maintenant : `<model courant>`). Pour continuer
-> à fonctionner, il me faut **ré-indexer tes documents** — eux ne bougent pas, c'est juste qu'ils
-> doivent être ré-encodés avec le nouveau modèle. **Ça peut prendre un peu de temps.** Tu veux que je
-> le fasse maintenant ? »
+> "My fast, semantic search capabilities rely on an **indexer/embedder**; yet **its
+> configuration has changed** (before: `<stamped model>`, now: `<current model>`). To keep
+> working, I need to **reindex your documents** — they don't move, it's just that they
+> have to be re-encoded with the new model. **It may take a bit of time.** Do you want me to
+> do it now?"
 
-→ **par défaut on ne réindexe RIEN** tant que l'utilisateur n'a pas confirmé (« on ne va pas indexer
-pour rien »).
+→ **by default we reindex NOTHING** until the user has confirmed ("we won't index
+for nothing").
 
-**Conséquence heureuse : aucune nouvelle surface MCP à inventer.** On réutilise `search_vault`
-(retour enrichi) + `reindex` (déjà là). Le **port MCP reste le contrat stable** de l'ADR 0006 —
-zéro breaking change, zéro provider-leak dans les **schémas** d'outils.
-
----
-
-## 5. Carte de refactor — séquence TDD (outside-in, baby-steps)
-
-Un seul test à la fois, **red → green → refactor complet** à chaque pas. Ordre pressenti (le risque
-le plus grave d'abord) :
-
-1. **Estampille — round-trip** : `index_meta` écrit l'identité à l'indexation, relue ensuite. *Tire
-   la table + l'accès.*
-2. **Estampille — garde d'identité** : recherche avec identité divergente (ou absente) → **signal
-   « périmé » explicite** porteur des deux identités, **pas** de résultats. *Tire le garde dans le
-   chemin `search_vault`.*
-3. **Extraire le port `Embedder`** : introduire l'interface ; faire implémenter `GeminiEmbedder` par
-   le code existant. Les tests actuels (`rag/src/lib/embedder.test.ts`, qui stubbent déjà via
-   `EmbedDeps`/`embedOne`) restent le filet — idéalement reformulés autour du port. **Comportement
-   inchangé.**
-4. **Injecter le port chez ses 2 consommateurs** : `index-manager` (indexation → `embedDocuments` ;
-   c'est lui qui stampe l'identité) et `search-vault`/`index.ts:50` (recherche → `embedQuery` ; c'est
-   lui qui consulte le garde).
-5. **Un seul point de sélection** : `createEmbedder()` dans `rag/src/lib/config.ts` retourne
-   `GeminiEmbedder`. Le futur `EMBEDDING_PROVIDER` se branchera **là**, un seul `switch`, **sans
-   toucher au harnais ni au port MCP**. (⛔ on n'ajoute pas le `switch` multi-provider maintenant —
-   juste le point d'entrée unique.)
-6. *(optionnel)* `FakeEmbedder` déterministe + son test.
-
-Après chaque pas vert : `npm test` (ou la commande de test du dossier `rag/`) doit passer ; commit
-conventionnel.
+**Happy consequence: no new MCP surface to invent.** We reuse `search_vault`
+(enriched return) + `reindex` (already there). The **MCP port remains the stable contract** of
+ADR 0006 — zero breaking change, zero provider-leak in the tool **schemas**.
 
 ---
 
-## 6. Fichiers concernés
+## 5. Refactor map — TDD sequence (outside-in, baby-steps)
 
-- `rag/src/lib/embedder.ts` — devient le port `Embedder` + `GeminiEmbedder` (extraction).
-- `rag/src/lib/config.ts` — `EMBEDDING_MODEL`, `readGeminiKey` ; **ajouter** `createEmbedder()` (point
-  de sélection unique).
-- `rag/src/lib/vector-store.ts` — **ajouter** la table `index_meta` (stamp d'identité) + accès.
-- `rag/src/lib/index-manager.ts` — chemin indexation (`embed?: typeof embedTexts` → injecter le port) ;
-  **stampe** l'identité.
-- `rag/src/tools/search-vault.ts` + `rag/src/index.ts` (l.50) — **consultent le garde** avant de
-  chercher ; renvoient le signal « périmé » le cas échéant.
-- `rag/src/tools/reindex.ts` — inchangé sur le principe : reste l'**action confirmée** (vérifier juste
-  qu'un reindex `force` ré-stampe la nouvelle identité).
-- `rag/src/lib/embedder.test.ts` — reformuler autour du port (filet anti-régression).
+One test at a time, **red → green → full refactor** at each step. Tentative order (the
+most serious risk first):
+
+1. **Stamp — round-trip**: `index_meta` writes the identity at indexing, read back afterward. *Drives
+   the table + the access.*
+2. **Stamp — identity guard**: search with a divergent (or absent) identity → **explicit
+   "stale" signal** carrying both identities, **no** results. *Drives the guard in the
+   `search_vault` path.*
+3. **Extract the `Embedder` port**: introduce the interface; have `GeminiEmbedder` implemented by
+   the existing code. The current tests (`rag/src/lib/embedder.test.ts`, which already stub via
+   `EmbedDeps`/`embedOne`) remain the net — ideally reformulated around the port. **Behavior
+   unchanged.**
+4. **Inject the port into its 2 consumers**: `index-manager` (indexing → `embedDocuments`;
+   it's the one that stamps the identity) and `search-vault`/`index.ts:50` (search → `embedQuery`; it's
+   the one that consults the guard).
+5. **A single selection point**: `createEmbedder()` in `rag/src/lib/config.ts` returns
+   `GeminiEmbedder`. The future `EMBEDDING_PROVIDER` will plug in **there**, a single `switch`, **without
+   touching the harness or the MCP port**. (⛔ we don't add the multi-provider `switch` now —
+   just the single entry point.)
+6. *(optional)* deterministic `FakeEmbedder` + its test.
+
+After each green step: `npm test` (or the `rag/` folder's test command) must pass; conventional
+commit.
 
 ---
 
-## 7. Hors scope (fidèle à « juste abstraire »)
+## 6. Affected files
 
-- ❌ **Aucun 2ᵉ embedder réel** (Mistral / OpenAI / local-Ollama) — **discussion préalable avec
-  Thomas** (décision §0.2).
-- ❌ Pas de `switch` multi-provider ni de catalogue dans `createEmbedder()` — juste le point d'entrée.
-- ❌ Pas de refonte de l'onboarding (`installer.mjs`, `scripts/verify-rag.mjs`, `scripts/lib/gemini-key.mjs`,
-  `.env.example`, amorce `CLAUDE.md` étape 4) : ils supposent une **clé Gemini**. Un embedder local
-  *sans clé* casserait ce flux → **à traiter le jour où une vraie 2ᵉ impl arrive**, pas ici.
-- ❌ Dé-Gemini-iser les **défauts** du `UsageTracker` (timezone Pacifique, libellés « minuit
-  Pacifique ») : dette notée, pas faite ici.
+- `rag/src/lib/embedder.ts` — becomes the `Embedder` port + `GeminiEmbedder` (extraction).
+- `rag/src/lib/config.ts` — `EMBEDDING_MODEL`, `readGeminiKey`; **add** `createEmbedder()` (single
+  selection point).
+- `rag/src/lib/vector-store.ts` — **add** the `index_meta` table (identity stamp) + access.
+- `rag/src/lib/index-manager.ts` — indexing path (`embed?: typeof embedTexts` → inject the port);
+  **stamps** the identity.
+- `rag/src/tools/search-vault.ts` + `rag/src/index.ts` (l.50) — **consult the guard** before
+  searching; return the "stale" signal where applicable.
+- `rag/src/tools/reindex.ts` — unchanged in principle: remains the **confirmed action** (just verify
+  that a `force` reindex re-stamps the new identity).
+- `rag/src/lib/embedder.test.ts` — reformulate around the port (anti-regression net).
 
 ---
 
-## 8. Provider-leak du contrat MCP — déjà propre ✅
+## 7. Out of scope (faithful to "just abstract")
 
-L'ADR 0006 citait `vault_stats` « parle Quota Gemini ». **Vérifié le 2026-06-08 :** `rag/src/tools/vault-stats.ts`
-ne sort que des termes **agnostiques** (Documents / Chunks / Par type), **zéro** quota Gemini. Le leak
-résiduel est **interne au SPI** (commentaires, message d'erreur `DailyCapExceededError`,
-`"google-rate-limit"` dans `index-manager.ts`), **pas dans les schémas d'outils MCP**. Le contrat
-public exposé est déjà propre — rien à corriger côté port dans ce plan.
+- ❌ **No 2nd real embedder** (Mistral / OpenAI / local-Ollama) — **prior discussion with
+  Thomas** (decision §0.2).
+- ❌ No multi-provider `switch` nor catalog in `createEmbedder()` — just the entry point.
+- ❌ No rework of the onboarding (`installer.mjs`, `scripts/verify-rag.mjs`, `scripts/lib/gemini-key.mjs`,
+  `.env.example`, `CLAUDE.md` stub step 4): they assume a **Gemini key**. A local embedder
+  *without a key* would break this flow → **to be handled the day a real 2nd impl arrives**, not here.
+- ❌ De-Gemini-ize the **defaults** of the `UsageTracker` (Pacific timezone, "Pacific
+  midnight" labels): noted debt, not done here.
+
+---
+
+## 8. MCP contract provider-leak — already clean ✅
+
+ADR 0006 noted that `vault_stats` "speaks Gemini Quota". **Verified 2026-06-08:** `rag/src/tools/vault-stats.ts`
+emits only **agnostic** terms (Documents / Chunks / By type), **zero** Gemini quota. The
+residual leak is **internal to the SPI** (comments, the `DailyCapExceededError` error message,
+`"google-rate-limit"` in `index-manager.ts`), **not in the MCP tool schemas**. The
+public contract exposed is already clean — nothing to fix on the port side in this plan.

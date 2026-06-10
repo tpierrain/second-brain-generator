@@ -1,142 +1,136 @@
-# ADR 0008 — LightRAG / graph-RAG : différé (intéressant, mais pas maintenant)
+# ADR 0008 — LightRAG / graph-RAG: deferred (interesting, but not now)
 
-- **STATUT :** ACTÉ (2026-06-08) pour la **direction** : on **ne branche pas** LightRAG (ni un
-  graph-RAG) dans le chantier en cours ; on le **réserve à plus tard**, conditionné à une mesure.
-  C'est une décision de **séquencement et de périmètre**, pas un rejet définitif.
-- **Lié :**
+- **STATUS:** ACCEPTED (2026-06-08) for the **direction**: we **do not wire in** LightRAG (nor a
+  graph-RAG) in the current effort; we **reserve it for later**, conditioned on a measurement. This
+  is a **sequencing and scope** decision, not a definitive rejection.
+- **Related:**
   [`0006-le-mcp-du-rag-est-un-contrat-stable.md`](0006-le-mcp-du-rag-est-un-contrat-stable.md)
-  (le contrat MCP reste stable ; un graph-RAG vivrait *derrière* ce contrat, pas à la place),
+  (the MCP contract stays stable; a graph-RAG would live *behind* that contract, not in its place),
   [`0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md`](0007-trois-adaptateurs-embedder-et-echelle-confidentialite.md)
-  (le chantier en cours porte sur l'**embedder** swappable — un autre étage que celui de LightRAG),
-  [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md) (le LLM qui *répond*
-  reste Claude → borne déjà la promesse de privacy ; LightRAG ajouterait un LLM **à l'indexation**).
-- **Plan associé :** [`../plans/rag-embedder-plan-action.md`](../plans/rag-embedder-plan-action.md)
-  (Étape 7 « profil grosse machine », **conditionnelle**, où cette piste atterrit) et l'étude
+  (the current effort is about the swappable **embedder** — a different layer from LightRAG's),
+  [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md) (the LLM that *answers*
+  stays Claude → already bounds the privacy promise; LightRAG would add an LLM **at indexing**).
+- **Associated plan:** [`../plans/rag-embedder-plan-action.md`](../plans/rag-embedder-plan-action.md)
+  (Step 7 "big-machine profile", **conditional**, where this lead lands) and the study
   [`../plans/etude-rag-local-criteres-et-veille.md`](../plans/etude-rag-local-criteres-et-veille.md)
-  §4 (voie graphe ; E2GraphRAG).
+  §4 (graph path; E2GraphRAG).
 
-## Contexte
+## Context
 
-Thomas a demandé d'évaluer **LightRAG** (`HKUDS/LightRAG`, MIT, ~36k stars, Python `lightrag-hku`,
-papier EMNLP 2025) pour le second cerveau. C'est un **moteur de RAG à base de graphe de
-connaissances** : à l'indexation, **un LLM lit chaque chunk** pour en extraire **entités +
-relations + mots-clés** et bâtir un knowledge graph, qu'il combine ensuite aux embeddings à la
-recherche (récupération « dual-level » : entités précises + thèmes larges, + voisins à un saut).
-Sa promesse explicite : approcher la qualité **multi-hop** de Microsoft GraphRAG pour une
-**fraction** de son coût (il supprime les « community reports » et fait des mises à jour
-incrémentales). Utilisable en **lib ou en serveur**, avec stores fichier par défaut (KV + vectoriel
-+ graphe + doc-status) ou backends prod (Postgres / Neo4j / Milvus / Qdrant…). Embedder **pluggable**
-(OpenAI, Ollama, HuggingFace, Gemini…). **Peut tourner 100 % local** (Ollama pour le LLM *et* les
-embeddings ; guide « offline » documenté).
+Thomas asked to evaluate **LightRAG** (`HKUDS/LightRAG`, MIT, ~36k stars, Python `lightrag-hku`,
+EMNLP 2025 paper) for the second brain. It's a **knowledge-graph-based RAG engine**: at indexing,
+**an LLM reads each chunk** to extract **entities + relations + keywords** and build a knowledge
+graph, which it then combines with embeddings at search time ("dual-level" retrieval: precise
+entities + broad themes, + one-hop neighbors). Its explicit promise: approach the **multi-hop**
+quality of Microsoft GraphRAG at a **fraction** of its cost (it drops the "community reports" and
+does incremental updates). Usable as a **lib or a server**, with file stores by default (KV + vector
++ graph + doc-status) or prod backends (Postgres / Neo4j / Milvus / Qdrant…). **Pluggable** embedder
+(OpenAI, Ollama, HuggingFace, Gemini…). **Can run 100% local** (Ollama for the LLM *and* the
+embeddings; documented "offline" guide).
 
-La question réelle n'est pas « LightRAG est-il bon ? » (il l'est dans son créneau) mais
-**« est-ce que ça entre dans CE produit, MAINTENANT, vu nos invariants ? »**.
+The real question isn't "is LightRAG good?" (it is, in its niche) but **"does it fit THIS product,
+NOW, given our invariants?"**.
 
-## Décision
+## Decision
 
-**On ne branche pas LightRAG (ni un graph-RAG) dans le chantier embedder. On le diffère** à
-l'Étape 7 (« profil grosse machine », opt-in, conditionnelle), **à n'ouvrir que si la mesure
-(eval-set, Étapes 2/4) révèle un plafond de qualité** que le RAG dense + un éventuel reranker
-(Étape 6) ne lèvent pas — et même là, **E2GraphRAG reste préféré** à LightRAG sur machine modeste
-(voir Alternatives). Les raisons :
+**We do not wire in LightRAG (nor a graph-RAG) in the embedder effort. We defer it** to Step 7
+("big-machine profile", opt-in, conditional), **to open only if the measurement (eval-set, Steps
+2/4) reveals a quality ceiling** that dense RAG + a possible reranker (Step 6) don't lift — and even
+there, **E2GraphRAG remains preferred** over LightRAG on a modest machine (see Alternatives). The
+reasons:
 
-### 1. LightRAG n'est pas un *embedder* — c'est un autre paradigme de retrieval
+### 1. LightRAG isn't an *embedder* — it's a different retrieval paradigm
 
-Tout le chantier en cours (ADR 0007 + plan d'action) rend l'**embedder** swappable **derrière un
-contrat MCP figé** (ADR 0006). LightRAG ne se branche pas comme un adaptateur d'embedder : il
-**remplace le moteur de recherche entier** et **réutilise zéro** de notre SPI `Embedder`. C'est
-**orthogonal** au chantier — pas une brique de plus dedans, mais un autre étage.
+The entire current effort (ADR 0007 + action plan) makes the **embedder** swappable **behind a
+frozen MCP contract** (ADR 0006). LightRAG doesn't plug in like an embedder adapter: it **replaces
+the entire search engine** and **reuses zero** of our `Embedder` SPI. It's **orthogonal** to the
+effort — not one more brick inside it, but another layer.
 
-> **⚠️ Lever l'ambiguïté : LightRAG ≠ embedder ; il en *utilise* un, pluggable comme le nôtre.**
-> Au **niveau de l'embedder**, ce n'est **pas** un autre paradigme. À l'intérieur, LightRAG
-> appelle un **embedder** qui joue **exactement le même rôle** que le nôtre (un texte entre, un
-> vecteur sort) et qui est **pluggable de la même façon** (OpenAI, Ollama, Gemini, HuggingFace…) :
-> notre `OpenAiCompatibleEmbedder` (ADR 0007) s'y brancherait **à l'identique**. Le paradigme
-> « embedder swappable » est donc **commun aux deux**. Ce qui diffère n'est pas l'embedder mais ce
-> qu'il y a **autour** :
+> **⚠️ Removing the ambiguity: LightRAG ≠ embedder; it *uses* one, pluggable like ours.**
+> At the **embedder level**, it's **not** another paradigm. Inside, LightRAG calls an **embedder**
+> that plays **exactly the same role** as ours (text in, vector out) and that is **pluggable the
+> same way** (OpenAI, Ollama, Gemini, HuggingFace…): our `OpenAiCompatibleEmbedder` (ADR 0007) would
+> plug in there **identically**. The "swappable embedder" paradigm is therefore **common to both**.
+> What differs isn't the embedder but what sits **around** it:
 >
 > ```
->         RAG dense (le nôtre)                    LightRAG
+>         Dense RAG (ours)                         LightRAG
 >    ┌────────────────────────┐        ┌──────────────────────────────────┐
->    │ chunk → EMBEDDER → vec  │        │ chunk → EMBEDDER → vec            │ ← même brique
+>    │ chunk → EMBEDDER → vec  │        │ chunk → EMBEDDER → vec            │ ← same brick
 >    │                        │        │   +                              │
->    │                        │        │ chunk → LLM → entités/relations   │ ← LA couche en plus
->    │                        │        │            → graphe + vecteurs    │
+>    │                        │        │ chunk → LLM → entities/relations  │ ← THE extra layer
+>    │                        │        │            → graph + vectors      │
 >    └────────────────────────┘        └──────────────────────────────────┘
 > ```
 >
-> Deux nuances : (a) LightRAG **embedde *plus de choses*** — pas seulement les chunks mais aussi
-> les **entités** et **relations** extraites — mais c'est le *même* embedder appelé plus souvent,
-> pas un embedder d'une autre nature ; (b) le vrai « autre paradigme », c'est l'**étape
-> LLM-par-chunk** qui fabrique le graphe (cf. §2), absente de notre RAG dense.
+> Two nuances: (a) LightRAG **embeds *more things*** — not just the chunks but also the extracted
+> **entities** and **relations** — but it's the *same* embedder called more often, not an embedder
+> of another nature; (b) the real "other paradigm" is the **LLM-per-chunk step** that builds the
+> graph (cf. §2), absent from our dense RAG.
 >
-> **Conséquence pratique :** le travail embedder (ADR 0007 + plan) **resterait valable et
-> réutilisable** même si on adoptait LightRAG un jour — on ne jetterait rien, on **emboîterait une
-> couche au-dessus**. C'est précisément le sens de « orthogonal » ici.
+> **Practical consequence:** the embedder work (ADR 0007 + plan) **would stay valid and reusable**
+> even if we adopted LightRAG one day — we'd throw nothing away, we'd **slot a layer on top**. That's
+> precisely the meaning of "orthogonal" here.
 
-| | RAG actuel (dense) | LightRAG (graphe) |
+| | Current RAG (dense) | LightRAG (graph) |
 |---|---|---|
-| Indexation | embed-and-store, **zéro LLM** | **un appel LLM par chunk** (extraction entités/relations) |
-| Stores | SQLite (vecteurs) | KV + vectoriel + **graphe** + doc-status |
-| Ce qu'on swap | l'**embedder**, derrière le contrat MCP | **tout le moteur** |
-| Coût d'indexation | bas | moyen (taxe LLM par chunk) |
-| Multi-hop / synthèse trans-docs | faible | fort |
-| Complexité opérationnelle | basse | moyenne (graphe + vecteurs + KV) |
+| Indexing | embed-and-store, **zero LLM** | **one LLM call per chunk** (entity/relation extraction) |
+| Stores | SQLite (vectors) | KV + vector + **graph** + doc-status |
+| What we swap | the **embedder**, behind the MCP contract | **the whole engine** |
+| Indexing cost | low | medium (per-chunk LLM tax) |
+| Multi-hop / cross-doc synthesis | weak | strong |
+| Operational complexity | low | medium (graph + vectors + KV) |
 
-### 2. Le « LLM par chunk » heurte de plein fouet notre modèle de coût ET de privacy
+### 2. The "LLM per chunk" hits our cost AND privacy model head-on
 
-Aujourd'hui notre indexation **ne sort rien vers un LLM** (seul l'embedder parle éventuellement au
-cloud ; le local **ne sort pas** — niveau 1 de l'échelle de confidentialité de l'ADR 0007).
-LightRAG, lui, **fait passer tout le vault dans un LLM à l'indexation** :
+Today our indexing **sends nothing to an LLM** (only the embedder possibly talks to the cloud; local
+**doesn't leave** — level 1 of ADR 0007's privacy scale). LightRAG, by contrast, **runs the whole
+vault through an LLM at indexing**:
 
-- **en cloud** → coût réel **+ données qui sortent** (et plus seulement « pas d'entraînement » : du
-  contenu, pas juste des vecteurs) ;
-- **en local** → il faut un **LLM local costaud ET bon en extraction d'entités** (pas le petit
-  EmbeddingGemma ~0,3 Go) ; or l'extraction est exigeante, donc un petit modèle produit un **graphe
-  pauvre**.
+- **in the cloud** → real cost **+ data leaving** (and no longer just "no training": content, not
+  just vectors);
+- **locally** → you need a **beefy local LLM that's good at entity extraction** (not the little
+  EmbeddingGemma ~0.3 GB); yet extraction is demanding, so a small model produces a **poor graph**.
 
-Dans les deux cas, ça **pulvérise la cible « Mac nu d'Achille »** (non-dev, privacy max, friction
-minimale) qui guide ADR 0007 et la Décision D1.
+In both cases, it **pulverizes the "Achille's bare Mac" target** (non-dev, max privacy, minimal
+friction) that guides ADR 0007 and Decision D1.
 
-### 3. Le gain n'est démontré **que là où nous ne sommes pas (encore)**
+### 3. The gain is only demonstrated **where we are not (yet)**
 
-Les chiffres flatteurs de LightRAG (60-85 % de « win » vs NaiveRAG/GraphRAG ; ~610 000 tokens →
-< 100 tokens à la récupération vs GraphRAG) viennent du **papier lui-même**, sur des corpus
-**légal / médical / finance, en anglais, très structurés en entités/relations**. Pour un **second
-cerveau perso FR** (notes, transcripts, mails), le bénéfice multi-hop est **plausible mais non
-mesuré**. L'adopter sur la foi de ces benchmarks violerait notre règle **« on mesure avant de
-choisir »** (eval-set, plan d'action Étapes 2/4).
+LightRAG's flattering numbers (60–85% "win" vs NaiveRAG/GraphRAG; ~610,000 tokens → < 100 tokens at
+retrieval vs GraphRAG) come from the **paper itself**, on **legal / medical / finance corpora, in
+English, heavily structured into entities/relations**. For a **personal FR second brain** (notes,
+transcripts, emails), the multi-hop benefit is **plausible but not measured**. Adopting it on the
+faith of those benchmarks would violate our rule **"we measure before choosing"** (eval-set, action
+plan Steps 2/4).
 
-### 4. Le vrai déclencheur est un **usage**, pas une techno
+### 4. The real trigger is a **use**, not a tech
 
-Le graphe ne se rentabilise que si les questions au cerveau sont **multi-hop / synthèse
-trans-documents** (« comment X est-il relié à Y via Z », « fais-moi la synthèse de tout ce qui
-touche à… »). Si l'usage réel est surtout du **lookup factuel** (« retrouve ce que j'ai noté sur
-X »), un seul chunk pertinent suffit et le graphe n'est que de la **complexité non rentabilisée**.
-**Décision : on attend d'avoir l'eval-set ET un signal d'usage** avant d'investir.
+The graph only pays off if questions to the brain are **multi-hop / cross-document synthesis** ("how
+is X related to Y via Z", "give me the synthesis of everything touching…"). If the real use is mostly
+**factual lookup** ("find what I noted about X"), a single relevant chunk is enough and the graph is
+only **unrealized complexity**. **Decision: we wait until we have the eval-set AND a usage signal**
+before investing.
 
-## Conséquences
+## Consequences
 
-- **Le chantier embedder n'est pas perturbé** : on finit port + 3 adaptateurs + eval-set + mesure
-  (Étapes 1-4) sans détour graphe.
-- **La piste est tracée, pas perdue** : elle vit à l'Étape 7, **conditionnée à un plafond mesuré**,
-  et se départagera **sur notre propre eval-set FR** (pas sur les benchmarks du papier), face à
-  E2GraphRAG.
-- **Si on l'ouvre un jour**, l'invariant tient : un graph-RAG s'intègrerait **derrière le contrat
-  MCP stable** (ADR 0006), pas en cassant la surface exposée au harnais utilisateur. Et il
-  s'assumerait en **profil grosse machine + LLM local fort**, **opt-in**, **jamais le défaut**.
-- **Coût d'avoir tranché ainsi** : on renonce (pour l'instant) à un éventuel gain multi-hop ; on
-  l'assume tant qu'aucune mesure ni aucun usage ne le réclame.
+- **The embedder effort isn't disrupted**: we finish port + 3 adapters + eval-set + measurement
+  (Steps 1-4) without a graph detour.
+- **The lead is mapped, not lost**: it lives at Step 7, **conditioned on a measured ceiling**, and
+  will be decided **on our own FR eval-set** (not on the paper's benchmarks), against E2GraphRAG.
+- **If we ever open it**, the invariant holds: a graph-RAG would integrate **behind the stable MCP
+  contract** (ADR 0006), not by breaking the surface exposed to the user harness. And it would own
+  being a **big-machine profile + strong local LLM**, **opt-in**, **never the default**.
+- **Cost of deciding this way**: we give up (for now) a possible multi-hop gain; we accept that as
+  long as no measurement and no usage call for it.
 
-## Alternatives écartées
+## Rejected alternatives
 
-- **Brancher LightRAG maintenant** — change le paradigme, ajoute un LLM à l'indexation (coût +
-  fuite de contenu), casse la cible non-dev/privacy, et n'est pas mesuré sur notre corpus FR.
-  Différé (pas rejeté).
-- **LightRAG comme voie graphe par défaut le jour venu** — sur machine modeste, **E2GraphRAG** est
-  préféré : il vise le bénéfice graphe **sans la taxe « LLM par chunk »** (étude §4). LightRAG
-  resterait le choix **seulement** sous profil machine costaude + LLM local fort, après mesure.
-- **Microsoft GraphRAG** — encore plus lourd (extraction + community reports, mises à jour
-  coûteuses) ; hors-cible pour un second cerveau perso.
-</content>
-</invoke>
+- **Wiring in LightRAG now** — changes the paradigm, adds an LLM at indexing (cost + content leak),
+  breaks the non-dev/privacy target, and isn't measured on our FR corpus. Deferred (not rejected).
+- **LightRAG as the default graph path when the day comes** — on a modest machine, **E2GraphRAG** is
+  preferred: it targets the graph benefit **without the "LLM per chunk" tax** (study §4). LightRAG
+  would remain the choice **only** under a beefy-machine + strong-local-LLM profile, after
+  measurement.
+- **Microsoft GraphRAG** — even heavier (extraction + community reports, costly updates); off-target
+  for a personal second brain.

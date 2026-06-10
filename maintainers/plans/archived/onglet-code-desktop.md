@@ -1,139 +1,140 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUT : ✅ FAIT (révisé 2026-06-06) — stratégie renversée : échec bruyant.  -->
+<!-- STATUS: ✅ DONE (revised 2026-06-06) — strategy reversed: loud failure.       -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
-# Plan — fiabiliser le second cerveau depuis l'app desktop Claude (onglet Code), cible managers non-devs
+# Plan — make the second brain reliable from the Claude desktop app (Code tab), targeting non-dev managers
 
-> **STATUT : ✅ FAIT** (révisé le 2026-06-06). Ce plan a été **renversé** par rapport à sa première
-> version (gate d'install déterministe). La nouvelle stratégie — **confiance à Claude pour installer,
-> échec BRUYANT pour attraper tout état cassé** — a été exécutée (CHANGE 6 + post-flight sourcé).
-> La traduction EN (`translate-to-english.md`) reste repoussée tout à la fin.
+> **STATUS: ✅ DONE** (revised 2026-06-06). This plan was **reversed** relative to its first
+> version (deterministic install gate). The new strategy — **trust Claude to install,
+> LOUD failure to catch any broken state** — has been executed (CHANGE 6 + sourced post-flight).
+> The EN translation (`translate-to-english.md`) remains deferred to the very end.
 >
-> **Décisions d'archi associées :** [`../../decisions/0005-support-onglet-code-desktop.md`](../../decisions/0005-support-onglet-code-desktop.md)
-> (révisée 2026-06-06 — renversement D1/D4) et
+> **Associated architecture decisions:** [`../../decisions/0005-support-onglet-code-desktop.md`](../../decisions/0005-support-onglet-code-desktop.md)
+> (revised 2026-06-06 — reversal of D1/D4) and
 > [`../../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md`](../../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md)
-> (contrat MCP stable, inchangé).
+> (stable MCP contract, unchanged).
 
 ---
 
-## 0. Objectif & périmètre
+## 0. Objective & scope
 
-Permettre à des **managers non-devs** (engineering managers, product managers, responsables)
-d'**installer et d'utiliser** un second cerveau depuis l'**onglet « Code » de l'app desktop Claude**,
-de façon **fiable** — pas seulement depuis le terminal (Claude Code CLI).
+Enable **non-dev managers** (engineering managers, product managers, leads)
+to **install and use** a second brain from the **"Code" tab of the Claude desktop app**,
+**reliably** — not only from the terminal (Claude Code CLI).
 
-**Hors périmètre :** le cross-IA (autre client que Claude) — cf. ADR 0004. L'onglet Code **est**
-Claude Code sur une autre surface.
+**Out of scope:** cross-AI (a client other than Claude) — cf. ADR 0004. The Code tab **is**
+Claude Code on another surface.
 
-## 1. Les deux pannes observées (le « pourquoi »)
+## 1. The two observed failures (the "why")
 
-- **Panne A — toolchain absente → Claude improvise des installs → état « Frankenstein ».**
-  Poste de **Richard** (non-dev), puis tentative sur le Mac nu d'**Achille** : machine sans node/npm/npx.
-  **Hypothèse NON PROUVÉE** : sur Achille, on a **coupé avant le verdict** — on ne sait pas si Claude
-  aurait su installer proprement la toolchain depuis l'onglet Code. On a longtemps supposé que non ;
-  ce n'est pas démontré.
-- **Panne B — RAG down → réponse depuis Internet, silencieusement.** Chez Richard, le RAG n'a pas
-  démarré → la 1re question de démo (Star Wars) a répondu **depuis Internet** au lieu du vault
-  (bypass silencieux). **Panne B est PROUVÉE et c'est le danger réel** : un cerveau inutile **mais qui
-  semble marcher** est pire qu'un cerveau franchement en panne.
+- **Failure A — toolchain absent → Claude improvises installs → "Frankenstein" state.**
+  **Richard**'s machine (non-dev), then an attempt on **Achille**'s bare Mac: a machine without node/npm/npx.
+  **UNPROVEN hypothesis**: on Achille, we **cut off before the verdict** — we don't know whether Claude
+  would have been able to install the toolchain cleanly from the Code tab. We long assumed not;
+  that's not demonstrated.
+- **Failure B — RAG down → answer from the Internet, silently.** At Richard's, the RAG didn't
+  start → the 1st demo question (Star Wars) answered **from the Internet** instead of the vault
+  (silent bypass). **Failure B is PROVEN and that's the real danger**: a useless brain **that
+  seems to work** is worse than a brain that's plainly broken.
 
-### Findings terrain — Mac nu d'Achille (onglet Code)
-- `git` présent en `/usr/bin/git` (Xcode CLT) ; **node / npm / npx absents**.
-- PATH de l'onglet Code mesuré = **`/usr/local/bin`** (+ chemins système), **mais ni `/opt/homebrew/bin`
-  ni les shims nvm/asdf**. → un Node installé via Homebrew Apple Silicon ou via nvm **ne serait pas vu**.
-- **Agency de Claude non prouvée** : session coupée avant de voir s'il savait s'en sortir seul.
+### Field findings — Achille's bare Mac (Code tab)
+- `git` present at `/usr/bin/git` (Xcode CLT); **node / npm / npx absent**.
+- PATH of the Code tab measured = **`/usr/local/bin`** (+ system paths), **but neither `/opt/homebrew/bin`
+  nor the nvm/asdf shims**. → a Node installed via Homebrew Apple Silicon or via nvm **would not be seen**.
+- **Claude's agency not proven**: session cut off before seeing whether it could manage on its own.
 
-## 2. Décision (Thomas, 2026-06-06) — renversement
+## 2. Decision (Thomas, 2026-06-06) — reversal
 
-> Détail et raisonnement complet : **ADR 0005, section « Révision 2026-06-06 »**.
+> Full detail and reasoning: **ADR 0005, section "Revision 2026-06-06"**.
 
-- **Confiance à Claude pour installer** (UX de l'ère Claude). **Pas de gate d'install.** On abandonne
-  l'idée d'un pré-vol déterministe qui *prévient* (panne A non prouvée — on ne durcit pas contre un
-  risque non démontré).
-- **Seul filet : rendre tout état cassé BRUYANT** (panne B, prouvée). On **attrape** l'install cassée
-  au lieu de la *prévenir*, sur deux faces :
-  - **Runtime** — la constitution générée refuse de répondre hors-vault quand `vault-rag` est indispo.
-  - **Install-time** — le post-flight du bootstrap prouve que la démo répond **depuis le vault**
-    (source citée), sinon FAIL bruyant + `exit 1`.
-- Ceci **renverse D1 (install maximalement déterministe) et D4 (interdiction d'improviser des
-  installs)** de la première version de ce plan / de l'ADR 0005.
+- **Trust Claude to install** (the UX of the Claude era). **No install gate.** We drop
+  the idea of a deterministic pre-flight that *prevents* (failure A unproven — we don't harden against a
+  risk that isn't demonstrated).
+- **Only net: make any broken state LOUD** (failure B, proven). We **catch** the broken install
+  instead of *preventing* it, on two faces:
+  - **Runtime** — the generated constitution refuses to answer off-vault when `vault-rag` is unavailable.
+  - **Install-time** — the bootstrap's post-flight proves the demo answers **from the vault**
+    (cited source), otherwise loud FAIL + `exit 1`.
+- This **reverses D1 (maximally deterministic install) and D4 (ban on improvising
+  installs)** of the first version of this plan / of ADR 0005.
 
-## 3. Invariants préservés (inchangés)
+## 3. Preserved invariants (unchanged)
 
-- **Launcher/cerveau** (ADR 0001) : launcher lecture seule ; bootstrap crée un dossier neuf et
-  **refuse une cible existante**.
-- **Push opt-in** : auto-commit ne pousse que si `secondbrain.autopush=true`.
-- **Secrets** : clé Gemini **jamais** en argument CLI ; vit dans `.env` (gitignoré).
-- **Multi-OS** : Node pur dans le cœur ; `.cmd` sur Windows ; chemins JSON normalisés `/` (`toPosix`).
-- **Idempotence** du bootstrap.
-- **Contrat MCP stable** (ADR 0006).
-
----
-
-## 4. Ce qui a été FAIT (les deux faces du filet)
-
-### ✅ CHANGE 6 — Fail-loud RAG dans la constitution (runtime)
-`CLAUDE.md.template`, section « Vault — RAG sémantique » : règle en gras — si les outils
-`mcp__vault-rag__*` sont **indisponibles ou en erreur**, le DIRE FORT (« ⚠️ RAG indisponible ») et
-**REFUSER** de fabriquer une réponse depuis Internet/connaissances générales — **surtout pour la
-question de démo** (premier contact de l'utilisateur). C'est la couche qui aurait évité le bypass
-silencieux de Richard.
-
-### ✅ Post-flight sourcé (install-time)
-- `scripts/lib/mcp-smoke.mjs` : param optionnel `probe:{ tool, args, expectText }`. Après le smoke
-  structurel (`tools/list`), il **appelle réellement** `search_vault` (`tools/call`) et vérifie que
-  la réponse **cite une source du vault** (`/vault\//`). Sans `probe` → comportement inchangé.
-- `bootstrap.mjs` étape 9/9 :
-  - **avec clé Gemini** (`keyReady`) → probe avec la question de démo. PASS = bannière succès `exit 0` ;
-    **FAIL = `err()` bruyant + `process.exit(1)` AVANT la bannière** (pas de faux vert).
-  - **sans clé** → smoke structurel seul + message honnête « check démo **reporté** — colle ta clé
-    dans `.env` puis pose la démo » → `exit 0`.
-- Question de démo extraite en **constante `DEMO`** (réutilisée par le probe et le message final).
-
-### ✅ Nettoyage
-`scripts/preflight.sh` + `scripts/preflight.test.mjs` (pré-vol exploratoire du gate abandonné) **retirés**.
+- **Launcher/brain** (ADR 0001): launcher read-only; bootstrap creates a fresh folder and
+  **refuses an existing target**.
+- **Push opt-in**: auto-commit pushes only if `secondbrain.autopush=true`.
+- **Secrets**: Gemini key **never** as a CLI argument; lives in `.env` (gitignored).
+- **Multi-OS**: pure Node at the core; `.cmd` on Windows; JSON paths normalized to `/` (`toPosix`).
+- **Idempotence** of the bootstrap.
+- **Stable MCP contract** (ADR 0006).
 
 ---
 
-## 5. Items GELÉS (et pourquoi)
+## 4. What was DONE (the two faces of the net)
 
-Tout ce qui suit appartenait à la stratégie « gate déterministe » et est **abandonné** avec le
-renversement — pas perdu, juste consciemment écarté :
+### ✅ CHANGE 6 — Fail-loud RAG in the constitution (runtime)
+`CLAUDE.md.template`, section "Vault — semantic RAG": rule in bold — if the
+`mcp__vault-rag__*` tools are **unavailable or erroring**, SAY SO LOUDLY ("⚠️ RAG unavailable") and
+**REFUSE** to fabricate an answer from the Internet/general knowledge — **especially for the
+demo question** (the user's first contact). This is the layer that would have avoided Richard's
+silent bypass.
 
-- **Pré-vol déterministe 1a** (`preflight.sh` GUI-visible, rejet nvm/asdf) — *prévenait* la panne A
-  non prouvée. Gate abandonné → retiré.
-- **Amorce `CLAUDE.md` « STOP si rouge » + interdiction d'improviser des installs (D4)** — on fait
-  désormais **confiance** à Claude pour installer.
-- **Heuristiques PATH « GUI-visible » / « PATH GUI-minimal simulé »** (CHANGE 1b/5.3) — servaient à
-  prouver le desktop en amont. Le post-flight réel suffit à attraper l'échec.
-- **Self-heal runtime 1c** (`process.env.PATH = …` en tête des scripts hook) — à ne **durcir que si**
-  une machine réelle prouve que le runtime ne résout pas node *après* un bootstrap réussi. Non observé.
-- **`--here` (install in place, 3a)** — entaillait le modèle « cerveau ≠ launcher ». Pas nécessaire au
-  filet ; différé.
-- **Handoff manuel desktop / statut SessionStart visible en desktop (CHANGE 4)** — l'alerte précoce
-  est désormais portée par le post-flight (install-time) + la constitution fail-loud (runtime).
+### ✅ Sourced post-flight (install-time)
+- `scripts/lib/mcp-smoke.mjs`: optional param `probe:{ tool, args, expectText }`. After the
+  structural smoke (`tools/list`), it **actually calls** `search_vault` (`tools/call`) and verifies that
+  the answer **cites a vault source** (`/vault\//`). Without `probe` → behavior unchanged.
+- `bootstrap.mjs` step 9/9:
+  - **with a Gemini key** (`keyReady`) → probe with the demo question. PASS = success banner `exit 0`;
+    **FAIL = loud `err()` + `process.exit(1)` BEFORE the banner** (no false green).
+  - **without a key** → structural smoke only + honest message "demo check **deferred** — paste your key
+    in `.env` then ask the demo" → `exit 0`.
+- Demo question extracted into a **constant `DEMO`** (reused by the probe and the final message).
 
-> Les CHANGE 2 (pré-approuver le serveur MCP), CHANGE 3 (onboarding desktop README/SETUP) et CHANGE 5
-> (noms de serveur MCP opaques) restent des **améliorations UX possibles**, non bloquantes, hors du
-> filet de fiabilité. À reprendre seulement si le terrain le justifie.
+### ✅ Cleanup
+`scripts/preflight.sh` + `scripts/preflight.test.mjs` (exploratory pre-flight of the abandoned gate) **removed**.
 
 ---
 
-## 6. Validation (juge de paix)
+## 5. FROZEN items (and why)
 
-- `node --test scripts/lib/*.test.mjs scripts/*.test.mjs` au vert (dont nouveaux cas mcp-smoke :
-  probe sourcé, probe non sourcé, régression sans probe).
-- **Mac nu d'Achille, onglet Code** : (1) laisser Claude installer **en entier sans couper** →
-  observer s'il marche/casse et comment (clôt enfin l'hypothèse panne A) ; (2) si marche : avec clé,
-  post-flight **PASS** + démo **sourcée du vault** + un write → commit auto ; (3) si casse : **panne B
-  bruyante** (post-flight FAIL `exit 1` et/ou constitution qui refuse de répondre hors-vault).
-- **Sans clé** : bootstrap `exit 0` + message « check démo reporté » (pas de faux vert).
+Everything below belonged to the "deterministic gate" strategy and is **abandoned** with the
+reversal — not lost, just consciously set aside:
 
-## 7. Idées différées (feu vert de Thomas requis)
+- **Deterministic pre-flight 1a** (`preflight.sh` GUI-visible, rejecting nvm/asdf) — *prevented* failure A
+  unproven. Gate abandoned → removed.
+- **Stub `CLAUDE.md` "STOP if red" + ban on improvising installs (D4)** — we now
+  **trust** Claude to install.
+- **PATH heuristics "GUI-visible" / "simulated GUI-minimal PATH"** (CHANGE 1b/5.3) — served to
+  prove the desktop upfront. The real post-flight is enough to catch the failure.
+- **Runtime self-heal 1c** (`process.env.PATH = …` at the top of the hook scripts) — to be
+  **hardened only if** a real machine proves the runtime doesn't resolve node *after* a successful
+  bootstrap. Not observed.
+- **`--here` (install in place, 3a)** — chipped away at the "brain ≠ launcher" model. Not necessary to the
+  net; deferred.
+- **Manual desktop handoff / SessionStart status visible in desktop (CHANGE 4)** — the early alert
+  is now carried by the post-flight (install-time) + the fail-loud constitution (runtime).
 
-- **`doctor` non bloquant** — une commande de diagnostic (toolchain, clé, index, connexion MCP) que
-  l'utilisateur lance s'il a un doute, **sans gate**. À considérer si le terrain montre que le
-  post-flight ne suffit pas à orienter le dépannage.
-- **Composant RAG partagé/upgradable** (ADR 0006) — frotte avec ADR 0003. À trancher avec Thomas.
-- **`vault_stats` provider-agnostique** (ADR 0006) — sortir le vocabulaire « quota Gemini ».
-- **Variante Windows** d'éventuels scripts — macOS d'abord (la cible immédiate).
+> CHANGE 2 (pre-approve the MCP server), CHANGE 3 (desktop onboarding README/SETUP) and CHANGE 5
+> (opaque MCP server names) remain **possible UX improvements**, non-blocking, outside the
+> reliability net. To be picked up only if the field justifies it.
+
+---
+
+## 6. Validation (the final arbiter)
+
+- `node --test scripts/lib/*.test.mjs scripts/*.test.mjs` green (including new mcp-smoke cases:
+  sourced probe, non-sourced probe, regression without probe).
+- **Achille's bare Mac, Code tab**: (1) let Claude install **fully without cutting off** →
+  observe whether it works/breaks and how (finally closes the failure-A hypothesis); (2) if it works: with a key,
+  post-flight **PASS** + demo **sourced from the vault** + one write → auto-commit; (3) if it breaks: **loud
+  failure B** (post-flight FAIL `exit 1` and/or constitution refusing to answer off-vault).
+- **Without a key**: bootstrap `exit 0` + message "demo check deferred" (no false green).
+
+## 7. Deferred ideas (Thomas's green light required)
+
+- **Non-blocking `doctor`** — a diagnostic command (toolchain, key, index, MCP connection) that
+  the user runs if in doubt, **without a gate**. To consider if the field shows that the
+  post-flight isn't enough to guide troubleshooting.
+- **Shared/upgradable RAG component** (ADR 0006) — rubs against ADR 0003. To be settled with Thomas.
+- **Provider-agnostic `vault_stats`** (ADR 0006) — drop the "Gemini quota" vocabulary.
+- **Windows variant** of possible scripts — macOS first (the immediate target).

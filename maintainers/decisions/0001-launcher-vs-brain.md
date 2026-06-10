@@ -1,56 +1,55 @@
-# ADR 0001 — Launcher réutilisable vs cerveau créé ailleurs
+# ADR 0001 — Reusable launcher vs brain created elsewhere
 
-- **STATUT :** ACTÉ (2026-06-03) — supersède l'approche « transform in-place ».
-- **Plan d'implémentation associé :** [`../plans/archived/launcher-vs-brain.md`](../plans/archived/launcher-vs-brain.md) (LIVRÉ).
+- **STATUS:** ACCEPTED (2026-06-03) — supersedes the "transform in-place" approach.
+- **Associated implementation plan:** [`../plans/archived/launcher-vs-brain.md`](../plans/archived/launcher-vs-brain.md) (DELIVERED).
 
-## Contexte
+## Context
 
-La cause racine de tous les corner-cases git (strip-remote, garde-fou mainteneur, gating
-`wasStub`) était de **recycler le clone du starter comme cerveau** de l'utilisateur. On dissocie
-les deux rôles.
+The root cause of every git corner-case (strip-remote, maintainer guardrail, `wasStub`
+gating) was **recycling the starter clone as the user's brain**. We separate the two roles.
 
-## Décision
+## Decision
 
-- **Launcher** = le repo générateur cloné. **Source en lecture seule, RÉUTILISABLE** : un même
-  launcher sur un poste peut bootstrapper plusieurs cerveaux différents. Le bootstrap n'écrit
-  **jamais** dedans (son `CLAUDE.md` reste l'amorce, son `rag/` reste sans `node_modules`).
-- **Cerveau** = un dossier **neuf que le bootstrap CRÉE lui-même** (nom + emplacement donnés par
-  l'utilisateur). Comme c'est nous qui le créons et y déposons les fichiers, puis `git init`
-  dedans → **aucun lien vers le launcher, par construction**. Plus de chirurgie git.
+- **Launcher** = the cloned generator repo. **Read-only, REUSABLE source**: a single launcher
+  on one machine can bootstrap several different brains. The bootstrap **never** writes into it
+  (its `CLAUDE.md` stays the bootstrap stub, its `rag/` stays without `node_modules`).
+- **Brain** = a **fresh folder that the bootstrap CREATES itself** (name + location provided by
+  the user). Since we are the ones creating it and dropping the files into it, then running
+  `git init` inside → **no link back to the launcher, by construction**. No more git surgery.
 
-### Renommage `starter` → `generator`
+### Renaming `starter` → `generator`
 
-`second-brain-starter` → **`second-brain-generator`** (« Second Brain Generator »).
-« starter »/« template » portaient le mauvais modèle (graine in-place / copier-modifier) ;
-« générateur » = outil qui PRODUIT des cerveaux, réutilisable, non modifié → colle à l'archi
-launcher↔cerveau. Métaphore « graine » gardée (= le cerveau qu'on fait pousser, ≠ le générateur).
+`second-brain-starter` → **`second-brain-generator`** ("Second Brain Generator").
+"starter"/"template" carried the wrong model (in-place seed / copy-and-modify);
+"generator" = a tool that PRODUCES brains, reusable, never modified → matches the
+launcher↔brain architecture. The "seed" metaphor is kept (= the brain you grow, ≠ the generator).
 
-## Règles qui en découlent
+## Rules that follow
 
-- On **refuse** un dossier cible **existant** (garantit que c'est bien le bootstrap qui le crée).
-- On ne supprime **rien** : le launcher reste, l'utilisateur le jette s'il veut.
-- Copie = fichiers **suivis** du launcher (`git ls-files`, en Node pur) → exclut auto `.git`,
-  `node_modules`, `.env`, et les fichiers de dev (`DEVELOPING.md`, `maintainers/` — cf.
+- We **refuse** an **existing** target folder (guarantees the bootstrap is the one creating it).
+- We delete **nothing**: the launcher stays, the user throws it away if they want.
+- Copy = the launcher's **tracked** files (`git ls-files`, in pure Node) → auto-excludes `.git`,
+  `node_modules`, `.env`, and the dev files (`DEVELOPING.md`, `maintainers/` — cf.
   `filterCopyable`).
-- `{{PROJECT_ROOT}}` (hook auto-commit) et toutes les opérations (génération, `git init`,
-  `npm install`, smoke-test) pointent sur la **cible**, pas le launcher.
-- **Push opt-in (`secondbrain.autopush`) GARDÉ** ; **strip-remote + garde-fou `CLAUDE.local.md`
-  RETIRÉS** (devenus inutiles).
-- « Use this template » (GitHub) = juste une façon d'obtenir le launcher, plus « ton repo dès le
-  jour 1 ».
+- `{{PROJECT_ROOT}}` (auto-commit hook) and all operations (generation, `git init`,
+  `npm install`, smoke-test) point at the **target**, not the launcher.
+- **Opt-in push (`secondbrain.autopush`) KEPT**; **strip-remote + `CLAUDE.local.md` guardrail
+  REMOVED** (no longer needed).
+- "Use this template" (GitHub) = just a way to obtain the launcher, no longer "your repo from
+  day 1".
 
-## Conséquences multi-OS (Windows inclus)
+## Multi-OS consequences (Windows included)
 
-- Emplacement par défaut calculé en Node : `path.join(os.homedir(), name)` — JAMAIS un `~/…`
-  littéral. `--dest <dir>` pour surcharger. Tous les chemins via `path.join`/`path.resolve`.
-- Copie des fichiers suivis en **Node pur** (`git ls-files -z` + copie `fs`), PAS `git archive | tar`
-  (pipe shell + tar = fragile sous Windows).
-- `{{PROJECT_ROOT}}` dans `settings.json` (JSON) : un chemin Windows `C:\…` casse l'échappement →
-  écrire des `/` (Node les accepte sous Windows) ou JSON-échapper.
-- Refus-si-existe via `existsSync` ; `git`/`npm` avec `cwd` sur la cible.
+- Default location computed in Node: `path.join(os.homedir(), name)` — NEVER a literal `~/…`.
+  `--dest <dir>` to override. All paths via `path.join`/`path.resolve`.
+- Tracked-file copy in **pure Node** (`git ls-files -z` + `fs` copy), NOT `git archive | tar`
+  (shell pipe + tar = fragile on Windows).
+- `{{PROJECT_ROOT}}` in `settings.json` (JSON): a Windows path `C:\…` breaks escaping →
+  write `/` (Node accepts them on Windows) or JSON-escape.
+- Refuse-if-exists via `existsSync`; `git`/`npm` with `cwd` on the target.
 
-## Rôle de Claude (amorce)
+## Claude's role (bootstrap stub)
 
-Cloner le launcher, poser les questions (nom, emplacement, langue), lancer **UNE** commande
-bootstrap `--non-interactive`. Le bootstrap décide et fait tout (déterminisme dans le script,
-Claude = emballage conversationnel minimal).
+Clone the launcher, ask the questions (name, location, language), run **ONE** bootstrap command
+`--non-interactive`. The bootstrap decides and does everything (determinism in the script,
+Claude = minimal conversational wrapping).

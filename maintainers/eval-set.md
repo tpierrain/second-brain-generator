@@ -1,221 +1,220 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUT : 🧪 OUTIL DEV (livré 2026-06-09) — Étape 2 du plan embedder.        -->
+<!-- STATUS : 🧪 DEV TOOL (shipped 2026-06-09) — Step 2 of the embedder plan.     -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
-# Eval-set RAG — mesurer la qualité de récupération (juge = Claude)
+# RAG eval-set — measuring retrieval quality (judge = Claude)
 
-> **À quoi ça sert.** C'est l'**instrument de mesure** de l'[Étape 2 du plan
-> embedder](plans/rag-embedder-plan-action.md) : il transforme « cet embedder est-il bon ? » en
-> un **score chiffré reproductible**. Il établit la **baseline Gemini** ; en [Étape 4](plans/rag-embedder-plan-action.md#étape-4--brancher-le-local--mesurer-vs-gemini-),
-> on rejoue le **même** harnais sur les embedders locaux (bge-m3, EmbeddingGemma) pour les
-> comparer **sur du FR réel**, pas sur des leaderboards anglais.
+> **What it's for.** This is the **measurement instrument** of [Step 2 of the embedder
+> plan](plans/rag-embedder-plan-action.md): it turns "is this embedder good?" into a
+> **reproducible numeric score**. It establishes the **Gemini baseline**; in [Step 4](plans/rag-embedder-plan-action.md#étape-4--brancher-le-local--mesurer-vs-gemini-),
+> we replay the **same** harness on the local embedders (bge-m3, EmbeddingGemma) to compare them
+> **on real-world content**, not on English leaderboards.
 >
-> **Dev-only.** Exclu du cerveau généré (`DEV_ONLY_PREFIXES` dans
-> [`../scripts/lib/tracked-files.mjs`](../scripts/lib/tracked-files.mjs)) : il sert à choisir
-> l'embedder **du launcher**, il n'a aucune valeur chez un utilisateur (notes Flemmr purgées).
+> **Dev-only.** Excluded from the generated brain (`DEV_ONLY_PREFIXES` in
+> [`../scripts/lib/tracked-files.mjs`](../scripts/lib/tracked-files.mjs)): it serves to choose the
+> embedder **of the launcher**, it has no value on a user's side (Flemmr notes purged).
 
-## Comment ça marche
+## How it works
 
-Pour chaque question de l'eval-set : on lance `search_vault` (via le **vrai** serveur MCP
-`vault-rag`, le contrat réel), puis on demande à **Claude** (`claude -p`) de juger **si les
-passages remontés suffisent à répondre** — il ne se fie qu'aux passages, pas à ses connaissances.
-Le juge termine par `VERDICT: PASS` / `VERDICT: FAIL` ; le score = `PASS / total`.
+For each eval-set question: we run `search_vault` (via the **real** `vault-rag` MCP server, the
+actual contract), then we ask **Claude** (`claude -p`) to judge **whether the returned passages are
+enough to answer** — it relies only on the passages, not on its own knowledge. The judge ends with
+`VERDICT: PASS` / `VERDICT: FAIL`; the score = `PASS / total`.
 
-Le corpus de la baseline = le **vault d'exemple livré** (Flemmr, parodique → inventé, donc
-public-safe, versionné et **rejouable par n'importe qui**). La 1ʳᵉ question reprend le **canari
-grep-proof** de `demo.mjs` (réponse « Mollecuisse » introuvable par mots-clés → vraie preuve
-sémantique).
+The baseline's corpus = the **shipped example vault** (Flemmr, parodic → invented, hence
+public-safe, versioned and **replayable by anyone**). The 1st question reuses the **grep-proof
+canary** from `demo.mjs` (answer "Mollecuisse" not findable by keyword → real semantic proof).
 
-## Lancer
+## Running it
 
-Depuis la racine du repo, avec une **clé Gemini dans `.env`** (la recherche embedde les
-questions) et le **CLI `claude`** dans le PATH :
+From the repo root, with a **Gemini key in `.env`** (search embeds the questions) and the
+**`claude` CLI** in the PATH:
 
 ```bash
 node scripts/run-eval.mjs
 ```
 
-- `exit 0` = eval menée à bien (le **score peut être bas** — c'est une *mesure*, pas un échec).
-- `exit 1` = échec **opérationnel** (pas de clé, index KO, MCP mort, ou **verdict illisible** =
-  juge qui n'a pas suivi le format → on ne publie pas un score invalide).
-- Optionnel : `EVAL_JUDGE_MODEL=<modèle>` pour pinner un modèle de juge (ex. un Haiku, moins cher).
+- `exit 0` = eval carried out (the **score may be low** — it's a *measurement*, not a failure).
+- `exit 1` = **operational** failure (no key, index KO, MCP dead, or **unreadable verdict** =
+  judge that didn't follow the format → we don't publish an invalid score).
+- Optional: `EVAL_JUDGE_MODEL=<model>` to pin a judge model (e.g. a Haiku, cheaper).
 
-> **Reproductibilité.** Le juge est un LLM → le score est **stable**, pas bit-exact. La consigne
-> est binaire et objective (les passages suffisent-ils, oui/non) → variance faible. Suffisant pour
-> départager des embedders (étude §6 : un script local donne 90 % de la valeur, sans infra lourde).
+> **Reproducibility.** The judge is an LLM → the score is **stable**, not bit-exact. The instruction
+> is binary and objective (are the passages enough, yes/no) → low variance. Enough to separate
+> embedders (study §6: a local script gives 90% of the value, without heavy infra).
 
-## Baseline Gemini — **80 % (8/10)** _(2026-06-09)_
+## Gemini baseline — **80% (8/10)** _(2026-06-09)_
 
-Premier chiffre de référence, embedder courant **Gemini**, sur le vault d'exemple Flemmr (7 notes) :
+First reference number, current embedder **Gemini**, on the Flemmr example vault (7 notes):
 
 | | Questions | Score |
 |---|---|---|
-| **Gemini (baseline)** | 8 PASS / 10 | **80,0 %** |
+| **Gemini (baseline)** | 8 PASS / 10 | **80.0%** |
 
-Les **2 ratés** sont de **vrais échecs de récupération** (pas un bug d'eval-set) : la réponse
-existe bien dans le vault, mais les passages remontés n'ont pas suffi au juge.
+The **2 misses** are **real retrieval failures** (not an eval-set bug): the answer does exist in the
+vault, but the returned passages weren't enough for the judge.
 
-- *« Combien Flemmr a-t-elle levé en série A… ? »* — fait présent dans `vault/topics/flemmr.md`.
-- *« Quel est le slogan de Flemmr ? »* — slogan présent dans le **même** fichier.
+- *"How much did Flemmr raise in its Series A…?"* — fact present in `vault/topics/flemmr.md`.
+- *"What is Flemmr's slogan?"* — slogan present in the **same** file.
 
-> C'est exactement le signal qu'un eval-set doit capturer : on **ne corrige pas** la question ni le
-> vault pour faire monter le chiffre — ce serait vider la mesure de son sens. 80 % est la **vérité
-> terrain** que les embedders locaux (Étape 4) devront égaler ou dépasser, **sous le même harnais**.
-> (Note : corpus petit → un seul run ; si l'Étape 4 demande plus de finesse, moyenner quelques runs.)
+> This is exactly the signal an eval-set must capture: we **do not fix** the question or the vault to
+> push the number up — that would drain the measurement of its meaning. 80% is the **ground truth**
+> that the local embedders (Step 4) will have to match or beat, **under the same harness**.
+> (Note: small corpus → a single run; if Step 4 calls for finer granularity, average a few runs.)
 
-## Ajouter / modifier une question
+## Adding / editing a question
 
-Éditer [`../scripts/lib/eval-set.mjs`](../scripts/lib/eval-set.mjs) : un item =
-`{ question, expect }` (la question en langage naturel + la réponse **attendue**, le ground-truth
-que la bonne récupération doit permettre de donner). Garde-fou : `eval-set.test.mjs` exige ≥ 8
-questions bien formées et au moins une ancrée sur le canari Mollecuisse.
+Edit [`../scripts/lib/eval-set.mjs`](../scripts/lib/eval-set.mjs): an item =
+`{ question, expect }` (the natural-language question + the **expected** answer, the ground-truth
+that good retrieval should make it possible to give). Guardrail: `eval-set.test.mjs` requires ≥ 8
+well-formed questions and at least one anchored on the Mollecuisse canary.
 
-Mélanger volontairement des questions **faciles** (le terme-réponse est dans les notes → testent
-le plancher) et des questions **par synonymes** (grep-résistantes → testent le sens) : un embedder
-faible décroche sur les secondes.
+Deliberately mix **easy** questions (the answer-term is in the notes → they test the floor) and
+**synonym** questions (grep-resistant → they test meaning): a weak embedder drops off on the latter.
 
-## Les fichiers
+## The files
 
-| Fichier | Rôle | Testé |
+| File | Role | Tested |
 |---|---|---|
-| `scripts/lib/eval-set.mjs` | Les questions Flemmr (donnée, source de vérité) | structurel |
-| `scripts/lib/eval-judge.mjs` | Prompt du juge, lecture du verdict, score (PUR) | ✅ unitaire |
-| `scripts/lib/eval-run.mjs` | Orchestration `search → juge → verdict → score` (PUR, deps injectées) | ✅ unitaire |
-| `scripts/lib/mcp-search.mjs` | N requêtes `search_vault` sur **une** session MCP | ✅ (stub MCP) |
-| `scripts/run-eval.mjs` | Exécutable : câble index + MCP réel + `claude -p` | — (I/O, comme `verify-rag`) |
+| `scripts/lib/eval-set.mjs` | The Flemmr questions (data, source of truth) | structural |
+| `scripts/lib/eval-judge.mjs` | Judge prompt, verdict reading, score (PURE) | ✅ unit |
+| `scripts/lib/eval-run.mjs` | Orchestration `search → judge → verdict → score` (PURE, injected deps) | ✅ unit |
+| `scripts/lib/mcp-search.mjs` | N `search_vault` requests over **one** MCP session | ✅ (MCP stub) |
+| `scripts/run-eval.mjs` | Executable: wires index + real MCP + `claude -p` | — (I/O, like `verify-rag`) |
 
-## Étape 4 — résultats mesurés (local vs Gemini) _(2026-06-09)_
+## Step 4 — measured results (local vs Gemini) _(2026-06-09)_
 
-Trois embedders, **même harnais**, même vault Flemmr, **même session** (sur secteur), via Ollama +
-l'adaptateur compatible-OpenAI (`EMBEDDING_PROVIDER=openai-compatible`, `EMBEDDING_BASE_URL=http://localhost:11434/v1`) :
+Three embedders, **same harness**, same Flemmr vault, **same session** (on AC power), via Ollama +
+the OpenAI-compatible adapter (`EMBEDDING_PROVIDER=openai-compatible`, `EMBEDDING_BASE_URL=http://localhost:11434/v1`):
 
-| Embedder | Lieu | Dim | **Score FR** | Raté(s) | Index 7 notes (warm) | Disque | RAM résidente |
+| Embedder | Location | Dim | **FR score** | Miss(es) | Index 7 notes (warm) | Disk | Resident RAM |
 |---|---|---|---|---|---|---|---|
-| **EmbeddingGemma** | 🟢 local | 768 | **90 % (9/10)** | série A | ~1,3 s | 621 Mo | ~0,67 Go (GPU Metal) |
-| **bge-m3** | 🟢 local | 1024 | **90 % (9/10)** | Q1 (employé oisif) | ~1,7 s | 1,2 Go | ~0,66 Go (GPU Metal) |
-| **Gemini** (baseline) | 🔴 cloud | 3072 | **80 % (8/10)** | série A + slogan | ~20,8 s | 0 | 0 (clé+quota+réseau) |
+| **EmbeddingGemma** | 🟢 local | 768 | **90% (9/10)** | Series A | ~1.3 s | 621 MB | ~0.67 GB (Metal GPU) |
+| **bge-m3** | 🟢 local | 1024 | **90% (9/10)** | Q1 (idle employee) | ~1.7 s | 1.2 GB | ~0.66 GB (Metal GPU) |
+| **Gemini** (baseline) | 🔴 cloud | 3072 | **80% (8/10)** | Series A + slogan | ~20.8 s | 0 | 0 (key+quota+network) |
 
-**Anti-fallback (prouvé)** : estampilles d'index distinctes (`index_meta` = provider/modèle/dimension),
-vecteurs stockés à la bonne dimension, **0 appel Gemini** durant les runs locaux (compteur quota figé).
+**Anti-fallback (proven)**: distinct index stamps (`index_meta` = provider/model/dimension),
+vectors stored at the right dimension, **0 Gemini calls** during the local runs (quota counter frozen).
 
-**Lecture honnête** — le signal robuste est **« aucun malus qualité à passer en local »** : les deux
-locaux **égalent ou dépassent** Gemini ici. Mais le 90 vs 80 = **une seule question d'écart**, dans le
-bruit (variance juge LLM + **corpus minuscule** où le top-k ramène presque tout), et **chaque modèle
-rate une question différente** → la conclusion défendable est **« local au moins à parité »**, pas
-« local bat Gemini ». Latence : sur 7 notes le local indexe ~15× plus vite (pas de réseau/throttle) ;
-l'écart se creuse à l'échelle d'un vrai vault, l'encodage restant **ponctuel**.
+**Honest reading** — the robust signal is **"no quality penalty in going local"**: both locals
+**match or beat** Gemini here. But the 90 vs 80 = **a single question's gap**, within the
+noise (LLM judge variance + **tiny corpus** where top-k brings back almost everything), and **each
+model misses a different question** → the defensible conclusion is **"local at least at parity"**, not
+"local beats Gemini". Latency: on 7 notes the local indexes ~15× faster (no network/throttle);
+the gap widens at the scale of a real vault, with encoding remaining **one-off**.
 
-> **Reproduire** : `rm -f rag/.cache/vault.db*` puis, pour un local,
+> **Reproduce**: `rm -f rag/.cache/vault.db*` then, for a local one,
 > `EMBEDDING_PROVIDER=openai-compatible EMBEDDING_BASE_URL=http://localhost:11434/v1 EMBEDDING_API_KEY= EMBEDDING_MODEL_NAME=<embeddinggemma|bge-m3> EMBEDDING_DIMENSION=<768|1024> node scripts/run-eval.mjs`
-> ; sans les `EMBEDDING_*` = Gemini natif. Prérequis local : Ollama + `ollama pull <modèle>`.
+> ; without the `EMBEDDING_*` = native Gemini. Local prerequisite: Ollama + `ollama pull <model>`.
 
-## Étape 4-bis — viabilité de l'in-process « Gemma inside » (SANS Ollama) _(2026-06-09)_
+## Step 4-bis — viability of in-process "Gemma inside" (WITHOUT Ollama) _(2026-06-09)_
 
-Même harnais, même vault Flemmr, mais l'embedder tourne **dans le process Node du RAG**
-(Transformers.js v4 + EmbeddingGemma-300m **ONNX q8**), **sans serveur ni app** — branché par
-`EMBEDDING_PROVIDER=in-process` (ni URL ni clé). Verdict des **3 validations** :
+Same harness, same Flemmr vault, but the embedder runs **inside the RAG's Node process**
+(Transformers.js v4 + EmbeddingGemma-300m **ONNX q8**), **without a server or app** — wired by
+`EMBEDDING_PROVIDER=in-process` (no URL, no key). Verdict of the **3 validations**:
 
-| Validation | Résultat | Détail mesuré (ce Mac, Apple Silicon) |
+| Validation | Result | Measured detail (this Mac, Apple Silicon) |
 |---|---|---|
-| **V1 — install cross-OS** | ✅ **OK Mac+Windows** | `npm i @huggingface/transformers` → `onnxruntime-node@1.24.3` **embarque** les binaires pré-buildés `win32/x64`, `win32/arm64`, `darwin/arm64`, `linux/x64+arm64` ; `requirements=[]` partout (seul le GPU CUDA Linux est distant) → **rien à compiler, rien à télécharger, offline-friendly**. ⚠️ **Mac Intel (darwin/x64) non supporté** par cette version (Apple Silicon ✅). |
-| **V2 — latence CPU** | ✅ **tenable** | Téléchargement des poids **~28 s une seule fois** (caché ensuite) ; démarrage à froid poids cachés = **675 ms** (load+1ᵉʳ embed) ; débit à chaud **8–9 ms/texte (~110/s)**, **sans GPU Metal** ; vecteur 768-dim **normalisé** (‖v‖=1). |
-| **V3 — qualité (quantifié)** | ✅ **parité Ollama (90 %)** | eval-set rejoué : **90 % (9/10)**, = EmbeddingGemma via Ollama, **> Gemini 80 %**. Seul raté : « série A » (idem Ollama). |
-| **V4 — empreinte (disque + RAM)** | ⚖️ **prix local assumé** | **Disque** : +~550 Mo dans `node_modules` (binaires onnxruntime tous OS ; ~35 Mo réellement chargés sur Mac) + ~150–300 Mo de poids en cache HF au 1ᵉʳ usage. **RAM** : modèle chargé = **~1,1–1,6 Go résident** (variance des arènes onnxruntime CPU), **stable** quelle que soit la taille du vault (l'indexeur embed **doc par doc**, `indexer.ts:46`). |
+| **V1 — cross-OS install** | ✅ **OK Mac+Windows** | `npm i @huggingface/transformers` → `onnxruntime-node@1.24.3` **bundles** the pre-built binaries `win32/x64`, `win32/arm64`, `darwin/arm64`, `linux/x64+arm64`; `requirements=[]` everywhere (only the Linux CUDA GPU is remote) → **nothing to compile, nothing to download, offline-friendly**. ⚠️ **Mac Intel (darwin/x64) not supported** by this version (Apple Silicon ✅). |
+| **V2 — CPU latency** | ✅ **tenable** | Weights download **~28 s once only** (cached afterwards); cold start with cached weights = **675 ms** (load+1st embed); warm throughput **8–9 ms/text (~110/s)**, **without a Metal GPU**; 768-dim vector **normalized** (‖v‖=1). |
+| **V3 — quality (quantized)** | ✅ **Ollama parity (90%)** | eval-set replayed: **90% (9/10)**, = EmbeddingGemma via Ollama, **> Gemini 80%**. Only miss: "Series A" (same as Ollama). |
+| **V4 — footprint (disk + RAM)** | ⚖️ **local price accepted** | **Disk**: +~550 MB in `node_modules` (onnxruntime binaries for all OSes; ~35 MB actually loaded on Mac) + ~150–300 MB of weights in the HF cache on first use. **RAM**: model loaded = **~1.1–1.6 GB resident** (variance of the onnxruntime CPU arenas), **stable** whatever the vault's size (the indexer embeds **doc by doc**, `indexer.ts:46`). |
 
-**Le démarrage du MCP n'est PAS ralenti (mesuré).** Boot → handshake « MCP running on stdio » =
-**~0,5–0,7 s**, **identique** en défaut Gemini et en `in-process`. Raisons : `server.connect()` se fait
-**avant** tout embedding (`index.ts:257`) ; le modèle n'est **jamais importé statiquement** (seul un
-`await import("@huggingface/transformers")` **paresseux** + pipeline **mémoïsé**) ; il ne se charge qu'à
-la **1ʳᵉ recherche** (ou au reindex de fond, non bloquant). En défaut Gemini, `InProcessEmbedder` n'est
-même pas instancié → **impact nul**. Le coût (~675 ms de chargement par lancement du process, poids
-cachés) est donc **payé à la 1ʳᵉ recherche, pas au boot**. Seul gonflement RAM possible (~2,1 Go) : une
-**unique note** de plusieurs centaines de chunks encodée en un seul lot — edge case, traitable par
-tranchage si ça mord un jour.
+**MCP startup is NOT slowed down (measured).** Boot → "MCP running on stdio" handshake =
+**~0.5–0.7 s**, **identical** in Gemini default and in `in-process`. Reasons: `server.connect()` happens
+**before** any embedding (`index.ts:257`); the model is **never imported statically** (only a
+**lazy** `await import("@huggingface/transformers")` + a **memoized** pipeline); it only loads on the
+**1st search** (or on the background reindex, non-blocking). In Gemini default, `InProcessEmbedder` is
+not even instantiated → **zero impact**. The cost (~675 ms of loading per process launch, weights
+cached) is therefore **paid on the 1st search, not at boot**. The only possible RAM bloat (~2.1 GB): a
+**single** note of several hundred chunks encoded in one batch — an edge case, fixable by slicing if it
+ever bites.
 
-**La leçon V3 (importante).** EmbeddingGemma **exige ses prompts de tâche** (`task: search result |
-query: …` côté recherche, `title: none | text: …` côté document). Ollama les applique en interne ;
-en in-process **c'est à nous**. Sans eux, q8 brut = **80 %** (et le canari *Mollecuisse* rate) ; avec
-eux, **90 %**. Donc l'écart venait du **mauvais usage du modèle, pas de la quantification** — la parité
-quantifié↔Ollama est **confirmée, pas supposée** (exactement ce que le plan demandait de vérifier).
+**The V3 lesson (important).** EmbeddingGemma **requires its task prompts** (`task: search result |
+query: …` on the search side, `title: none | text: …` on the document side). Ollama applies them
+internally; in-process **it's up to us**. Without them, raw q8 = **80%** (and the *Mollecuisse* canary
+misses); with them, **90%**. So the gap came from **misusing the model, not from the quantization** —
+the quantized↔Ollama parity is **confirmed, not assumed** (exactly what the plan asked us to verify).
 
-**Anti-fallback (prouvé)** : réindex complet (`7 indexés`) sous estampille `index_meta` =
-`transformers-js`/`embeddinggemma-300m-ONNX`/`768`, **0 appel réseau** pendant l'eval (offline).
+**Anti-fallback (proven)**: full reindex (`7 indexed`) under stamp `index_meta` =
+`transformers-js`/`embeddinggemma-300m-ONNX`/`768`, **0 network calls** during the eval (offline).
 
-> **Verdict 4-bis → VIABLE comme défaut.** L'in-process lève la **seule** objection sérieuse du
-> tout-local (la friction Ollama) **sans rien céder** : install `npm`-only sur Mac (Apple Silicon) ET
-> Windows, latence ponctuelle tenable, qualité **à parité d'Ollama (90 %)** et au-dessus de Gemini.
-> → **candidat n°1 du défaut en D1.** Réserves honnêtes : (a) **RAM** — le ~1,5 Go n'est vrai qu'**au
-> repos/en recherche** ; **en indexation d'un corpus dense ça monte à ~6 Go** (cf. Étape 4-ter
-> ci-dessous), confortable 16 Go+, **swappe sur 8 Go** (vs ~0 pour Gemini, distant) ; (b) **Mac Intel** hors couverture `onnxruntime-node` 1.24.3 ; (c) corpus Flemmr
-> petit (90 vs 80 = une question, cf. limite ci-dessous) ; (d) binaires pré-buildés **volatils** →
-> re-vérifier la matrice à chaque bump d'`onnxruntime-node`.
+> **Verdict 4-bis → VIABLE as default.** In-process removes the **only** serious objection to
+> all-local (the Ollama friction) **without giving up anything**: `npm`-only install on Mac (Apple
+> Silicon) AND Windows, tenable one-off latency, quality **at Ollama parity (90%)** and above Gemini.
+> → **candidate #1 for the default in D1.** Honest reservations: (a) **RAM** — the ~1.5 GB is only true
+> **at rest/in search**; **when indexing a dense corpus it climbs to ~6 GB** (cf. Step 4-ter
+> below), comfortable at 16 GB+, **swaps on 8 GB** (vs ~0 for Gemini, remote); (b) **Mac Intel** outside
+> `onnxruntime-node` 1.24.3 coverage; (c) the Flemmr corpus is
+> small (90 vs 80 = one question, cf. the limit below); (d) pre-built binaries **volatile** →
+> re-check the matrix at each `onnxruntime-node` bump.
 
-> **Reproduire** : `rm -f rag/.cache/vault.db*` puis
-> `EMBEDDING_PROVIDER=in-process node scripts/run-eval.mjs` (ni URL ni clé ; poids téléchargés au 1ᵉʳ
-> run puis cachés). Sans les `EMBEDDING_*` = Gemini natif. *(Le label « embedder courant : Gemini »
-> affiché par le script est cosmétique et codé en dur — la mesure est bien in-process, prouvée par
-> l'estampille et le réindex.)*
+> **Reproduce**: `rm -f rag/.cache/vault.db*` then
+> `EMBEDDING_PROVIDER=in-process node scripts/run-eval.mjs` (no URL, no key; weights downloaded on the
+> 1st run then cached). Without the `EMBEDDING_*` = native Gemini. *(The "current embedder: Gemini"
+> label printed by the script is cosmetic and hard-coded — the measurement really is in-process, proven
+> by the stamp and the reindex.)*
 
-## Étape 4-ter — corpus dense : plafonnement de lot _(2026-06-09)_
+## Step 4-ter — dense corpus: batch cap _(2026-06-09)_
 
-La viabilité 4-bis a été mesurée sur Flemmr (7 notes). **Test sur un vrai vault personnel dense (264 notes,
-2709 chunks, moy. 10,3/note)** — copie temporaire, embedder **in-process** (rien ne sort), persistance
-neutre — corrige cette photo sur deux points et révèle un correctif obligatoire :
+The 4-bis viability was measured on Flemmr (7 notes). **Test on a real dense personal vault (264 notes,
+2709 chunks, avg 10.3/note)** — temporary copy, **in-process** embedder (nothing leaves), neutral
+persistence — corrects this snapshot on two points and reveals a mandatory fix:
 
-| | **Prod actuelle** (lot = tous les chunks d'une note) | **Lot plafonné à 16 chunks** |
+| | **Current prod** (batch = all chunks of a note) | **Batch capped at 16 chunks** |
 |---|---|---|
-| Issue | ❌ **stall** (tué à ~12 min, coincé sur une note de 78 chunks) | ✅ **264/264 indexées** |
-| RAM résidente pic | **8,5 Go** et ça grimpait | **6,1 Go** (OS : 6,55 Go) |
-| Temps total | jamais fini | **7 min 27 s** |
-| Débit | — | **6 chunks/s** · 0,6 note/s · load 0,8 s · repos 1,67 Go |
+| Issue | ❌ **stall** (killed at ~12 min, stuck on a 78-chunk note) | ✅ **264/264 indexed** |
+| Resident RAM peak | **8.5 GB** and climbing | **6.1 GB** (OS: 6.55 GB) |
+| Total time | never finished | **7 min 27 s** |
+| Throughput | — | **6 chunks/s** · 0.6 note/s · load 0.8 s · rest 1.67 GB |
 
-**Cause racine** : `embedDocuments` reçoit **tous les chunks d'une note d'un coup** (`indexer.ts:46`).
-Une note longue (transcript sync/1-1 = **78 chunks de ~2000 tokens**) crée un lot dont l'attention en
-**O(seq²)×batch** fait exploser onnxruntime. 17 notes du vault dépassent 20 chunks, 6 dépassent 50.
+**Root cause**: `embedDocuments` receives **all the chunks of a note at once** (`indexer.ts:46`).
+A long note (sync/1-1 transcript = **78 chunks of ~2000 tokens**) creates a batch whose attention in
+**O(seq²)×batch** blows up onnxruntime. 17 notes of the vault exceed 20 chunks, 6 exceed 50.
 
-### Balayage du plafond 4 / 8 / 16 _(2026-06-09, livré)_
+### Sweep of the cap 4 / 8 / 16 _(2026-06-09, shipped)_
 
-Plafonnement implémenté dans `InProcessEmbedder.embedDocuments` (TDD, constante `EMBED_BATCH`,
-`batchSize?` configurable) — au niveau de l'adaptateur, car la contrainte RAM est **spécifique à
-l'ONNX in-process** (Gemini/OpenAI passent par le réseau) ; protège ainsi **tous** les appelants.
-Balayage sur le même vault dense (264 notes / 2709 chunks), in-process, persistance neutre :
+Cap implemented in `InProcessEmbedder.embedDocuments` (TDD, constant `EMBED_BATCH`,
+configurable `batchSize?`) — at the adapter level, since the RAM constraint is **specific to
+in-process ONNX** (Gemini/OpenAI go through the network); it thus protects **all** callers.
+Sweep on the same dense vault (264 notes / 2709 chunks), in-process, neutral persistence:
 
-| plafond de lot | pic RSS *(in-process)* | temps total | débit |
+| batch cap | RSS peak *(in-process)* | total time | throughput |
 |---|---|---|---|
-| 16 | 5,35 Go | 7,42 min | 6,1 chunks/s |
-| 8 | 3,82 Go | 6,52 min | 6,9 chunks/s |
-| **4 ✅ retenu** | **3,16 Go** | **5,31 min** | **8,5 chunks/s** |
+| 16 | 5.35 GB | 7.42 min | 6.1 chunks/s |
+| 8 | 3.82 GB | 6.52 min | 6.9 chunks/s |
+| **4 ✅ chosen** | **3.16 GB** | **5.31 min** | **8.5 chunks/s** |
 
-**Résultat contre-intuitif : le PETIT lot gagne sur les DEUX axes** (RAM *et* temps). Sur CPU, les gros
-lots × longues séquences gonflent l'attention sans mieux vectoriser ; les petits lots gardent un
-working-set cache-friendly. **La qualité est inchangée** (chaque texte est embeddé indépendamment — le
-batching ne touche pas les vecteurs ; le 90 % de 4-bis tient). → **`EMBED_BATCH = 4` figé.**
+**Counter-intuitive result: the SMALL batch wins on BOTH axes** (RAM *and* time). On CPU, large
+batches × long sequences inflate attention without vectorizing any better; small batches keep a
+cache-friendly working set. **Quality is unchanged** (each text is embedded independently — batching
+doesn't touch the vectors; the 90% from 4-bis holds). → **`EMBED_BATCH = 4` locked in.**
 
-> ⚠️ **RSS in-process vs OS** : ces pics sont lus via `process.memoryUsage().rss` **dans** le process —
-> ~0,7-0,8 Go sous le RSS OS externe (le lot 16 mesuré à 6,1 Go OS plus haut = 5,35 Go ici). **Pic OS réel
-> estimé du lot 4 ≈ 3,8-4 Go.** Reproduire (depuis `rag/`) : `node --import tsx scripts/measure-batch.mts <4|8|16>`
-> — vault dense via l'argument ou `$MEASURE_VAULT` ; sans rien = le vault d'exemple du repo.
+> ⚠️ **in-process RSS vs OS**: these peaks are read via `process.memoryUsage().rss` **inside** the process —
+> ~0.7-0.8 GB below the external OS RSS (the batch 16 measured at 6.1 GB OS above = 5.35 GB here). **Estimated
+> real OS peak of batch 4 ≈ 3.8-4 GB.** Reproduce (from `rag/`): `node --import tsx scripts/measure-batch.mts <4|8|16>`
+> — dense vault via the argument or `$MEASURE_VAULT`; with nothing = the repo's example vault.
 
-**Trois leçons (invisibles sur Flemmr) :**
-1. **La prod actuelle n'est pas sûre sur un vrai vault** → **plafonner la taille de lot est OBLIGATOIRE**
-   (Étape 4-ter du plan, TDD, bloquant pour le défaut option 1). **✅ Livré (lot=4).**
-2. **RAM en indexation ≫ 1,5 Go** : avec lot=4, **pic OS ≈ 3,8-4 Go** (vs ~6 Go au lot 16) → **rentre
-   confortablement sur 12 Go, et plausiblement sur 8 Go** (à confirmer machine réelle). Le ~1,5 Go ne
-   vaut qu'au repos/recherche.
-3. **Débit ≪ 110/s** : le « 8-9 ms/texte » était sur texte **court** ; les vrais chunks frôlent le
-   contexte max → **8,5 chunks/s au lot 4** (~13× plus lent que la pub). Index à froid d'un vrai vault
-   ≈ **5,3 min**, **une fois** (ensuite incrémental par hash).
+**Three lessons (invisible on Flemmr):**
+1. **Current prod is not safe on a real vault** → **capping the batch size is MANDATORY**
+   (Step 4-ter of the plan, TDD, blocking for the option-1 default). **✅ Shipped (batch=4).**
+2. **RAM during indexing ≫ 1.5 GB**: with batch=4, **OS peak ≈ 3.8-4 GB** (vs ~6 GB at batch 16) → **fits
+   comfortably on 12 GB, and plausibly on 8 GB** (to confirm on a real machine). The ~1.5 GB only
+   holds at rest/search.
+3. **Throughput ≪ 110/s**: the "8-9 ms/text" was on **short** text; real chunks brush against the
+   max context → **8.5 chunks/s at batch 4** (~13× slower than the marketing). Cold index of a real vault
+   ≈ **5.3 min**, **once** (incremental by hash afterwards).
 
-> **Verdict D1 — à reconsidérer pour l'Étape 5** : le lot 4 abaisse le pic OS de ~6 Go (lot 16) à
-> ~3,8-4 Go. Le seuil acté « 16 Go+ → in-process ⭐ / ≤ 8 Go → API ⭐ » était calé sur 6 Go ; avec ~4 Go,
-> **un seuil à 12 Go (voire 8 Go) devient défendable**. À trancher par Thomas au moment de figer le seuil
-> de détection machine (Étape 5) — la mesure ne décide pas seule l'UX. **N'invalide pas le choix C** (3
-> options explicites) ; l'option clé d'API (RAM ~0) reste pertinente sur très petit poste / Mac Intel.
+> **Verdict D1 — to reconsider for Step 5**: batch 4 lowers the OS peak from ~6 GB (batch 16) to
+> ~3.8-4 GB. The enacted threshold "16 GB+ → in-process ⭐ / ≤ 8 GB → API ⭐" was calibrated on 6 GB; with ~4 GB,
+> **a 12 GB threshold (or even 8 GB) becomes defensible**. To be settled by Thomas when locking in the
+> machine-detection threshold (Step 5) — the measurement doesn't decide the UX on its own. **Doesn't invalidate
+> choice C** (3 explicit options); the API-key option (RAM ~0) stays relevant on a very small machine / Mac Intel.
 
-## Étape 4 — discriminer plus finement (limite connue)
+## Step 4 — discriminate more finely (known limit)
 
-Le corpus Flemmr (7 notes) est petit → discrimination d'embedders **limitée** (le top-k ramène
-presque tout, d'où le coude-à-coude ci-dessus). Pour départager **vraiment** EmbeddingGemma vs bge-m3
-(et trancher D1 sur des chiffres qui séparent), pointer le même harnais sur un corpus **plus riche**
-(le vrai cerveau de Thomas, ou un échantillon réaliste) : seul le jeu de questions change, le reste de
-l'instrument est inchangé.
+The Flemmr corpus (7 notes) is small → embedder discrimination is **limited** (top-k brings back
+almost everything, hence the neck-and-neck above). To **really** separate EmbeddingGemma vs bge-m3
+(and settle D1 on numbers that separate), point the same harness at a **richer** corpus
+(Thomas's real brain, or a realistic sample): only the question set changes, the rest of the
+instrument is unchanged.

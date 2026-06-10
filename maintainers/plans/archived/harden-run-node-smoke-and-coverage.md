@@ -1,161 +1,162 @@
-# Plan — Durcir `run-node` : preuve en PATH appauvri + couverture élargie
+# Plan — Harden `run-node`: proof on an impoverished PATH + broadened coverage
 
-> **État : LIVRÉ** (2026-06-07, en TDD baby-steps ; suite verte 74/74, bootstrap frais
-> validé en PATH appauvri — non encore committé). Document auto-suffisant :
-> il contient tout le contexte nécessaire pour exécuter dans une session neuve.
-> Discipline : **TDD baby-steps** (skill `tdd-discipline`) — un test à la fois,
-> red→green→refactor. Le launcher est un outil Node/JS (pas un back-end Hive).
+> **State: SHIPPED** (2026-06-07, in TDD baby-steps; suite green 74/74, fresh bootstrap
+> validated on an impoverished PATH — not yet committed). Self-sufficient document:
+> it contains all the context needed to execute in a fresh session.
+> Discipline: **TDD baby-steps** (skill `tdd-discipline`) — one test at a time,
+> red→green→refactor. The launcher is a Node/JS tool (not a Hive back-end).
 >
-> **Pré-requis** : ce plan fait suite à `fix-hooks-node-nvm.md` (LIVRÉ + poussé,
-> commits `c1d21a7` / `8bfafbf` / `d8c1f17`). Il en corrige deux angles morts.
+> **Prerequisite**: this plan follows `fix-hooks-node-nvm.md` (SHIPPED + pushed,
+> commits `c1d21a7` / `8bfafbf` / `d8c1f17`). It fixes two of its blind spots.
 
-## Origine (discussion de design, 2026-06-07)
+## Origin (design discussion, 2026-06-07)
 
-Le lot précédent a introduit `scripts/run-node.*` : un lanceur « self-heal PATH »
-par lequel passent les 3 hooks (`{{NODE}}` dans `.claude/settings.json.template`),
-pour que `node` (souvent installé via nvm/Homebrew) soit retrouvé malgré le **PATH
-minimal** de l'app desktop. Mécanisme prouvé sur le terrain.
+The previous lot introduced `scripts/run-node.*`: a "self-heal PATH" launcher
+through which the 3 hooks go (`{{NODE}}` in `.claude/settings.json.template`),
+so that `node` (often installed via nvm/Homebrew) is found despite the **minimal
+PATH** of the desktop app. Mechanism proven in the field.
 
-En revoyant le design, **deux angles morts** sont apparus :
+Reviewing the design, **two blind spots** appeared:
 
-### Angle mort A — le smoke-test d'install ne prouve PAS le scénario réel
-Le smoke-test actuel (`bootstrap.mjs`, bloc « Smoke-test du lanceur ») lance
-`run-node` via `run(...)`, qui **hérite du PATH complet du shell d'install**. Or
-c'est précisément ce PATH riche qui masque le bug : node y est toujours trouvable.
-Le test répond donc à « node existe-t-il quelque part ? » et **non** à la vraie
-question « le wrapper, SEUL, retrouvera-t-il node quand l'app desktop l'appellera
-en PATH appauvri ? ». C'est un quasi-faux-positif.
+### Blind spot A — the install smoke-test does NOT prove the real scenario
+The current smoke-test (`bootstrap.mjs`, "Launcher smoke-test" block) runs
+`run-node` via `run(...)`, which **inherits the full PATH of the install shell**. Yet
+it's precisely that rich PATH that masks the bug: node is always findable there.
+The test therefore answers "does node exist somewhere?" and **not** the real
+question "will the wrapper, ON ITS OWN, find node when the desktop app calls it
+on an impoverished PATH?". It's a near-false-positive.
 
-### Angle mort B — la couverture du self-heal est incomplète
-`pathPrependSh()` regarde dans `/usr/local/bin`, `/opt/homebrew/bin`,
-`~/.asdf/shims` et les dossiers nvm. Il **manque** des emplacements courants :
-- **`/usr/bin`** — node installé via le gestionnaire système **Linux**
-  (`apt`/`dnf`/nodesource). Trou réel sur Linux.
+### Blind spot B — the self-heal coverage is incomplete
+`pathPrependSh()` looks in `/usr/local/bin`, `/opt/homebrew/bin`,
+`~/.asdf/shims` and the nvm directories. It's **missing** some common locations:
+- **`/usr/bin`** — node installed via the **Linux** system package manager
+  (`apt`/`dnf`/nodesource). A real gap on Linux.
 - **Volta** (`~/.volta/bin`).
 - **nodenv** (`~/.nodenv/shims`).
-- **fnm** (`~/.local/share/fnm/node-versions/*/installation/bin`, et sur macOS
+- **fnm** (`~/.local/share/fnm/node-versions/*/installation/bin`, and on macOS
   `~/Library/Application Support/fnm/node-versions/*/installation/bin`).
 
-Côté Windows (`pathPrependCmd()`), il manque notamment **Volta**
+On the Windows side (`pathPrependCmd()`), it notably misses **Volta**
 (`%LOCALAPPDATA%\Volta\bin`).
 
-## Principe directeur (et garde-fou anti sur-ingénierie — style Thomas)
+## Guiding principle (and anti over-engineering guardrail — Thomas style)
 
-On **n'essaie pas** d'énumérer tous les gestionnaires de versions à l'infini : c'est
-une course perdue. Le **vrai filet**, c'est l'angle mort A — un smoke-test qui
-**prouve à l'install, en PATH appauvri**, que le wrapper trouve node tout seul ;
-ainsi même un gestionnaire **non listé** échoue **bruyamment et tôt** (message
-actionnable), au lieu de casser en silence au runtime. Élargir la couverture
-(angle mort B) ne fait que **réduire la fréquence** où ce smoke-test recale un setup
-légitime. Donc : **A est prioritaire, B est un complément curé** (pas exhaustif).
+We **don't try** to enumerate every version manager forever: that's a losing
+race. The **real net** is blind spot A — a smoke-test that **proves at install,
+on an impoverished PATH**, that the wrapper finds node on its own;
+that way even an **unlisted** manager fails **loudly and early** (actionable
+message), instead of breaking silently at runtime. Broadening the coverage
+(blind spot B) only **reduces the frequency** at which this smoke-test rejects a
+legitimate setup. So: **A is the priority, B is a curated complement** (not exhaustive).
 
-Rappel design (déjà acté dans `fix-hooks-node-nvm.md`, ne PAS revenir dessus) : on
-**re-résout** le PATH à chaque exécution (coût ≈ nul : quelques `stat`, noyés dans
-le démarrage de node) plutôt que de **figer un chemin absolu** à l'install — un
-chemin gelé casserait au prochain `nvm install` / changement de version. On
-n'auto-installe pas node non plus (node = LE prérequis, vérifié fort à l'étape 1).
+Design reminder (already decided in `fix-hooks-node-nvm.md`, do NOT revisit): we
+**re-resolve** the PATH on every execution (cost ≈ nil: a few `stat`s, drowned in
+node's startup) rather than **freezing an absolute path** at install — a frozen
+path would break at the next `nvm install` / version change. We
+don't auto-install node either (node = THE prerequisite, strongly checked at step 1).
 
-## Étapes (TDD, baby-steps — un test à la fois)
+## Steps (TDD, baby-steps — one test at a time)
 
-### 1. Élargir la couverture POSIX — `scripts/lib/rag-launcher.mjs`
-- **Test-first** (`rag-launcher.test.mjs`) : `pathPrependSh()` doit contenir
-  `/usr/bin`, `$HOME/.volta/bin`, `$HOME/.nodenv/shims`, et les deux globs fnm
-  (`~/.local/share/fnm/.../installation/bin` et le chemin macOS
+### 1. Broaden the POSIX coverage — `scripts/lib/rag-launcher.mjs`
+- **Test-first** (`rag-launcher.test.mjs`): `pathPrependSh()` must contain
+  `/usr/bin`, `$HOME/.volta/bin`, `$HOME/.nodenv/shims`, and the two fnm globs
+  (`~/.local/share/fnm/.../installation/bin` and the macOS path
   `~/Library/Application Support/fnm/.../installation/bin`).
-- Ajouter les `add …` correspondants dans `pathPrependSh()`. ⚠️ **Ordre** : `add`
-  **prepend** (le dernier `add` finit en TÊTE de PATH). Garder en tête que les
-  ajouts tardifs priment — placer les gestionnaires utilisateur (volta/fnm/nodenv)
-  APRÈS les chemins système si on veut qu'ils priment, ou l'inverse. Décision par
-  défaut : conserver l'ordre actuel (système d'abord, puis nvm), ajouter
-  volta/fnm/nodenv à la suite. Le glob avec espace (« Application Support ») doit
-  être quoté correctement en sh (`"$HOME/Library/Application Support/fnm"/...`).
-- `buildShLauncher`/`buildNodeRunnerSh` héritent automatiquement (ils appellent
-  `pathPrependSh()`). Vérifier que les tests RAG existants restent verts.
+- Add the corresponding `add …` in `pathPrependSh()`. ⚠️ **Order**: `add`
+  **prepends** (the last `add` ends up at the HEAD of PATH). Keep in mind that
+  late additions win — place the user managers (volta/fnm/nodenv)
+  AFTER the system paths if you want them to win, or the reverse. Default
+  decision: keep the current order (system first, then nvm), add
+  volta/fnm/nodenv after. The glob with a space ("Application Support") must
+  be quoted correctly in sh (`"$HOME/Library/Application Support/fnm"/...`).
+- `buildShLauncher`/`buildNodeRunnerSh` inherit automatically (they call
+  `pathPrependSh()`). Verify the existing RAG tests stay green.
 
-### 2. Élargir la couverture Windows — même module
-- **Test-first** : `pathPrependCmd()` doit contenir `%LOCALAPPDATA%\Volta\bin`.
-- Ajouter la ligne `if exist "%LOCALAPPDATA%\\Volta\\bin" set "PATH=…"`.
-  (fnm-Windows = globbing cmd pénible → **hors scope**, couvert par le smoke-test A.)
+### 2. Broaden the Windows coverage — same module
+- **Test-first**: `pathPrependCmd()` must contain `%LOCALAPPDATA%\Volta\bin`.
+- Add the line `if exist "%LOCALAPPDATA%\\Volta\\bin" set "PATH=…"`.
+  (fnm-Windows = painful cmd globbing → **out of scope**, covered by smoke-test A.)
 
-### 3. Helper « env à PATH appauvri » testable — `scripts/lib/rag-launcher.mjs`
-- Nouveau `minimalPathEnv(platform, baseEnv)` : renvoie une copie de `baseEnv` où
-  **seul `PATH` est neutralisé**, en conservant le reste (HOME, ProgramFiles,
-  APPDATA, LOCALAPPDATA, NVM_SYMLINK… dont le self-heal a besoin).
-  - **posix** → `PATH: ""` (sh est lancé en absolu `/bin/sh`, node ne viendra QUE
-    du self-heal → preuve que le wrapper est auto-suffisant).
-  - **win32** → `PATH: "<SystemRoot>\\System32"` (cmd.exe doit rester trouvable ;
-    node viendra du self-heal). Utiliser `baseEnv.SystemRoot || "C:\\\\Windows"`.
-- **Test-first** : `minimalPathEnv("darwin", {HOME:"/h", PATH:"/usr/local/bin:/x"})`
-  → `PATH === ""` et `HOME === "/h"` (préservé). `minimalPathEnv("win32",
-  {SystemRoot:"C:\\Windows", ProgramFiles:"C:\\PF", PATH:"…"})` → `PATH` se termine
-  par `System32` et `ProgramFiles` préservé.
+### 3. Testable "impoverished-PATH env" helper — `scripts/lib/rag-launcher.mjs`
+- New `minimalPathEnv(platform, baseEnv)`: returns a copy of `baseEnv` where
+  **only `PATH` is neutralized**, preserving the rest (HOME, ProgramFiles,
+  APPDATA, LOCALAPPDATA, NVM_SYMLINK… which the self-heal needs).
+  - **posix** → `PATH: ""` (sh is launched absolute `/bin/sh`, node will come ONLY
+    from the self-heal → proof that the wrapper is self-sufficient).
+  - **win32** → `PATH: "<SystemRoot>\\System32"` (cmd.exe must stay findable;
+    node will come from the self-heal). Use `baseEnv.SystemRoot || "C:\\\\Windows"`.
+- **Test-first**: `minimalPathEnv("darwin", {HOME:"/h", PATH:"/usr/local/bin:/x"})`
+  → `PATH === ""` and `HOME === "/h"` (preserved). `minimalPathEnv("win32",
+  {SystemRoot:"C:\\Windows", ProgramFiles:"C:\\PF", PATH:"…"})` → `PATH` ends
+  with `System32` and `ProgramFiles` preserved.
 
-### 4. Durcir le smoke-test d'install — `bootstrap.mjs`
-- Dans le bloc « Smoke-test du lanceur », passer l'env appauvri au `run(...)` :
+### 4. Harden the install smoke-test — `bootstrap.mjs`
+- In the "Launcher smoke-test" block, pass the impoverished env to `run(...)`:
   `run(runner.command, [...], { cwd: TARGET, env: minimalPathEnv(process.platform, process.env) })`.
-- Importer `minimalPathEnv` depuis `./scripts/lib/rag-launcher.mjs`.
-- Adapter le message d'échec : c'est maintenant la **preuve en conditions réelles**
-  (PATH appauvri façon app desktop) → si ça recale, dire à l'utilisateur que son
-  node est dans un emplacement **inhabituel** (lister les emplacements couverts) et
-  qu'il faut soit l'ajouter, soit signaler le cas. Garder `process.exit(1)` (échec
-  bruyant, cohérent avec « le script juge lui-même »).
-- ⚠️ Vérifier que `run()` transmet bien `opts.env` à `execFileSync` (il spread
-  `...opts` → oui). Sur Windows, `command: "cmd"` doit rester résoluble via le
-  `System32` du PATH appauvri (d'où le choix du helper).
+- Import `minimalPathEnv` from `./scripts/lib/rag-launcher.mjs`.
+- Adapt the failure message: it is now the **proof under real conditions**
+  (impoverished PATH like the desktop app) → if it rejects, tell the user that their
+  node is in an **unusual** location (list the covered locations) and
+  that they must either add it or report the case. Keep `process.exit(1)` (loud
+  failure, consistent with "the script judges itself").
+- ⚠️ Verify that `run()` properly passes `opts.env` to `execFileSync` (it spreads
+  `...opts` → yes). On Windows, `command: "cmd"` must stay resolvable via the
+  `System32` of the impoverished PATH (hence the helper's choice).
 
-### 5. Test comportemental hermétique — `scripts/run-node.test.mjs`
-- Ajouter un cas (POSIX, skip win32) : créer un **HOME temporaire** avec un faux
-  node sous un dossier de gestionnaire (ex. `<tmpHome>/.volta/bin/node`, script sh
-  qui imprime un marqueur unique), écrire `run-node.sh` via `buildNodeRunnerSh()`,
-  puis l'exécuter avec `env = minimalPathEnv("darwin", { HOME: tmpHome, PATH:
-  "/usr/local/bin" })` MAIS en neutralisant le node système : pour rendre le test
-  **déterministe** malgré un éventuel node système, s'appuyer sur le fait que `add`
-  **prepend** → placer le faux gestionnaire de sorte qu'il soit ajouté EN DERNIER
-  (donc prioritaire) ; asserter que le **marqueur** du faux node est bien imprimé
-  (preuve que c'est CE node-là qui a tourné, pas un node système). Si l'ordre des
-  `add` ne garantit pas la priorité du dossier choisi, utiliser plutôt un dossier
-  **exclusif** au HOME temporaire (asdf/nvm/volta) ET `PATH: ""` ; le seul node
-  atteignable via $HOME temporaire sera le faux. (Documenter le choix dans le test.)
-- Objectif : prouver que la **couverture élargie** (volta/fnm/nodenv) résout
-  vraiment, pas seulement que la chaîne « forwarde vers node ».
+### 5. Hermetic behavioral test — `scripts/run-node.test.mjs`
+- Add a case (POSIX, skip win32): create a **temporary HOME** with a fake
+  node under a manager directory (e.g. `<tmpHome>/.volta/bin/node`, sh script
+  that prints a unique marker), write `run-node.sh` via `buildNodeRunnerSh()`,
+  then run it with `env = minimalPathEnv("darwin", { HOME: tmpHome, PATH:
+  "/usr/local/bin" })` BUT neutralizing the system node: to make the test
+  **deterministic** despite a possible system node, rely on the fact that `add`
+  **prepends** → place the fake manager so it's added LAST
+  (thus winning); assert that the **marker** of the fake node is indeed printed
+  (proof that THIS node ran, not a system node). If the order of the
+  `add`s doesn't guarantee the priority of the chosen directory, use instead a
+  directory **exclusive** to the temporary HOME (asdf/nvm/volta) AND `PATH: ""`;
+  the only node reachable via the temporary $HOME will be the fake one. (Document the
+  choice in the test.)
+- Goal: prove that the **broadened coverage** (volta/fnm/nodenv) really
+  resolves, not just that the chain "forwards to node".
 
-### 6. Suite verte & docs
-- `node --test scripts/lib/*.test.mjs scripts/*.test.mjs` → tout vert.
-- `DEVELOPING.md` (note de design existante sur run-node) : ajouter un paragraphe
-  « le smoke-test tourne désormais en PATH appauvri (preuve réelle, pas faux
-  positif) ; couverture = liste curée, le smoke-test est le filet pour le reste ».
-- `SETUP.md` (encadré utilisateur run-node) : préciser que si l'install **recale**
-  au smoke-test, c'est que node est dans un emplacement inhabituel → quoi faire.
+### 6. Suite green & docs
+- `node --test scripts/lib/*.test.mjs scripts/*.test.mjs` → all green.
+- `DEVELOPING.md` (existing design note on run-node): add a paragraph
+  "the smoke-test now runs on an impoverished PATH (real proof, not a false
+  positive); coverage = a curated list, the smoke-test is the net for the rest".
+- `SETUP.md` (user callout on run-node): clarify that if the install **rejects**
+  at the smoke-test, it's because node is in an unusual location → what to do.
 
-## Fichiers touchés
-- `scripts/lib/rag-launcher.mjs` (couverture POSIX+Win, `minimalPathEnv`) + `.test.mjs`
-- `bootstrap.mjs` (smoke-test en env appauvri + import)
-- `scripts/run-node.test.mjs` (test comportemental couverture)
+## Files touched
+- `scripts/lib/rag-launcher.mjs` (POSIX+Win coverage, `minimalPathEnv`) + `.test.mjs`
+- `bootstrap.mjs` (smoke-test in impoverished env + import)
+- `scripts/run-node.test.mjs` (behavioral coverage test)
 - `DEVELOPING.md` / `SETUP.md` (notes)
 
-## Hors périmètre (anti sur-ingénierie)
-- **Énumération exhaustive** des gestionnaires de versions : non. Liste curée +
-  smoke-test comme filet. fnm-Windows (globbing cmd) explicitement exclu.
-- **Chemin node absolu figé** à l'install : non (casse au prochain `nvm install` —
-  décision déjà actée).
-- **Auto-installation de node** : non (invasif, dépendant OS ; node = prérequis
-  vérifié fort à l'étape 1 du bootstrap).
-- Refonte du wrapper ou du format des hooks : non — on ne fait qu'élargir la liste
-  et durcir la preuve.
+## Out of scope (anti over-engineering)
+- **Exhaustive enumeration** of version managers: no. Curated list +
+  smoke-test as the net. fnm-Windows (cmd globbing) explicitly excluded.
+- **Frozen absolute node path** at install: no (breaks at the next `nvm install` —
+  decision already made).
+- **Auto-installation of node**: no (invasive, OS-dependent; node = prerequisite
+  strongly checked at step 1 of the bootstrap).
+- Reworking the wrapper or the hook format: no — we only broaden the list
+  and harden the proof.
 
-## Validation finale attendue
-- Reproduire le scénario A : sur une machine où node n'est PAS dans `/usr/local/bin`
-  (ex. uniquement Homebrew Apple Silicon ou nvm), l'ancien smoke-test passait à
-  tort ; le nouveau (PATH appauvri) doit **réussir** car le self-heal couvre ces
-  cas — ET **échouer** si on simule un node dans un dossier NON couvert (preuve que
-  le filet mord). À tester en simulant un PATH appauvri + un faux node placé hors
-  liste.
-- Test comportemental volta/fnm hermétique vert.
-- Suite complète verte. Valider le **livré** (bootstrap/wrapper générés), pas une
-  instance jetable : refaire un bootstrap frais dans `/tmp`, vérifier que le
-  smoke-test tourne en env appauvri et que `run-node` du cerveau résout node.
+## Expected final validation
+- Reproduce scenario A: on a machine where node is NOT in `/usr/local/bin`
+  (e.g. only Homebrew Apple Silicon or nvm), the old smoke-test passed
+  wrongly; the new one (impoverished PATH) must **succeed** because the self-heal covers these
+  cases — AND **fail** if we simulate a node in a directory NOT covered (proof that
+  the net bites). To be tested by simulating an impoverished PATH + a fake node placed off
+  the list.
+- Hermetic volta/fnm behavioral test green.
+- Full suite green. Validate the **shipped artifact** (generated bootstrap/wrapper), not a
+  disposable instance: redo a fresh bootstrap in `/tmp`, verify that the
+  smoke-test runs in the impoverished env and that the brain's `run-node` resolves node.
 
-## Commits suggérés (séparés)
+## Suggested commits (separate)
 1. `feat(run-node): élargir la couverture PATH (/usr/bin, volta, fnm, nodenv ; volta win)`
 2. `feat(bootstrap): smoke-test run-node en PATH appauvri — preuve réelle, plus de faux positif`
 3. `test(run-node): preuve hermétique que la couverture élargie résout node`

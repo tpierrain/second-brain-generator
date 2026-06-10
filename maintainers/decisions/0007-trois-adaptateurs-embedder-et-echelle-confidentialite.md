@@ -1,236 +1,236 @@
-# ADR 0007 — Trois adaptateurs d'embedder (Gemini natif / compatible-OpenAI / local) + échelle de confidentialité
+# ADR 0007 — Three embedder adapters (native Gemini / OpenAI-compatible / local) + privacy scale
 
-- **STATUT :** ACTÉ (2026-06-08) pour la **direction** (les trois adaptateurs + l'échelle de
-  confidentialité). **Question ouverte n°1 (défaut d'embedder à l'installation) → TRANCHÉE le
-  2026-06-09** : cf. **Addendum D1** en fin d'ADR (choix explicite à 3, défaut recommandé =
-  in-process « Gemma inside »).
-- **Lié :** [`0006-le-mcp-du-rag-est-un-contrat-stable.md`](0006-le-mcp-du-rag-est-un-contrat-stable.md)
-  (cet ADR **concrétise** son SPI « embedder interchangeable » en nommant les adaptateurs visés),
-  [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md) (le LLM qui répond reste
-  Claude → borne la promesse de privacy).
-- **Plan d'implémentation associé :** [`../plans/embedder-spi.md`](../plans/embedder-spi.md) (le port
-  `Embedder` + l'estampille d'identité) — cet ADR **ouvre la « discussion préalable »** que son §0.2
-  exigeait avant toute 2ᵉ impl concrète.
-- **Étude / veille :** [`../plans/etude-rag-local-criteres-et-veille.md`](../plans/etude-rag-local-criteres-et-veille.md)
-  (éventail de profils, veille embedders, échelle de confidentialité détaillée).
+- **STATUS:** ACCEPTED (2026-06-08) for the **direction** (the three adapters + the privacy scale).
+  **Open question #1 (default embedder at install) → SETTLED on 2026-06-09**: cf. **Addendum D1** at
+  the end of the ADR (explicit 3-way choice, recommended default = in-process "Gemma inside").
+- **Related:** [`0006-le-mcp-du-rag-est-un-contrat-stable.md`](0006-le-mcp-du-rag-est-un-contrat-stable.md)
+  (this ADR **makes concrete** its "interchangeable embedder" SPI by naming the targeted adapters),
+  [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md) (the LLM that answers
+  stays Claude → bounds the privacy promise).
+- **Associated implementation plan:** [`../plans/embedder-spi.md`](../plans/embedder-spi.md) (the
+  `Embedder` port + the identity stamp) — this ADR **opens the "prior discussion"** that its §0.2
+  required before any 2nd concrete impl.
+- **Study / watch:** [`../plans/etude-rag-local-criteres-et-veille.md`](../plans/etude-rag-local-criteres-et-veille.md)
+  (range of profiles, embedder watch, detailed privacy scale).
 
-## Contexte
+## Context
 
-Demande de **Dimitry Ernot** : pouvoir utiliser **autre chose que Google Gemini**. Deux réalités
-derrière ça : (a) le profil **gratuit + privé** (sortir d'une API cloud payante), et (b) le profil
-**entreprise**, où les gens passent par un **OpenAI/Azure validé par leur boîte** (gouvernance des
-données déjà tranchée à leur niveau) — pas par le service public central.
+Request from **Dimitry Ernot**: be able to use **something other than Google Gemini**. Two realities
+behind it: (a) the **free + private** profile (leaving a paid cloud API), and (b) the **enterprise**
+profile, where people go through an **OpenAI/Azure validated by their company** (data governance
+already settled at their level) — not the central public service.
 
-Aujourd'hui, l'embedder est **Gemini uniquement** (SDK natif Google, `rag/src/lib/embedder.ts` +
-`config.ts`), et l'install **force** une clé Gemini dans `.env`. L'ADR 0006 a déjà acté que
-l'embedder est un **SPI interchangeable** derrière un contrat MCP stable ; il restait à décider
-**quels** adaptateurs on vise et **pourquoi**.
+Today, the embedder is **Gemini only** (native Google SDK, `rag/src/lib/embedder.ts` + `config.ts`),
+and the install **forces** a Gemini key into `.env`. ADR 0006 already established that the embedder
+is an **interchangeable SPI** behind a stable MCP contract; it remained to decide **which** adapters
+we target and **why**.
 
-## Décision
+## Decision
 
-### 1. Trois choix côté utilisateur, ~deux implémentations côté code
+### 1. Three user-side choices, ~two code-side implementations
 
-| # | Choix utilisateur | Implémentation |
+| # | User choice | Implementation |
 |---|---|---|
-| 1 | **Gemini** (l'existant) | `GeminiEmbedder` — **SDK natif Google**, conservé tel quel |
-| 2 | **Endpoint API** (OpenAI public, **Azure OpenAI**, passerelle d'entreprise, **Mistral**…) | `OpenAiCompatibleEmbedder` — **un seul** adaptateur, **URL + clé configurables** |
-| 3 | **Local** (EmbeddingGemma / bge-m3 via Ollama) | **rien de neuf** : l'adaptateur n°2 **pointé sur `http://localhost:11434/v1`** (Ollama expose l'API compatible-OpenAI), sans clé |
+| 1 | **Gemini** (the existing one) | `GeminiEmbedder` — **native Google SDK**, kept as-is |
+| 2 | **API endpoint** (public OpenAI, **Azure OpenAI**, enterprise gateway, **Mistral**…) | `OpenAiCompatibleEmbedder` — **a single** adapter, **configurable URL + key** |
+| 3 | **Local** (EmbeddingGemma / bge-m3 via Ollama) | **nothing new**: adapter #2 **pointed at `http://localhost:11434/v1`** (Ollama exposes the OpenAI-compatible API), with no key |
 
-→ **3 options à proposer, mais potentiellement 2 seules impls à coder** (Gemini natif + compatible-
-OpenAI). Le local **réutilise** l'adaptateur n°2 — moins de pièces mobiles, moins de bugs.
+→ **3 options to offer, but potentially only 2 impls to code** (native Gemini + OpenAI-compatible).
+Local **reuses** adapter #2 — fewer moving parts, fewer bugs.
 
 ```
           ┌──────────────────────────────────────────────┐
-          │   PORT  Embedder  (le contrat interne, UNIQUE) │
-          │   • embedDocuments(textes) → vecteurs           │
-          │   • embedQuery(texte)      → vecteur             │
-          │   • identity (provider / modèle / dimension)    │
+          │   PORT  Embedder  (the internal contract, ONE) │
+          │   • embedDocuments(texts) → vectors             │
+          │   • embedQuery(text)      → vector              │
+          │   • identity (provider / model / dimension)     │
           └──────────────────────────────────────────────┘
                  ▲                ▲                ▲
-                 │ implémente     │ implémente     │ (réutilise n°2)
+                 │ implements     │ implements     │ (reuses #2)
         ┌────────┴─────┐  ┌───────┴─────────┐  ┌───┴───────────────┐
-        │GeminiEmbedder│  │OpenAiCompatible │  │ LOCAL = n°2 pointé │
-        │ = SDK Google │  │ Embedder        │  │ http://localhost…  │
-        │  (l'ACTUEL)  │  │ URL + clé config│  │ (Ollama, sans clé) │
+        │GeminiEmbedder│  │OpenAiCompatible │  │ LOCAL = #2 pointed │
+        │ = Google SDK │  │ Embedder        │  │ http://localhost…  │
+        │ (the CURRENT)│  │ URL + key config│  │ (Ollama, no key)   │
         └──────────────┘  │ OpenAI · Azure ·│  └────────────────────┘
-                          │ passerelle ·    │
+                          │ gateway ·       │
                           │ Mistral · …     │
                           └─────────────────┘
 
-   Les CONSOMMATEURS (indexation via index-manager, recherche via search-vault)
-   ne connaissent QUE le port → changer d'adaptateur ne touche ni eux, ni le
-   contrat MCP (ADR 0006). Les spécificités fournisseur (taskType…) vivent
-   DANS chaque adaptateur, sans fuiter dans le port.
+   The CONSUMERS (indexing via index-manager, search via search-vault)
+   only know the port → changing adapter touches neither them, nor the
+   MCP contract (ADR 0006). Provider specifics (taskType…) live INSIDE
+   each adapter, without leaking into the port.
 ```
 
-### 2. On **garde** le `GeminiEmbedder` natif — on ne le remplace pas par du compatible-OpenAI
+### 2. We **keep** the native `GeminiEmbedder` — we don't replace it with OpenAI-compatible
 
-Pour de l'embedding « brut », SDK natif et porte compatible-OpenAI rendent la même chose (un
-vecteur). Mais le **natif expose des boutons spécifiques** que la couche compatible-OpenAI aplatit —
-surtout le **`taskType`** (encoder un *document* ≠ encoder une *question*, ce qui améliore la
-pertinence), plus `outputDimensionality` et `title`. Remplacer le natif ne **gagne rien** pour Gemini
-et **perdrait** ces réglages. Règle : **on parle à chaque fournisseur dans sa langue maternelle quand
-on l'a déjà ; on utilise l'« espéranto compatible-OpenAI » pour tous ceux qu'on ne veut pas coder un
-par un.**
+For "raw" embedding, the native SDK and the OpenAI-compatible gateway return the same thing (a
+vector). But the **native one exposes specific knobs** that the OpenAI-compatible layer flattens —
+above all **`taskType`** (encoding a *document* ≠ encoding a *question*, which improves relevance),
+plus `outputDimensionality` and `title`. Replacing the native one **gains nothing** for Gemini and
+would **lose** those settings. Rule: **we speak to each provider in its mother tongue when we
+already can; we use the "OpenAI-compatible esperanto" for everyone we don't want to code one by
+one.**
 
-### 3. L'adaptateur compatible-OpenAI est l'impl concrète **au plus fort levier**
+### 3. The OpenAI-compatible adapter is the concrete impl with the **highest leverage**
 
-L'API `/v1/embeddings` d'OpenAI étant le **standard de fait**, **un seul** adaptateur à URL
-configurable couvre presque tout l'écosystème (OpenAI, Azure, passerelle interne, Mistral, Ollama
-local). On change de backend **en changeant une URL dans `.env`**, sans une ligne de code en plus.
-C'est donc le **premier candidat** de 2ᵉ impl à implémenter (après le port `Embedder` du plan SPI).
+Since OpenAI's `/v1/embeddings` API is the **de facto standard**, **a single** adapter with a
+configurable URL covers nearly the whole ecosystem (OpenAI, Azure, internal gateway, Mistral, local
+Ollama). You change backend **by changing a URL in `.env`**, without a single extra line of code.
+It's therefore the **first candidate** for the 2nd impl to build (after the SPI plan's `Embedder`
+port).
 
-**Jusqu'où va ce standard — l'enveloppe vs la lettre.** Ce qui a convergé, c'est l'**enveloppe** :
-requête `{ model, input }` → réponse `{ data: [{ embedding: [...] }] }`. C'est *ça* qui rend
-l'adaptateur unique possible. Restent **non** standardisés : (a) les **réglages fins** propres à un
-fournisseur (p. ex. le « type de tâche » document-vs-requête de Gemini/Cohere), accessibles seulement
-via le SDK natif → **justifie de garder l'adaptateur Gemini natif** (§2) ; (b) le **contenu** des
-vecteurs, propre à chaque modèle → **non interchangeable**, d'où le réindex obligatoire au swap (§5).
-Autrement dit : **on standardise *comment on se parle*, pas *ce que les nombres veulent dire*.**
+**How far this standard goes — the envelope vs the letter.** What converged is the **envelope**:
+request `{ model, input }` → response `{ data: [{ embedding: [...] }] }`. *That's* what makes the
+single adapter possible. What remains **not** standardized: (a) the **fine-grained settings** unique
+to a provider (e.g. Gemini/Cohere's "task type" document-vs-query), accessible only via the native
+SDK → **justifies keeping the native Gemini adapter** (§2); (b) the **content** of the vectors,
+specific to each model → **not interchangeable**, hence the mandatory reindex on swap (§5). In other
+words: **we standardize *how we talk to each other*, not *what the numbers mean*.**
 
-### 4. La confidentialité est une propriété de l'**endpoint + du palier**, pas du code
+### 4. Privacy is a property of the **endpoint + tier**, not of the code
 
-L'adaptateur est de la **tuyauterie neutre**. Le niveau de privacy est décidé par où on le pointe et
-sous quel plan. On **documente l'échelle de confidentialité** (détail dans l'étude) :
+The adapter is **neutral plumbing**. The privacy level is decided by where you point it and under
+which plan. We **document the privacy scale** (detail in the study):
 
 ```
-🟢 1. LOCAL (EmbeddingGemma/bge-m3) ── rien ne sort. Gratuit. Privacy max.
-🟢 2. Azure OpenAI / passerelle boîte ─ sort mais reste dans le tenant, 0 entraînement, contractuel.
-🟡 3. OpenAI API ──────────────────── sort, 0 entraînement par défaut, rétention ~30 j.
-🟡 4. Mistral payant (UE) ──────────── sort, 0 entraînement, hébergé UE (RGPD).
-🔴 5. N'IMPORTE QUEL palier GRATUIT ── ⚠️ souvent exploité (Gemini gratuit inclus → payer = passe ~3).
+🟢 1. LOCAL (EmbeddingGemma/bge-m3) ── nothing leaves. Free. Max privacy.
+🟢 2. Azure OpenAI / company gateway ─ leaves but stays in the tenant, 0 training, contractual.
+🟡 3. OpenAI API ──────────────────── leaves, 0 training by default, retention ~30 d.
+🟡 4. Paid Mistral (EU) ───────────── leaves, 0 training, EU-hosted (GDPR).
+🔴 5. ANY FREE tier ─────────────────  ⚠️ often exploited (free Gemini included → paying = moves to ~3).
 ```
 
-Deux vérités à ne pas survendre : **« pas d'entraînement » ≠ « ça ne quitte pas la machine »** (seul
-le local ne sort pas) ; et **le LLM qui répond reste Claude** (ADR 0004) — la privacy locale ne
-concerne **que** le RAG (embeddings + index + recherche).
+Two truths not to oversell: **"no training" ≠ "it doesn't leave the machine"** (only local doesn't
+leave); and **the LLM that answers stays Claude** (ADR 0004) — local privacy concerns **only** the
+RAG (embeddings + index + search).
 
-### 5. Au swap d'embedder : la base reste, les vecteurs non
+### 5. On embedder swap: the database stays, the vectors don't
 
-Quel que soit l'adaptateur, le **stockage est le même** (SQLite, mêmes tables) et les **notes ne
-bougent jamais**. Mais les **vecteurs ne sont JAMAIS réutilisables** d'un embedder à l'autre (espaces
-différents, **même à dimension égale**) → **réindex obligatoire** au swap. C'est l'estampille
-d'identité du plan SPI qui le détecte et déclenche le **confirm-gate** (addendum ADR 0006) ;
-l'estampille garde sur **provider + modèle + dimension** (pas la seule dimension, qui serait un
-piège).
+Whatever the adapter, the **storage is the same** (SQLite, same tables) and the **notes never move**.
+But the **vectors are NEVER reusable** from one embedder to another (different spaces, **even at
+equal dimension**) → **mandatory reindex** on swap. It's the SPI plan's identity stamp that detects
+it and triggers the **confirm-gate** (ADR 0006 addendum); the stamp keeps track of **provider +
+model + dimension** (not dimension alone, which would be a trap).
 
-## Conséquences
+## Consequences
 
-- **Réponse directe et complète à Dimitry** : profil entreprise (Azure/passerelle) et profil
-  gratuit+privé (local) couverts par le même mécanisme, sans toucher au harnais ni au contrat MCP.
-- **Un seul adaptateur neuf** (`OpenAiCompatibleEmbedder`) débloque OpenAI + Azure + Mistral + local
-  → effort minimal, surface de bug minimale (fidèle à « pas de sur-ingénierie »).
-- **Argumentaire d'install clair** : l'échelle de confidentialité dit, en une ligne par option, quelle
-  promesse on tient (et laquelle on **ne** tient pas).
-- **Coûte** : maintenir une 2ᵉ voie d'auth/erreurs (clé + URL configurables, codes d'erreur OpenAI) et
-  rester discipliné sur le provider-leak hors des schémas MCP (déjà propre, cf. ADR 0006 §8).
+- **Direct and complete answer to Dimitry**: the enterprise profile (Azure/gateway) and the
+  free+private profile (local) are both covered by the same mechanism, without touching the harness
+  or the MCP contract.
+- **A single new adapter** (`OpenAiCompatibleEmbedder`) unlocks OpenAI + Azure + Mistral + local →
+  minimal effort, minimal bug surface (faithful to "no over-engineering").
+- **Clear install pitch**: the privacy scale states, in one line per option, which promise we keep
+  (and which one we **don't**).
+- **Costs**: maintaining a 2nd auth/error path (configurable key + URL, OpenAI error codes) and
+  staying disciplined about provider leaks outside the MCP schemas (already clean, cf. ADR 0006 §8).
 
-### Exigence pédagogique (capitaliser sur ce qui a déjà fait ses preuves)
+### Pedagogical requirement (build on what has already proven itself)
 
-Offrir trois adaptateurs **n'a de valeur que si le choix est rendu limpide** pour un non-dev. Les
-**artefacts pédagogiques validés en conversation avec Thomas** (jugés « vraiment très clairs ») sont
-des **livrables de premier rang**, pas de la déco, et doivent être **réutilisés** partout où
-l'utilisateur rencontre ce choix (doc d'install, message de confirm-gate, futur explainer
-utilisateur) :
+Offering three adapters **only has value if the choice is made crystal-clear** for a non-dev. The
+**pedagogical artifacts validated in conversation with Thomas** (judged "really very clear") are
+**first-class deliverables**, not decoration, and must be **reused** everywhere the user encounters
+this choice (install doc, confirm-gate message, future user explainer):
 
-1. **« Embedder ≠ LLM de chat »** + tableau disque/RAM/GPU + verdict « réaliste sur un laptop banal »
-   (étude §1.3) — dégonfle la peur « faire tourner ChatGPT chez moi ».
-2. **L'échelle de confidentialité par fournisseur** (étude § cadrage privacy) — une ligne par option :
-   ce que la promesse tient, et ce qu'elle ne tient pas.
-3. **Le tableau « réutilisable au swap ou pas »** (étude §2) — rassure : *tes notes ne sont jamais
-   perdues, on ré-encode, ça prend quelques minutes.*
+1. **"Embedder ≠ chat LLM"** + disk/RAM/GPU table + "realistic on a regular laptop" verdict
+   (study §1.3) — deflates the "running ChatGPT at home" fear.
+2. **The per-provider privacy scale** (study, privacy framing §) — one line per option: what the
+   promise keeps, and what it doesn't.
+3. **The "reusable on swap or not" table** (study §2) — reassures: *your notes are never lost, we
+   re-encode, it takes a few minutes.*
 
-Règle : **toujours expliquer avec un tableau/échelle concret + un verdict en une phrase**, jamais en
-jargon. C'est le registre qui a marché ; on le standardise pour le RAG.
+Rule: **always explain with a concrete table/scale + a one-sentence verdict**, never in jargon.
+That's the register that worked; we standardize it for the RAG.
 
-## Questions ouvertes (NON tranchées ici — décision produit/UX de Thomas)
+## Open questions (NOT settled here — Thomas's product/UX decision)
 
-1. **Défaut d'embedder à l'installation.** Aujourd'hui l'install force une clé Gemini. Or l'install la
-   plus *simple* pourrait être **tout-local par défaut** (zéro clé, zéro cloud, zéro piège « gratuit
-   exploité »). **Tension réelle :**
-   - *Pour le tout-local* : pas de clé, privacy max, gratuit, pas de dépendance cloud.
-   - *Contre, pour un vrai non-dev (« Mac nu d'Achille »)* : exige **Ollama installé + modèle pull**
-     (~0,3–1,2 Go) → une **nouvelle dépendance native** à gérer (échos des leçons `run-node` /
-     PATH desktop nu). « Coller une clé » peut rester *mécaniquement* plus simple — mais traîne le
-     palier payant + le caveat cloud.
-   - **Pistes :** tout-local par défaut *(cible privilégiée)* ; (A) défaut unique simple + swap via
-     `.env` ; (B) mini-question pour le cas entreprise ; (C) choix explicite à 3 à l'install.
-   - **Préférence affichée par Thomas (2026-06-08) :** **défaut = adaptateur PUREMENT LOCAL** si possible
-     (argument produit : « on n'envoie pas tes données chez un provider »). **Méthode de décision actée :**
-     on tranche **APRÈS** avoir livré les 3 adaptateurs et fait des **tests ensemble** (cf. plan d'action
-     [`../plans/rag-embedder-plan-action.md`](../plans/rag-embedder-plan-action.md), Décision D1, qui
-     dépend de l'Étape 4 / mesure) — **pas sur l'intuition.** ⚠️ À confronter à la friction d'install du
-     local (Ollama + modèle) et à la règle « install générique » du `CLAUDE.md`. **Non tranché à ce jour.**
-2. **Local : via l'adaptateur n°2 (localhost) ou un adaptateur Ollama natif ?** Détail
-   d'implémentation ; penchant = **réutiliser le n°2** (moins de code), à valider à l'usage.
+1. **Default embedder at install.** Today the install forces a Gemini key. Yet the *simplest*
+   install might be **all-local by default** (zero key, zero cloud, zero "free-but-exploited" trap).
+   **Real tension:**
+   - *For all-local*: no key, max privacy, free, no cloud dependency.
+   - *Against, for a true non-dev ("Achille's bare Mac")*: requires **Ollama installed + model
+     pull** (~0.3–1.2 GB) → a **new native dependency** to manage (echoes of the `run-node` / bare
+     desktop PATH lessons). "Pasting a key" may remain *mechanically* simpler — but drags along the
+     paid tier + the cloud caveat.
+   - **Leads:** all-local by default *(preferred target)*; (A) single simple default + swap via
+     `.env`; (B) mini-question for the enterprise case; (C) explicit 3-way choice at install.
+   - **Preference stated by Thomas (2026-06-08):** **default = PURELY LOCAL adapter** if possible
+     (product argument: "we don't send your data to a provider"). **Accepted decision method:** we
+     settle it **AFTER** shipping the 3 adapters and running **tests together** (cf. action plan
+     [`../plans/rag-embedder-plan-action.md`](../plans/rag-embedder-plan-action.md), Decision D1,
+     which depends on Step 4 / measurement) — **not on intuition.** ⚠️ To weigh against the local's
+     install friction (Ollama + model) and the "generic install" rule of `CLAUDE.md`. **Not settled
+     to date.**
+2. **Local: via adapter #2 (localhost) or a native Ollama adapter?** Implementation detail; leaning
+   = **reuse #2** (less code), to validate in practice.
 
-## Alternatives écartées
+## Rejected alternatives
 
-- **Remplacer le `GeminiEmbedder` natif par du compatible-OpenAI** — ne gagne rien pour Gemini,
-  **perd** le `taskType` et casse une voie éprouvée (canari). Refusé (§2).
-- **Un adaptateur codé à la main par fournisseur** (OpenAI, Azure, Mistral séparés) — inutile :
-  le dialecte OpenAI est le standard de fait, un seul adaptateur à URL configurable suffit. Refusé.
-- **Imposer un choix de fournisseur à chaque non-dev à l'install** — friction, et frotte avec la
-  philosophie d'install générique. Écarté comme *défaut* (reste l'option C, ouverte).
+- **Replacing the native `GeminiEmbedder` with OpenAI-compatible** — gains nothing for Gemini,
+  **loses** `taskType` and breaks a proven path (canary). Refused (§2).
+- **A hand-coded adapter per provider** (separate OpenAI, Azure, Mistral) — pointless: the OpenAI
+  dialect is the de facto standard, a single adapter with a configurable URL is enough. Refused.
+- **Forcing a provider choice on every non-dev at install** — friction, and rubs against the generic
+  install philosophy. Set aside as a *default* (option C remains, open).
 
-## Addendum D1 (2026-06-09) — défaut d'embedder à l'installation : TRANCHÉ
+## Addendum D1 (2026-06-09) — default embedder at install: SETTLED
 
-> Résout la **Question ouverte n°1**, post-Étapes 4 + 4-bis (mesures consignées
-> [`../eval-set.md`](../eval-set.md)). Décision produit/UX de Thomas.
+> Resolves **Open question #1**, post Steps 4 + 4-bis (measurements recorded in
+> [`../eval-set.md`](../eval-set.md)). Thomas's product/UX decision.
 
-**Décision : option C — choix explicite à 3 à l'install**, avec une **recommandation ADAPTATIVE selon la
-machine** (et non un défaut fixe). On assume **une** question délibérée (exception consciente au « le moins
-de questions possible » du `CLAUDE.md`) : la confidentialité est un **vrai arbitrage utilisateur**, pas un
-détail technique.
+**Decision: option C — explicit 3-way choice at install**, with an **ADAPTIVE recommendation based
+on the machine** (rather than a fixed default). We accept **one** deliberate question (a conscious
+exception to `CLAUDE.md`'s "as few questions as possible"): privacy is a **genuine user trade-off**,
+not a technical detail.
 
-**🎚️ Recommandation adaptative (affinée 2026-06-09 après le test corpus dense).** L'install **détecte la
-machine** et met l'étoile ⭐ sur l'option adaptée :
-- **Poste capable (≥ 12 Go RAM, Apple Silicon / Windows)** → ⭐ **option 1 (in-process)** : privé, gratuit,
-  rien à installer.
-- **Petit poste (< 12 Go RAM) OU Mac Intel** → ⭐ **option 2 (clé d'API)** : Gemini, OpenAI, ou **n'importe
-  quel fournisseur, y compris l'endpoint de l'entreprise**. **Pourquoi** : l'in-process monte à **~4–6 Go en
-  indexation** (test vault réel, après plafonnement de lot Étape 4-ter) → swappe sur petite machine, et il
-  est **indisponible sur Mac Intel**. L'API = RAM ~0, reste léger sur petite machine.
-- **Seuil FIGÉ à 12 Go** (décision Thomas, post-Étape 4-ter — plafonnement de lot livré, pic OS ~3,8–4 Go en
-  `EMBED_BATCH=4`). Implémenté dans `scripts/lib/embedder-choice.mjs` (`IN_PROCESS_MIN_RAM_BYTES = 12 Go`).
+**🎚️ Adaptive recommendation (refined 2026-06-09 after the dense-corpus test).** The install
+**detects the machine** and puts the star ⭐ on the right option:
+- **Capable machine (≥ 12 GB RAM, Apple Silicon / Windows)** → ⭐ **option 1 (in-process)**: private,
+  free, nothing to install.
+- **Small machine (< 12 GB RAM) OR Intel Mac** → ⭐ **option 2 (API key)**: Gemini, OpenAI, or **any
+  provider, including the company endpoint**. **Why**: in-process climbs to **~4–6 GB during
+  indexing** (real-vault test, after Step 4-ter's batch capping) → swaps on a small machine, and it
+  is **unavailable on Intel Mac**. The API = RAM ~0, stays light on a small machine.
+- **Threshold FROZEN at 12 GB** (Thomas's decision, post Step 4-ter — batch capping shipped, OS peak
+  ~3.8–4 GB with `EMBED_BATCH=4`). Implemented in `scripts/lib/embedder-choice.mjs`
+  (`IN_PROCESS_MIN_RAM_BYTES = 12 GB`).
 
-Le *pourquoi*, adossé aux chiffres : l'in-process « Gemma inside » (Étape 4-bis) est **viable comme
-défaut** — install `npm`-only (ni clé ni app), démarrage MCP non ralenti, qualité **90 % = Ollama,
-> Gemini 80 %**, **rien ne sort de la machine**. Il offre donc « gratuit + privé + zéro friction »
-sans imposer de trancher un sujet technique.
+The *why*, backed by numbers: the in-process "Gemma inside" (Step 4-bis) is **viable as a default**
+— `npm`-only install (no key, no app), MCP startup not slowed, quality **90% = Ollama,
+> Gemini 80%**, **nothing leaves the machine**. It therefore offers "free + private + zero friction"
+without forcing a technical subject to be decided.
 
-**Les 3 options présentées** (triées par confidentialité décroissante) :
+**The 3 options presented** (sorted by decreasing privacy):
 
-| # | Libellé utilisateur | Adaptateur | Trade-off en une ligne |
+| # | User label | Adapter | One-line trade-off |
 |---|---|---|---|
-| 1 ⭐ | **Tout sur ta machine, rien à installer** | `InProcessEmbedder` (in-process) | Privé + gratuit + offline ; ~1,5 Go RAM au repos, **~4–6 Go en indexation d'un vrai vault** (≥ 12 Go ; plafonnement de lot `EMBED_BATCH=4` livré, Étape 4-ter) ; **Mac Apple Silicon / Windows** (pas Mac Intel) |
-| 2 | **Avec une clé d'API** (Gemini, ou endpoint entreprise) | `OpenAiCompatibleEmbedder` (ou Gemini natif) | Léger pour la machine ; **les notes transitent par le fournisseur** — voir cadrage gratuit/payant ci-dessous |
-| 3 | **Local via Ollama** *(avancé)* | n°2 pointé sur `localhost:11434` | Comme 1 (rien ne sort) mais **app séparée** ; utile Mac Intel / modèle précis |
+| 1 ⭐ | **Everything on your machine, nothing to install** | `InProcessEmbedder` (in-process) | Private + free + offline; ~1.5 GB RAM at rest, **~4–6 GB while indexing a real vault** (≥ 12 GB; batch capping `EMBED_BATCH=4` shipped, Step 4-ter); **Apple Silicon Mac / Windows** (not Intel Mac) |
+| 2 | **With an API key** (Gemini, or company endpoint) | `OpenAiCompatibleEmbedder` (or native Gemini) | Light for the machine; **the notes pass through the provider** — see free/paid framing below |
+| 3 | **Local via Ollama** *(advanced)* | #2 pointed at `localhost:11434` | Like 1 (nothing leaves) but **a separate app**; useful for Intel Mac / a specific model |
 
-**Garde-fous d'implémentation (pour l'Étape 5) :**
-- **Mac Intel** : l'option 1 (in-process) **n'apparaît pas** (`onnxruntime-node` 1.24.3 ne couvre pas
-  darwin/x64) → choix réduit à 2 (clé / Ollama). À **détecter automatiquement**.
-- **Ne plus *forcer* la clé Gemini** : l'étape « ouvrir le `.env` / coller la clé » ne se déclenche que
-  pour l'**option 2** (aujourd'hui `installer.mjs` / `verify-rag.mjs` / `gemini-key.mjs` / amorce
-  `CLAUDE.md` étape 4 l'exigent toujours).
-- **`verify-rag` doit passer** avec l'embedder retenu (canari Mollecuisse déjà OK en in-process).
-- **Réutiliser les 3 artefacts pédagogiques** (échelle confidentialité / embedder≠LLM /
-  réutilisable-au-swap) au point de choix.
+**Implementation guardrails (for Step 5):**
+- **Intel Mac**: option 1 (in-process) **does not appear** (`onnxruntime-node` 1.24.3 doesn't cover
+  darwin/x64) → choice reduced to 2 (key / Ollama). To **detect automatically**.
+- **No longer *force* the Gemini key**: the "open the `.env` / paste the key" step only triggers for
+  **option 2** (today `installer.mjs` / `verify-rag.mjs` / `gemini-key.mjs` / the `CLAUDE.md` step-4
+  bootstrap stub still require it).
+- **`verify-rag` must pass** with the retained embedder (Mollecuisse canary already OK in-process).
+- **Reuse the 3 pedagogical artifacts** (privacy scale / embedder≠LLM / reusable-on-swap) at the
+  choice point.
 
-**Cadrage « clé gratuite vs payante » (OBLIGATOIRE si l'utilisateur choisit l'option 2).** Le piège à
-désamorcer : **« gratuit » ≠ « privé ».** Avec une clé, le **texte des notes** est envoyé au
-fournisseur ; ce qui change tout, c'est le **palier** :
+**"Free vs paid key" framing (MANDATORY if the user picks option 2).** The trap to defuse: **"free"
+≠ "private".** With a key, the **text of the notes** is sent to the provider; what changes
+everything is the **tier**:
 
-- **Gemini GRATUIT** ⚠️ — limité (quotas) **ET Google peut exploiter tes données d'embedding**. À
-  éviter pour un vault un peu confidentiel (palier 🔴 5 de l'échelle).
-- **Gemini PAYANT** ✅ — **quelques dizaines de centimes/mois** en usage perso (quasi rien), et **c'est
-  précisément ce qui garantit que Google n'exploite PAS tes données** (pas d'entraînement, rétention
-  ~30 j → palier 🟡 3). **Le passage payant = la confidentialité.**
-- **Endpoint entreprise** (Azure / passerelle) ✅ — données dans le **tenant de la boîte** (palier 🟢 2).
+- **FREE Gemini** ⚠️ — limited (quotas) **AND Google may exploit your embedding data**. To avoid for
+  a somewhat confidential vault (tier 🔴 5 of the scale).
+- **PAID Gemini** ✅ — **a few tens of cents/month** in personal use (almost nothing), and **that is
+  precisely what guarantees Google does NOT exploit your data** (no training, retention ~30 d → tier
+  🟡 3). **Going paid = privacy.**
+- **Company endpoint** (Azure / gateway) ✅ — data in the **company's tenant** (tier 🟢 2).
 
-Verdict d'une phrase : **« gratuit » ne veut pas dire « privé » ; pour une clé d'API, payer quelques
-centimes c'est ce qui rend tes données privées — et si tu veux du vraiment-rien-ne-sort gratuit, c'est
-l'option 1.**
+One-sentence verdict: **"free" doesn't mean "private"; for an API key, paying a few cents is what
+makes your data private — and if you want truly-nothing-leaves for free, that's option 1.**
 
-> **Suite :** l'Étape 5 du plan [`../plans/rag-embedder-plan-action.md`](../plans/rag-embedder-plan-action.md)
-> implémente ce flux. D1 cochée.
+> **Next:** Step 5 of the plan [`../plans/rag-embedder-plan-action.md`](../plans/rag-embedder-plan-action.md)
+> implements this flow. D1 checked off.

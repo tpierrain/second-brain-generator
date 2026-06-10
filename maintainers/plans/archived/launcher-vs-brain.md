@@ -1,262 +1,262 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUT : ✅ LIVRÉ (2026-06-03) — archive. Décision : decisions/0001-launcher-vs-brain.md -->
+<!-- STATUS: ✅ SHIPPED (2026-06-03) — archive. Decision: decisions/0001-launcher-vs-brain.md -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
-# Plan — bascule du modèle d'install (launcher ↔ cerveau)
+# Plan — switch the install model (launcher ↔ brain)
 
-> **STATUT : ✅ LIVRÉ (2026-06-03).** La décision d'architecture correspondante est consignée dans
+> **STATUS: ✅ SHIPPED (2026-06-03).** The corresponding architecture decision is recorded in
 > [`../../decisions/0001-launcher-vs-brain.md`](../../decisions/0001-launcher-vs-brain.md). Archive
-> conservée pour le détail des étapes (R, A→G).
+> kept for the step detail (R, A→G).
 
 ---
 
-## Plan détaillé d'origine
+## Original detailed plan
 
-# PLAN — Dissociation launcher / cerveau (« le bootstrap CRÉE le dossier »)
+# PLAN — Launcher / brain decoupling ("the bootstrap CREATES the folder")
 
-> **But de ce fichier** : plan autoporteur. Une session Claude **vierge** doit pouvoir
-> l'exécuter en ne lisant QUE ce fichier + les fichiers source cités. Écrit dans `tmp/`
-> (gitignoré) → ne part pas chez l'utilisateur. Repo : `second-brain-starter` (le *template*).
-> Discipline **TDD obligatoire** (charger la skill `tdd-discipline`). Commits **manuels**.
-> Neutralité : aucun nom/chemin absolu en dur (placeholders `{{…}}` uniquement dans les `*.template`).
-> **Multi-OS strict (Windows inclus)** : voir §4.
+> **Purpose of this file**: self-sufficient plan. A **fresh** Claude session must be able
+> to execute it reading ONLY this file + the cited source files. Written in `tmp/`
+> (gitignored) → doesn't ship to the user. Repo: `second-brain-starter` (the *template*).
+> **Mandatory TDD** discipline (load the skill `tdd-discipline`). **Manual** commits.
+> Neutrality: no hardcoded name/absolute path (placeholders `{{…}}` only in the `*.template`).
+> **Strict multi-OS (Windows included)**: see §4.
 
 ---
 
-## 0. Objectif (le « pourquoi »)
+## 0. Objective (the "why")
 
-Supprimer **la cause racine** de tous nos corner-cases git : on **recyclait le clone** du starter
-comme cerveau (transform in-place) → d'où strip-remote, garde-fou mainteneur, gating `wasStub`…
+Remove **the root cause** of all our git corner-cases: we **recycled the clone** of the starter
+as the brain (in-place transform) → hence strip-remote, maintainer guardrail, `wasStub` gating…
 
-**Nouveau modèle :** on **dissocie**.
-- **Launcher** = le repo starter cloné. **Source en LECTURE SEULE, réutilisable** : un même launcher
-  sur un poste peut bootstrapper plusieurs cerveaux. Le bootstrap n'écrit **jamais** dedans.
-- **Cerveau** = un dossier **neuf que le bootstrap CRÉE lui-même** (nom + emplacement donnés).
-  Comme c'est nous qui le créons, y déposons les fichiers, puis `git init` dedans → **aucun lien
-  vers le starter, par construction**. Plus aucune chirurgie git.
+**New model:** we **decouple**.
+- **Launcher** = the cloned starter repo. **READ-ONLY source, reusable**: a single launcher
+  on a machine can bootstrap several brains. The bootstrap **never** writes inside it.
+- **Brain** = a **fresh folder that the bootstrap CREATES itself** (name + location given).
+  Since we're the ones creating it, dropping the files in, then `git init` inside → **no link
+  to the starter, by construction**. No more git surgery.
 
 ```
-~/second-brain-starter   (launcher cloné, RÉUTILISABLE, jamais modifié)
-   └─ node bootstrap.mjs --name perso     → crée  <dest>/perso/   (git init, 0 remote)
-   └─ node bootstrap.mjs --name boulot     → crée  <dest>/boulot/  (git init, 0 remote)
+~/second-brain-starter   (cloned launcher, REUSABLE, never modified)
+   └─ node bootstrap.mjs --name perso     → creates  <dest>/perso/   (git init, 0 remote)
+   └─ node bootstrap.mjs --name boulot     → creates  <dest>/boulot/  (git init, 0 remote)
 ```
 
-Rôle de **Claude** (amorce) : cloner le launcher, poser les questions (**nom**, **emplacement**,
-contexte, langue), lancer **UNE** commande. Le bootstrap décide et fait tout.
+Role of **Claude** (stub): clone the launcher, ask the questions (**name**, **location**,
+context, language), run **ONE** command. The bootstrap decides and does everything.
 
 ---
 
-## 1. Déterminisme (principe directeur, à ne pas trahir)
+## 1. Determinism (guiding principle, not to be betrayed)
 
-Mécanique + critique + répétable → **dans `bootstrap.mjs`** (déterministe, idempotent, auto-vérifiant
-via smoke-test + exit non-zéro). Claude = emballage conversationnel minimal (récolte des réponses,
-1 commande, relai du verdict + consignes finales). On NE confie PAS la séquence d'install à Claude.
+Mechanical + critical + repeatable → **in `bootstrap.mjs`** (deterministic, idempotent, self-verifying
+via smoke-test + non-zero exit). Claude = minimal conversational wrapping (gather the answers,
+1 command, relay the verdict + final instructions). We do NOT entrust the install sequence to Claude.
 
 ---
 
-## 2. État actuel du code (faits VÉRIFIÉS le 2026-06-03 — ne pas re-explorer)
+## 2. Current state of the code (facts VERIFIED 2026-06-03 — don't re-explore)
 
-- **`bootstrap.mjs`** (~360 l.) : `const ROOT = resolve(dirname(fileURLToPath(import.meta.url)))`
-  (l.33) puis `process.chdir(ROOT)` (l.34). **Tout opère sur ROOT** (= le dossier du script lui-même) :
-  - `defaultProject` = basename de ROOT (l.113).
-  - `replacements` (l.171-178) : `{{PROJECT_ROOT}}: toPosix(ROOT)`, `{{PROJECT_NAME}}`,
+- **`bootstrap.mjs`** (~360 l.): `const ROOT = resolve(dirname(fileURLToPath(import.meta.url)))`
+  (l.33) then `process.chdir(ROOT)` (l.34). **Everything operates on ROOT** (= the script's own folder):
+  - `defaultProject` = basename of ROOT (l.113).
+  - `replacements` (l.171-178): `{{PROJECT_ROOT}}: toPosix(ROOT)`, `{{PROJECT_NAME}}`,
     `{{OWNER_NAME}}`, `{{OWNER_CONTEXT}}`, `{{LANGUAGE}}`, `{{TMP_DIR}}: toPosix(tmpdir())`, `{{SOURCE_1}}`.
-    **`toPosix()` existe déjà** et convertit en forward-slash → règle le souci JSON/Windows pour les chemins.
-  - `gen(tpl, out, canOverwrite)` (l.182-194) : substitue `replacements` puis écrit `out`.
-    Appels l.200-202 : CLAUDE.md (overwrite stub via `isBootstrapStub`), .mcp.json, .claude/settings.json.
-  - `.env` copié depuis `.env.example` (l.205-206), clé écrite seulement si fournie.
-  - **Bloc git (l.~213-250)** : utilise `planGitSetup({hasDotGit, wasStub, isMaintainer})` +
-    `git init`/`remote remove`/`commit` sur ROOT. ← **À SUPPRIMER/REMPLACER** (modèle in-place).
-  - Connecteurs (étape 5), notes d'exemple (6), `npm install` rag (7, `join(ROOT,"rag")` l.313),
-    index (8), smoke-test (9, lit `join(ROOT,".mcp.json")` l.341, `cwd: srv.cwd ?? ROOT` l.354).
-- **`scripts/lib/git-init.mjs`** : `planGitSetup(...)` (Couche 2). ← **À SUPPRIMER** (+ son test
-  `git-init.test.mjs`). Plus aucun mode in-place → plus de strip-remote ni garde-fou.
-- **`scripts/auto-commit.mjs`** : **Couche 1 = push opt-in** (`secondbrain.autopush`). ← **GARDER**
-  tel quel (`auto-commit.test.mjs` aussi : 4 tests, dont remote bare = vérif comportementale).
-- **`scripts/lib/bootstrap-args.mjs`** : `parseAnswers(argv, env, defaults)` →
+    **`toPosix()` already exists** and converts to forward-slash → settles the JSON/Windows issue for paths.
+  - `gen(tpl, out, canOverwrite)` (l.182-194): substitutes `replacements` then writes `out`.
+    Calls l.200-202: CLAUDE.md (overwrite stub via `isBootstrapStub`), .mcp.json, .claude/settings.json.
+  - `.env` copied from `.env.example` (l.205-206), key written only if provided.
+  - **Git block (l.~213-250)**: uses `planGitSetup({hasDotGit, wasStub, isMaintainer})` +
+    `git init`/`remote remove`/`commit` on ROOT. ← **TO REMOVE/REPLACE** (in-place model).
+  - Connectors (step 5), example notes (6), `npm install` rag (7, `join(ROOT,"rag")` l.313),
+    index (8), smoke-test (9, reads `join(ROOT,".mcp.json")` l.341, `cwd: srv.cwd ?? ROOT` l.354).
+- **`scripts/lib/git-init.mjs`**: `planGitSetup(...)` (Layer 2). ← **TO REMOVE** (+ its test
+  `git-init.test.mjs`). No more in-place mode → no more strip-remote nor guardrail.
+- **`scripts/auto-commit.mjs`**: **Layer 1 = push opt-in** (`secondbrain.autopush`). ← **KEEP**
+  as-is (`auto-commit.test.mjs` too: 4 tests, including bare remote = behavioral check).
+- **`scripts/lib/bootstrap-args.mjs`**: `parseAnswers(argv, env, defaults)` →
   `{projectName, ownerName, ownerContext, language, nonInteractive}`. Flags `--name/--owner/--context/--lang`
-  (formes `--x v` ET `--x=v`), env `SB_*`, précédence flag>env>default ; alias `--non-interactive/--yes/--no-input`.
-  **N'accepte jamais de secret.** ← **À ÉTENDRE** : ajouter l'emplacement (`--dest`, env `SB_DEST`).
-- **Tests** : `node --test scripts/lib/*.test.mjs scripts/*.test.mjs` (40 verts). Moteur :
+  (forms `--x v` AND `--x=v`), env `SB_*`, precedence flag>env>default; alias `--non-interactive/--yes/--no-input`.
+  **Never accepts a secret.** ← **TO EXTEND**: add the location (`--dest`, env `SB_DEST`).
+- **Tests**: `node --test scripts/lib/*.test.mjs scripts/*.test.mjs` (40 green). Engine:
   `cd rag && npm test` (76) + `npx tsc --noEmit`.
-- **Dernier commit** `c5d3627` (Couches 1+2). Ce plan **supersède** la Couche 2 (retrait assumé).
-- **`tmp/` gitignoré** (ce plan y vit). `toPosix` = helper interne de bootstrap.mjs (chercher sa def).
+- **Last commit** `c5d3627` (Layers 1+2). This plan **supersedes** Layer 2 (deliberate removal).
+- **`tmp/` gitignored** (this plan lives there). `toPosix` = internal helper of bootstrap.mjs (look for its def).
 
 ---
 
-## 3. Décisions verrouillées avec Thomas
+## 3. Decisions locked with Thomas
 
-1. **On refuse un dossier cible EXISTANT.** Garantit que c'est bien le bootstrap qui crée le dossier.
-   Pas de gestion « mettre un cerveau dans un repo existant ».
-2. **On ne supprime RIEN.** Le launcher reste en place, réutilisable ; l'utilisateur le jette s'il veut.
-3. **Launcher = lecture seule.** Le bootstrap n'écrit jamais dans le launcher (son CLAUDE.md reste
-   l'amorce, son `rag/` reste sans `node_modules`). Réutilisable pour N cerveaux.
-4. **Copie = fichiers SUIVIS** du launcher (`git -C <launcher> ls-files -z`) → exclut auto `.git`,
-   `node_modules`, `.env`, et les gitignorés `CLAUDE.local.md` / `tmp/`.
-   ⚠️ **CORRECTION (vérifié le 2026-06-03)** : `DEVELOPING.md` est **TRACKÉ** (pas gitignoré),
-   donc `ls-files` l'inclut. **Décision Thomas : denylist dans la copie** — `bootstrap.mjs`
-   exclut explicitement `DEVELOPING.md` (constante `DEV_ONLY = new Set(["DEVELOPING.md"])`).
-   On NE le dé-tracke PAS (il reste versionné/public). Tests, templates, `rag/` source → copiés (OK).
-5. **Couche 1 (push opt-in) gardée ; Couche 2 retirée.**
-6. **« Use this template » (GitHub)** : ~~recadré en « juste une façon d'obtenir le launcher »~~
-   → **RÉVISÉ le 2026-06-03 (Thomas) : SUPPRIMÉ du README.** Dans le modèle local-first (le cerveau
-   est créé par le bootstrap, 0 remote par défaut), « Use this template » n'apporte rien et risque de
-   réveiller l'ancien modèle mental (« ce repo = mon projet »). On ne garde que `git clone <URL>`.
-7. **README/SETUP réécrits en étape E APRÈS le code (A→C→D)** — choix Thomas, pour éviter tout
-   écart doc/code. Ne PAS toucher au narratif in-place du README avant E (les 7 occ. « Use this
-   template » + « un seul dossier / aucun second dossier » seront remplacées d'un bloc en E).
-
----
-
-## 4. Multi-OS strict (Windows inclus) — incompressible
-
-- **Emplacement par défaut calculé en Node** : `path.join(os.homedir(), name)`. **JAMAIS** un `~/…`
-  littéral. `--dest <parent>` surcharge → cible = `join(dest ?? homedir(), name)`. Tous les chemins
-  via `path.join`/`path.resolve` (jamais de concat `/` manuelle).
-- **Copie en Node PUR** : `git ls-files -z` (NUL → gère espaces/accents) + `mkdir` parents + copie
-  `fs`. **PAS** `git archive | tar` (pipe shell + tar fragiles sous Windows).
-- **`{{PROJECT_ROOT}}`** doit rester en forward-slash dans le JSON → utiliser `toPosix(TARGET)`
-  (helper déjà présent). Vérifier que `.claude/settings.json` généré reste un JSON valide.
-- `existsSync` pour le refus-si-existe ; `git`/`npm` lancés avec `cwd: join(target, …)` explicite.
-- Pas de dépendance bash/jq/tar/sqlite3 (cohérent avec la philosophie du repo).
+1. **We refuse an EXISTING target folder.** Guarantees that the bootstrap is indeed the one creating the folder.
+   No "put a brain into an existing repo" handling.
+2. **We delete NOTHING.** The launcher stays in place, reusable; the user discards it if they want.
+3. **Launcher = read-only.** The bootstrap never writes into the launcher (its CLAUDE.md stays
+   the stub, its `rag/` stays without `node_modules`). Reusable for N brains.
+4. **Copy = TRACKED files** of the launcher (`git -C <launcher> ls-files -z`) → auto-excludes `.git`,
+   `node_modules`, `.env`, and the gitignored `CLAUDE.local.md` / `tmp/`.
+   ⚠️ **CORRECTION (verified 2026-06-03)**: `DEVELOPING.md` is **TRACKED** (not gitignored),
+   so `ls-files` includes it. **Thomas's decision: denylist in the copy** — `bootstrap.mjs`
+   explicitly excludes `DEVELOPING.md` (constant `DEV_ONLY = new Set(["DEVELOPING.md"])`).
+   We do NOT untrack it (it stays versioned/public). Tests, templates, `rag/` source → copied (OK).
+5. **Layer 1 (push opt-in) kept; Layer 2 removed.**
+6. **"Use this template" (GitHub)**: ~~recast as "just a way to obtain the launcher"~~
+   → **REVISED 2026-06-03 (Thomas): REMOVED from the README.** In the local-first model (the brain
+   is created by the bootstrap, 0 remote by default), "Use this template" adds nothing and risks
+   reviving the old mental model ("this repo = my project"). We keep only `git clone <URL>`.
+7. **README/SETUP rewritten in step E AFTER the code (A→C→D)** — Thomas's choice, to avoid any
+   doc/code gap. Do NOT touch the README's in-place narrative before E (the 7 occ. "Use this
+   template" + "a single folder / no second folder" will be replaced in one block in E).
 
 ---
 
-## 5. Travaux (ordonnés, chacun en TDD) — = les « grandes étapes »
+## 4. Strict multi-OS (Windows included) — incompressible
 
-### R. Renommage `second-brain-starter` → `second-brain-generator` [à faire EN PREMIER]
-> **Pourquoi ce nom.** « starter » = une graine qu'on fait pousser **sur place** = le modèle
-> in-place qu'on ABANDONNE → faux. « template » = un truc qu'on copie/modifie → faux aussi.
-> **« générateur »** = un outil qui **PRODUIT** des sorties, **réutilisable**, **non modifié** →
-> mappe 1:1 sur « un launcher en lecture seule génère N cerveaux ». Le nom raconte l'archi.
-> Nom retenu : **Second Brain Generator** (en) / `second-brain-generator` (repo) / « générateur de
-> second cerveau » (fr).
+- **Default location computed in Node**: `path.join(os.homedir(), name)`. **NEVER** a literal `~/…`.
+  `--dest <parent>` overrides → target = `join(dest ?? homedir(), name)`. All paths
+  via `path.join`/`path.resolve` (never a manual `/` concat).
+- **PURE Node copy**: `git ls-files -z` (NUL → handles spaces/accents) + `mkdir` parents + `fs`
+  copy. **NOT** `git archive | tar` (shell pipe + tar fragile on Windows).
+- **`{{PROJECT_ROOT}}`** must stay forward-slash in the JSON → use `toPosix(TARGET)`
+  (helper already present). Verify the generated `.claude/settings.json` stays valid JSON.
+- `existsSync` for the refuse-if-exists; `git`/`npm` launched with explicit `cwd: join(target, …)`.
+- No bash/jq/tar/sqlite3 dependency (consistent with the repo's philosophy).
 
-**R1 — Texte (in-repo), à committer séparément AVANT A** :
-- **Formes composées** (remplacement direct, même longueur → alignement bannière ASCII préservé) :
-  `Second Brain Starter` → `Second Brain Generator` ; `second-brain-starter` → `second-brain-generator`.
-  Fichiers connus : `.env.example`, `.gitignore`, `CLAUDE.md` (amorce), `DEVELOPING.md`, `README.md`,
-  `bootstrap.mjs` (commentaire l.3 + bannière l.60). Commande sûre (zsh → lister les fichiers, pas `$VAR`) :
-  `perl -i -pe 's/second-brain-starter/second-brain-generator/g; s/Second Brain Starter/Second Brain Generator/g' <fichiers>`
-- **Marqueur bootstrap-stub** (garder synchrone !) : `<!-- second-brain-starter:bootstrap-stub -->`
-  → `<!-- second-brain-generator:bootstrap-stub -->` dans **`scripts/lib/claude-md.mjs`**
-  (`BOOTSTRAP_STUB_MARKER`) ET **`CLAUDE.md`** (l.1) ET **`DEVELOPING.md`** (l.52). Le test
-  `claude-md.test.mjs` importe la constante (ne hardcode pas la string) → reste vert. Vérifier
-  `isBootstrapStub(CLAUDE.md) === true` après coup.
-- **« starter » employé SEUL** (≈30 occ.) — **désignant le PROJET** → « générateur » (FR correct :
-  « le générateur enforce… », « récupérer le générateur »). Fichiers : `README.md`, `CLAUDE.md`
-  (amorce, ex. « Récupérer le générateur »), `SETUP.md`, `CONNECTORS.md`, `bootstrap.mjs`
-  (commentaires + message « lien vers le générateur retiré »), `scripts/auto-commit.mjs`,
+---
+
+## 5. Work (ordered, each in TDD) — = the "big steps"
+
+### R. Rename `second-brain-starter` → `second-brain-generator` [to do FIRST]
+> **Why this name.** "starter" = a seed we grow **in place** = the in-place model
+> we're ABANDONING → wrong. "template" = something we copy/modify → wrong too.
+> **"generator"** = a tool that **PRODUCES** outputs, **reusable**, **unmodified** →
+> maps 1:1 onto "a read-only launcher generates N brains". The name tells the architecture.
+> Chosen name: **Second Brain Generator** (en) / `second-brain-generator` (repo) / "générateur de
+> second cerveau" (fr).
+
+**R1 — Text (in-repo), to commit separately BEFORE A**:
+- **Compound forms** (direct replacement, same length → ASCII banner alignment preserved):
+  `Second Brain Starter` → `Second Brain Generator`; `second-brain-starter` → `second-brain-generator`.
+  Known files: `.env.example`, `.gitignore`, `CLAUDE.md` (stub), `DEVELOPING.md`, `README.md`,
+  `bootstrap.mjs` (comment l.3 + banner l.60). Safe command (zsh → list the files, not `$VAR`):
+  `perl -i -pe 's/second-brain-starter/second-brain-generator/g; s/Second Brain Starter/Second Brain Generator/g' <files>`
+- **bootstrap-stub marker** (keep in sync!): `<!-- second-brain-starter:bootstrap-stub -->`
+  → `<!-- second-brain-generator:bootstrap-stub -->` in **`scripts/lib/claude-md.mjs`**
+  (`BOOTSTRAP_STUB_MARKER`) AND **`CLAUDE.md`** (l.1) AND **`DEVELOPING.md`** (l.52). The test
+  `claude-md.test.mjs` imports the constant (doesn't hardcode the string) → stays green. Verify
+  `isBootstrapStub(CLAUDE.md) === true` afterward.
+- **"starter" used ALONE** (≈30 occ.) — **designating the PROJECT** → "générateur" (correct FR:
+  "le générateur enforce…", "récupérer le générateur"). Files: `README.md`, `CLAUDE.md`
+  (stub, e.g. "Récupérer le générateur"), `SETUP.md`, `CONNECTORS.md`, `bootstrap.mjs`
+  (comments + message "lien vers le générateur retiré"), `scripts/auto-commit.mjs`,
   `scripts/auto-commit.test.mjs`, `scripts/lib/git-init.mjs`, `scripts/lib/git-init.test.mjs`
-  (⚠️ git-init.* sera de toute façon supprimé en étape D), `.claude/skills/EXAMPLES.md`,
-  `.claude/skills/tdd-discipline/SKILL.md`, `example-notes.mjs`. **À la main / ciblé** (pas de
-  remplacement aveugle : « le creator/generator » ≠ voulu partout — réfléchir au cas par cas).
-- **Métaphore « graine » : GARDÉE** (décrit le *cerveau* qu'on fait pousser, ≠ le générateur qui le
-  produit). Vit dans `README.md` (L17-18, 212-213, 216, 230, 392-393). **Seul ajustement** : L17
-  « c'est une **graine** (un *starter*) » conflate repo=graine → reformuler en « le **générateur**
-  **produit** une graine/un squelette que tu fais pousser ». (Confirmer le sort de la métaphore avec
-  Thomas si doute — défaut : garder + recadrer L17.)
-- **Vérifs** : `git grep -niE "second[ -]brain[ -]starter"` vide ; `isBootstrapStub(CLAUDE.md)` vrai ;
-  suite harnais + RAG vertes ; `node --check bootstrap.mjs`. **Neutralité** OK.
-- **Commit** : `chore: renommage second-brain-starter → second-brain-generator`.
+  (⚠️ git-init.* will be removed anyway in step D), `.claude/skills/EXAMPLES.md`,
+  `.claude/skills/tdd-discipline/SKILL.md`, `example-notes.mjs`. **By hand / targeted** (no
+  blind replacement: "le creator/generator" ≠ wanted everywhere — think case by case).
+- **"seed" metaphor: KEPT** (describes the *brain* we grow, ≠ the generator that
+  produces it). Lives in `README.md` (L17-18, 212-213, 216, 230, 392-393). **Only adjustment**: L17
+  "it's a **seed** (a *starter*)" conflates repo=seed → reword to "the **generator**
+  **produces** a seed/skeleton you grow". (Confirm the fate of the metaphor with
+  Thomas if in doubt — default: keep + recast L17.)
+- **Checks**: `git grep -niE "second[ -]brain[ -]starter"` empty; `isBootstrapStub(CLAUDE.md)` true;
+  harness + RAG suites green; `node --check bootstrap.mjs`. **Neutrality** OK.
+- **Commit**: `chore: renommage second-brain-starter → second-brain-generator`.
 
-**R2 — Repo GitHub distant (optionnel, faisable EN session)** :
-`gh repo rename second-brain-generator` (depuis le repo) puis `git remote set-url origin <nouvelle-url>`.
-GitHub **redirige** automatiquement l'ancienne URL. (Si pas de `gh`/droits → guider Thomas.)
+**R2 — Remote GitHub repo (optional, doable IN session)**:
+`gh repo rename second-brain-generator` (from the repo) then `git remote set-url origin <new-url>`.
+GitHub **redirects** the old URL automatically. (If no `gh`/rights → guide Thomas.)
 
-**R3 — Dossier local sur disque (MANUEL par Thomas, HORS session)** :
-⚠️ **Ne pas faire depuis une session Claude active** : la session est ancrée sur le chemin, et la
-mémoire auto est indexée dessus (`~/.claude/projects/-Users-tpierrain-Dev-second-brain-starter/`).
-Procédure à donner à Thomas : fermer Claude Code, puis
+**R3 — Local folder on disk (MANUAL by Thomas, OUTSIDE the session)**:
+⚠️ **Don't do this from an active Claude session**: the session is anchored on the path, and the
+auto-memory is indexed on it (`~/.claude/projects/-Users-tpierrain-Dev-second-brain-starter/`).
+Procedure to give to Thomas: close Claude Code, then
 ```bash
 mv ~/Dev/second-brain-starter ~/Dev/second-brain-generator
 mv ~/.claude/projects/-Users-tpierrain-Dev-second-brain-starter \
-   ~/.claude/projects/-Users-tpierrain-Dev-second-brain-generator   # préserve la mémoire
+   ~/.claude/projects/-Users-tpierrain-Dev-second-brain-generator   # preserves the memory
 ```
-puis rouvrir Claude Code dans `~/Dev/second-brain-generator`.
+then reopen Claude Code in `~/Dev/second-brain-generator`.
 
-### A. Résolution de la cible — `bootstrap-args.mjs` [TDD]
-- Étendre `parseAnswers` : reconnaître `--dest`/`--dest=` + env `SB_DEST` (précédence flag>env>défaut).
-  Ajouter au retour un champ pour l'emplacement (p. ex. `destParent`, défaut `undefined`).
-- **Nouvelle fonction PURE** `resolveTargetDir({ name, destParent, home })` → chemin absolu de la
-  cible = `path.join(destParent ?? home, name)`. (Pure → `home` injecté, pas d'appel `os.homedir()`
-  dedans, pour testabilité + déterminisme.)
-- **Tests** (red d'abord) : défaut = `join(home, name)` ; `--dest` → `join(dest, name)` ; formes
-  `--dest v` et `--dest=v` ; précédence flag>env>défaut ; jamais de secret reconnu (garde existante).
+### A. Target resolution — `bootstrap-args.mjs` [TDD]
+- Extend `parseAnswers`: recognize `--dest`/`--dest=` + env `SB_DEST` (precedence flag>env>default).
+  Add a field for the location to the return (e.g. `destParent`, default `undefined`).
+- **New PURE function** `resolveTargetDir({ name, destParent, home })` → absolute path of the
+  target = `path.join(destParent ?? home, name)`. (Pure → `home` injected, no `os.homedir()`
+  call inside, for testability + determinism.)
+- **Tests** (red first): default = `join(home, name)`; `--dest` → `join(dest, name)`; forms
+  `--dest v` and `--dest=v`; precedence flag>env>default; never a secret recognized (existing guard).
 
-### B. Refus-si-existe + liste des fichiers suivis [TDD-léger]
-- Petit helper PUR pour parser la sortie `git ls-files -z` → tableau de chemins relatifs
-  (split sur `\0`, filtrer le vide). Test trivial sur une string `"a\0b/c\0"`.
-- Le refus-si-existe (`existsSync(target)`) et la copie réelle (`fs`) sont des side-effects →
-  couverts par l'e2e §6 (pas de test unitaire artificiel). Le **message** d'erreur si la cible
-  existe doit être clair (mais **ne pas** asserter sur la string en test — cf. règle anti-fragile).
+### B. Refuse-if-exists + list of tracked files [light-TDD]
+- Small PURE helper to parse the `git ls-files -z` output → array of relative paths
+  (split on `\0`, filter empties). Trivial test on a string `"a\0b/c\0"`.
+- The refuse-if-exists (`existsSync(target)`) and the real copy (`fs`) are side-effects →
+  covered by the e2e §6 (no artificial unit test). The error **message** if the target
+  exists must be clear (but **do not** assert on the string in a test — cf. anti-fragile rule).
 
-### C. Refactor `bootstrap.mjs` vers le modèle CIBLE [le gros morceau]
-- Introduire `TARGET` = `resolveTargetDir(...)`. **Refuser** (exit non-zéro, message clair) si
-  `existsSync(TARGET)`. Sinon `mkdirSync(TARGET, { recursive: true })`.
-- **Copier les fichiers suivis** ROOT(launcher)→TARGET : `git -C ROOT ls-files -z` → pour chaque,
-  `mkdir` du parent dans TARGET + copie `fs`. (ROOT reste intact.)
-- **Rediriger TOUT vers TARGET** : `gen()` écrit dans TARGET (templates lus depuis TARGET, qui les
-  a reçus à la copie) ; `.env` dans TARGET ; `{{PROJECT_ROOT}} = toPosix(TARGET)` ; `npm install`
-  dans `join(TARGET,"rag")` ; smoke-test lit `join(TARGET,".mcp.json")`, `cwd` = TARGET.
-- **Git du cerveau, trivial** : `git init` dans TARGET + `add -A` + commit « initialisation du
-  second cerveau » (commit non-fatal si pas d'identité git). **Toujours** init (dossier neuf),
-  **aucun** conditionnel, **aucun** remote, **aucune** suppression. Retirer `process.chdir(ROOT)`
-  ou le remplacer par un usage explicite des chemins (vigilance : ne plus dépendre du cwd).
-- `defaultProject` : dériver du `--name` (sinon fallback « second-brain »), plus du basename de ROOT.
+### C. Refactor `bootstrap.mjs` toward the TARGET model [the big piece]
+- Introduce `TARGET` = `resolveTargetDir(...)`. **Refuse** (non-zero exit, clear message) if
+  `existsSync(TARGET)`. Otherwise `mkdirSync(TARGET, { recursive: true })`.
+- **Copy the tracked files** ROOT(launcher)→TARGET: `git -C ROOT ls-files -z` → for each,
+  `mkdir` the parent in TARGET + `fs` copy. (ROOT stays intact.)
+- **Redirect EVERYTHING to TARGET**: `gen()` writes into TARGET (templates read from TARGET, which
+  received them in the copy); `.env` into TARGET; `{{PROJECT_ROOT}} = toPosix(TARGET)`; `npm install`
+  in `join(TARGET,"rag")`; smoke-test reads `join(TARGET,".mcp.json")`, `cwd` = TARGET.
+- **Brain git, trivial**: `git init` in TARGET + `add -A` + commit "initialisation du
+  second cerveau" (non-fatal commit if no git identity). **Always** init (fresh folder),
+  **no** conditional, **no** remote, **no** deletion. Remove `process.chdir(ROOT)`
+  or replace it with explicit path usage (caution: no longer depend on cwd).
+- `defaultProject`: derive from `--name` (otherwise fallback "second-brain"), no longer basename of ROOT.
 
-### D. Retrait de la Couche 2
-- Supprimer `scripts/lib/git-init.mjs` + `scripts/lib/git-init.test.mjs` + l'import/usage
-  `planGitSetup` dans `bootstrap.mjs`. (Couche 1 / `auto-commit.mjs` **inchangée**.)
-- Retirer de `.claude/settings.json.template` la permission `Bash(git init:*)` ? **Non** — le
-  bootstrap fait toujours `git init` (mais dans la CIBLE) ; et le hook côté user n'en a pas besoin.
-  Laisser tel quel sauf si incohérent (vérifier).
+### D. Removal of Layer 2
+- Delete `scripts/lib/git-init.mjs` + `scripts/lib/git-init.test.mjs` + the import/usage
+  `planGitSetup` in `bootstrap.mjs`. (Layer 1 / `auto-commit.mjs` **unchanged**.)
+- Remove from `.claude/settings.json.template` the `Bash(git init:*)` permission? **No** — the
+  bootstrap still does `git init` (but in the TARGET); and the user-side hook doesn't need it.
+  Leave as-is unless inconsistent (verify).
 
-### E. Amorce `CLAUDE.md` + README + SETUP [garder le marqueur stub]
-- **Amorce `CLAUDE.md`** (conserver `<!-- second-brain-starter:bootstrap-stub -->`) : nouveau runbook.
-  - Étape 1 : cloner le **launcher** (clone normal) `git clone --depth 1 <URL> <launcher-dir>` ; `cd`.
-    Préciser : **launcher réutilisable**, le bootstrap **crée un dossier cerveau séparé**.
-  - Étape 2 : questions EN CHAT — **nom du cerveau**, **emplacement** (défaut `~/<nom>`), contexte,
-    langue. **Pas la clé Gemini.**
-  - Étape 3 : UNE commande exacte
-    `node bootstrap.mjs --non-interactive --name "<nom>" --dest "<emplacement-parent>" --owner "<user>" --context "<ctx>" --lang "<langue>"`
-    (`--dest` optionnel). Le script **crée le dossier**, refuse s'il existe, fait tout, juge la réussite.
-  - Étape 4 : relai + 3 consignes finales → (a) clé dans `<cerveau>/.env` ; (b) dépôt distant
-    optionnel → si oui : `git remote add` + `git config secondbrain.autopush true` ; si non : rien
-    (push opt-in off = aucune fuite) ; (c) **rouvrir Claude Code dans le DOSSIER CERVEAU créé**.
-  - Garde-fous : commande exacte, clé jamais en argument, idempotence (relancer = autre nom/échec
-    propre si existe), ne pas inventer.
-- **README** : Option A (assisté) → prompt minimal *« Installe-moi un second cerveau nommé `<nom>`
-  à partir de `<URL>` »* + expliquer launcher↔cerveau + 3 gestes finaux. Option B (« Use this
-  template ») = juste obtenir le launcher.
-- **SETUP** : §2 (le bootstrap crée le dossier, refuse si existe, launcher réutilisable, copie
-  fichiers suivis, 0 lien par construction) ; flags `--name/--dest/...` ; §7 push opt-in (déjà).
+### E. `CLAUDE.md` stub + README + SETUP [keep the stub marker]
+- **`CLAUDE.md` stub** (keep `<!-- second-brain-starter:bootstrap-stub -->`): new runbook.
+  - Step 1: clone the **launcher** (normal clone) `git clone --depth 1 <URL> <launcher-dir>`; `cd`.
+    Clarify: **reusable launcher**, the bootstrap **creates a separate brain folder**.
+  - Step 2: questions IN CHAT — **brain name**, **location** (default `~/<name>`), context,
+    language. **Not the Gemini key.**
+  - Step 3: ONE exact command
+    `node bootstrap.mjs --non-interactive --name "<name>" --dest "<parent-location>" --owner "<user>" --context "<ctx>" --lang "<language>"`
+    (`--dest` optional). The script **creates the folder**, refuses if it exists, does everything, judges success.
+  - Step 4: relay + 3 final instructions → (a) key in `<brain>/.env`; (b) optional remote
+    repo → if yes: `git remote add` + `git config secondbrain.autopush true`; if no: nothing
+    (push opt-in off = no leak); (c) **reopen Claude Code in the CREATED BRAIN FOLDER**.
+  - Guardrails: exact command, key never as an argument, idempotence (re-run = other name/clean
+    failure if it exists), don't make things up.
+- **README**: Option A (assisted) → minimal prompt *"Install me a second brain named `<name>`
+  from `<URL>`"* + explain launcher↔brain + 3 final gestures. Option B ("Use this
+  template") = just obtain the launcher.
+- **SETUP**: §2 (the bootstrap creates the folder, refuses if it exists, reusable launcher, copy
+  tracked files, 0 link by construction); flags `--name/--dest/...`; §7 push opt-in (already).
 
 ### F. Tests & e2e (multi-OS-safe)
-- Unitaires A+B verts (`resolveTargetDir`, parse `ls-files -z`).
-- Suite complète verte : `node --test scripts/lib/*.test.mjs scripts/*.test.mjs` (sans git-init.*),
+- Unit A+B green (`resolveTargetDir`, parse `ls-files -z`).
+- Full suite green: `node --test scripts/lib/*.test.mjs scripts/*.test.mjs` (without git-init.*),
   `cd rag && npm test` + `npx tsc --noEmit`, `node --check bootstrap.mjs`.
-- **E2E** (copie jetable du launcher, voir §6) :
-  - run 1 : `--name perso --dest <tmp>` → asserter : `<tmp>/perso` **créé** ; `.git` présent **neuf**
-    (1 commit, `git remote` **vide**) ; CLAUDE.md **n'est plus l'amorce** ; `.mcp.json` +
-    `.claude/settings.json` générés (+ JSON valide, `{{PROJECT_ROOT}}` en `/`) ; `.env` clé vide ;
-    `rag/node_modules` présent ; smoke-test MCP OK ; **launcher INTACT** (son CLAUDE.md toujours
-    l'amorce, pas de `rag/node_modules` ajouté, `git status` du launcher inchangé).
-  - run 2 : **réutiliser le même launcher** `--name boulot --dest <tmp>` → `<tmp>/boulot` créé, OK
-    → prouve la réutilisabilité.
-  - run 3 : refuser si existe → relancer `--name perso` → **exit non-zéro**, `<tmp>/perso` inchangé.
-  - non-fuite : écrire une note dans `<tmp>/perso/vault` + lancer son `scripts/auto-commit.mjs` →
-    commit local, `secondbrain.autopush` absent, `git remote` vide → aucun push (vérif par dépôt
-    bare comme dans `auto-commit.test.mjs`, **pas** par string de message).
+- **E2E** (disposable copy of the launcher, see §6):
+  - run 1: `--name perso --dest <tmp>` → assert: `<tmp>/perso` **created**; `.git` present **fresh**
+    (1 commit, `git remote` **empty**); CLAUDE.md **is no longer the stub**; `.mcp.json` +
+    `.claude/settings.json` generated (+ valid JSON, `{{PROJECT_ROOT}}` in `/`); `.env` empty key;
+    `rag/node_modules` present; MCP smoke-test OK; **launcher INTACT** (its CLAUDE.md still
+    the stub, no `rag/node_modules` added, the launcher's `git status` unchanged).
+  - run 2: **reuse the same launcher** `--name boulot --dest <tmp>` → `<tmp>/boulot` created, OK
+    → proves reusability.
+  - run 3: refuse if it exists → re-run `--name perso` → **non-zero exit**, `<tmp>/perso` unchanged.
+  - no-leak: write a note in `<tmp>/perso/vault` + run its `scripts/auto-commit.mjs` →
+    local commit, `secondbrain.autopush` absent, `git remote` empty → no push (check via a bare
+    repo as in `auto-commit.test.mjs`, **not** via a message string).
 
-### G. Commit + push (manuel, conventionnel, co-author Claude) — quand tout est vert.
+### G. Commit + push (manual, conventional, co-author Claude) — when everything is green.
 
 ---
 
-## 6. Procédure e2e (copie jetable, multi-OS dans l'esprit)
+## 6. E2E procedure (disposable copy, multi-OS in spirit)
 ```bash
-# Launcher jetable (working tree courant, sans .git/node_modules/dev). On RE-init un .git
-# pour simuler un vrai launcher cloné (git ls-files a besoin d'un dépôt).
+# Disposable launcher (current working tree, without .git/node_modules/dev). We RE-init a .git
+# to simulate a real cloned launcher (git ls-files needs a repo).
 LAUNCH=$(mktemp -d)
 rsync -a --exclude node_modules --exclude .git --exclude 'rag/.cache' --exclude 'rag/dist' \
   --exclude CLAUDE.local.md --exclude DEVELOPING.md --exclude tmp \
@@ -265,135 +265,135 @@ cd "$LAUNCH" && git init -q && git add -A && git -c user.email=t@e -c user.name=
 DEST=$(mktemp -d)
 node bootstrap.mjs --non-interactive --name perso  --dest "$DEST" --owner Hossam --context DevOps --lang français
 node bootstrap.mjs --non-interactive --name boulot --dest "$DEST" --owner Hossam --context DevOps --lang français
-# Vérifs : voir §5.F. Le launcher ($LAUNCH) doit rester INTACT.
+# Checks: see §5.F. The launcher ($LAUNCH) must stay INTACT.
 ```
-*(Le test interactif réel reste à faire par Thomas en vrai terminal — Claude ne pilote pas un clavier.)*
+*(The real interactive test remains for Thomas to do in a real terminal — Claude doesn't drive a keyboard.)*
 
 ---
 
-## 7. Ordre d'exécution (= grandes étapes, une par session après /clear)
-0. **R** (renommage → `second-brain-generator`, R1 texte + commit ; R2 GitHub optionnel ; R3 dossier = manuel Thomas).
-1. **A** (resolveTargetDir + --dest, TDD) → suite verte.
+## 7. Execution order (= big steps, one per session after /clear)
+0. **R** (rename → `second-brain-generator`, R1 text + commit; R2 GitHub optional; R3 folder = manual Thomas).
+1. **A** (resolveTargetDir + --dest, TDD) → suite green.
 2. **B** (parse ls-files -z, TDD).
 3. **C** (refactor bootstrap → TARGET) + `node --check`.
-4. **D** (retrait Couche 2).
-5. **E** (amorce + docs ; vérifier `isBootstrapStub` toujours vrai).
-6. **F** (e2e §6) — multi-cerveaux + launcher intact + refus-si-existe + non-fuite.
-7. **G** (commit + push) — seulement quand tout est vert.
+4. **D** (removal of Layer 2).
+5. **E** (stub + docs; verify `isBootstrapStub` still true).
+6. **F** (e2e §6) — multi-brains + intact launcher + refuse-if-exists + no-leak.
+7. **G** (commit + push) — only when everything is green.
 
 ---
 
-## 8. Pour REPRENDRE après un /clear
-- Dire : **« Reprends le plan dans `tmp/PLAN-launcher-vs-brain.md`, va à l'étape <X> »**.
-- Claude : lire ce fichier en entier, charger la skill **`tdd-discipline`**, exécuter l'étape via §5/§7.
-- Garder sacré : déterminisme (§1), lecture seule du launcher (§3), multi-OS (§4), TDD strict,
-  **pas d'assert sur des strings de messages** (tester l'état/comportement réel).
-- **Suivi vivant** : §9 (cases à cocher) = source de vérité du progrès — la mettre à jour à chaque pas.
+## 8. To RESUME after a /clear
+- Say: **"Resume the plan in `tmp/PLAN-launcher-vs-brain.md`, go to step <X>"**.
+- Claude: read this file in full, load the skill **`tdd-discipline`**, execute the step via §5/§7.
+- Keep sacred: determinism (§1), launcher read-only (§3), multi-OS (§4), strict TDD,
+  **no assert on message strings** (test the real state/behavior).
+- **Living tracking**: §9 (checkboxes) = source of truth of progress — update it at every step.
 
 ---
 
-## 9. SUIVI — cases à cocher (tableau de bord, source de vérité unique)
+## 9. TRACKING — checkboxes (dashboard, single source of truth)
 
-### R. Renommage → `second-brain-generator` [EN PREMIER]
-- [x] R1 formes composées (`Second Brain Starter`/`second-brain-starter`) remplacées ; bannière ASCII réalignée (50 ch.)
-- [x] R1 marqueur bootstrap-stub synchro (claude-md.mjs + CLAUDE.md + DEVELOPING.md) ; `isBootstrapStub` vrai ✓
-- [x] R1 « starter » seul (sens projet) → « générateur » ; métaphore « graine » gardée + L17 recadré ; reste « starter » uniquement dans `git-init.*` (supprimé en D)
-- [x] R1 vérifs (git grep composées vide ; 40 harnais + 76 RAG + tsc + `node --check` verts) + commit `chore: renommage …`
-- [x] R2 repo GitHub renommé (`gh repo rename second-brain-generator`, remote auto-màj → `…/second-brain-generator.git`, fetch OK) ; commit R1 poussé
-- [ ] R3 dossier local — **manuel par Thomas hors session** (mv dossier + mv dossier mémoire)
+### R. Rename → `second-brain-generator` [FIRST]
+- [x] R1 compound forms (`Second Brain Starter`/`second-brain-starter`) replaced; ASCII banner realigned (50 ch.)
+- [x] R1 bootstrap-stub marker in sync (claude-md.mjs + CLAUDE.md + DEVELOPING.md); `isBootstrapStub` true ✓
+- [x] R1 "starter" alone (project sense) → "générateur"; "seed" metaphor kept + L17 recast; "starter" remains only in `git-init.*` (removed in D)
+- [x] R1 checks (git grep compound forms empty; 40 harness + 76 RAG + tsc + `node --check` green) + commit `chore: renommage …`
+- [x] R2 GitHub repo renamed (`gh repo rename second-brain-generator`, remote auto-updated → `…/second-brain-generator.git`, fetch OK); R1 commit pushed
+- [ ] R3 local folder — **manual by Thomas outside the session** (mv folder + mv memory folder)
 
-### A. Résolution de la cible (`resolveTargetDir` + `--dest`)
-- [x] Test défaut = `join(home, name)` (red→green) + triangulation `destParent` → `join(dest, name)`
-- [x] Test `--dest` (formes `v` et `=v`) → `destParent` (red→green)
-- [x] Test précédence flag (`--dest`) > env (`SB_DEST`) > défaut
-- [x] `parseAnswers` renvoie `destParent` (défaut `undefined`) ; garde anti-secret toujours verte ; `onlyDefaults` deepEqual màj (nouveau champ)
-- [x] Suite verte (44 tests harnais) + `node --check bootstrap.mjs`
+### A. Target resolution (`resolveTargetDir` + `--dest`)
+- [x] Test default = `join(home, name)` (red→green) + triangulation `destParent` → `join(dest, name)`
+- [x] Test `--dest` (forms `v` and `=v`) → `destParent` (red→green)
+- [x] Test precedence flag (`--dest`) > env (`SB_DEST`) > default
+- [x] `parseAnswers` returns `destParent` (default `undefined`); anti-secret guard still green; `onlyDefaults` deepEqual updated (new field)
+- [x] Suite green (44 harness tests) + `node --check bootstrap.mjs`
 
-### B. Refus-si-existe + parse `ls-files -z`
-- [x] Helper pur `parseLsFilesZ` (`scripts/lib/tracked-files.mjs`) : `"a\0b/c\0"` → `["a","b/c"]`, `""` → `[]` (red→green)
-- [x] Helper pur `filterCopyable` + denylist `DEV_ONLY={DEVELOPING.md}` (`tracked-files.mjs`, red→green) — §3.4
-- [ ] (side-effects refus/copie → couverts par e2e §F)
+### B. Refuse-if-exists + parse `ls-files -z`
+- [x] Pure helper `parseLsFilesZ` (`scripts/lib/tracked-files.mjs`): `"a\0b/c\0"` → `["a","b/c"]`, `""` → `[]` (red→green)
+- [x] Pure helper `filterCopyable` + denylist `DEV_ONLY={DEVELOPING.md}` (`tracked-files.mjs`, red→green) — §3.4
+- [ ] (side-effects refuse/copy → covered by e2e §F)
 
-### C. Refactor `bootstrap.mjs` → modèle CIBLE
-- [x] `TARGET` résolu (`resolveTargetDir`) ; refus si `existsSync(TARGET)` (exit 1, msg clair) ; `mkdir` sinon
-- [x] Copie des fichiers suivis launcher→TARGET (Node pur, `ls-files -z` + `filterCopyable`) ; ROOT lecture seule
-- [x] `gen` (templates lus dans TARGET) / `.env` / `{{PROJECT_ROOT}}=toPosix(TARGET)` / `npm install` / connecteurs / notes / smoke → tous sur TARGET
-- [x] `git init` + commit dans TARGET (toujours, 0 remote, 0 suppression) ; `chdir(ROOT)` retiré ; defaultProject `--name` ?? "second-brain"
-- [x] `node --check bootstrap.mjs` OK ; suite harnais 47 verts + RAG + tsc verts
+### C. Refactor `bootstrap.mjs` → TARGET model
+- [x] `TARGET` resolved (`resolveTargetDir`); refuse if `existsSync(TARGET)` (exit 1, clear msg); `mkdir` otherwise
+- [x] Copy of tracked files launcher→TARGET (pure Node, `ls-files -z` + `filterCopyable`); ROOT read-only
+- [x] `gen` (templates read in TARGET) / `.env` / `{{PROJECT_ROOT}}=toPosix(TARGET)` / `npm install` / connectors / notes / smoke → all on TARGET
+- [x] `git init` + commit in TARGET (always, 0 remote, 0 deletion); `chdir(ROOT)` removed; defaultProject `--name` ?? "second-brain"
+- [x] `node --check bootstrap.mjs` OK; harness suite 47 green + RAG + tsc green
 
-### D. Retrait Couche 2
-- [x] `git-init.mjs` + `git-init.test.mjs` supprimés ; usage `planGitSetup` déjà retiré en C ; 0 ref résiduelle
-- [x] Couche 1 (`auto-commit.mjs`) inchangée et toujours verte (43 harnais après retrait des 4 tests git-init)
-- [x] `.claude/settings.json.template` vérifié : permission `git init` conservée (cohérente côté cerveau user)
-- [x] DEVELOPING.md : 2 refs à `git-init.mjs` recadrées (`tracked-files.mjs`/`resolveTargetDir`)
+### D. Removal of Layer 2
+- [x] `git-init.mjs` + `git-init.test.mjs` deleted; `planGitSetup` usage already removed in C; 0 residual ref
+- [x] Layer 1 (`auto-commit.mjs`) unchanged and still green (43 harness after removing the 4 git-init tests)
+- [x] `.claude/settings.json.template` verified: `git init` permission kept (consistent on the user-brain side)
+- [x] DEVELOPING.md: 2 refs to `git-init.mjs` recast (`tracked-files.mjs`/`resolveTargetDir`)
 
-### E. Amorce + docs
-- [x] Amorce `CLAUDE.md` réécrite (marqueur stub conservé ; runbook launcher↔cerveau, `--dest`, refus-si-existe, 3 consignes finales sur `<cerveau>`)
-- [x] `isBootstrapStub(CLAUDE.md)` toujours vrai ; `CLAUDE.md.template` SANS marqueur (constitution ≠ amorce)
-- [x] README : section « modèle » réécrite (launcher↔cerveau, 0 lien par construction), Option A (prompt + 3 gestes sur `<cerveau>`), Option B (clone launcher → bootstrap crée dossier → cd cerveau), « Use this template » recadré en « façon d'obtenir le launcher » (§3.6), métaphore graine gardée
-- [x] SETUP §2 réécrit (crée le dossier, refus-si-existe, copie fichiers suivis, `--dest`/`SB_DEST`, 0 lien — retrait du narratif strip-remote Couche 2) ; §3 (`cd <cerveau>`) ; §7 (autre machine = clone du cerveau, PAS bootstrap)
-- [x] Neutralité : aucun nom perso / chemin absolu en dur (placeholders `~/<nom>`, `<emplacement>`) ; grep in-place contradictions vide (hors « Use this template » recadrés)
+### E. Stub + docs
+- [x] `CLAUDE.md` stub rewritten (stub marker kept; launcher↔brain runbook, `--dest`, refuse-if-exists, 3 final instructions on `<brain>`)
+- [x] `isBootstrapStub(CLAUDE.md)` still true; `CLAUDE.md.template` WITHOUT a marker (constitution ≠ stub)
+- [x] README: "model" section rewritten (launcher↔brain, 0 link by construction), Option A (prompt + 3 gestures on `<brain>`), Option B (clone launcher → bootstrap creates folder → cd brain), "Use this template" recast as "a way to obtain the launcher" (§3.6), seed metaphor kept
+- [x] SETUP §2 rewritten (creates the folder, refuse-if-exists, copy tracked files, `--dest`/`SB_DEST`, 0 link — removal of the Layer 2 strip-remote narrative); §3 (`cd <brain>`); §7 (other machine = clone of the brain, NOT bootstrap)
+- [x] Neutrality: no personal name / hardcoded absolute path (placeholders `~/<name>`, `<location>`); in-place contradictions grep empty (apart from the recast "Use this template")
 
 ### F. Tests & e2e
-- [x] Unitaires A+B verts (`resolveTargetDir`, `parseLsFilesZ`, `filterCopyable`)
-- [x] Suite complète verte : 43 harnais (sans git-init.*) + 76 RAG + tsc + `node --check`
-- [x] E2E run1 (perso créé, **amorce E remplacée**, launcher intact) + run2 (boulot, réutilisabilité) + run3 (refus-si-existe, exit 1)
-- [x] E2E non-fuite : autopush **off** → **aucun push** (bare vide) + commit local OK ; flip autopush=true + upstream → push suit le local (opt-in OK dans les 2 sens)
+- [x] Unit A+B green (`resolveTargetDir`, `parseLsFilesZ`, `filterCopyable`)
+- [x] Full suite green: 43 harness (without git-init.*) + 76 RAG + tsc + `node --check`
+- [x] E2E run1 (perso created, **E stub replaced**, intact launcher) + run2 (boulot, reusability) + run3 (refuse-if-exists, exit 1)
+- [x] E2E no-leak: autopush **off** → **no push** (empty bare) + local commit OK; flip autopush=true + upstream → push follows the local (opt-in OK both ways)
 
 ### Final
-- [x] Commits manuels + push au fil de l'eau (C `edc32b1`, D `e0096ce`, E `0ff9d01`, suppr. « Use this template » `695705f`) — tout vert, tout sur origin/main
-- [ ] **R3 rappelé à Thomas** (cf. §11) — renommage dossier local + mémoire (geste manuel, Claude fermé)
+- [x] Manual commits + push as we go (C `edc32b1`, D `e0096ce`, E `0ff9d01`, removal of "Use this template" `695705f`) — all green, all on origin/main
+- [ ] **R3 reminded to Thomas** (cf. §11) — local folder + memory rename (manual gesture, Claude closed)
 
 ---
 
-## 11. 🏁 RAPPEL DE CLÔTURE — à ressortir à Thomas une fois TOUT terminé (après G)
+## 11. 🏁 CLOSING REMINDER — to bring up to Thomas once EVERYTHING is finished (after G)
 
-> ⚠️ **Pour Claude (dernière session) :** quand A→G sont finis/poussés, **redonne ces instructions
-> à Thomas** (il l'a explicitement demandé : « tu me rediras comment faire à ce moment-là »). C'est
-> **R3** : aligner le **dossier local** sur le nouveau nom du repo. **Toi (Claude) tu ne le fais PAS** —
-> la session est ancrée sur le chemin et la mémoire auto est indexée dessus.
+> ⚠️ **For Claude (last session):** when A→G are finished/pushed, **give these instructions back
+> to Thomas** (he explicitly asked: "you'll tell me how to do it at that point"). It's
+> **R3**: align the **local folder** with the repo's new name. **You (Claude) do NOT do it** —
+> the session is anchored on the path and the auto-memory is indexed on it.
 
-**Message à donner à Thomas :**
+**Message to give to Thomas:**
 
-R3 = renommer le dossier sur ton disque (le repo GitHub est déjà `second-brain-generator` ; le
-dossier local s'appelle encore `…second-brain-starter`). À faire **Claude Code fermé** :
+R3 = rename the folder on your disk (the GitHub repo is already `second-brain-generator`; the
+local folder is still named `…second-brain-starter`). To do with **Claude Code closed**:
 
 ```bash
 mv ~/Dev/second-brain-starter ~/Dev/second-brain-generator
 mv ~/.claude/projects/-Users-tpierrain-Dev-second-brain-starter \
-   ~/.claude/projects/-Users-tpierrain-Dev-second-brain-generator   # préserve la mémoire auto
+   ~/.claude/projects/-Users-tpierrain-Dev-second-brain-generator   # preserves the auto-memory
 ```
 
-Puis rouvrir Claude Code dans `~/Dev/second-brain-generator`. Le 2ᵉ `mv` préserve la mémoire
-(indexée par le chemin du projet). Non bloquant / purement cosmétique : pouvait être fait à tout
-moment, mais c'est le dernier geste qui « ferme » le renommage de bout en bout.
+Then reopen Claude Code in `~/Dev/second-brain-generator`. The 2nd `mv` preserves the memory
+(indexed by the project path). Non-blocking / purely cosmetic: could be done at any
+time, but it's the last gesture that "closes" the rename end to end.
 
-## 10. État (MÀJ 2026-06-03, fin de session — étape C terminée)
-**Fait & commité localement (PAS encore poussé sur origin) :**
-- **R** terminé : R1 (renommage texte, commit `1c0ee33`, poussé), R2 (repo GitHub renommé
-  `second-brain-generator`, remote màj, poussé). **R3 (mv dossier local + dossier mémoire) =
-  reste à faire MANUELLEMENT par Thomas, Claude Code fermé** (cf. §5.R3).
-- **A** commité `e7449f4` (`--dest`/`SB_DEST` + `resolveTargetDir` pur, 44 tests verts).
-- **B** commité `0e45b00` (`parseLsFilesZ` pur).
-- **C** commité + **poussé** `edc32b1` : `bootstrap.mjs` refactoré vers le modèle TARGET
-  (résolution cible, refus-si-existe, copie fichiers suivis Node pur, tout redirigé sur TARGET,
-  `git init` trivial 0-remote, plus de `chdir`/`planGitSetup`). Helper pur `filterCopyable` +
+## 10. State (UPDATED 2026-06-03, end of session — step C finished)
+**Done & committed locally (NOT yet pushed to origin):**
+- **R** finished: R1 (text rename, commit `1c0ee33`, pushed), R2 (GitHub repo renamed
+  `second-brain-generator`, remote updated, pushed). **R3 (mv local folder + memory folder) =
+  remains to be done MANUALLY by Thomas, Claude Code closed** (cf. §5.R3).
+- **A** committed `e7449f4` (`--dest`/`SB_DEST` + pure `resolveTargetDir`, 44 tests green).
+- **B** committed `0e45b00` (pure `parseLsFilesZ`).
+- **C** committed + **pushed** `edc32b1`: `bootstrap.mjs` refactored to the TARGET model
+  (target resolution, refuse-if-exists, pure Node tracked-files copy, everything redirected to TARGET,
+  trivial 0-remote `git init`, no more `chdir`/`planGitSetup`). Pure helper `filterCopyable` +
   denylist `DEVELOPING.md` (`tracked-files.mjs`, TDD red→green).
-  **E2E validé** (§6, launcher fidèle avec DEVELOPING.md tracké) : run1 perso (.git neuf 1 commit
-  0 remote, CLAUDE.md dé-amorcé, .mcp.json/settings.json générés + JSON valide, PROJECT_ROOT en
-  `/`, .env clé vide, rag/node_modules, **DEVELOPING.md NON copié**, CLAUDE.local.md absent) ;
-  run2 boulot (réutilisabilité launcher) ; run3 refus-si-existe (exit 1, perso inchangé) ;
-  **launcher resté INTACT** (CLAUDE.md amorce, pas de node_modules, git status inchangé).
-- **D** commité + **poussé** `e0096ce` : `git-init.mjs`/`git-init.test.mjs` supprimés, refs
-  DEVELOPING.md recadrées, Couche 1 intacte. Suite **43 harnais + 76 RAG + tsc + `node --check`** verts.
-- **E** **codé, à committer** : amorce `CLAUDE.md` réécrite (stub conservé, runbook launcher↔cerveau,
-  `--dest`, refus-si-existe) ; README (modèle + Options A/B + « Use this template » recadré) ; SETUP
-  §2/§3/§7 réécrits. `isBootstrapStub` toujours vrai, `CLAUDE.md.template` sans marqueur, 43 harnais verts.
-- ✅ **A, B, C, D poussés sur origin/main** ; E en working tree.
+  **E2E validated** (§6, faithful launcher with DEVELOPING.md tracked): run1 perso (.git fresh 1 commit
+  0 remote, CLAUDE.md de-stubbed, .mcp.json/settings.json generated + valid JSON, PROJECT_ROOT in
+  `/`, .env empty key, rag/node_modules, **DEVELOPING.md NOT copied**, CLAUDE.local.md absent);
+  run2 boulot (launcher reusability); run3 refuse-if-exists (exit 1, perso unchanged);
+  **launcher stayed INTACT** (CLAUDE.md stub, no node_modules, git status unchanged).
+- **D** committed + **pushed** `e0096ce`: `git-init.mjs`/`git-init.test.mjs` deleted, refs
+  DEVELOPING.md recast, Layer 1 intact. Suite **43 harness + 76 RAG + tsc + `node --check`** green.
+- **E** **coded, to commit**: `CLAUDE.md` stub rewritten (stub kept, launcher↔brain runbook,
+  `--dest`, refuse-if-exists); README (model + Options A/B + "Use this template" recast); SETUP
+  §2/§3/§7 rewritten. `isBootstrapStub` still true, `CLAUDE.md.template` without a marker, 43 harness green.
+- ✅ **A, B, C, D pushed to origin/main**; E in the working tree.
 
-**À FAIRE ensuite = étape F** (e2e complet §6 : multi-cerveaux + launcher intact + refus-si-existe +
-**non-fuite autopush** via dépôt bare). Puis G (commit final). ⚠️ Après G : rappeler R3 à Thomas (cf. §11).
+**TO DO next = step F** (full e2e §6: multi-brains + intact launcher + refuse-if-exists +
+**autopush no-leak** via a bare repo). Then G (final commit). ⚠️ After G: remind R3 to Thomas (cf. §11).
 
-**Rappels :** Ce plan supersède la Couche 2 (retrait en D) et le « transform in-place ». Couche 1
-(push opt-in) conservée. Mémoire de référence : `install-model-launcher-vs-brain`,
+**Reminders:** This plan supersedes Layer 2 (removed in D) and the "in-place transform". Layer 1
+(push opt-in) kept. Reference memory: `install-model-launcher-vs-brain`,
 `feedback-no-string-fragile-asserts`.

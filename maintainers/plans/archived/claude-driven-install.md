@@ -1,326 +1,326 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUT : ✅ LIVRÉ ET POUSSÉ (2026-06-03) — archive, plus rien à reprendre. -->
+<!-- STATUS: ✅ SHIPPED AND PUSHED (2026-06-03) — archive, nothing left to resume. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
-# Plan — onboarding « installe mon second cerveau » piloté par Claude
+# Plan — "install my second brain" onboarding driven by Claude
 
-> **STATUT : ✅ LIVRÉ ET POUSSÉ (2026-06-03).** Toutes les sections A→E livrées. Dernier commit
-> de la série `af406b8`. Archive conservée pour le *pourquoi* ; rien à reprendre.
+> **STATUS: ✅ SHIPPED AND PUSHED (2026-06-03).** All sections A→E shipped. Last commit
+> of the series `af406b8`. Archive kept for the *why*; nothing to resume.
 
-## Résumé de ce qui a été livré
+## Summary of what was shipped
 
-L'utilisateur part de Claude Code + l'URL du repo, **une seule instruction** ; Claude pose les
-questions à l'oral puis délègue **toute** la mécanique au script déterministe `bootstrap.mjs`
-(principe : déterminisme dans le script, Claude = emballage minimal). Sections cochées :
+The user starts from Claude Code + the repo URL, **a single instruction**; Claude asks the
+questions out loud then delegates **all** the machinery to the deterministic script `bootstrap.mjs`
+(principle: determinism in the script, Claude = minimal wrapping). Sections checked:
 
-- **(A)** mode `--non-interactive` + `scripts/lib/bootstrap-args.mjs` (`parseAnswers` → flags
-  `--name/--owner/--lang`, env `SB_*`, précédence flag > env > défaut).
-- **(B)** `git init` auto du cerveau (`git-init.mjs`).
-- **(C)** amorce `CLAUDE.md` réécrite en notice d'auto-install (marqueur `bootstrap-stub` conservé).
-- **(D)** docs README option A/B + SETUP + DEVELOPING.
+- **(A)** `--non-interactive` mode + `scripts/lib/bootstrap-args.mjs` (`parseAnswers` → flags
+  `--name/--owner/--lang`, env `SB_*`, precedence flag > env > default).
+- **(B)** auto `git init` of the brain (`git-init.mjs`).
+- **(C)** `CLAUDE.md` stub rewritten as a self-install notice (`bootstrap-stub` marker kept).
+- **(D)** README docs option A/B + SETUP + DEVELOPING.
 - **(E)** tests + e2e.
 
-La **clé Gemini est différée** vers `.env` (jamais chat/argv).
+The **Gemini key is deferred** to `.env` (never chat/argv).
 
-## Validation e2e (✅ FAIT 2026-06-03)
+## E2E validation (✅ DONE 2026-06-03)
 
-L'e2e a été exécuté dans une **copie jetable** (`mktemp -d`, copie détachée sans `.git`) via
-`node bootstrap.mjs --non-interactive` : exit 0 ; amorce `CLAUDE.md` (marqueur `bootstrap-stub`)
-bien **remplacée** par la vraie constitution ; `.mcp.json` + `.claude/settings.json` générés ;
-`git init` auto (1 commit) ; `.env` clé vide ; deps RAG installées ; smoke-test MCP OK (5 outils) ;
-puis note vault + `auto-commit.mjs` → commit local sans remote, **aucun push, aucune erreur**.
-Verrouillé en plus par le test de non-régression `scripts/auto-commit.test.mjs`.
+The e2e ran in a **disposable copy** (`mktemp -d`, detached copy without `.git`) via
+`node bootstrap.mjs --non-interactive`: exit 0; `CLAUDE.md` stub (`bootstrap-stub` marker)
+properly **replaced** by the real constitution; `.mcp.json` + `.claude/settings.json` generated;
+auto `git init` (1 commit); `.env` with empty key; RAG deps installed; MCP smoke-test OK (5 tools);
+then vault note + `auto-commit.mjs` → local commit without a remote, **no push, no error**.
+Additionally locked by the non-regression test `scripts/auto-commit.test.mjs`.
 
-> **Reste hors périmètre Claude :** le test **interactif** réel du wizard (questions + connecteurs
-> au clavier) que seul Thomas peut piloter dans un vrai terminal.
-
----
-
-## Plan détaillé d'origine
-
-# PLAN — Installation assistée par Claude (« Claude-driven onboarding »)
-
-> **But de ce fichier** : plan autoporteur. Une session Claude **vierge** doit pouvoir
-> l'exécuter en ne lisant QUE ce fichier + les fichiers source cités. Écrit dans `tmp/`
-> (gitignoré) → ne part pas chez l'utilisateur. Repo : `second-brain-starter` (le *template*,
-> pas un cerveau utilisateur). Discipline **TDD obligatoire** (charger la skill `tdd-discipline`).
-> Commits **manuels** (pas de hook auto-commit dans ce repo). Neutralité : aucun nom/chemin
-> absolu en dur (placeholders `{{…}}` uniquement dans les `*.template`).
+> **Remains outside Claude's scope:** the real **interactive** test of the wizard (questions +
+> connectors at the keyboard) that only Thomas can drive in a real terminal.
 
 ---
 
-## 0. Objectif (le « pourquoi » / l'UX cible)
+## Original detailed plan
 
-Permettre à un utilisateur (ex. **Hossam**, agent DevOps, demain matin) d'installer son second
-cerveau **en ne partant que de Claude Code + l'URL du repo** (auquel il a accès), avec **une
-seule instruction**. Claude lui pose les questions à l'oral, puis **délègue toute la mécanique
-au script déterministe `bootstrap.mjs`**, et termine par 2 consignes manuelles.
+# PLAN — Claude-assisted install ("Claude-driven onboarding")
 
-### Flux cible
+> **Purpose of this file**: self-sufficient plan. A **fresh** Claude session must be able
+> to execute it reading ONLY this file + the cited source files. Written in `tmp/`
+> (gitignored) → doesn't ship to the user. Repo: `second-brain-starter` (the *template*,
+> not a user brain). **Mandatory TDD** discipline (load the skill `tdd-discipline`).
+> **Manual** commits (no auto-commit hook in this repo). Neutrality: no hardcoded
+> name/absolute path (placeholders `{{…}}` only in the `*.template`).
+
+---
+
+## 0. Objective (the "why" / the target UX)
+
+Allow a user (e.g. **Hossam**, DevOps engineer, tomorrow morning) to install their second
+brain **starting only from Claude Code + the repo URL** (to which they have access), with **a
+single instruction**. Claude asks the questions out loud, then **delegates all the machinery
+to the deterministic script `bootstrap.mjs`**, and finishes with 2 manual instructions.
+
+### Target flow
 ```
-USER (dans Claude Code, hors repo) :
-  « Crée-moi un second cerveau nommé 'mon-cerveau' à partir de ce starter : <URL>.
-    Fais-en une COPIE (pas un clone lié à ce repo), puis installe-le en suivant son CLAUDE.md.
-    Pose-moi les questions nécessaires, mais ne me demande PAS ma clé Gemini. »
+USER (in Claude Code, outside the repo):
+  "Create me a second brain named 'mon-cerveau' from this starter: <URL>.
+    Make a COPY of it (not a clone linked to this repo), then install it following its CLAUDE.md.
+    Ask me the necessary questions, but do NOT ask me for my Gemini key."
 
-CLAUDE :
-  1. git clone --depth 1 <URL> mon-cerveau   (puis SUPPRIME mon-cerveau/.git → copie détachée)
-  2. cd mon-cerveau ; lit CLAUDE.md (= l'amorce = la NOTICE d'auto-install)
-  3. pose les questions EN CHAT : nom du projet, ton nom, ton contexte, langue (PAS la clé)
+CLAUDE:
+  1. git clone --depth 1 <URL> mon-cerveau   (then DELETE mon-cerveau/.git → detached copy)
+  2. cd mon-cerveau ; reads CLAUDE.md (= the stub = the self-install NOTICE)
+  3. asks the questions IN CHAT: project name, your name, your context, language (NOT the key)
   4. node bootstrap.mjs --non-interactive --name "…" --owner "…" --context "…" --lang "…"
-     → le SCRIPT fait tout : git init, génère fichiers, installe RAG, smoke-test (déterministe)
-  5. relaie le résultat + dit les 2 étapes finales :
-       a. « colle ta clé Gemini dans .env » (jamais dans le chat)
-       b. « veux-tu un dépôt git DISTANT (backup + multi-machine) ? » → cf. §Décisions
-       c. « ferme/rouvre Claude Code dans 'mon-cerveau' » (active le serveur MCP RAG)
+     → the SCRIPT does everything: git init, generates files, installs RAG, smoke-test (deterministic)
+  5. relays the result + states the 2 final steps:
+       a. "paste your Gemini key into .env" (never in the chat)
+       b. "do you want a REMOTE git repository (backup + multi-machine)?" → cf. §Decisions
+       c. "close/reopen Claude Code in 'mon-cerveau'" (activates the RAG MCP server)
 ```
 
 ---
 
-## 1. Déterminisme — qui fait quoi (PRINCIPE DIRECTEUR, à ne pas trahir)
+## 1. Determinism — who does what (GUIDING PRINCIPLE, not to be betrayed)
 
-Claude n'est **pas** fiable pour exécuter une longue séquence mécanique. Donc :
+Claude is **not** reliable for executing a long mechanical sequence. Therefore:
 
-- **Tout ce qui est mécanique + critique + répétable → `bootstrap.mjs`** (déterministe,
-  idempotent, auto-vérifiant : il finit par le smoke-test MCP et `process.exit(1)` si ça casse).
-- **Claude = emballage conversationnel minimal** : (a) récolter les réponses en langage naturel,
-  (b) appeler **UNE commande exacte**, (c) relayer le verdict du script + 2 consignes finales,
-  (d) gérer la conversation « dépôt distant » (cas par cas, non mécanisable).
-- Garde-fous anti-dérive inscrits dans l'amorce : **commande exacte à copier** (pas à
-  interpréter), `--non-interactive` **obligatoire**, idempotence, **clé jamais en argument**.
+- **Everything mechanical + critical + repeatable → `bootstrap.mjs`** (deterministic,
+  idempotent, self-verifying: it ends with the MCP smoke-test and `process.exit(1)` if it breaks).
+- **Claude = minimal conversational wrapping**: (a) gather the answers in natural language,
+  (b) call **ONE exact command**, (c) relay the script's verdict + 2 final instructions,
+  (d) handle the "remote repo" conversation (case by case, not mechanizable).
+- Anti-drift guardrails written into the stub: **exact command to copy** (not to
+  interpret), `--non-interactive` **mandatory**, idempotence, **key never as an argument**.
 
-> On NE confie PAS les étapes d'install à Claude. Les ~9 étapes restent dans le script.
+> We do NOT entrust the install steps to Claude. The ~9 steps stay in the script.
 
 ---
 
-## 2. État actuel du code (faits vérifiés — pour ne pas re-explorer)
+## 2. Current state of the code (verified facts — to avoid re-exploring)
 
-- **`bootstrap.mjs`** (racine, ~290 l.) : 9 étapes numérotées `X/9`. `interactive = stdin.isTTY`.
-  - Helper `ask(prompt, def)` → renvoie `def` si `!rl` (non-TTY).
-  - **Non-interactif aujourd'hui = valeurs par défaut brutes** (ownerName=""), connecteurs
-    sautés, notes d'exemple gardées. ⇒ PAS de moyen d'injecter les réponses. **À AJOUTER.**
-  - Génération via `gen(tpl, out, canOverwrite)` ; `gen(CLAUDE.md.template → CLAUDE.md,
-    isBootstrapStub)` ⇒ remplace l'amorce par la vraie constitution.
-  - `.env` : copié depuis `.env.example` (clé `GOOGLE_GEMINI_API_KEY=` **vide**) ; clé écrite
-    seulement si fournie. Différer la clé = laisser vide → étape 8/9 « indexation reportée ».
-  - **❗ Le bootstrap NE fait PAS `git init`.** Il suppose un `.git` déjà présent (clone / Use
-    this template). Dans le flux « copie détachée » (on supprime `.git`), il faut l'ajouter.
-- **`scripts/auto-commit.mjs`** : hook PostToolUse. **Gère DÉJÀ l'absence de remote** :
+- **`bootstrap.mjs`** (root, ~290 l.): 9 numbered steps `X/9`. `interactive = stdin.isTTY`.
+  - Helper `ask(prompt, def)` → returns `def` if `!rl` (non-TTY).
+  - **Non-interactive today = raw default values** (ownerName=""), connectors
+    skipped, example notes kept. ⇒ NO way to inject the answers. **TO ADD.**
+  - Generation via `gen(tpl, out, canOverwrite)`; `gen(CLAUDE.md.template → CLAUDE.md,
+    isBootstrapStub)` ⇒ replaces the stub with the real constitution.
+  - `.env`: copied from `.env.example` (key `GOOGLE_GEMINI_API_KEY=` **empty**); key written
+    only if provided. Deferring the key = leave it empty → step 8/9 "indexing deferred".
+  - **❗ The bootstrap does NOT do `git init`.** It assumes a `.git` already present (clone / Use
+    this template). In the "detached copy" flow (we delete `.git`), it must be added.
+- **`scripts/auto-commit.mjs`**: PostToolUse hook. **ALREADY handles the absence of a remote**:
   `const hasRemote = git(["remote"]).out.trim().length > 0; if (hasRemote && !push) …`.
-  ⇒ « non au dépôt distant » = commit local, **aucun push tenté, aucune erreur**. ✅ (À
-  verrouiller par un test de non-régression.)
-- **`scripts/lib/claude-md.mjs`** : `BOOTSTRAP_STUB_MARKER = "<!-- second-brain-starter:bootstrap-stub -->"`
-  ; `isBootstrapStub(content)` = contient le marqueur. **La réécriture de l'amorce DOIT garder
-  ce marqueur exact** (sinon le bootstrap ne la remplace plus → casse DEVELOPING #3).
-- **`CLAUDE.md`** (racine) = l'amorce actuelle (marqueur présent) : dit « l'installateur est
-  interactif, tu ne peux pas le piloter, dis à l'user de le lancer lui-même ». **À INVERSER.**
-- **`.claude/settings.json.template`** : hook auto-commit (`{{PROJECT_ROOT}}/scripts/auto-commit.mjs`)
-  + permissions (git add/commit/push/init? → **vérifier `git init` est permis**, sinon l'ajouter
-  à la whitelist : actuellement pas de `Bash(git init:*)`).
-- **Tests harnais** : `node --test scripts/lib/*.test.mjs` (27 verts). Moteur : `cd rag && npm test`.
-- **`tmp/` est gitignoré** (ce plan y vit). `PLAN-*.md` à la racine ne le serait PAS.
+  ⇒ "no to the remote repo" = local commit, **no push attempted, no error**. ✅ (To be
+  locked by a non-regression test.)
+- **`scripts/lib/claude-md.mjs`**: `BOOTSTRAP_STUB_MARKER = "<!-- second-brain-starter:bootstrap-stub -->"`
+  ; `isBootstrapStub(content)` = contains the marker. **The rewrite of the stub MUST keep
+  this exact marker** (otherwise the bootstrap no longer replaces it → breaks DEVELOPING #3).
+- **`CLAUDE.md`** (root) = the current stub (marker present): says "the installer is
+  interactive, you can't drive it, tell the user to launch it themselves". **TO INVERT.**
+- **`.claude/settings.json.template`**: auto-commit hook (`{{PROJECT_ROOT}}/scripts/auto-commit.mjs`)
+  + permissions (git add/commit/push/init? → **check `git init` is allowed**, otherwise add it
+  to the whitelist: currently no `Bash(git init:*)`).
+- **Harness tests**: `node --test scripts/lib/*.test.mjs` (27 green). Engine: `cd rag && npm test`.
+- **`tmp/` is gitignored** (this plan lives there). `PLAN-*.md` at the root would NOT be.
 
 ---
 
-## 3. Décisions déjà prises avec Thomas (verrouillées)
+## 3. Decisions already made with Thomas (locked)
 
-1. **Copie, pas clone lié** : récupérer les fichiers puis **détacher** (`rm -rf .git`) ; dossier
-   au **bon nom dès le départ**.
-2. **Clé Gemini différée vers `.env`** : Claude installe tout sauf la clé ; la clé ne transite
-   **jamais** par le chat ni par la ligne de commande. Index construit au 1er démarrage du MCP.
-3. **`git init` local = automatique et indispensable** (socle de l'auto-commit). Ce n'est PAS la
-   question posée à l'utilisateur.
-4. **Question « dépôt distant » à la toute fin, avec les ENJEUX explicites** :
-   formuler ≈ *« Veux-tu un dépôt git **distant** pour que ton second cerveau ait un **backup**,
-   voire soit **utilisable depuis plusieurs machines** ? »*
-   - **Si NON** : ne rien faire. Tout reste versionné en local, rien ne se perd ; le hook
-     auto-commit **ne tente pas de push** (déjà géré) → aucune erreur. Possibilité d'en ajouter
-     un plus tard. **Vérifier/garantir par test** que « pas de remote » ne casse rien.
-   - **Si OUI** : demander **plateforme** (GitHub / GitLab / Azure DevOps…) + **nom**. Créer/brancher
-     le remote (`gh repo create` si dispo, sinon `git remote add` + `git push -u`, sinon guider).
-     GitHub = cas simple ; autres plateformes = best-effort + guidage si CLI/auth absente.
-5. **Déterminisme** : cf. §1. Mécanique dans le script ; Claude = emballage minimal.
-
----
-
-## 4. Contraintes incompressibles (à assumer/documenter, pas à « résoudre »)
-
-- **Redémarrage final** : le moteur RAG est un serveur MCP chargé au **démarrage** de Claude
-  Code → rouvrir Claude Code dans le dossier après install. Inévitable.
-- **Accès au repo privé** : tant que le repo est privé, cloner/télécharger exige un **accès**
-  (compte GitHub avec droits). Inévitable jusqu'à passage public.
-- **Création de dépôt distant** : dépend de la plateforme + de l'auth locale → partie la plus
-  fragile, traitée en best-effort par Claude (pas par le script).
+1. **Copy, not linked clone**: grab the files then **detach** (`rm -rf .git`); folder
+   at the **right name from the start**.
+2. **Gemini key deferred to `.env`**: Claude installs everything except the key; the key never
+   transits through the chat nor the command line. Index built at the 1st start of the MCP.
+3. **Local `git init` = automatic and indispensable** (foundation of auto-commit). This is NOT the
+   question asked to the user.
+4. **The "remote repo" question at the very end, with the explicit STAKES**:
+   phrase ≈ *"Do you want a **remote** git repo so that your second brain has a **backup**,
+   or is even **usable from multiple machines**?"*
+   - **If NO**: do nothing. Everything stays versioned locally, nothing is lost; the
+     auto-commit hook **doesn't attempt to push** (already handled) → no error. Possibility to add
+     one later. **Verify/guarantee by test** that "no remote" breaks nothing.
+   - **If YES**: ask for **platform** (GitHub / GitLab / Azure DevOps…) + **name**. Create/wire
+     the remote (`gh repo create` if available, otherwise `git remote add` + `git push -u`, otherwise guide).
+     GitHub = simple case; other platforms = best-effort + guidance if CLI/auth absent.
+5. **Determinism**: cf. §1. Machinery in the script; Claude = minimal wrapping.
 
 ---
 
-## 5. Travaux (ordonnés, chacun en TDD)
+## 4. Incompressible constraints (to accept/document, not to "solve")
 
-### A. Mode non-interactif PILOTÉ par flags — `bootstrap.mjs` [TDD]
-**Nouveau** `scripts/lib/bootstrap-args.mjs` : fonction **pure** `parseAnswers(argv, env, defaults)`.
-- Reconnaît : `--name`, `--owner`, `--context`, `--lang` (formes `--x v` ET `--x=v`) ; flag
+- **Final restart**: the RAG engine is an MCP server loaded at the **start** of Claude
+  Code → reopen Claude Code in the folder after install. Unavoidable.
+- **Access to the private repo**: as long as the repo is private, cloning/downloading requires
+  **access** (GitHub account with rights). Unavoidable until going public.
+- **Remote repo creation**: depends on the platform + the local auth → the most
+  fragile part, handled best-effort by Claude (not by the script).
+
+---
+
+## 5. Work (ordered, each in TDD)
+
+### A. Non-interactive mode DRIVEN by flags — `bootstrap.mjs` [TDD]
+**New** `scripts/lib/bootstrap-args.mjs`: **pure** function `parseAnswers(argv, env, defaults)`.
+- Recognizes: `--name`, `--owner`, `--context`, `--lang` (forms `--x v` AND `--x=v`); flag
   `--non-interactive` (alias `--yes`/`--no-input`) → `nonInteractive: true`.
-- Précédence : **flags > env** (`SB_PROJECT_NAME`, `SB_OWNER_NAME`, `SB_OWNER_CONTEXT`,
-  `SB_LANGUAGE`) **> defaults** fournis.
-- **N'accepte JAMAIS la clé Gemini** (sécurité : pas de secret en argv).
-- Renvoie `{ projectName, ownerName, ownerContext, language, nonInteractive }`.
+- Precedence: **flags > env** (`SB_PROJECT_NAME`, `SB_OWNER_NAME`, `SB_OWNER_CONTEXT`,
+  `SB_LANGUAGE`) **> defaults** provided.
+- **NEVER accepts the Gemini key** (security: no secret in argv).
+- Returns `{ projectName, ownerName, ownerContext, language, nonInteractive }`.
 
-**Test** `scripts/lib/bootstrap-args.test.mjs` (red d'abord) :
-- `--name=mon-cerveau --owner "Jane Doe"` → parse correct des deux formes.
-- précédence flag > env > default ; absents → defaults.
+**Test** `scripts/lib/bootstrap-args.test.mjs` (red first):
+- `--name=mon-cerveau --owner "Jane Doe"` → correct parse of both forms.
+- precedence flag > env > default; absent → defaults.
 - `--non-interactive` → `nonInteractive:true`.
-- aucune clé/secret reconnu même si `--gemini-key xxx` passé (ignoré).
+- no key/secret recognized even if `--gemini-key xxx` passed (ignored).
 
-**Câblage dans `bootstrap.mjs` (§2 Personnalisation)** :
-- En tête : `const cli = parseAnswers(process.argv.slice(2), process.env, { projectName:
-  defaultProject, ownerName: gitUser, ownerContext: "usage professionnel", language: "français" })`.
+**Wiring in `bootstrap.mjs` (§2 Personalization)**:
+- At the top: `const cli = parseAnswers(process.argv.slice(2), process.env, { projectName:
+  defaultProject, ownerName: gitUser, ownerContext: "professional use", language: "français" })`.
 - `const interactive = stdin.isTTY && !cli.nonInteractive;`
-- Branche **non-interactive** : utiliser `cli.*` (au lieu des défauts bruts actuels). Branche
-  interactive : prompts pré-remplis avec `cli.*` comme défauts.
-- **Clé** : en non-interactive, toujours différer (`geminiKey=""`). Jamais lue depuis argv.
-- Connecteurs + notes d'exemple : **rester sautés** en non-interactive (comportement actuel OK).
+- **Non-interactive** branch: use `cli.*` (instead of the current raw defaults). Interactive
+  branch: prompts pre-filled with `cli.*` as defaults.
+- **Key**: in non-interactive, always defer (`geminiKey=""`). Never read from argv.
+- Connectors + example notes: **stay skipped** in non-interactive (current behavior OK).
 
-### B. `git init` si pas de dépôt — `bootstrap.mjs` [TDD-léger]
-- Helper pur (dans `bootstrap-args.mjs` ou un petit `git-init.mjs`) `shouldInitGit(root)` =
-  `!existsSync(join(root, ".git"))`. Test trivial.
-- Dans `bootstrap.mjs`, **juste après la génération des fichiers (§4)** : si `shouldInitGit`,
+### B. `git init` if no repo — `bootstrap.mjs` [light-TDD]
+- Pure helper (in `bootstrap-args.mjs` or a small `git-init.mjs`) `shouldInitGit(root)` =
+  `!existsSync(join(root, ".git"))`. Trivial test.
+- In `bootstrap.mjs`, **right after the file generation (§4)**: if `shouldInitGit`,
   `git init` + `git add -A` + `git commit -m "chore: initialisation du second cerveau"`.
-  Idempotent (skip si `.git` présent). Message `ok("dépôt git local initialisé")`.
-- **Ne PAS renuméroter** les `X/9` (éviter la dérive doc) : intégrer ce sous-pas dans l'étape de
-  génération existante, sans nouvel en-tête numéroté.
-- Ajouter `Bash(git init:*)` à la whitelist de `.claude/settings.json.template`.
-- Le side-effect git est de l'intégration → couvert par l'e2e (§7), pas un test unitaire artificiel.
+  Idempotent (skip if `.git` present). Message `ok("local git repo initialized")`.
+- **Do NOT renumber** the `X/9` (to avoid doc drift): integrate this sub-step into the existing
+  generation step, without a new numbered header.
+- Add `Bash(git init:*)` to the whitelist of `.claude/settings.json.template`.
+- The git side-effect is integration → covered by the e2e (§7), not an artificial unit test.
 
-### C. Réécrire l'amorce `CLAUDE.md` → NOTICE D'AUTO-INSTALL [garder le marqueur]
-Fichier `CLAUDE.md` (racine). **Conserver `<!-- second-brain-starter:bootstrap-stub -->`** en tête.
-Contenu = runbook **adressé à Claude**, impératif et court :
-- **Préambule** : « Ce repo n'est pas encore installé. Si l'utilisateur demande de créer/installer
-  son second cerveau, suis EXACTEMENT ces étapes. »
-- **Étape 1 — (si on part d'une URL, repo pas encore local)** : `git clone --depth 1 <URL> <nom>`
-  puis **`rm -rf <nom>/.git`** (copie détachée), `cd <nom>`. *(Souvent déjà fait si Claude lit ce
-  fichier depuis l'intérieur du repo.)*
-- **Étape 2 — Poser les questions EN CHAT, groupées** : nom du projet/dossier, nom de l'utilisateur,
-  contexte, langue. **NE PAS demander la clé Gemini.**
-- **Étape 3 — Lancer la commande EXACTE** (copier, ne pas paraphraser) :
-  `node bootstrap.mjs --non-interactive --name "<nom>" --owner "<nom user>" --context "<contexte>" --lang "<langue>"`
-  ⚠️ `--non-interactive` obligatoire (sinon blocage clavier). Idempotent. Le script fait TOUT
-  (git init, fichiers, install RAG, smoke-test) et **juge lui-même** la réussite (sortie non-zéro
-  = échec → relaie l'erreur, ne « fais pas semblant »).
-- **Étape 4 — Relayer + 2 (3) consignes finales** :
-  a. « Colle ta clé Gemini dans `.env` (ligne `GOOGLE_GEMINI_API_KEY=`). » — jamais dans le chat.
-  b. **Question dépôt distant** (formulation §3.4, avec enjeux backup/multi-machine). Si oui →
-     plateforme + nom → créer/brancher (gh/glab/az ou `git remote add` + guidage). Si non → ne
-     rien faire (le hook ne pushera pas, c'est sûr).
-  c. « Ferme et rouvre Claude Code dans `<nom>` » → active le serveur MCP RAG (indexe au démarrage).
-- **Garde-fous** rappelés : commande exacte, clé jamais en argument, idempotence, ne pas inventer.
+### C. Rewrite the `CLAUDE.md` stub → SELF-INSTALL NOTICE [keep the marker]
+File `CLAUDE.md` (root). **Keep `<!-- second-brain-starter:bootstrap-stub -->`** at the top.
+Content = runbook **addressed to Claude**, imperative and short:
+- **Preamble**: "This repo is not installed yet. If the user asks to create/install
+  their second brain, follow these steps EXACTLY."
+- **Step 1 — (if starting from a URL, repo not yet local)**: `git clone --depth 1 <URL> <name>`
+  then **`rm -rf <name>/.git`** (detached copy), `cd <name>`. *(Often already done if Claude reads this
+  file from inside the repo.)*
+- **Step 2 — Ask the questions IN CHAT, grouped**: project/folder name, user's name,
+  context, language. **DO NOT ask for the Gemini key.**
+- **Step 3 — Run the EXACT command** (copy, do not paraphrase):
+  `node bootstrap.mjs --non-interactive --name "<name>" --owner "<user name>" --context "<context>" --lang "<language>"`
+  ⚠️ `--non-interactive` mandatory (otherwise keyboard block). Idempotent. The script does EVERYTHING
+  (git init, files, RAG install, smoke-test) and **judges success itself** (non-zero exit
+  = failure → relay the error, don't "pretend").
+- **Step 4 — Relay + 2 (3) final instructions**:
+  a. "Paste your Gemini key into `.env` (line `GOOGLE_GEMINI_API_KEY=`)." — never in the chat.
+  b. **Remote repo question** (phrasing §3.4, with backup/multi-machine stakes). If yes →
+     platform + name → create/wire (gh/glab/az or `git remote add` + guidance). If no → do
+     nothing (the hook won't push, that's certain).
+  c. "Close and reopen Claude Code in `<name>`" → activates the RAG MCP server (indexes at startup).
+- **Guardrails** reminded: exact command, key never as an argument, idempotence, don't make things up.
 
-> ⚠️ Le `CLAUDE.md.template` (la VRAIE constitution générée) est un fichier **distinct** — ne pas
-> le confondre. On ne touche ici qu'à l'**amorce** `CLAUDE.md`.
+> ⚠️ The `CLAUDE.md.template` (the REAL generated constitution) is a **distinct** file — don't
+> confuse it. Here we only touch the `CLAUDE.md` **stub**.
 
 ### D. Docs — README + SETUP + DEVELOPING
-- **README** (section « Prêt à essayer ? ») : ajouter **« Option A — Démarrage assisté par Claude
-  (le plus simple) »** = le prompt copier-coller (cf. §0), + les 2 étapes finales + « non au
-  distant = sûr ». Garder **« Option B — Manuel (`node bootstrap.mjs`) »**. Garder la section
-  Connecteurs (déjà livrée).
-- **SETUP** : documenter les flags `--non-interactive --name/--owner/--context/--lang` ; le
-  `git init` auto ; la décision dépôt distant (+ « pas de remote = pas de push = sûr ») ; la clé
-  différée. Aligner les numéros d'étapes si besoin.
-- **DEVELOPING** : backlog → marquer « option `--non-interactive` » **livrée** ; ajouter une note
-  de design « onboarding piloté par Claude (déterminisme : script fait tout, Claude = emballage) ».
+- **README** ("Ready to try?" section): add **"Option A — Claude-assisted start
+  (the simplest)"** = the copy-paste prompt (cf. §0), + the 2 final steps + "no to
+  the remote = safe". Keep **"Option B — Manual (`node bootstrap.mjs`)"**. Keep the
+  Connectors section (already shipped).
+- **SETUP**: document the flags `--non-interactive --name/--owner/--context/--lang`; the
+  auto `git init`; the remote repo decision (+ "no remote = no push = safe"); the deferred
+  key. Align the step numbers if needed.
+- **DEVELOPING**: backlog → mark "`--non-interactive` option" **shipped**; add a design note
+  "Claude-driven onboarding (determinism: script does everything, Claude = wrapping)".
 
 ### E. Tests & e2e
 - `scripts/lib/bootstrap-args.test.mjs` (cf. A).
-- **Non-régression « pas de remote »** : `scripts/auto-commit.test.mjs` — créer un dépôt temp
-  (`git init` dans tmpdir), modifier un fichier, exécuter `auto-commit.mjs`, asserter : 1 commit
-  créé, **aucun remote**, aucune erreur/aucun push. (Complexité moyenne : spawn git + node.)
-- Suite complète verte : `node --test scripts/lib/*.test.mjs scripts/*.test.mjs` + `cd rag &&
+- **"No remote" non-regression**: `scripts/auto-commit.test.mjs` — create a temp repo
+  (`git init` in tmpdir), modify a file, run `auto-commit.mjs`, assert: 1 commit
+  created, **no remote**, no error/no push. (Medium complexity: spawn git + node.)
+- Full suite green: `node --test scripts/lib/*.test.mjs scripts/*.test.mjs` + `cd rag &&
   npm test` + `node --check bootstrap.mjs`.
-- **E2E à la cible** (copie jetable, voir §6) : clone → `rm -rf .git` → `node bootstrap.mjs
+- **E2E at the target** (disposable copy, see §6): clone → `rm -rf .git` → `node bootstrap.mjs
   --non-interactive --name test-brain --owner "Hossam" --context "DevOps" --lang français`.
-  Asserter : `CLAUDE.md` n'est plus l'amorce (marqueur absent), `.mcp.json` + `.claude/settings.json`
-  générés, `.git` présent (git-inité), `.env` présent (clé vide), deps RAG installées, smoke-test
-  MCP OK. Puis écrire une note vault + lancer `auto-commit.mjs` → commit local, pas d'erreur push.
+  Assert: `CLAUDE.md` is no longer the stub (marker absent), `.mcp.json` + `.claude/settings.json`
+  generated, `.git` present (git-inited), `.env` present (empty key), RAG deps installed, MCP smoke-test
+  OK. Then write a vault note + run `auto-commit.mjs` → local commit, no push error.
 
 ---
 
-## 6. Procédure e2e (copie jetable, SANS rm -rf destructeur sur le template)
+## 6. E2E procedure (disposable copy, WITHOUT a destructive rm -rf on the template)
 ```bash
-# Dossier neuf, horodaté par l'appelant si besoin (pas de Date.now en script de workflow).
+# Fresh folder, timestamped by the caller if needed (no Date.now in a workflow script).
 SBS=/tmp/sbs-e2e-claude-driven
 rsync -a --exclude node_modules --exclude .git --exclude rag/.cache \
   ~/Dev/second-brain-starter/ "$SBS"/
 cd "$SBS"
-# Simuler la "copie détachée" : pas de .git (rsync l'a exclu) → bootstrap doit git-init.
+# Simulate the "detached copy": no .git (rsync excluded it) → bootstrap must git-init.
 node bootstrap.mjs --non-interactive --name test-brain --owner "Hossam" --context "agent DevOps" --lang français
-# Vérifs : voir §5.E.
+# Checks: see §5.E.
 ```
-*(Le test interactif réel du wizard connecteurs/questions reste à faire par Thomas en vrai
-terminal — Claude ne peut pas piloter un prompt clavier.)*
+*(The real interactive test of the connectors/questions wizard remains for Thomas to do in a real
+terminal — Claude can't drive a keyboard prompt.)*
 
 ---
 
-## 7. Ordre d'exécution recommandé
-1. **A** (parseAnswers + test → red→green) puis câbler dans bootstrap.
+## 7. Recommended execution order
+1. **A** (parseAnswers + test → red→green) then wire into bootstrap.
 2. **B** (git init + permission whitelist).
-3. `node --check bootstrap.mjs` + suite tests verte.
-4. **C** (réécriture amorce CLAUDE.md, marqueur conservé) — vérifier `isBootstrapStub` toujours vrai.
+3. `node --check bootstrap.mjs` + green test suite.
+4. **C** (rewrite CLAUDE.md stub, marker kept) — verify `isBootstrapStub` still true.
 5. **D** (docs).
-6. **E** (tests non-régression + e2e §6).
-7. **Commit manuel + push** (message conventionnel, co-author Claude). Pas avant que tout soit vert.
+6. **E** (non-regression tests + e2e §6).
+7. **Manual commit + push** (conventional message, co-author Claude). Not before everything is green.
 
 ---
 
-## 8. Pour REPRENDRE après un /clear
-- Dire à Claude : **« Reprends le plan dans `tmp/PLAN-claude-driven-install.md` »**.
-- Claude : lire ce fichier en entier, puis `DEVELOPING.md` (auto-chargé), charger la skill
-  **`tdd-discipline`**, et exécuter §5 dans l'ordre §7. TDD strict, commits manuels, neutralité.
-- Garder le **principe §1** sacré : déterminisme dans le script, Claude minimal.
-- **Suivi vivant** : la section §9 (cases à cocher) est la source de vérité du progrès — Claude
-  la met à jour à chaque pas franchi.
-- **État au moment d'écrire ce plan** : rien de A–E n'est commencé. Le commit précédent
-  (`feat(connectors)…`) est déjà poussé et indépendant.
+## 8. To RESUME after a /clear
+- Tell Claude: **"Resume the plan in `tmp/PLAN-claude-driven-install.md`"**.
+- Claude: read this file in full, then `DEVELOPING.md` (auto-loaded), load the skill
+  **`tdd-discipline`**, and execute §5 in the §7 order. Strict TDD, manual commits, neutrality.
+- Keep the **§1 principle** sacred: determinism in the script, Claude minimal.
+- **Living tracking**: section §9 (checkboxes) is the source of truth of progress — Claude
+  updates it at every step taken.
+- **State at the time of writing this plan**: nothing of A–E started. The previous commit
+  (`feat(connectors)…`) is already pushed and independent.
 
 ---
 
-## 9. SUIVI — cases à cocher (tableau de bord, source de vérité unique)
+## 9. TRACKING — checkboxes (dashboard, single source of truth)
 
-> Mis à jour par Claude à chaque baby-step / pas franchi. Détail des items : §5 + §7.
+> Updated by Claude at every baby-step / step taken. Item detail: §5 + §7.
 
-### A. Mode non-interactif piloté par flags (`parseAnswers` + câblage) ✅ TERMINÉ
-- [x] Test 1 — forme `--x=v` (red→green)
-- [x] Test 2 — forme `--x v` (espace) (red→green)
-- [x] Test 3 — précédence flags > env > defaults ; absents → defaults (red→green)
+### A. Flag-driven non-interactive mode (`parseAnswers` + wiring) ✅ DONE
+- [x] Test 1 — form `--x=v` (red→green)
+- [x] Test 2 — form `--x v` (space) (red→green)
+- [x] Test 3 — precedence flags > env > defaults; absent → defaults (red→green)
 - [x] Test 4 — `--non-interactive` (+ alias `--yes`/`--no-input`) → `nonInteractive:true` (red→green)
-- [x] Test 5 — clé/secret JAMAIS reconnu (`--gemini-key xxx` ignoré) — test de garde (déjà vert : liste blanche `VALUE_FLAGS`, signalé)
-- [x] `parseAnswers` retourne `{ projectName, ownerName, ownerContext, language, nonInteractive }`
-- [x] Câblage `bootstrap.mjs` : `const cli = parseAnswers(...)` + `interactive = isTTY && !cli.nonInteractive`
-- [x] Branche non-interactive utilise `cli.*` ; branche interactive pré-remplie avec `cli.*`
-- [x] Clé toujours différée en non-interactive (`geminiKey=""`), jamais lue depuis argv (via `ask()`→"" quand `rl=null` ; `parseAnswers` ne lit aucune clé)
-- [x] Suite verte : 32 tests (27 + 5), `node --check bootstrap.mjs` OK
+- [x] Test 5 — key/secret NEVER recognized (`--gemini-key xxx` ignored) — guard test (already green: whitelist `VALUE_FLAGS`, flagged)
+- [x] `parseAnswers` returns `{ projectName, ownerName, ownerContext, language, nonInteractive }`
+- [x] Wiring `bootstrap.mjs`: `const cli = parseAnswers(...)` + `interactive = isTTY && !cli.nonInteractive`
+- [x] Non-interactive branch uses `cli.*`; interactive branch pre-filled with `cli.*`
+- [x] Key always deferred in non-interactive (`geminiKey=""`), never read from argv (via `ask()`→"" when `rl=null`; `parseAnswers` reads no key)
+- [x] Suite green: 32 tests (27 + 5), `node --check bootstrap.mjs` OK
 
-### B. `git init` si pas de dépôt ✅ TERMINÉ
-- [x] Helper pur `shouldInitGit(root)` + test (`scripts/lib/git-init.mjs` + `.test.mjs`, red→green, 2 tests)
-- [x] Câblage `bootstrap.mjs` (après §4 génération, sans nouvel en-tête numéroté) : `git init -q` + `add -A` + `commit`, idempotent (skip si `.git`), commit non-fatal si pas d'identité git
-- [x] `Bash(git init:*)` ajouté à la whitelist `.claude/settings.json.template`
-- [x] Suite verte : 34 tests, JSON template + `node --check bootstrap.mjs` OK
-- [~] Side-effect git réel = intégration → couvert par l'e2e §E (pas de test unitaire artificiel)
+### B. `git init` if no repo ✅ DONE
+- [x] Pure helper `shouldInitGit(root)` + test (`scripts/lib/git-init.mjs` + `.test.mjs`, red→green, 2 tests)
+- [x] Wiring `bootstrap.mjs` (after §4 generation, without a new numbered header): `git init -q` + `add -A` + `commit`, idempotent (skip if `.git`), non-fatal commit if no git identity
+- [x] `Bash(git init:*)` added to the whitelist `.claude/settings.json.template`
+- [x] Suite green: 34 tests, JSON template + `node --check bootstrap.mjs` OK
+- [~] Real git side-effect = integration → covered by the e2e §E (no artificial unit test)
 
-### C. Réécriture amorce `CLAUDE.md` → NOTICE D'AUTO-INSTALL ✅ TERMINÉ
-- [x] Marqueur `<!-- second-brain-starter:bootstrap-stub -->` conservé en tête
-- [x] Runbook adressé à Claude (étapes 1→4 : copie détachée, questions en chat sans clé, commande exacte `--non-interactive`, 3 consignes finales dont dépôt distant) + garde-fous
-- [x] `isBootstrapStub(CLAUDE.md)` toujours vrai après réécriture (vérifié) → le bootstrap remplacera bien l'amorce
-- [x] Neutralité : aucun nom perso / chemin absolu (placeholders `<nom>`, `<URL_DU_REPO>`)
+### C. Rewrite the `CLAUDE.md` stub → SELF-INSTALL NOTICE ✅ DONE
+- [x] Marker `<!-- second-brain-starter:bootstrap-stub -->` kept at the top
+- [x] Runbook addressed to Claude (steps 1→4: detached copy, questions in chat without the key, exact `--non-interactive` command, 3 final instructions including remote repo) + guardrails
+- [x] `isBootstrapStub(CLAUDE.md)` still true after rewrite (verified) → the bootstrap will indeed replace the stub
+- [x] Neutrality: no personal name / absolute path (placeholders `<name>`, `<REPO_URL>`)
 
-### D. Docs ✅ TERMINÉ
-- [x] README — « Option A : démarrage assisté par Claude » (prompt copier-coller + 3 gestes finals + « non au distant = sûr ») + « Option B : manuel » (ex-3 étapes)
-- [x] SETUP §2 — sous-section flags `--non-interactive --name/--owner/--context/--lang` (+ env `SB_*`, précédence), git init auto, clé différée, décision dépôt distant ; mention git init dans la liste numérotée
-- [x] DEVELOPING — backlog `--non-interactive` marqué livré + note de design « onboarding piloté par Claude » (déterminisme : script fait tout, Claude = emballage)
+### D. Docs ✅ DONE
+- [x] README — "Option A: Claude-assisted start" (copy-paste prompt + 3 final gestures + "no to the remote = safe") + "Option B: manual" (ex-3 steps)
+- [x] SETUP §2 — sub-section flags `--non-interactive --name/--owner/--context/--lang` (+ env `SB_*`, precedence), auto git init, deferred key, remote repo decision; git init mention in the numbered list
+- [x] DEVELOPING — backlog `--non-interactive` marked shipped + design note "Claude-driven onboarding" (determinism: script does everything, Claude = wrapping)
 
-### E. Tests & e2e ✅ TERMINÉ
-- [x] `bootstrap-args.test.mjs` complet (cf. A) — 5 tests verts (formes `--x=v`/`--x v`, précédence, alias `--non-interactive`, garde anti-secret)
-- [x] Non-régression « pas de remote » : `scripts/auto-commit.test.mjs` (2 tests) — commit local sans remote = aucun push/aucune erreur ; arbre propre = aucun commit superflu. Test de caractérisation (vert d'emblée, signalé)
-- [x] Suite complète verte : 36 harnais (`scripts/lib/*.test.mjs` + `scripts/*.test.mjs`) + 76 moteur RAG (`cd rag && npm test`) + `node --check bootstrap.mjs` OK
-- [x] E2E copie jetable (§6) vert — `--owner "Hossam" --context "agent DevOps"` : amorce remplacée (marqueur absent), `.mcp.json` + `.claude/settings.json` générés, `.git` git-inité (1 commit), `.env` clé vide, deps RAG installées, smoke-test MCP OK (5 outils), Hossam injecté ; puis note vault + `auto-commit.mjs` → commit local, pas de push, pas d'erreur
+### E. Tests & e2e ✅ DONE
+- [x] `bootstrap-args.test.mjs` complete (cf. A) — 5 green tests (forms `--x=v`/`--x v`, precedence, alias `--non-interactive`, anti-secret guard)
+- [x] "No remote" non-regression: `scripts/auto-commit.test.mjs` (2 tests) — local commit without a remote = no push/no error; clean tree = no superfluous commit. Characterization test (green from the start, flagged)
+- [x] Full suite green: 36 harness (`scripts/lib/*.test.mjs` + `scripts/*.test.mjs`) + 76 RAG engine (`cd rag && npm test`) + `node --check bootstrap.mjs` OK
+- [x] E2E disposable copy (§6) green — `--owner "Hossam" --context "agent DevOps"`: stub replaced (marker absent), `.mcp.json` + `.claude/settings.json` generated, `.git` git-inited (1 commit), `.env` empty key, RAG deps installed, MCP smoke-test OK (5 tools), Hossam injected; then vault note + `auto-commit.mjs` → local commit, no push, no error
 
-### Final ✅ TERMINÉ
-- [x] Commit manuel + push (conventionnel, co-author Claude) — `af406b8` poussé sur `main` (entraîne aussi les commits A–D non encore poussés). Tout vert avant push.
+### Final ✅ DONE
+- [x] Manual commit + push (conventional, co-author Claude) — `af406b8` pushed on `main` (also carries the not-yet-pushed A–D commits). All green before push.

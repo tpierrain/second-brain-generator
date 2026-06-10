@@ -1,119 +1,116 @@
-# ADR 0006 — Le serveur MCP du RAG est un contrat d'interface stable
+# ADR 0006 — The RAG's MCP server is a stable interface contract
 
-- **STATUT :** ACTÉ (2026-06-06).
-- **Lié :** [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md) (renforce
-  son invariant « serveur RAG = MCP standard, sans dépendance à une API propriétaire »),
+- **STATUS:** ACCEPTED (2026-06-06).
+- **Related:** [`0004-claude-only-pour-l-instant.md`](0004-claude-only-pour-l-instant.md)
+  (reinforces its invariant "RAG server = standard MCP, no dependency on a proprietary API"),
   [`0003-pas-upgrade-capacites-cerveaux.md`](0003-pas-upgrade-capacites-cerveaux.md) (tension
-  examinée ci-dessous), [`0005-support-onglet-code-desktop.md`](0005-support-onglet-code-desktop.md).
-- **Plan d'implémentation associé :** [`../plans/archived/onglet-code-desktop.md`](../plans/archived/onglet-code-desktop.md) (§8).
+  examined below), [`0005-support-onglet-code-desktop.md`](0005-support-onglet-code-desktop.md).
+- **Associated implementation plan:** [`../plans/archived/onglet-code-desktop.md`](../plans/archived/onglet-code-desktop.md) (§8).
 
-## Contexte
+## Context
 
-Le RAG a d'abord **émergé dans le vrai second cerveau local de Thomas**, puis a été **généralisé
-dans le générateur**. Il va **continuer de s'améliorer** — et Thomas anticipe de vouloir **changer
-de techno** : sortir de Google/Gemini (confidentialité, coût, lock-in), passer **100 % local**
-(Ollama / embeddings open-source), changer de vector store, de stratégie de chunking, etc.
+The RAG first **emerged in Thomas's actual local second brain**, then was **generalized into the
+generator**. It will **keep improving** — and Thomas anticipates wanting to **change tech**: leave
+Google/Gemini (privacy, cost, lock-in), go **100% local** (Ollama / open-source embeddings), change
+the vector store, the chunking strategy, etc.
 
-Or **l'interface MCP du RAG (les outils exposés) est, elle, plutôt stable.** Tout le harnais des
-utilisateurs en dépend : `CLAUDE.md`, skills, `sync-sources` consomment les **outils MCP**, pas la
-techno derrière. Sans décision explicite, rien n'empêche du provider-specific de fuiter dans cette
-surface (c'est déjà le cas : `vault_stats` parle « quota Gemini ») et de **re-coupler** ce qui est
-déjà agnostique.
+But **the RAG's MCP interface (the exposed tools) is, by contrast, fairly stable.** The whole user
+harness depends on it: `CLAUDE.md`, skills, `sync-sources` consume the **MCP tools**, not the tech
+behind them. Without an explicit decision, nothing stops provider-specific details from leaking into
+that surface (it's already happening: `vault_stats` talks about "Gemini quota") and **re-coupling**
+what is already decoupled.
 
-## Cadrage architecture hexagonale
+## Hexagonal architecture framing
 
-Le serveur `vault-rag` est un **hexagone** :
+The `vault-rag` server is a **hexagon**:
 
-- **Port API (contrat public, STABLE)** = les **outils MCP** exposés et leurs schémas d'entrée/
-  sortie : `search_vault`, `get_document`, `list_documents`, `vault_stats`, `reindex` (liste à
-  figer/versionner). C'est **tout** ce dont dépend le harnais des gens.
-- **SPI / adaptateurs (détails internes, INTERCHANGEABLES)** = moteur d'embeddings (Gemini
-  aujourd'hui, via `EMBEDDING_MODEL` dans `rag/src/lib/config.ts` + `embedder.ts` — **déjà
-  partiellement modulaire**), vector store (SQLite / `better-sqlite3`), stratégie de chunking,
-  garde-fous quota.
+- **API port (public contract, STABLE)** = the **MCP tools** exposed and their input/output schemas:
+  `search_vault`, `get_document`, `list_documents`, `vault_stats`, `reindex` (list to
+  freeze/version). That's **all** the user harness depends on.
+- **SPI / adapters (internal details, INTERCHANGEABLE)** = embedding engine (Gemini today, via
+  `EMBEDDING_MODEL` in `rag/src/lib/config.ts` + `embedder.ts` — **already partially modular**),
+  vector store (SQLite / `better-sqlite3`), chunking strategy, quota guardrails.
 
-## Décision
+## Decision
 
-**La surface MCP du RAG (noms d'outils + schémas I/O) est un contrat public stable, versionné.**
+**The RAG's MCP surface (tool names + I/O schemas) is a stable, versioned public contract.**
 
-- Tout changement de ce contrat est un **breaking change explicite** (versionnement / migration
-  annoncée), jamais un effet de bord d'un refactor interne.
-- Ce qui est **derrière le port** (embedder, vector store, chunking, garde-fous quota) est
-  **librement remplaçable** sans toucher au harnais. L'utilisateur choisit via `.env`
-  (`EMBEDDING_MODEL` / équivalent).
-- **Aucun vocabulaire provider-specific ne doit fuiter dans le contrat.** Action actée :
-  généraliser `vault_stats` — sortir « Quota Gemini X/7600 », « réserve 50 » au profit de termes
-  **agnostiques** (« budget d'embeddings », « requêtes restantes »), pour qu'un embedder **local
-  sans quota** satisfasse le contrat sans incohérence (il renverrait p. ex. « illimité / N/A »).
+- Any change to this contract is an **explicit breaking change** (versioning / announced migration),
+  never a side effect of an internal refactor.
+- What is **behind the port** (embedder, vector store, chunking, quota guardrails) is **freely
+  replaceable** without touching the harness. The user chooses via `.env` (`EMBEDDING_MODEL` /
+  equivalent).
+- **No provider-specific vocabulary should leak into the contract.** Accepted action: generalize
+  `vault_stats` — drop "Gemini quota X/7600", "reserve 50" in favor of **agnostic** terms
+  ("embedding budget", "remaining requests"), so that a **local embedder with no quota** satisfies
+  the contract without inconsistency (it would return e.g. "unlimited / N/A").
 
-## Conséquences
+## Consequences
 
-- **Changer d'adaptateur ne casse jamais un cerveau déjà déployé.** Gemini → local/Ollama,
-  SQLite → autre store : au pire l'utilisateur **ré-indexe**. Son harnais (skills, constitution)
-  ne bouge pas. C'est ce qui rend l'amélioration continue du RAG **sûre** pour les gens.
-- **Renforce 0004 :** garde la porte cross-platform ouverte à faible coût (un contrat MCP propre,
-  sans provider-leak, est consommable par tout client MCP-capable).
-- **Discipline de design imposée :** toute évolution du RAG se pose la question « est-ce que ça
-  touche le port (→ breaking, versionné) ou seulement le SPI (→ libre) ? ». Le provider-leak de
-  `vault_stats` devient une **dette à corriger**, pas une fatalité.
-- **Coûte un peu de rigueur :** il faut résister à exposer un détail pratique mais spécifique (un
-  champ « modèle Gemini », un code d'erreur SQLite) directement dans un outil MCP.
+- **Changing adapters never breaks an already-deployed brain.** Gemini → local/Ollama, SQLite →
+  another store: at worst the user **re-indexes**. Their harness (skills, constitution) doesn't
+  move. That's what makes the RAG's continuous improvement **safe** for people.
+- **Reinforces 0004:** keeps the cross-platform door open at low cost (a clean MCP contract, with no
+  provider leak, is consumable by any MCP-capable client).
+- **Imposes design discipline:** every RAG evolution asks the question "does this touch the port
+  (→ breaking, versioned) or only the SPI (→ free)?". The `vault_stats` provider leak becomes a
+  **debt to fix**, not a fatality.
+- **Costs a bit of rigor:** you have to resist exposing a handy but specific detail (a "Gemini
+  model" field, a SQLite error code) directly in an MCP tool.
 
-## Tension avec l'ADR 0003 — examinée et tranchée
+## Tension with ADR 0003 — examined and settled
 
-L'ADR 0003 acte qu'on **ne propage pas** d'upgrade de capacités vers les cerveaux déjà générés
-(ils sont figés à l'install). **Aucune contradiction avec le présent ADR**, qui ne parle que de
-**stabilité d'interface**, pas de distribution :
+ADR 0003 establishes that we **do not propagate** capability upgrades to already-generated brains
+(they are frozen at install). **No contradiction with the present ADR**, which speaks only of
+**interface stability**, not distribution:
 
-- 0006 dit : *le port MCP est stable, le SPI est swappable* → un utilisateur peut changer son
-  embedder **dans son propre cerveau** (geste local, via `.env`), exactement l'esprit « itération
-  locale » de 0003. Aucun canal de propagation amont n'est créé.
-- Les deux ADR sont donc **complémentaires** : 0003 = pas de flotte synchronisée ; 0006 = quand un
-  cerveau évolue (localement, ou via une régénération), l'interface ne casse pas sous lui.
+- 0006 says: *the MCP port is stable, the SPI is swappable* → a user can change their embedder **in
+  their own brain** (a local gesture, via `.env`), exactly the "local iteration" spirit of 0003. No
+  upstream propagation channel is created.
+- The two ADRs are therefore **complementary**: 0003 = no synchronized fleet; 0006 = when a brain
+  evolves (locally, or via a regeneration), the interface doesn't break under it.
 
-**Ce qui frotterait avec 0003 est scopé DEHORS de cet ADR** : l'idée sœur « packager le RAG comme
-**composant partagé et upgradable** » (potentiellement publié/versionné). Le contrat MCP stable en
-est le **préalable** (extractabilité hexagonale), mais un composant *partagé upgradable*
-réintroduirait un canal de propagation que 0003 a justement écarté. **Décision différée, à
-remonter à Thomas** : soit le packaging respecte 0003 (chaque cerveau garde SA copie figée, mise à
-jour = geste explicite opt-in non destructif), soit ça demande un addendum à 0003. **On ne tranche
-pas ici.**
+**What would rub against 0003 is scoped OUT of this ADR**: the sibling idea of "packaging the RAG as
+a **shared, upgradable component**" (potentially published/versioned). The stable MCP contract is
+the **prerequisite** for it (hexagonal extractability), but a *shared upgradable component* would
+reintroduce a propagation channel that 0003 specifically ruled out. **Deferred decision, to escalate
+to Thomas**: either the packaging respects 0003 (each brain keeps ITS frozen copy, update = explicit
+opt-in, non-destructive gesture), or it requires an addendum to 0003. **We don't settle it here.**
 
-## Addendum (2026-06-08) — Swap d'embedder = confirm-gate, jamais de réindex silencieux
+## Addendum (2026-06-08) — Embedder swap = confirm-gate, never a silent reindex
 
-Précision actée avec Thomas en concrétisant cet ADR (plan
-[`../plans/embedder-spi.md`](../plans/embedder-spi.md)) : **comment** un cerveau déjà déployé
-réagit quand son embedder change (le « au pire l'utilisateur ré-indexe » ci-dessus).
+Clarification settled with Thomas while making this ADR concrete (plan
+[`../plans/embedder-spi.md`](../plans/embedder-spi.md)): **how** an already-deployed brain reacts
+when its embedder changes (the "at worst the user re-indexes" above).
 
-**Constat technique :** l'index stocke les vecteurs en BLOB `Float32` brut **sans aucune trace du
-modèle qui les a produits** (ni provider, ni modèle, ni **dimension**). Comme chaque embedder a sa
-dimension propre (Gemini ≈ 3072, Mistral 1024, local ~768), un swap **sans** réindex rend la
-recherche **silencieusement fausse** (comparaison de vecteurs de dimensions incompatibles). Rien ne
-le détecte aujourd'hui.
+**Technical finding:** the index stores vectors as raw `Float32` BLOBs **with no trace of the model
+that produced them** (no provider, no model, no **dimension**). Since each embedder has its own
+dimension (Gemini ≈ 3072, Mistral 1024, local ~768), a swap **without** reindex makes search
+**silently wrong** (comparing vectors of incompatible dimensions). Nothing detects it today.
 
-**Décision :**
+**Decision:**
 
-1. **L'index est estampillé** d'une **identité d'embedder** (`providerId` / `model` / `dimension`).
-2. Au moment d'une recherche, si l'identité courante **diffère** de celle stampée (ou est absente),
-   le RAG **ne renvoie pas de résultats faux** : il remonte un **signal « index périmé »**.
-3. **Confirm-gate en langage naturel, jamais de réindex dans le dos.** Claude **explique** à
-   l'utilisateur que la config de recherche a changé, qu'il faut **ré-indexer les documents**
-   (inchangés — juste ré-encodés), que **ça prend un peu de temps**, et **attend une confirmation
-   explicite**. **Par défaut : on ne réindexe rien** (« on ne va pas indexer pour rien »).
-4. **Aucune nouvelle surface MCP :** le signal passe par le retour de `search_vault`, et le réindex
-   par l'outil `reindex` existant — **appelé seulement après le « oui »**. Le port MCP reste donc le
-   contrat stable de cet ADR (zéro breaking change, zéro provider-leak dans les schémas ; le message
-   nomme les modèles **dynamiquement** via l'identité, rien codé en dur « Gemini »).
+1. **The index is stamped** with an **embedder identity** (`providerId` / `model` / `dimension`).
+2. At search time, if the current identity **differs** from the stamped one (or is absent), the RAG
+   **does not return wrong results**: it surfaces a **"stale index" signal**.
+3. **Natural-language confirm-gate, never a behind-the-back reindex.** Claude **explains** to the
+   user that the search config has changed, that the documents must be **re-indexed** (unchanged —
+   just re-encoded), that **it takes a little time**, and **waits for explicit confirmation**.
+   **By default: we reindex nothing** ("we're not going to index for nothing").
+4. **No new MCP surface:** the signal travels through the return of `search_vault`, and the reindex
+   through the existing `reindex` tool — **called only after the "yes"**. The MCP port thus remains
+   the stable contract of this ADR (zero breaking change, zero provider leak in the schemas; the
+   message names models **dynamically** via the identity, nothing hardcoded "Gemini").
 
-C'est l'application directe de la posture **fail-loud + opt-in budget** du projet (cf. ADR 0005
-révisé) : un refus explicite et actionnable plutôt qu'une recherche qui ment, et jamais de
-consommation de budget d'embeddings sans accord humain.
+This is the direct application of the project's **fail-loud + opt-in budget** posture (cf. revised
+ADR 0005): an explicit, actionable refusal rather than a search that lies, and never any embedding
+budget consumed without human agreement.
 
-## Alternatives écartées
+## Rejected alternatives
 
-- **Coupler le harnais directement à Gemini / au schéma SQLite** (rapide à court terme) — re-couple
-  ce qui est déjà agnostique, casse l'invariant 0004 et interdit le passage en local. Refusé.
-- **Laisser le provider-leak dans `vault_stats`** (« ça marche aujourd'hui ») — piège : le premier
-  embedder local sans quota rendrait l'outil incohérent. Corrigé par la généralisation actée.
-- **Figer aussi le SPI** (vector store / embedder gravés) — tuerait précisément la liberté
-  d'évolution qui motive cet ADR. Refusé.
+- **Coupling the harness directly to Gemini / the SQLite schema** (quick in the short term) —
+  re-couples what is already decoupled, breaks the 0004 invariant, and forbids going local. Refused.
+- **Leaving the provider leak in `vault_stats`** ("it works today") — a trap: the first local
+  embedder with no quota would make the tool inconsistent. Fixed by the accepted generalization.
+- **Freezing the SPI too** (vector store / embedder set in stone) — would kill exactly the freedom
+  to evolve that motivates this ADR. Refused.

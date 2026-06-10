@@ -1,404 +1,404 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUT : 🔬 ÉTUDE / VEILLE (créé 2026-06-08) — RIEN D'ACTÉ, exploration.    -->
+<!-- STATUS: 🔬 STUDY / WATCH (created 2026-06-08) — NOTHING DECIDED, exploration. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
-# Étude — Offrir un éventail d'alternatives RAG selon les besoins et contraintes des gens
+# Study — Offer a range of RAG alternatives to suit people's needs and constraints
 
-> **STATUT : 🔬 ÉTUDE / VEILLE** (créé le 2026-06-08, **veille rafraîchie le 2026-06-08** via
-> recherche multi-sources + vérification adversariale — cf. §8). **Rien n'est acté ici** — c'est la
-> note d'exploration qui alimentera des décisions (ADR) et le plan d'implémentation
-> [`embedder-spi.md`](embedder-spi.md). Le choix concret d'un embedder/stratégie se fait **après
-> mesure** (cf. §6), pas sur intuition.
+> **STATUS: 🔬 STUDY / WATCH** (created 2026-06-08, **watch refreshed 2026-06-08** via
+> multi-source research + adversarial verification — see §8). **Nothing is decided here** — it's the
+> exploration note that will feed decisions (ADR) and the implementation plan
+> [`embedder-spi.md`](embedder-spi.md). The concrete choice of an embedder/strategy is made **after
+> measurement** (see §6), not on intuition.
 >
-> **La thèse (recadrée avec Thomas, 2026-06-08).** L'objet n'est **pas** « sortir de Gemini » —
-> ça, c'est juste *un* cas. L'objet est : **proposer plusieurs alternatives RAG, et aider chacun à
-> choisir la bonne selon SES besoins et SES contraintes** (privacy, budget, puissance machine, OS,
-> type de corpus, tolérance à la friction d'install). « Sortir de Gemini » est *une* réponse parmi
-> d'autres, pour le profil gratuit + privé. Le port SPI `Embedder` est le mécanisme qui rend cet
-> **éventail** possible sans casser le harnais ni le contrat MCP.
+> **The thesis (reframed with Thomas, 2026-06-08).** The goal is **not** "get out of Gemini" —
+> that's just *one* case. The goal is: **offer several RAG alternatives, and help each person
+> choose the right one based on THEIR needs and THEIR constraints** (privacy, budget, machine power, OS,
+> corpus type, tolerance for install friction). "Getting out of Gemini" is *one* answer among
+> others, for the free + private profile. The `Embedder` SPI port is the mechanism that makes this
+> **range** possible without breaking the harness or the MCP contract.
 >
-> **Origine :** demande de **Dimitry Ernot** (« pouvoir utiliser autre chose que Google Gemini » —
-> Betclic a ChatGPT packagé + Claude Code ; sa femme un outil Mistral) + pistes de **Gaël Bernier**
-> (REX VIF à la Nuit des communautés de Nantes, 28/05 : LightRAG/GraphRAG, LangFuse, LLM-as-judge,
+> **Origin:** request from **Dimitry Ernot** ("being able to use something other than Google Gemini" —
+> Betclic has a packaged ChatGPT + Claude Code; his wife uses a Mistral tool) + leads from **Gaël Bernier**
+> (VIF feedback at the Nantes Communities Night, 28/05: LightRAG/GraphRAG, LangFuse, LLM-as-judge,
 > human-in-the-loop).
 
 ---
 
-## 1. Les axes de besoins / contraintes (ce qui pilote le choix)
+## 1. The axes of needs / constraints (what drives the choice)
 
-L'étude ne cherche **pas** un « gagnant » unique : elle cherche à **mapper des profils
-d'utilisateurs sur des profils RAG**. Les axes qui font basculer le choix d'une personne :
+The study is **not** looking for a single "winner": it's looking to **map user profiles onto
+RAG profiles**. The axes that tip a person's choice one way or another:
 
-- **Privacy** — le vault doit-il rester **on-device** (rien au cloud), ou un envoi à une API tierce
-  est-il acceptable ?
-- **Budget** — gratuit obligatoire, ou un coût d'API toléré ?
-- **Puissance machine** — poste **bureautique** modeste (sans GPU) vs **grosse machine** (GPU/RAM).
-- **OS** — doit tourner sur **Mac ET PC (Windows)** (idéalement Linux).
-- **Friction d'install** — **non-dev** (zéro install, « colle une clé ») vs **dev/power-user**
-  (prêt à installer Ollama, un modèle, etc.).
-- **Type de corpus & qualité visée** — corpus riche en entités/relations + besoin de raisonnement
-  multi-hop (→ GraphRAG) vs recherche sémantique simple ; exigence de qualité en **français**.
+- **Privacy** — must the vault stay **on-device** (nothing to the cloud), or is sending to a third-party
+  API acceptable?
+- **Budget** — must it be free, or is an API cost tolerated?
+- **Machine power** — modest **office** machine (no GPU) vs **big machine** (GPU/RAM).
+- **OS** — must run on **Mac AND PC (Windows)** (ideally Linux).
+- **Install friction** — **non-dev** (zero install, "just paste a key") vs **dev/power-user**
+  (willing to install Ollama, a model, etc.).
+- **Corpus type & quality target** — corpus rich in entities/relations + need for multi-hop
+  reasoning (→ GraphRAG) vs simple semantic search; quality requirement in **French**.
 
-### 1.1 — Le défaut visé par le générateur (les contraintes de Thomas, validées 2026-06-08)
+### 1.1 — The default the generator targets (Thomas's constraints, validated 2026-06-08)
 
-Le **profil par défaut** que le générateur doit servir (cœur de cible : non-dev type « Mac nu
-d'Achille ») coche **idéalement tout** ceci — Thomas reconnaît que les cocher *tous à la fois*
-« va être compliqué », d'où la **mesure** (§6) et l'**offre à plusieurs niveaux** (§1.2) :
+The **default profile** the generator must serve (core target: non-dev like "Achille's bare
+Mac") **ideally ticks every** one of these — Thomas acknowledges that ticking them *all at once*
+"is going to be tricky", hence the **measurement** (§6) and the **multi-tier offering** (§1.2):
 
-1. **Gratuit** — pas de paiement.
+1. **Free** — no payment.
 2. **Privacy** — local / **on-device**.
-3. **Cross-plateforme** — Mac ET PC (Windows), pas de dépendance GPU NVIDIA.
-4. **Tourne sur un poste bureautique** — machine modeste, sans GPU dédié.
+3. **Cross-platform** — Mac AND PC (Windows), no NVIDIA GPU dependency.
+4. **Runs on an office machine** — modest machine, no dedicated GPU.
 
-### 1.2 — L'offre RAG à plusieurs niveaux (la vraie ambition)
+### 1.2 — The multi-tier RAG offering (the real ambition)
 
-Plutôt qu'un choix unique, **un éventail de profils**, sélectionnable (via `.env` / installeur),
-chacun répondant à un jeu de contraintes :
+Rather than a single choice, **a range of profiles**, selectable (via `.env` / installer),
+each addressing a set of constraints:
 
-| Profil RAG | Pour qui (besoins/contraintes) | Stack pressentie |
+| RAG profile | For whom (needs/constraints) | Likely stack |
 |---|---|---|
-| **Bureautique** (défaut perso) | Non-dev, gratuit, privé, machine modeste, Mac/PC | Embedder local léger (**EmbeddingGemma** ou **bge-m3**) via Ollama, retrieval plat + reranker local |
-| **Grosse machine** (opt-in) | Dev/power-user, GPU/RAM, qualité max, gratuit+privé | Embedder local gros (**Qwen3** / Nemotron-8B), reranking lourd, éventuellement **GraphRAG léger** (E2GraphRAG) |
-| **Endpoint API (compatible OpenAI)** (opt-in) | • soit *zéro install locale* (clé perso) • soit **en entreprise** avec un OpenAI/Azure **validé par la boîte** (cas Dimitry) | **Un seul adaptateur « compatible OpenAI », URL + clé configurables** → OpenAI public, **Azure OpenAI**, **passerelle interne** d'entreprise, **Mistral**… (+ Gemini actuel via son adaptateur natif) |
+| **Office** (personal default) | Non-dev, free, private, modest machine, Mac/PC | Light local embedder (**EmbeddingGemma** or **bge-m3**) via Ollama, flat retrieval + local reranker |
+| **Big machine** (opt-in) | Dev/power-user, GPU/RAM, max quality, free+private | Big local embedder (**Qwen3** / Nemotron-8B), heavy reranking, possibly **light GraphRAG** (E2GraphRAG) |
+| **API endpoint (OpenAI-compatible)** (opt-in) | • either *zero local install* (personal key) • or **in a company** with an OpenAI/Azure **approved by the company** (Dimitry's case) | **A single "OpenAI-compatible" adapter, configurable URL + key** → public OpenAI, **Azure OpenAI**, company **internal gateway**, **Mistral**… (+ current Gemini via its native adapter) |
 
-> **Ce qui rend ça possible architecturalement :** le **port SPI `Embedder`** (plan
-> [`embedder-spi.md`](embedder-spi.md)) + l'estampille d'identité de l'index. C'est lui qui permet
-> d'offrir **plusieurs profils** (bureautique / grosse machine / endpoint API) sans toucher au
-> harnais ni au contrat MCP (ADR
+> **What makes this architecturally possible:** the **`Embedder` SPI port** (plan
+> [`embedder-spi.md`](embedder-spi.md)) + the index identity stamp. It's what lets us
+> offer **several profiles** (office / big machine / API endpoint) without touching the
+> harness or the MCP contract (ADR
 > [`../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md`](../decisions/0006-le-mcp-du-rag-est-un-contrat-stable.md)).
 >
-> **🎯 L'adaptateur « compatible OpenAI » est l'impl concrète au plus fort levier.** L'API
-> d'embeddings d'OpenAI (`/v1/embeddings`) étant le **standard de fait**, **un seul** adaptateur avec
-> **URL configurable** couvre presque tout l'écosystème : OpenAI public, **Azure OpenAI**, passerelle
-> interne d'entreprise, **Mistral**, et même **Ollama en local** (qui expose aussi cette API). On
-> change de backend en **changeant une URL dans `.env`**, sans une ligne de code en plus. Pour le
-> **public entreprise de Dimitry** (OpenAI/Azure déjà validé par l'employeur), c'est **probablement le
-> meilleur défaut** : zéro install, zéro Ollama, et **la confidentialité est déjà tranchée par la
-> boîte** (pas d'approbation supplémentaire à demander). ⚠️ Ça reste du **cloud** (les notes partent à
-> l'endpoint à l'indexation) — donc « fournisseur validé par l'employeur », *pas* « 100 % on-device ».
-> → Ouvre la **discussion préalable** exigée par le plan SPI ([`embedder-spi.md`](embedder-spi.md) §0.2)
-> avant toute 2ᵉ impl concrète : l'adaptateur OpenAI-compatible est le premier candidat naturel.
+> **🎯 The "OpenAI-compatible" adapter is the concrete impl with the highest leverage.** Since OpenAI's
+> embeddings API (`/v1/embeddings`) is the **de facto standard**, **a single** adapter with a
+> **configurable URL** covers almost the entire ecosystem: public OpenAI, **Azure OpenAI**, a company's
+> internal gateway, **Mistral**, and even **Ollama running locally** (which also exposes this API). You
+> switch backend by **changing one URL in `.env`**, without a single extra line of code. For
+> **Dimitry's enterprise audience** (OpenAI/Azure already approved by the employer), it's **probably the
+> best default**: zero install, zero Ollama, and **confidentiality is already settled by the
+> company** (no additional approval to request). ⚠️ It's still **cloud** (notes go out to the
+> endpoint at indexing time) — so "provider approved by the employer", *not* "100% on-device".
+> → It opens the **prior discussion** required by the SPI plan ([`embedder-spi.md`](embedder-spi.md) §0.2)
+> before any 2nd concrete impl: the OpenAI-compatible adapter is the natural first candidate.
 
-### 1.3 — Dégonfler le jargon « ressources » : embedder ≠ LLM de chat
+### 1.3 — Deflating the "resources" jargon: embedder ≠ chat LLM
 
-> **La confusion à lever en premier.** On mélange deux familles de modèles **très** différentes :
+> **The confusion to clear up first.** People mix up two **very** different families of models:
 >
-> | | **Embedder** (ce dont le RAG a besoin) | **LLM de chat** (PAS besoin de le faire tourner) |
+> | | **Embedder** (what RAG needs) | **Chat LLM** (NO need to run it) |
 > |---|---|---|
-> | Rôle | Transforme un texte en liste de nombres (pour retrouver) | Tient une conversation, raisonne, rédige (genre ChatGPT) |
-> | Taille | **minuscule** (300M–600M paramètres) | **énorme** (7B–70B, soit 20 à 200× plus gros) |
-> | Sur un laptop banal | **oui, tranquille** | **non**, exige une grosse machine/GPU |
+> | Role | Turns a text into a list of numbers (to retrieve) | Holds a conversation, reasons, writes (like ChatGPT) |
+> | Size | **tiny** (300M–600M parameters) | **huge** (7B–70B, i.e. 20 to 200× bigger) |
+> | On a regular laptop | **yes, easily** | **no**, requires a big machine/GPU |
 >
-> « RAG local » **ne veut PAS dire** « faire tourner ChatGPT sur ton laptop ». Le chat (la réponse)
-> reste **Claude, dans le cloud**. La seule chose qu'on ferait tourner en local, c'est le **petit**
-> modèle qui *encode* les notes.
+> "Local RAG" does **NOT mean** "running ChatGPT on your laptop". The chat (the answer)
+> stays **Claude, in the cloud**. The only thing we'd run locally is the **small**
+> model that *encodes* the notes.
 
-**Chiffres concrets** (cible = laptop de PM banal : MacBook Air M2 16 Go, ou ultrabook Windows 16 Go,
-**sans carte graphique de gamer**) :
+**Concrete numbers** (target = regular PM laptop: MacBook Air M2 16 GB, or Windows ultrabook 16 GB,
+**without a gamer's graphics card**):
 
-| Modèle | Disque | RAM à l'usage | Sans GPU dédié ? | Réaliste sur ce laptop ? |
+| Model | Disk | RAM in use | No dedicated GPU? | Realistic on this laptop? |
 |---|---|---|---|---|
-| **EmbeddingGemma** (300M) | ~0,3–0,6 Go | **< 200 Mo** | ✅ conçu pour ça | ✅✅ **les doigts dans le nez**, même 8 Go |
-| **bge-m3** (568M) | 1,2 Go | ~1–2 Go | ✅ | ✅ très bien sur 16 Go |
-| **Qwen3-0.6B** | ~0,6–1,2 Go | ~1–2 Go | ✅ | ✅ ok |
-| Qwen3-**8B** (gros) | ~8–16 Go | ~8–16 Go | ❌ veut un vrai GPU | ❌ pas sur ce laptop |
-| GraphRAG **+ LLM local** | ≥ 5 Go (le LLM) | ≥ 8–16 Go | ❌ GPU quasi obligatoire | ❌ **non** (indexation 1 h–3 h) |
+| **EmbeddingGemma** (300M) | ~0.3–0.6 GB | **< 200 MB** | ✅ designed for it | ✅✅ **a breeze**, even 8 GB |
+| **bge-m3** (568M) | 1.2 GB | ~1–2 GB | ✅ | ✅ very good on 16 GB |
+| **Qwen3-0.6B** | ~0.6–1.2 GB | ~1–2 GB | ✅ | ✅ ok |
+| Qwen3-**8B** (big) | ~8–16 GB | ~8–16 GB | ❌ wants a real GPU | ❌ not on this laptop |
+| GraphRAG **+ local LLM** | ≥ 5 GB (the LLM) | ≥ 8–16 GB | ❌ GPU practically required | ❌ **no** (indexing 1h–3h) |
 
-- **Encoder le vault = ponctuel** (quelques minutes à ~15 min pour quelques milliers de notes ; à
-  refaire seulement quand le contenu change).
-- **Poser une question = encoder une phrase = < 1 s.** Encoder est *pas cher* ; c'est *générer la
-  réponse* qui coûte — et ça, c'est Claude (cloud).
+- **Encoding the vault = one-off** (a few minutes to ~15 min for a few thousand notes; only to be
+  redone when the content changes).
+- **Asking a question = encoding one sentence = < 1 s.** Encoding is *cheap*; it's *generating the
+  answer* that costs — and that's Claude (cloud).
 
-⇒ **Verdict** : un **embedder local léger est parfaitement réaliste** sur un laptop de PM banal
-(EmbeddingGemma est fait *exprès* pour ça). C'est **GraphRAG-avec-LLM-local** qui ne l'est pas → d'où
-son rangement en « profil grosse machine, pas le défaut » (§4).
+⇒ **Verdict**: a **light local embedder is perfectly realistic** on a regular PM laptop
+(EmbeddingGemma is *purpose-built* for it). It's **GraphRAG-with-a-local-LLM** that isn't → hence
+its filing under "big-machine profile, not the default" (§4).
 
-### Cadrage honnête — où s'arrête vraiment la privacy
+### Honest framing — where privacy really stops
 
-Le cerveau **tourne dans Claude** (ADR
+The brain **runs in Claude** (ADR
 [`../decisions/0004-claude-only-pour-l-instant.md`](../decisions/0004-claude-only-pour-l-instant.md)).
-Donc la couche qui **répond** envoie déjà questions + passages récupérés à Anthropic (cloud). **Le
-seul morceau qu'on peut rendre 100 % local, c'est le RAG** (embeddings + index + recherche).
+So the layer that **answers** already sends questions + retrieved passages to Anthropic (cloud). **The
+only piece we can make 100% local is the RAG** (embeddings + index + search).
 
-⇒ L'objectif **atteignable et honnête** : *« le RAG ne dépend plus d'une API cloud payante
-(Google) ; le vault est encodé et fouillé entièrement sur la machine »*. C'est réel, shippable, et
-répond pile à Dimitry (sortir de Google) **et** aux critères 1–4. Ne pas survendre « tout est
-privé » : le LLM qui répond reste Claude.
+⇒ The **achievable and honest** objective: *"the RAG no longer depends on a paid cloud API
+(Google); the vault is encoded and searched entirely on the machine"*. That's real, shippable, and
+answers Dimitry precisely (get out of Google) **and** criteria 1–4. Don't oversell "everything is
+private": the LLM that answers stays Claude.
 
-### Échelle de confidentialité par fournisseur (le vrai argumentaire d'install)
+### Confidentiality scale by provider (the real install pitch)
 
-**Deux réflexes à intégrer :**
-1. **La confidentialité n'est pas une affaire de code, mais d'endpoint + de palier.** L'adaptateur
-   compatible-OpenAI est de la **tuyauterie neutre** : c'est l'URL + la clé (donc le fournisseur et
-   son plan) mis dans le `.env` qui *décident* du niveau de privacy. Le même code est « fuyant » ou
-   « béton » selon où on le pointe.
-2. **« Pas d'entraînement » ≠ « ça ne quitte pas la machine ».** Toute option API (même Azure) envoie
-   quand même le contenu du vault au fournisseur **à l'indexation**. Le **seul** niveau où *rien* ne
-   part, c'est le **local**.
+**Two reflexes to internalize:**
+1. **Confidentiality is not a matter of code, but of endpoint + tier.** The OpenAI-compatible
+   adapter is **neutral plumbing**: it's the URL + the key (hence the provider and its plan)
+   put in the `.env` that *decide* the privacy level. The same code is "leaky" or
+   "rock-solid" depending on where you point it.
+2. **"No training" ≠ "it doesn't leave the machine".** Any API option (even Azure) still sends
+   the vault content to the provider **at indexing time**. The **only** level where *nothing*
+   leaves is **local**.
 
-| Niveau | Option | Le contenu sort-il ? | Entraînement sur tes données ? | À savoir |
+| Level | Option | Does content leave? | Trained on your data? | Good to know |
 |---|---|---|---|---|
-| 🟢 **1** | **Local** (EmbeddingGemma / bge-m3) | **Non** — rien ne sort | sans objet | Confidentialité max, **gratuit**, pas de clé |
-| 🟢 **2** | **Azure OpenAI** / passerelle entreprise | oui, mais reste dans le **tenant** de la boîte | **Non** (garanties contractuelles) | **Le plus béton en cloud** ; déjà validé par l'employeur (cas Dimitry) |
-| 🟡 **3** | **OpenAI API** | oui | **Non, par défaut** (depuis 2023) | ≠ ChatGPT grand public ; rétention ~30 j anti-abus puis suppression. **Plus simple que Gemini** (pas de manip) |
-| 🟡 **4** | **Mistral** (payant, UE) | oui | **Non** en payant | Hébergé **UE** (bonus RGPD) ; ⚠️ vérifier les conditions du palier gratuit |
-| 🔴 **5** | **N'importe quel palier GRATUIT** | oui | ⚠️ **souvent oui** (amélioration produit) | **Le piège.** Gemini gratuit en fait partie → payer qq centimes (activer la facturation) le fait passer ~niveau 3 |
+| 🟢 **1** | **Local** (EmbeddingGemma / bge-m3) | **No** — nothing leaves | n/a | Max confidentiality, **free**, no key |
+| 🟢 **2** | **Azure OpenAI** / enterprise gateway | yes, but stays within the company's **tenant** | **No** (contractual guarantees) | **The most rock-solid in cloud**; already approved by the employer (Dimitry's case) |
+| 🟡 **3** | **OpenAI API** | yes | **No, by default** (since 2023) | ≠ consumer ChatGPT; ~30-day anti-abuse retention then deletion. **Simpler than Gemini** (no fiddling) |
+| 🟡 **4** | **Mistral** (paid, EU) | yes | **No** when paid | Hosted in the **EU** (GDPR bonus); ⚠️ check the free-tier terms |
+| 🔴 **5** | **Any FREE tier** | yes | ⚠️ **often yes** (product improvement) | **The trap.** Free Gemini is one of them → paying a few cents (enabling billing) moves it to ~level 3 |
 
-> **Le net :** la gymnastique « payer ~13 cts pour sortir de l'entraînement » est une **bizarrerie du
-> palier gratuit Gemini**, pas une fatalité. **OpenAI API** = pas d'entraînement par défaut ;
-> **Azure** = le plus solide (et la porte naturelle du monde entreprise) ; **local** = la question ne
-> se pose plus. ⚠️ Politiques **volatiles** (recul arrêté début 2026) → revérifier les pages
-> officielles à la date d'usage avant d'en faire un argument public.
+> **The bottom line:** the "pay ~13 cents to opt out of training" dance is a **quirk of the
+> free Gemini tier**, not a fatality. **OpenAI API** = no training by default;
+> **Azure** = the most solid (and the natural gateway for the enterprise world); **local** = the question no
+> longer arises. ⚠️ Policies are **volatile** (verification frozen early 2026) → recheck the
+> official pages at the date of use before making it a public argument.
 
 ---
 
-## 2. Le constat technique qui conditionne tout
+## 2. The technical finding that conditions everything
 
-L'index stocke les vecteurs en **BLOB `Float32` brut**, **sans trace du modèle** (ni provider, ni
-**dimension**) — cf. `rag/src/lib/vector-store.ts`. Or chaque embedder a sa dimension propre
-(Gemini ≈ 768–3072 selon config, bge-m3 = 1024, nomic = 768, Qwen3-8B = 4096). Swapper **sans
-réindexer** ⇒ recherche **silencieusement fausse**. D'où, dans le plan SPI : **estampille
-d'identité + confirm-gate** (on explique, on attend le « oui », jamais de réindex dans le dos).
+The index stores the vectors as a **raw `Float32` BLOB**, **without any trace of the model** (no provider, no
+**dimension**) — see `rag/src/lib/vector-store.ts`. Yet each embedder has its own dimension
+(Gemini ≈ 768–3072 depending on config, bge-m3 = 1024, nomic = 768, Qwen3-8B = 4096). Swapping **without
+reindexing** ⇒ search **silently wrong**. Hence, in the SPI plan: **identity stamp
++ confirm-gate** (we explain, we wait for the "yes", never a reindex behind your back).
 
-**Ce qui est réutilisable au swap d'embedder (et ce qui ne l'est pas) :**
+**What is reusable on an embedder swap (and what is not):**
 
-| Élément | Réutilisable ? |
+| Element | Reusable? |
 |---|---|
-| Les **notes Markdown** (la source) | ✅ toujours — elles ne bougent jamais |
-| La **structure** de la base (SQLite, tables documents/chunks) | ✅ identique quel que soit l'embedder |
-| Le **chunking** | ✅ si la stratégie de découpe est inchangée |
-| Les **vecteurs** (embeddings stockés) | ❌ **JAMAIS** d'un embedder à l'autre → **réindex obligatoire** |
+| The **Markdown notes** (the source) | ✅ always — they never move |
+| The **structure** of the database (SQLite, documents/chunks tables) | ✅ identical whatever the embedder |
+| The **chunking** | ✅ if the splitting strategy is unchanged |
+| The **vectors** (stored embeddings) | ❌ **NEVER** from one embedder to another → **reindex mandatory** |
 
-Chaque embedder encode dans son **espace propre** : deux vecteurs de modèles différents ne sont pas
-comparables, **même à dimension égale**. ⚠️ La dimension égale est donc un **piège** (un garde qui ne
-checkerait que la dimension laisserait passer un swap incompatible → recherche fausse) → l'estampille
-**doit** s'identifier sur **provider + modèle + dimension**, pas la seule dimension. **Bonne nouvelle :**
-réindexer = ré-encoder les notes (quelques minutes), **les notes ne sont jamais perdues** et la base
-n'est pas reconstruite de zéro.
+Each embedder encodes in its **own space**: two vectors from different models are not
+comparable, **even at equal dimension**. ⚠️ Equal dimension is therefore a **trap** (a guard that
+only checked the dimension would let an incompatible swap through → wrong search) → the stamp
+**must** identify on **provider + model + dimension**, not the dimension alone. **Good news:**
+reindexing = re-encoding the notes (a few minutes), **the notes are never lost** and the database
+is not rebuilt from scratch.
 
 ---
 
-## 3. Veille embedders — filtrée par les critères (état 2026)
+## 3. Embedder watch — filtered by the criteria (state 2026)
 
-| Option | Gratuit | Local/privé | Cross-OS | Bureautique | Qualité FR | Verdict |
+| Option | Free | Local/private | Cross-OS | Office | FR quality | Verdict |
 |---|---|---|---|---|---|---|
-| **Gemini** (actuel) | ❌ payant | ❌ cloud | n/a | n/a | ⚠️ ~66.2 (MTEB FR) **non vérifié** (cf. §8) | **À remplacer** — échoue 1 & 2 |
-| **bge-m3** (568M, 1024-dim) | ✅ | ✅ | ✅ | ✅ (1.2 Go Ollama, CPU-OK) | correcte **non SOTA** (~58.79 retrieval dense F-MTEB) ; multilingue 100+ langues = pertinence FR garantie, pas suprématie | **Candidat #1 profil bureautique** (à départager vs EmbeddingGemma) |
-| **EmbeddingGemma** (300/308M) | ✅ | ✅ | ✅ | ✅✅ **<200 Mo RAM** quantifié, conçu *on-device* | n°1 open multilingue **<500M** sur MTEB (~61.15 mean ML-v2) ; score FR isolé à mesurer | **Rival direct de bge-m3 dans le tier léger** (2× plus petit) — **nouveau, à benchmarker** |
-| **nomic-embed-text** (v1/v1.5, 768-dim) | ✅ | ✅ | ✅ | ✅✅ ultra-léger | **anglo-centré** (confirmé) — multilingue **uniquement** dans la variante séparée `nomic-embed-text-v2-moe` | « rapide partout » mais **FR faible** ; classé derrière bge-m3 en multilingue |
-| **Qwen3-Embedding-0.6B** (1024-dim, comme bge-m3) | ✅ | ✅ | ✅ | ✅ | **inconnue** (le 8B=69.8 mais pas le petit) | À **benchmarker**. ⚠️ Même dimension que bge-m3 **n'évite PAS le réindex** (espaces différents) — et c'est un **piège** : l'estampille doit garder sur **provider+modèle**, pas que la dimension (cf. §2) |
-| **Qwen3-Embedding-8B** (4096-dim) | ✅ | ✅ | ❌ exige gros GPU/RAM | ❌ | **~69.8** (excellent ; 70.58 mean ML, n°1 **juin 2025**) | **Profil grosse machine** uniquement — *dépassé en 2026* par NVIDIA Llama-Embed-Nemotron-8B |
+| **Gemini** (current) | ❌ paid | ❌ cloud | n/a | n/a | ⚠️ ~66.2 (MTEB FR) **unverified** (see §8) | **To replace** — fails 1 & 2 |
+| **bge-m3** (568M, 1024-dim) | ✅ | ✅ | ✅ | ✅ (1.2 GB Ollama, CPU-OK) | decent **not SOTA** (~58.79 dense retrieval F-MTEB); multilingual 100+ languages = FR relevance guaranteed, not supremacy | **Candidate #1 office profile** (to be decided vs EmbeddingGemma) |
+| **EmbeddingGemma** (300/308M) | ✅ | ✅ | ✅ | ✅✅ **<200 MB RAM** quantized, designed *on-device* | #1 open multilingual **<500M** on MTEB (~61.15 mean ML-v2); isolated FR score to be measured | **Direct rival of bge-m3 in the light tier** (2× smaller) — **new, to benchmark** |
+| **nomic-embed-text** (v1/v1.5, 768-dim) | ✅ | ✅ | ✅ | ✅✅ ultra-light | **anglo-centric** (confirmed) — multilingual **only** in the separate `nomic-embed-text-v2-moe` variant | "fast everywhere" but **weak FR**; ranked behind bge-m3 in multilingual |
+| **Qwen3-Embedding-0.6B** (1024-dim, like bge-m3) | ✅ | ✅ | ✅ | ✅ | **unknown** (the 8B=69.8 but not the small one) | To **benchmark**. ⚠️ Same dimension as bge-m3 does **NOT avoid the reindex** (different spaces) — and it's a **trap**: the stamp must keep to **provider+model**, not just the dimension (see §2) |
+| **Qwen3-Embedding-8B** (4096-dim) | ✅ | ✅ | ❌ requires big GPU/RAM | ❌ | **~69.8** (excellent; 70.58 mean ML, #1 **June 2025**) | **Big-machine profile** only — *surpassed in 2026* by NVIDIA Llama-Embed-Nemotron-8B |
 
-**À noter :**
-- **Le « Gemini 66.2 FR » de la version initiale n'est PAS confirmé** par la veille (aucune source
-  survivante ne chiffre `gemini-embedding-001` en FR). À revérifier avant d'en faire un argument.
-- **Classements volatils** : le n°1 Qwen3-8B date du **5 juin 2025** ; en 2026 NVIDIA
-  Llama-Embed-Nemotron-8B est passé devant (Qwen3-8B ~rang 3). **Revalider les leaderboards à la date
-  d'usage.** Et MTEB est critiqué comme prédicteur imparfait du retrieval réel (cf. RTEB) → un bon
-  score MTEB ≠ qualité terrain sur un corpus Markdown perso FR. **Mesurer, pas supposer.**
+**To note:**
+- **The "Gemini 66.2 FR" from the initial version is NOT confirmed** by the watch (no surviving
+  source puts a number on `gemini-embedding-001` in FR). To recheck before making it an argument.
+- **Volatile rankings**: the #1 Qwen3-8B dates from **June 5, 2025**; in 2026 NVIDIA
+  Llama-Embed-Nemotron-8B moved ahead (Qwen3-8B ~rank 3). **Re-validate the leaderboards at the date
+  of use.** And MTEB is criticized as an imperfect predictor of real retrieval (see RTEB) → a good
+  MTEB score ≠ field quality on a personal FR Markdown corpus. **Measure, don't assume.**
 
-**Mapping sur l'offre à plusieurs niveaux (§1.2) :**
-- **Profil bureautique (défaut)** : `bge-m3` **OU `EmbeddingGemma`** via **Ollama** — gratuit, privé,
-  Mac/PC, machine modeste. **EmbeddingGemma** est le nouveau prétendant le plus léger (conçu
-  on-device, <200 Mo RAM) ; **lequel des deux par défaut = à départager par l'eval-set FR (§6).**
-  (`nomic` écarté du défaut : FR trop faible.)
-- **Profil grosse machine (opt-in)** : `Qwen3-Embedding` gros (ou Llama-Embed-Nemotron-8B) + reranking
-  + éventuellement GraphRAG **léger** (E2GraphRAG, cf. §4).
-- **Profil endpoint API (opt-in)** : **un adaptateur « compatible OpenAI » à URL configurable**
-  couvre OpenAI public, **Azure OpenAI**, passerelle interne d'entreprise, **Mistral**, et même Ollama
-  local (+ Gemini via son adaptateur natif). Option « zéro friction » pour non-dev sans Ollama **et**
-  réponse directe au cas **entreprise de Dimitry** (OpenAI/Azure validé par la boîte = le défaut
-  naturel pour ce public). Cf. encart §1.2.
+**Mapping onto the multi-tier offering (§1.2):**
+- **Office profile (default)**: `bge-m3` **OR `EmbeddingGemma`** via **Ollama** — free, private,
+  Mac/PC, modest machine. **EmbeddingGemma** is the new lightest contender (designed
+  on-device, <200 MB RAM); **which of the two as default = to be decided by the FR eval-set (§6).**
+  (`nomic` ruled out of the default: FR too weak.)
+- **Big-machine profile (opt-in)**: big `Qwen3-Embedding` (or Llama-Embed-Nemotron-8B) + reranking
+  + possibly **light** GraphRAG (E2GraphRAG, see §4).
+- **API endpoint profile (opt-in)**: **one "OpenAI-compatible" adapter with a configurable URL**
+  covers public OpenAI, **Azure OpenAI**, a company's internal gateway, **Mistral**, and even local
+  Ollama (+ Gemini via its native adapter). A "zero friction" option for a non-dev without Ollama **and**
+  a direct answer to **Dimitry's enterprise** case (OpenAI/Azure approved by the company = the
+  natural default for that audience). See box §1.2.
 
-### 3 bis — ✅ MESURE Étape 4 (2026-06-09) : les locaux **ne dégradent pas** la qualité FR
+### 3 bis — ✅ MEASUREMENT Step 4 (2026-06-09): the local ones **do not degrade** FR quality
 
-> **Ce qui était « à benchmarker » ci-dessus l'est désormais.** Premier chiffrage réel sous notre
-> propre harnais (eval-set, juge = Claude) sur le vault FR Flemmr, via Ollama + l'adaptateur
-> compatible-OpenAI. Détail + repro : [`../eval-set.md`](../eval-set.md#étape-4--résultats-mesurés-local-vs-gemini-2026-06-09).
+> **What was "to benchmark" above now is.** First real numbers under our
+> own harness (eval-set, judge = Claude) on the FR Flemmr vault, via Ollama + the
+> OpenAI-compatible adapter. Detail + repro: [`../eval-set.md`](../eval-set.md#étape-4--résultats-mesurés-local-vs-gemini-2026-06-09).
 
-| Embedder | Lieu | Dim | **Score FR** | Index 7 notes (warm) | Disque | RAM |
+| Embedder | Location | Dim | **FR score** | Index 7 notes (warm) | Disk | RAM |
 |---|---|---|---|---|---|---|
-| **EmbeddingGemma** | 🟢 local | 768 | **90 % (9/10)** | ~1,3 s | 621 Mo | ~0,67 Go |
-| **bge-m3** | 🟢 local | 1024 | **90 % (9/10)** | ~1,7 s | 1,2 Go | ~0,66 Go |
-| **Gemini** (baseline) | 🔴 cloud | 3072 | **80 % (8/10)** | ~20,8 s | 0 | 0 |
+| **EmbeddingGemma** | 🟢 local | 768 | **90% (9/10)** | ~1.3 s | 621 MB | ~0.67 GB |
+| **bge-m3** | 🟢 local | 1024 | **90% (9/10)** | ~1.7 s | 1.2 GB | ~0.66 GB |
+| **Gemini** (baseline) | 🔴 cloud | 3072 | **80% (8/10)** | ~20.8 s | 0 | 0 |
 
-- **Conclusion robuste** : **aucun malus qualité** à passer en local sur ce corpus FR — les deux locaux
-  sont **au moins à parité** avec Gemini (ils le dépassent même d'une question). Le profil par défaut
-  visé (gratuit + privé + on-device, §1.1) est **viable côté qualité** : la mesure valide l'intuition,
-  elle ne la contredit pas.
-- **Caveat assumé** (ne pas survendre) : corpus minuscule → le 90 vs 80 = **1 question d'écart**, dans
-  le bruit (variance juge + top-k qui ramène presque tout) ; chaque modèle rate une question
-  *différente*. ⇒ **« local à parité »** est défendable, **« local > Gemini » ne l'est pas encore**.
-  Pour **départager EmbeddingGemma vs bge-m3** (le choix fin de D1), refaire la mesure sur un **corpus
-  riche** (cf. `eval-set.md` §discriminer). À score égal, **EmbeddingGemma** part favori du défaut
-  bureautique : 2× plus léger sur disque, vecteurs plus petits (index plus compact), conçu on-device.
-- **Footprint réel validé** : les deux modèles tiennent dans **~0,65 Go de RAM** (GPU Metal sur Mac
-  Apple Silicon), très loin du laptop saturé — confirme §1.3 (embedder ≠ LLM de chat).
+- **Robust conclusion**: **no quality penalty** in going local on this FR corpus — both local ones
+  are **at least at parity** with Gemini (they even beat it by one question). The targeted default
+  profile (free + private + on-device, §1.1) is **viable on the quality side**: the measurement validates the intuition,
+  it does not contradict it.
+- **Acknowledged caveat** (don't oversell): tiny corpus → the 90 vs 80 = **a 1-question gap**, within
+  the noise (judge variance + top-k that brings back nearly everything); each model misses a
+  *different* question. ⇒ **"local at parity"** is defensible, **"local > Gemini" is not yet**.
+  To **decide between EmbeddingGemma vs bge-m3** (the fine choice of D1), redo the measurement on a **rich
+  corpus** (see `eval-set.md` §discriminate). At equal score, **EmbeddingGemma** is the favorite for the office
+  default: 2× lighter on disk, smaller vectors (more compact index), designed on-device.
+- **Real footprint validated**: both models fit within **~0.65 GB of RAM** (Metal GPU on a Mac
+  Apple Silicon), far from a saturated laptop — confirms §1.3 (embedder ≠ chat LLM).
 
-#### Réponse chiffrée à Dimitry (sortir de Gemini)
+#### Quantified answer to Dimitry (getting out of Gemini)
 
-> *« Oui, on peut faire tourner le RAG **sans Google**, et sans perdre en qualité. Mesuré chez nous
-> (eval-set FR maison) : un embedder **100 % local** (EmbeddingGemma ou bge-m3, via Ollama) score
-> **9/10** contre **8/10** pour Gemini — donc **au moins à parité**, en restant **gratuit, on-device,
-> zéro clé, zéro donnée envoyée à un provider**. Footprint : ~0,6 Go de RAM, indexation quasi
-> instantanée sur un Mac/PC banal. Pour ton cas **entreprise** (OpenAI/Azure déjà validés par la
-> boîte), le **même** code bascule sur ton endpoint en changeant une URL dans `.env` — l'adaptateur
-> est neutre. Le seul niveau où *rien* ne sort de la machine reste le local (cf. échelle de
-> confidentialité §privacy). »*
+> *"Yes, we can run the RAG **without Google**, and without losing quality. Measured here
+> (in-house FR eval-set): a **100% local** embedder (EmbeddingGemma or bge-m3, via Ollama) scores
+> **9/10** vs **8/10** for Gemini — so **at least at parity**, while staying **free, on-device,
+> zero key, zero data sent to a provider**. Footprint: ~0.6 GB of RAM, near-instant indexing
+> on a regular Mac/PC. For your **enterprise** case (OpenAI/Azure already approved by the
+> company), the **same** code switches to your endpoint by changing one URL in `.env` — the adapter
+> is neutral. The only level where *nothing* leaves the machine remains local (see confidentiality
+> scale §privacy)."*
 
-### 3 ter — 🔎 Piste « local SANS Ollama » (embedding **in-process**) — veille 2026-06-09
+### 3 ter — 🔎 Lead "local WITHOUT Ollama" (embedding **in-process**) — watch 2026-06-09
 
-> **Pourquoi cette piste.** Le seul vrai prix du tout-local (§3 bis) n'est pas la qualité (mesurée ≥
-> Gemini) ni le footprint (~0,65 Go) — c'est la **friction d'install d'Ollama** (app séparée + `ollama
-> pull`) pour un non-dev (le « Mac nu d'Achille »). Question creusée : peut-on faire tourner l'embedder
-> local **dans le process Node du RAG lui-même**, sans serveur ni app à installer ? **Réponse : oui.**
+> **Why this lead.** The only real price of all-local (§3 bis) is not the quality (measured ≥
+> Gemini) nor the footprint (~0.65 GB) — it's the **install friction of Ollama** (separate app + `ollama
+> pull`) for a non-dev (the "Achille's bare Mac"). Question dug into: can we run the local embedder
+> **inside the RAG's own Node process**, with no server or app to install? **Answer: yes.**
 
-**Le mécanisme.** Au lieu de parler HTTP à un serveur local (Ollama), un adaptateur charge le modèle
-**en mémoire dans le process** via un runtime ONNX. Les poids se téléchargent **une fois** (cache
-local) au 1ᵉʳ usage, puis tout est offline. Côté archi : c'est **un 4ᵉ adaptateur derrière le port
-`Embedder`** déjà en place (Étape 1) — il ne parle pas le dialecte OpenAI HTTP, il appelle le modèle
-directement. **Zéro changement du harnais ni du contrat MCP.**
+**The mechanism.** Instead of talking HTTP to a local server (Ollama), an adapter loads the model
+**into memory inside the process** via an ONNX runtime. The weights download **once** (local
+cache) on first use, then everything is offline. On the architecture side: it's **a 4th adapter behind the
+`Embedder` port** already in place (Step 1) — it doesn't speak the OpenAI HTTP dialect, it calls the model
+directly. **Zero change to the harness or the MCP contract.**
 
-| Runtime local | Install pour un non-dev | Modèles utiles dispo | Accélération | Maintenu | Verdict |
+| Local runtime | Install for a non-dev | Useful models available | Acceleration | Maintained | Verdict |
 |---|---|---|---|---|---|
-| **Ollama** (serveur) — *testé Étape 4* | ⚠️ **app séparée** (cask) + `ollama pull` | EmbeddingGemma, bge-m3 (mesurés 90 %) | **GPU Metal** ✅ | ✅ actif | Marche, **mais friction app séparée** |
-| **Transformers.js v4** (`@huggingface/transformers`) — *in-process* | ✅ **`npm i` only** (déjà fait par l'installeur) ; binaires `onnxruntime-node` **pré-buildés Windows (x64+arm64), macOS (x64+arm64), Linux (x64+arm64)** — CPU partout, **pas de build tools** ; modèle auto-téléchargé+caché | **EmbeddingGemma-300m-ONNX** (q4/q8) ✅ + `Xenova/bge-m3` ✅ | CPU (WebGPU en Node encore jeune) | ✅ actif (HF, v4 nov. 2025) | **🎯 piste la plus prometteuse pour « tout-local SANS friction »** |
-| **fastembed-js** (`fastembed`) — *in-process* | ✅ `npm i` (bindings natifs précompilés) | bge-small/base, all-MiniLM, **multilingual-e5-large** ; ❌ **pas bge-m3 ni EmbeddingGemma** | CPU | ❌ **archivé 15/01/2026** (read-only) | Repli possible, mais **non maintenu** + pas nos meilleurs modèles → écarté |
+| **Ollama** (server) — *tested Step 4* | ⚠️ **separate app** (cask) + `ollama pull` | EmbeddingGemma, bge-m3 (measured 90%) | **Metal GPU** ✅ | ✅ active | Works, **but separate-app friction** |
+| **Transformers.js v4** (`@huggingface/transformers`) — *in-process* | ✅ **`npm i` only** (already done by the installer); `onnxruntime-node` binaries **pre-built for Windows (x64+arm64), macOS (x64+arm64), Linux (x64+arm64)** — CPU everywhere, **no build tools**; model auto-downloaded+cached | **EmbeddingGemma-300m-ONNX** (q4/q8) ✅ + `Xenova/bge-m3` ✅ | CPU (WebGPU in Node still young) | ✅ active (HF, v4 Nov. 2025) | **🎯 most promising lead for "all-local WITHOUT friction"** |
+| **fastembed-js** (`fastembed`) — *in-process* | ✅ `npm i` (precompiled native bindings) | bge-small/base, all-MiniLM, **multilingual-e5-large**; ❌ **no bge-m3 nor EmbeddingGemma** | CPU | ❌ **archived 15/01/2026** (read-only) | Possible fallback, but **unmaintained** + not our best models → ruled out |
 
-**Ce que ça changerait pour le défaut d'install** : plus d'Ollama du tout. L'embedder local devient
-une **dépendance npm** que l'installeur tire déjà, + un **téléchargement de poids transparent** au
-1ᵉʳ lancement (~150–300 Mo en q8). Pour un non-dev : *« tu n'installes rien de plus, ça marche tout
-seul »* — exactement ce qui débloque la cible §1.1 (gratuit + privé + on-device, **sans** le mur Ollama).
+**What it would change for the install default**: no Ollama at all anymore. The local embedder becomes
+an **npm dependency** that the installer already pulls, + a **transparent weights
+download** on first launch (~150–300 MB in q8). For a non-dev: *"you install nothing more, it works on its
+own"* — exactly what unblocks target §1.1 (free + private + on-device, **without** the Ollama wall).
 
-**Cross-platform (exigence DURE — Thomas, 2026-06-09) : Mac ET Windows à parité.** Sur le papier c'est
-acquis — `onnxruntime-node` publie des binaires pré-buildés pour **Windows x64+arm64, macOS x64+arm64,
-Linux x64+arm64** (CPU partout), donc *aucun* build tool ni sur Mac ni sur Windows. Le contrat MCP et
-le port `Embedder` sont déjà OS-agnostiques. ⚠️ Builds **volatils** → revérifier la matrice de
-plateformes à la version d'`onnxruntime-node` réellement épinglée (cf. réserves de méthode §8).
+**Cross-platform (HARD requirement — Thomas, 2026-06-09): Mac AND Windows at parity.** On paper it's
+settled — `onnxruntime-node` ships pre-built binaries for **Windows x64+arm64, macOS x64+arm64,
+Linux x64+arm64** (CPU everywhere), so *no* build tool on either Mac or Windows. The MCP contract and
+the `Embedder` port are already OS-agnostic. ⚠️ Builds are **volatile** → recheck the platform
+matrix at the actually-pinned version of `onnxruntime-node` (see method caveats §8).
 
-**⚠️ À VALIDER avant d'en faire le défaut D1 (honnête : recherché, PAS encore testé chez nous) :**
-1. **Install réelle sur Mac nu ET Windows nu** : confirmer que `onnxruntime-node` tire bien le binaire
-   pré-buildé sans build tools dans l'environnement appauvri de l'onglet Code (cf.
-   [[achille-bare-mac-desktop-path]]) — **les deux OS**, pas seulement le Mac de dev.
-2. **Latence CPU** : sans GPU Metal (qu'Ollama utilisait), l'encodage CPU est plus lent — à mesurer
-   (acceptable a priori, l'encodage étant **ponctuel** ; q8/q4 aident).
-3. **Re-mesurer la qualité sous ce runtime** : même modèle, mais **quantifié** (q8/q4) → rejouer
-   l'eval-set avec l'adaptateur in-process pour **confirmer la parité** avec les 90 % mesurés via Ollama
-   (ne pas supposer que quantifié = identique).
+**⚠️ TO VALIDATE before making it the D1 default (honest: researched, NOT yet tested by us):**
+1. **Real install on a bare Mac AND a bare Windows**: confirm that `onnxruntime-node` does pull the
+   pre-built binary without build tools in the impoverished environment of the Code tab (see
+   [[achille-bare-mac-desktop-path]]) — **both OSes**, not just the dev Mac.
+2. **CPU latency**: without the Metal GPU (which Ollama used), CPU encoding is slower — to be measured
+   (acceptable a priori, encoding being **one-off**; q8/q4 help).
+3. **Re-measure quality under this runtime**: same model, but **quantized** (q8/q4) → replay the
+   eval-set with the in-process adapter to **confirm parity** with the 90% measured via Ollama
+   (don't assume quantized = identical).
 
-**Synthèse intégrée — le paysage complet du choix d'embedder par défaut :**
+**Integrated synthesis — the complete landscape of the default embedder choice:**
 
-| Option | Statut chez nous | Abo/coût | Données sortent ? | Friction non-dev | Qualité FR |
+| Option | Status here | Subscription/cost | Does data leave? | Non-dev friction | FR quality |
 |---|---|---|---|---|---|
-| **Gemini** (actuel) | ✅ testé (baseline) | payant | oui (cloud) | ~nulle (coller clé) | 80 % |
-| **Local via Ollama** (EmbeddingGemma/bge-m3) | ✅ **testé Étape 4** | gratuit | **non** | ⚠️ app Ollama + pull | **90 %** (mesuré) |
-| **Local in-process** (Transformers.js + EmbeddingGemma) | 🔎 **envisagé** (veille OK, à tester) | gratuit | **non** | ✅ **npm only, rien à installer** | à confirmer (≈ parité attendue) |
-| **Endpoint API** (OpenAI/Azure/Mistral) | ✅ adaptateur livré (Ét. 3) | payant | oui (tenant boîte pour Azure) | nulle (URL+clé) | ≈ cloud |
+| **Gemini** (current) | ✅ tested (baseline) | paid | yes (cloud) | ~none (paste key) | 80% |
+| **Local via Ollama** (EmbeddingGemma/bge-m3) | ✅ **tested Step 4** | free | **no** | ⚠️ Ollama app + pull | **90%** (measured) |
+| **Local in-process** (Transformers.js + EmbeddingGemma) | 🔎 **considered** (watch OK, to test) | free | **no** | ✅ **npm only, nothing to install** | to confirm (≈ expected parity) |
+| **API endpoint** (OpenAI/Azure/Mistral) | ✅ adapter delivered (St. 3) | paid | yes (company tenant for Azure) | none (URL+key) | ≈ cloud |
 
-→ **Recommandation pour D1** : si la piste **in-process** passe les 3 validations ci-dessus, c'est
-**le meilleur candidat pour le défaut « tout-local »** (lève la seule objection sérieuse, la friction
-Ollama). L'adaptateur Ollama-compatible reste utile pour le **power-user** (GPU Metal, modèles plus
-gros) et l'endpoint API pour l'**entreprise**. Prochain pas concret possible : un **spike adaptateur
-in-process + re-run eval-set** pour transformer « envisagé » en « mesuré ».
-
----
-
-## 4. LightRAG / GraphRAG (repo pointé par Thomas : <https://github.com/HKUDS/LightRAG>)
-
-- **Licence MIT** ✅. **Full-local POSSIBLE** : LLM via Ollama + embeddings locaux + **stockage
-  fichier par défaut** (aucun service externe obligatoire ; Neo4j/Postgres/Milvus optionnels) ✅.
-- **Mais le point dur** : l'extraction entités/relations exige un **LLM capable**. Indexation
-  **lourde** : **un appel LLM par chunk** (+ agrégation des communautés → `c+n` appels au total).
-- **La taille minimale de LLM est INCERTAINE (veille 2026)** : le README parlait de ~30B, mais la
-  veille a **réfuté à la fois** « ≥7B requis » *et* « 7-8B suffisent ». Constat solide en revanche :
-  les **petits LLM échouent fréquemment l'extraction** (graphes **vides** — nano-graphrag documente
-  *42 chunks → 0 entité / 0 relation*), avec un piège Ollama récurrent (`num_ctx` par défaut = 2048
-  trop petit pour le prompt d'extraction → échec silencieux ; fix `PARAMETER num_ctx 32000`).
-- **Pas démontré GPU-less** : le benchmark 2026 de référence tourne sur **GPU NVIDIA discret**
-  (GTX 1070 Ti 8 Go, concurrence forcée à 1), indexation **88 min** (Qwen2.5-7B) à **211 min**
-  (Llama3.1-8B). **Aucune démonstration CPU-only / Mac nu.**
-- **Verdict vs critères** : *gratuit + privé* = faire tourner un **LLM local capable** → **hors
-  profil bureautique** (impensable sur le Mac nu d'Achille ; lent même sur une bonne machine sans
-  GPU). Le rendre fluide = LLM cloud = **payant + fuite**. ⇒ **En tension frontale avec les critères
-  1–4.** À réserver au **profil grosse machine** / track R&D power-user. **Pas le défaut.**
-
-**Alternative légère sans LLM par chunk — `E2GraphRAG`** (arXiv 2505.24226) : remplace l'extraction
-LLM par le toolkit NLP **SpaCy** (co-occurrence d'entités), d'où **~10× plus rapide** à l'indexation
-à efficacité comparable. **C'est la piste qui pourrait rendre le graphe jouable sans gros GPU** — à
-préférer à LightRAG si on attaque un jour le track graphe. (Autre nom croisé : `nano-graphrag`, plus
-léger que GraphRAG MS mais qui repose **toujours** sur un LLM par chunk.)
-
-**Pertinence sur le fond :** un second cerveau perso est **très riche en entités/relations**
-(personnes, décisions, réunions, 1-1, initiatives), donc GraphRAG **mappe bien** sur le cas — ce
-n'est pas du hype. Mais à n'attaquer **que si l'eval prouve** que le retrieval plat plafonne, et
-**par la voie sans-LLM-par-chunk** (E2GraphRAG) côté machine modeste.
+→ **Recommendation for D1**: if the **in-process** lead passes the 3 validations above, it's
+**the best candidate for the "all-local" default** (it lifts the only serious objection, the Ollama
+friction). The Ollama-compatible adapter remains useful for the **power-user** (Metal GPU, bigger
+models) and the API endpoint for the **enterprise**. Next concrete possible step: an **in-process adapter
+spike + eval-set re-run** to turn "considered" into "measured".
 
 ---
 
-## 5. Pistes intermédiaires de la veille
+## 4. LightRAG / GraphRAG (repo pointed to by Thomas: <https://github.com/HKUDS/LightRAG>)
 
-> ⚠️ **Tous les chiffres ci-dessous viennent des benchmarks Anthropic (cookbook/blog), qui sont
-> CLOUD et EN ANGLAIS.** La fraction de gain **conservée avec un LLM/embedder local léger en FR**
-> n'est **PAS** démontrée — c'est une extrapolation, pas un fait mesuré. D'où la primauté de
-> l'eval-set local (§6). Deux affirmations marketing ont d'ailleurs été **réfutées** en vérification :
-> « reranking −67 % » (0-3) et « hybrid 30/70 optimal partout » (0-3).
+- **MIT license** ✅. **Full-local POSSIBLE**: LLM via Ollama + local embeddings + **default
+  file storage** (no external service required; Neo4j/Postgres/Milvus optional) ✅.
+- **But the hard point**: entity/relation extraction requires a **capable LLM**. **Heavy**
+  indexing: **one LLM call per chunk** (+ community aggregation → `c+n` calls total).
+- **The minimum LLM size is UNCERTAIN (watch 2026)**: the README mentioned ~30B, but the
+  watch **refuted both** "≥7B required" *and* "7-8B is enough". A solid finding, however:
+  **small LLMs frequently fail extraction** (**empty** graphs — nano-graphrag documents
+  *42 chunks → 0 entities / 0 relations*), with a recurring Ollama trap (`num_ctx` default = 2048
+  too small for the extraction prompt → silent failure; fix `PARAMETER num_ctx 32000`).
+- **Not demonstrated GPU-less**: the reference 2026 benchmark runs on a **discrete NVIDIA GPU**
+  (GTX 1070 Ti 8 GB, concurrency forced to 1), indexing **88 min** (Qwen2.5-7B) to **211 min**
+  (Llama3.1-8B). **No CPU-only / bare Mac demonstration.**
+- **Verdict vs criteria**: *free + private* = running a **capable local LLM** → **outside the
+  office profile** (unthinkable on Achille's bare Mac; slow even on a good machine without a
+  GPU). Making it smooth = cloud LLM = **paid + leak**. ⇒ **In head-on tension with criteria
+  1–4.** To reserve for the **big-machine profile** / power-user R&D track. **Not the default.**
 
-- **Contextual Retrieval (Anthropic)** : enrichir chaque chunk d'un mini-contexte avant embedding →
-  **−35 %** d'échecs de retrieval (top-20 : 5.7 % → 3.7 %), **−49 %** avec Contextual BM25
-  (→ 2.9 %). Version canonique = Claude à l'indexation (**payant + cloud** → échoue les critères tel
-  quel). **Version gratuit+privé** = même technique avec un **LLM local** pour générer le contexte →
-  **bien plus léger que LightRAG**, mais **personne n'a publié le gain conservé en local/FR** (cf.
-  questions ouvertes §6). À garder en réserve.
-- **Reranking local** (cross-encoder : `bge-reranker-v2-m3`, `Qwen3-Reranker` 0.6B/4B) : sur les
-  chiffres **cloud** (Cohere rerank-v3) c'est **le plus gros saut incrémental** (Pass@10 95.3 %,
-  −47 % d'échecs). **MAIS** : ⚠️ **aucun chiffre de gain isolé d'un reranker LOCAL n'a survécu à la
-  vérification** — l'idée « meilleur ratio qualité/coût » reste une **hypothèse à valider
-  empiriquement** (en FR, avec le reranker local), pas un acquis. Reste un candidat fort une fois
-  l'embedder local en place.
-- **Hybrid search (BM25 + dense + reciprocal rank fusion)** : 100 % local, pas de modèle
-  supplémentaire — mais **gain MARGINAL** au-dessus des contextual embeddings d'après les chiffres
-  cloud (Pass@10 quasi nul ; Pass@20 ~+1 pt). À considérer **après** reranker/contextual, pas avant.
+**Light alternative without an LLM per chunk — `E2GraphRAG`** (arXiv 2505.24226): replaces LLM
+extraction with the **SpaCy** NLP toolkit (entity co-occurrence), hence **~10× faster** at indexing
+at comparable efficiency. **This is the lead that could make the graph playable without a big GPU** — to
+prefer over LightRAG if we ever attack the graph track one day. (Another name crossed: `nano-graphrag`, lighter
+than GraphRAG MS but which **still** relies on an LLM per chunk.)
+
+**Substantive relevance:** a personal second brain is **very rich in entities/relations**
+(people, decisions, meetings, 1-1s, initiatives), so GraphRAG **maps well** onto the case — this
+is not hype. But to attack **only if the eval proves** that flat retrieval plateaus, and
+**via the no-LLM-per-chunk route** (E2GraphRAG) on the modest-machine side.
 
 ---
 
-## 6. Eval-first — la pièce maîtresse (et c'est dans l'ADN du projet)
+## 5. Intermediate leads from the watch
 
-Le REX VIF insiste : l'**évaluation** est « indispensable, souvent mise de côté » (LangFuse,
-**LLM-as-judge**, **human-in-the-loop**). Et Thomas en a **déjà la graine** : le **canari
-« Mollecuisse »** de `scripts/verify-rag.mjs` *est* un mini-eval (il prouve que la réponse vient du
+> ⚠️ **All the numbers below come from Anthropic benchmarks (cookbook/blog), which are
+> CLOUD and IN ENGLISH.** The fraction of gain **retained with a light local LLM/embedder in FR**
+> is **NOT** demonstrated — it's an extrapolation, not a measured fact. Hence the primacy of
+> the local eval-set (§6). Two marketing claims were moreover **refuted** in verification:
+> "reranking −67%" (0-3) and "hybrid 30/70 optimal everywhere" (0-3).
+
+- **Contextual Retrieval (Anthropic)**: enriching each chunk with a mini-context before embedding →
+  **−35%** retrieval failures (top-20: 5.7% → 3.7%), **−49%** with Contextual BM25
+  (→ 2.9%). Canonical version = Claude at indexing time (**paid + cloud** → fails the criteria as
+  is). **Free+private version** = same technique with a **local LLM** to generate the context →
+  **much lighter than LightRAG**, but **nobody has published the gain retained in local/FR** (see
+  open questions §6). To keep in reserve.
+- **Local reranking** (cross-encoder: `bge-reranker-v2-m3`, `Qwen3-Reranker` 0.6B/4B): on the
+  **cloud** numbers (Cohere rerank-v3) it's **the biggest incremental jump** (Pass@10 95.3%,
+  −47% failures). **BUT**: ⚠️ **no isolated gain figure for a LOCAL reranker survived
+  verification** — the "best quality/cost ratio" idea remains a **hypothesis to validate
+  empirically** (in FR, with the local reranker), not a given. Remains a strong candidate once
+  the local embedder is in place.
+- **Hybrid search (BM25 + dense + reciprocal rank fusion)**: 100% local, no extra
+  model — but **MARGINAL gain** above contextual embeddings according to the cloud
+  numbers (Pass@10 nearly nil; Pass@20 ~+1 pt). To consider **after** reranker/contextual, not before.
+
+---
+
+## 6. Eval-first — the centerpiece (and it's in the project's DNA)
+
+The VIF feedback insists: **evaluation** is "indispensable, often set aside" (LangFuse,
+**LLM-as-judge**, **human-in-the-loop**). And Thomas already has **the seed** of it: the **"Mollecuisse"
+canary** in `scripts/verify-rag.mjs` *is* a mini-eval (it proves that the answer comes from the
 vault).
 
-⇒ **Avant** de choisir un embedder/stratégie, se faire un **eval-set local** (15–20 questions →
-réponse attendue, sur le vrai vault), **juge = Claude** (déjà dans la boucle, usage occasionnel =
-acceptable). Ça transforme « compliqué / risqué » en **« mesuré »** — exactement la façon de bosser
-de Thomas (valider empiriquement, pas de sur-ingénierie contre un risque non prouvé).
+⇒ **Before** choosing an embedder/strategy, build a **local eval-set** (15–20 questions →
+expected answer, on the real vault), **judge = Claude** (already in the loop, occasional use =
+acceptable). It turns "tricky / risky" into **"measured"** — exactly Thomas's way of working
+(validate empirically, no over-engineering against an unproven risk).
 
-- **Outils repérés** (au cas où on industrialise plus tard) : **RAGAS** (léger, spécifique RAG,
-  sans ground-truth), **DeepEval**, **TruLens** ; **LangFuse** = observabilité self-hostable mais
-  **= infra** → ne pas y aller avant d'avoir la question. Démarrer par un **script local façon
-  `verify-rag`** donne 90 % de la valeur sans infra.
-
----
-
-## 7. Séquence recommandée (recalée sur les critères)
-
-1. **Finir le port `Embedder`** (plan [`embedder-spi.md`](embedder-spi.md)) — l'**instrument**.
-2. **Eval-set local** (juge = Claude). Peu de code, levier énorme. **Confirmé indispensable par la
-   veille** : aucun chiffre local/FR n'existe dans la littérature, on ne tranchera que par la mesure.
-3. **Brancher `bge-m3` ET `EmbeddingGemma` via Ollama** derrière le port et **MESURER** vs Gemini sur
-   du FR → réponse **chiffrée** à Dimitry, et choix du **profil bureautique** par défaut (départage
-   bge-m3 vs EmbeddingGemma). `Qwen3-0.6B` en bonus (même dimension 1024 que bge-m3). (`nomic` écarté :
-   FR trop faible.)
-4. **Reranker local** (`bge-reranker-v2-m3` / `Qwen3-Reranker`) si l'eval montre un gain — à **mesurer**,
-   le « meilleur ratio » n'étant pas prouvé en local.
-5. **Profil grosse machine** (Qwen3 gros/Nemotron-8B / GraphRAG **E2GraphRAG** / Contextual Retrieval)
-   **seulement si** l'eval prouve un plafond — en assumant le coût machine.
+- **Tools spotted** (in case we industrialize later): **RAGAS** (light, RAG-specific,
+  without ground-truth), **DeepEval**, **TruLens**; **LangFuse** = self-hostable observability but
+  **= infra** → don't go there before having the question. Starting with a **local script like
+  `verify-rag`** gives 90% of the value without infra.
 
 ---
 
-## 8. Sources de la veille
+## 7. Recommended sequence (recalibrated on the criteria)
 
-**Veille initiale (2026-06-08) :**
+1. **Finish the `Embedder` port** (plan [`embedder-spi.md`](embedder-spi.md)) — the **instrument**.
+2. **Local eval-set** (judge = Claude). Little code, huge leverage. **Confirmed indispensable by the
+   watch**: no local/FR figure exists in the literature, we'll decide only by measurement.
+3. **Wire up `bge-m3` AND `EmbeddingGemma` via Ollama** behind the port and **MEASURE** vs Gemini on
+   FR → a **quantified** answer to Dimitry, and the choice of the default **office profile** (decide
+   bge-m3 vs EmbeddingGemma). `Qwen3-0.6B` as a bonus (same 1024 dimension as bge-m3). (`nomic` ruled out:
+   FR too weak.)
+4. **Local reranker** (`bge-reranker-v2-m3` / `Qwen3-Reranker`) if the eval shows a gain — to **measure**,
+   the "best ratio" not being proven locally.
+5. **Big-machine profile** (big Qwen3/Nemotron-8B / GraphRAG **E2GraphRAG** / Contextual Retrieval)
+   **only if** the eval proves a ceiling — accepting the machine cost.
+
+---
+
+## 8. Watch sources
+
+**Initial watch (2026-06-08):**
 - [Ailog — Embedding Models 2026 (benchmark)](https://app.ailog.fr/en/blog/news/embedding-models-2026)
 - [BentoML — Open-Source Embedding Models 2026](https://www.bentoml.com/blog/a-guide-to-open-source-embedding-models)
 - [AI Learning Guides — RAG in Production 2026 (GraphRAG, hybrid, evals)](https://ailearningguides.com/rag-production-patterns-2026/)
@@ -406,24 +406,24 @@ de Thomas (valider empiriquement, pas de sur-ingénierie contre un risque non pr
 - [LightRAG — HKUDS (repo)](https://github.com/HKUDS/LightRAG)
 - [Atlan — RAGAS / TruLens / DeepEval comparison 2026](https://atlan.com/know/llm-evaluation-frameworks-compared/)
 
-**Veille rafraîchie (2026-06-08, sources vérifiées en adversarial — 21/25 affirmations confirmées) :**
-- [Qwen3-Embedding — blog officiel](https://qwenlm.github.io/blog/qwen3-embedding/) · [arXiv 2506.05176](https://arxiv.org/abs/2506.05176) — tailles/dimensions, n°1 MTEB ML juin 2025 (70.58)
-- [Google — Introducing EmbeddingGemma](https://developers.googleblog.com/en/introducing-embeddinggemma/) · [arXiv 2509.20354](https://arxiv.org/abs/2509.20354) · [HF model card](https://huggingface.co/google/embeddinggemma-300m) — 308M, <200 Mo RAM quantifié, on-device
-- [bge-m3 — Ollama](https://ollama.com/library/bge-m3) · [HF BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3) · [arXiv 2402.03216](https://arxiv.org/abs/2402.03216) · [F-MTEB arXiv 2405.20468](https://arxiv.org/abs/2405.20468) — 1.2 Go Ollama, FR ~58.79 dense
-- [nomic-embed-text — Ollama](https://ollama.com/library/nomic-embed-text) · [v2-moe](https://ollama.com/library/nomic-embed-text-v2-moe) — multilingue réservé à v2-moe
-- [Anthropic Cookbook — Contextual Embeddings guide](https://platform.claude.com/cookbook/capabilities-contextual-embeddings-guide) — chiffres Pass@k reranker/hybrid (cloud, anglais)
-- [E2GraphRAG — arXiv 2505.24226](https://arxiv.org/html/2505.24226v1) — extraction SpaCy, ~10× plus rapide ; [nano-graphrag FAQ](https://github.com/gusye1234/nano-graphrag/blob/main/docs/FAQ.md) — piège `num_ctx`, graphes vides
-- [Bench GraphRAG local 2026 — arXiv 2605.20815](https://arxiv.org/html/2605.20815) — GPU NVIDIA discret, indexation 88–211 min
-- [RTEB — arXiv 2508.21038](https://arxiv.org/abs/2508.21038) — MTEB critiqué comme prédicteur du retrieval réel
+**Refreshed watch (2026-06-08, sources verified adversarially — 21/25 claims confirmed):**
+- [Qwen3-Embedding — official blog](https://qwenlm.github.io/blog/qwen3-embedding/) · [arXiv 2506.05176](https://arxiv.org/abs/2506.05176) — sizes/dimensions, #1 MTEB ML June 2025 (70.58)
+- [Google — Introducing EmbeddingGemma](https://developers.googleblog.com/en/introducing-embeddinggemma/) · [arXiv 2509.20354](https://arxiv.org/abs/2509.20354) · [HF model card](https://huggingface.co/google/embeddinggemma-300m) — 308M, <200 MB RAM quantized, on-device
+- [bge-m3 — Ollama](https://ollama.com/library/bge-m3) · [HF BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3) · [arXiv 2402.03216](https://arxiv.org/abs/2402.03216) · [F-MTEB arXiv 2405.20468](https://arxiv.org/abs/2405.20468) — 1.2 GB Ollama, FR ~58.79 dense
+- [nomic-embed-text — Ollama](https://ollama.com/library/nomic-embed-text) · [v2-moe](https://ollama.com/library/nomic-embed-text-v2-moe) — multilingual reserved for v2-moe
+- [Anthropic Cookbook — Contextual Embeddings guide](https://platform.claude.com/cookbook/capabilities-contextual-embeddings-guide) — Pass@k reranker/hybrid numbers (cloud, English)
+- [E2GraphRAG — arXiv 2505.24226](https://arxiv.org/html/2505.24226v1) — SpaCy extraction, ~10× faster; [nano-graphrag FAQ](https://github.com/gusye1234/nano-graphrag/blob/main/docs/FAQ.md) — `num_ctx` trap, empty graphs
+- [GraphRAG local bench 2026 — arXiv 2605.20815](https://arxiv.org/html/2605.20815) — discrete NVIDIA GPU, indexing 88–211 min
+- [RTEB — arXiv 2508.21038](https://arxiv.org/abs/2508.21038) — MTEB criticized as a predictor of real retrieval
 
-**Veille « local sans Ollama » (2026-06-09) :**
-- [Transformers.js v4 — blog HF](https://huggingface.co/blog/transformersjs-v4) · [doc installation](https://huggingface.co/docs/transformers.js/installation) — `npm i @huggingface/transformers`, tourne en Node/Bun/Deno, runtime WebGPU C++ réécrit
-- [onnx-community/embeddinggemma-300m-ONNX](https://huggingface.co/onnx-community/embeddinggemma-300m-ONNX) — variantes fp32/q8/q4 (pas fp16), conçu pour Transformers.js ; [demo « no server required »](https://github.com/glaforge/embedding-gemma-semantic-search)
-- [Xenova/bge-m3](https://huggingface.co/Xenova/bge-m3) · [aapot/bge-m3-onnx](https://huggingface.co/aapot/bge-m3-onnx) — bge-m3 en ONNX pour Transformers.js
-- [onnxruntime-node — npm](https://www.npmjs.com/package/onnxruntime-node) · [README officiel js/node](https://github.com/microsoft/onnxruntime/blob/main/js/node/README.md) — postinstall `prebuild-install` ; binaires pré-buildés **Windows x64+arm64, macOS x64+arm64, Linux x64+arm64** (CPU partout ; WebGPU EP pas encore sur linux-arm64) ; fallback compile si absent
-- [fastembed-js (`fastembed`)](https://github.com/Anush008/fastembed-js) — in-process ONNX, **archivé 15/01/2026** (v2.1.0) ; bge-small/base, all-MiniLM, multilingual-e5-large ; pas bge-m3/EmbeddingGemma
+**Watch "local without Ollama" (2026-06-09):**
+- [Transformers.js v4 — HF blog](https://huggingface.co/blog/transformersjs-v4) · [installation doc](https://huggingface.co/docs/transformers.js/installation) — `npm i @huggingface/transformers`, runs in Node/Bun/Deno, WebGPU runtime C++ rewritten
+- [onnx-community/embeddinggemma-300m-ONNX](https://huggingface.co/onnx-community/embeddinggemma-300m-ONNX) — fp32/q8/q4 variants (no fp16), designed for Transformers.js; [demo "no server required"](https://github.com/glaforge/embedding-gemma-semantic-search)
+- [Xenova/bge-m3](https://huggingface.co/Xenova/bge-m3) · [aapot/bge-m3-onnx](https://huggingface.co/aapot/bge-m3-onnx) — bge-m3 in ONNX for Transformers.js
+- [onnxruntime-node — npm](https://www.npmjs.com/package/onnxruntime-node) · [official js/node README](https://github.com/microsoft/onnxruntime/blob/main/js/node/README.md) — postinstall `prebuild-install`; pre-built binaries **Windows x64+arm64, macOS x64+arm64, Linux x64+arm64** (CPU everywhere; WebGPU EP not yet on linux-arm64); fallback compile if absent
+- [fastembed-js (`fastembed`)](https://github.com/Anush008/fastembed-js) — in-process ONNX, **archived 15/01/2026** (v2.1.0); bge-small/base, all-MiniLM, multilingual-e5-large; no bge-m3/EmbeddingGemma
 
-> **Réserves de méthode (issues de la vérification)** : (1) classements MTEB **volatils** — revalider
-> à la date d'usage ; (2) métriques **non équivalentes** (Mean-Task multilingue ≠ score FR ≠ retrieval
-> dense F-MTEB) ; (3) **Gemini FR ~66.2 NON vérifié** ; (4) **leviers contextual/hybrid/reranker non
-> chiffrés en local/FR** ; (5) viabilité GraphRAG **CPU-only/Mac nu non démontrée**.
+> **Method caveats (from verification)**: (1) MTEB rankings **volatile** — re-validate
+> at the date of use; (2) metrics **not equivalent** (multilingual Mean-Task ≠ FR score ≠ dense
+> retrieval F-MTEB); (3) **Gemini FR ~66.2 NOT verified**; (4) **contextual/hybrid/reranker levers not
+> quantified in local/FR**; (5) GraphRAG **CPU-only/bare-Mac viability not demonstrated**.
