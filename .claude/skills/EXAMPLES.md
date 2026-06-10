@@ -1,55 +1,55 @@
-# Skills à construire toi-même — exemples d'inspiration
+# Skills to build yourself — examples for inspiration
 
-Ce générateur ne fournit que quelques skills génériques : `sync` (synchro git inter-machines),
-`improve` (amélioration du harnais), `coach` (sparring partner « vénère » sur soi),
-`prepare-1-1` (préparer un 1-1 avec n'importe qui) et `sync-sources` (l'architecture
-fan-out/fan-in qui aspire le delta des sources, moteur de la Phase 2). `coach` et `prepare-1-1`
-sont des **implémentations de référence** dont tu peux t'inspirer. Le reste est à toi de le
-construire, **selon tes usages**.
+This generator provides only a few generic skills: `sync` (inter-machine git sync),
+`improve` (harness improvement), `coach` (fierce sparring partner on yourself),
+`prepare-1-1` (prepare a 1-1 with anyone) and `sync-sources` (the
+fan-out/fan-in architecture that pulls the delta from sources, engine of Phase 2). `coach` and `prepare-1-1`
+are **reference implementations** you can draw inspiration from. The rest is yours to
+build, **according to your usage**.
 
-C'est là que ton second cerveau devient *le tien* : un skill = un angle d'attaque sur le
-même vault. Voici des idées courantes (à adapter, pas à copier tel quel).
+This is where your second brain becomes *yours*: a skill = an angle of attack on the
+same vault. Here are some common ideas (to adapt, not to copy as-is).
 
-## Anatomie d'un skill
+## Anatomy of a skill
 
-Un skill vit dans `.claude/skills/<nom>/SKILL.md` avec un frontmatter :
+A skill lives in `.claude/skills/<name>/SKILL.md` with a frontmatter:
 
 ```markdown
 ---
-name: mon-skill
-description: "Phrase qui dit quand l'utiliser — c'est ce que Claude lit pour décider de le déclencher."
+name: my-skill
+description: "Sentence that says when to use it — that's what Claude reads to decide whether to trigger it."
 version: 1.0.0
 ---
 
-# /mon-skill — Titre
+# /my-skill — Title
 
-## Quand l'utiliser
+## When to use it
 …
 
-## Procédure
+## Procedure
 1. …
 2. …
 
-## Ce que ça produit
+## What it produces
 …
 ```
 
-## Idées de skills (par usage)
+## Skill ideas (by usage)
 
-| Skill | Ce qu'il fait | Sources typiques |
+| Skill | What it does | Typical sources |
 |---|---|---|
-| **briefing-journee** | Briefing du matin : agenda du jour, points chauds, actions prioritaires (s'appuie sur `sync-sources`) | Calendar, vault/backlog, vault/daily |
-| **prepare-meeting** | Avant une réunion : ramène l'historique, les points ouverts, le contexte des participants | Calendar, vault, transcripts |
-| **prepare-1-1** ✅ livré | Brief avant un entretien individuel : derniers échanges, engagements, signaux faibles | Calendar, Slack, vault/backlog |
-| **coach** ✅ livré | Sparring partner branché sur le vault : challenge les raisonnements, rappelle les engagements (coaching de soi) | vault entier |
-| **briefing** | Après une absence : synthèse de ce qui s'est passé sur les canaux suivis | Slack, mail |
-| **debrief** | En fin de journée : transforme les événements en notes structurées (daily, topics) | conversation, vault |
-| **weekly-review** | Revue hebdo : ce qui a avancé, ce qui stagne, ce qui arrive | vault/backlog, Calendar |
-| **rapport-etonnement** | Capturer ton regard neuf lors d'une prise de poste / d'une nouvelle mission (étonnements, angles morts) | vault, observations |
+| **daily-briefing** | Morning briefing: today's agenda, hot topics, priority actions (relies on `sync-sources`) | Calendar, vault/backlog, vault/daily |
+| **prepare-meeting** | Before a meeting: brings back the history, open points, the context of the participants | Calendar, vault, transcripts |
+| **prepare-1-1** ✅ shipped | Brief before a 1-1: latest exchanges, commitments, weak signals | Calendar, Slack, vault/backlog |
+| **coach** ✅ shipped | Sparring partner connected to the vault: challenges reasoning, recalls commitments (self-coaching) | entire vault |
+| **briefing** | After an absence: synthesis of what happened on the channels you follow | Slack, email |
+| **debrief** | At the end of the day: turns events into structured notes (daily, topics) | conversation, vault |
+| **weekly-review** | Weekly review: what has moved, what is stalling, what is coming | vault/backlog, Calendar |
+| **fresh-eyes-report** | Capture your fresh perspective when taking a new role / a new mission (surprises, blind spots) | vault, observations |
 
-## Méthode recommandée
+## Recommended method
 
-1. **Commence par le flux question directe** (décrit dans CLAUDE.md) — souvent il suffit, pas besoin de skill.
-2. **Crée un skill quand un besoin se répète** : si tu redemandes la même chose 3 fois, c'est un skill.
-3. **Utilise `/improve`** pour faire évoluer ton harnais au fil des frictions.
-4. **Garde les skills minces** : un skill décrit une procédure, il ne réimplémente pas le moteur.
+1. **Start with the direct-question flow** (described in CLAUDE.md) — often it's enough, no skill needed.
+2. **Create a skill when a need recurs**: if you ask for the same thing 3 times, it's a skill.
+3. **Use `/improve`** to evolve your harness as frictions arise.
+4. **Keep skills thin**: a skill describes a procedure, it doesn't reimplement the engine.

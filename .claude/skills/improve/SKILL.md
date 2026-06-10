@@ -1,47 +1,47 @@
 ---
 name: improve
-description: "Amélioration continue du harnais. Lit le backlog des frictions, détecte celles de la session en cours, propose les améliorations les plus impactantes et les implémente."
+description: "Continuous improvement of the harness. Reads the friction backlog, detects frictions from the current session, proposes the most impactful improvements and implements them."
 version: 1.0.0
 ---
 
-# /improve — Amélioration continue du harnais
+# /improve — Continuous improvement of the harness
 
-## Routage
+## Routing
 
-- **Pas d'argument** → **Mode session** (A).
-- **`ajouter <description>`** (ou `add`) → **Mode ajout rapide** (B).
-
----
-
-# MODE A — Session d'amélioration
-
-## A1 — Lire le backlog et observer
-1. Lire `vault/backlog/harnais.md` (backlog des améliorations en attente).
-2. Lire les derniers fichiers modifiés dans `.claude/skills/` pour comprendre l'état du harnais.
-3. Si la conversation compte 10+ échanges, détecter les frictions :
-   - Workarounds répétés (même action 2+ fois)
-   - Questions auxquelles le vault n'a pas pu répondre
-   - Skills ratés ou résultats insatisfaisants
-   - Trop de rounds pour trouver une info
-   Ajouter les observations au backlog avec le tag `[observation]`.
-
-## A2 — Proposer les améliorations prioritaires
-Présenter les 3 améliorations les plus impactantes, priorisées par ratio impact/effort, récurrence, effet de levier. Pour chacune : titre + tag, impact (1 phrase), effort (quick win < 30 min / chantier), proposition (2-3 lignes).
-Terminer par : « Laquelle on attaque ? »
-
-## A3 — Implémenter
-1. Faire les modifications (skills, CLAUDE.md, structure vault…).
-2. Tester si possible (dry run, vérif syntaxe).
-3. Marquer l'item `[x]` + date dans `vault/backlog/harnais.md`.
-4. Laisser le hook commiter.
+- **No argument** → **Session mode** (A).
+- **`ajouter <description>`** (or `add`) → **Quick-add mode** (B).
 
 ---
 
-# MODE B — Ajout rapide
-Ajouter l'idée à `vault/backlog/harnais.md` : catégoriser (quick win / chantier / idée), tag `[explicite]` + date du jour, confirmer en une ligne. **Ne pas implémenter.**
+# MODE A — Improvement session
+
+## A1 — Read the backlog and observe
+1. Read `vault/backlog/harnais.md` (backlog of pending improvements).
+2. Read the most recently modified files in `.claude/skills/` to understand the state of the harness.
+3. If the conversation has 10+ exchanges, detect frictions:
+   - Repeated workarounds (same action 2+ times)
+   - Questions the vault couldn't answer
+   - Failed skills or unsatisfactory results
+   - Too many rounds to find a piece of information
+   Add the observations to the backlog with the `[observation]` tag.
+
+## A2 — Propose the priority improvements
+Present the 3 most impactful improvements, prioritized by impact/effort ratio, recurrence, leverage. For each: title + tag, impact (1 sentence), effort (quick win < 30 min / project), proposal (2-3 lines).
+End with: "Which one do we tackle?"
+
+## A3 — Implement
+1. Make the changes (skills, CLAUDE.md, vault structure…).
+2. Test if possible (dry run, syntax check).
+3. Mark the item `[x]` + date in `vault/backlog/harnais.md`.
+4. Let the hook commit.
 
 ---
 
-# Observation passive (hors skill)
-> Règle dans CLAUDE.md (section 5). S'applique automatiquement à chaque session de 10+ échanges,
-> pas seulement quand `/improve` est invoqué.
+# MODE B — Quick add
+Add the idea to `vault/backlog/harnais.md`: categorize (quick win / project / idea), `[explicite]` tag + today's date, confirm in one line. **Do not implement.**
+
+---
+
+# Passive observation (outside the skill)
+> Rule in CLAUDE.md (section 5). Applies automatically to every session of 10+ exchanges,
+> not only when `/improve` is invoked.

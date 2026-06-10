@@ -1,125 +1,125 @@
 ---
 name: prepare-1-1
-description: "Prépare un 1-1 avec n'importe qui, dans les deux sens : avec TON manager (les sujets que tu veux porter, ce qui a bougé depuis la dernière fois) ou avec quelqu'un que TU manages (engagements pris/confiés, sujets opérationnels, revue de KPI). Prend un nom/alias, croise la fiche de la personne, le dernier 1-1 et le delta de signaux récents (via sync-sources, LECTURE SEULE). Skill méta : une structure qui te donne des idées, à affiner à tes axes et tes KPI (au besoin avec /improve)."
+description: "Prepare a 1-1 with anyone, in both directions: with YOUR manager (the topics you want to raise, what has changed since last time) or with someone YOU manage (commitments made/delegated, operational topics, KPI review). Takes a name/alias, cross-references the person's profile, the last 1-1 and the delta of recent signals (via sync-sources, READ-ONLY). Meta skill: a structure that gives you ideas, to be refined to your own focus areas and KPIs (with /improve if needed)."
 version: 1.0.0
 ---
 
-# /prepare-1-1 — Préparer un 1-1 (version méta)
+# /prepare-1-1 — Prepare a 1-1 (meta version)
 
-Produit un **briefing** scannable en 2 minutes avant ton prochain 1-1. C'est une **skill méta** :
-elle pose une **structure** qui te donne des idées ; tu l'**affines** ensuite à tes propres axes,
-à tes KPI et à ta façon de mener tes 1-1 (édite ce fichier, ou demande à `/improve` de t'aider).
+Produces a **briefing** scannable in 2 minutes before your next 1-1. This is a **meta skill**:
+it lays out a **structure** that gives you ideas; you then **refine** it to your own focus areas,
+your KPIs and the way you run your 1-1s (edit this file, or ask `/improve` to help you).
 
-## Paramètre
+## Parameter
 
-Un **nom ou alias** de personne dans `$ARGUMENTS` (ex. `/prepare-1-1 jane`). Sert à retrouver
-`vault/people/<prenom-nom>.md` (kebab-case, sans accents) et le cache `vault/backlog/<nom>.md`.
-Si aucune fiche ne correspond, proposer les fiches proches de `vault/people/` et s'arrêter.
+A **name or alias** of a person in `$ARGUMENTS` (e.g. `/prepare-1-1 jane`). Used to find
+`vault/people/<firstname-lastname>.md` (kebab-case, no accents) and the cache `vault/backlog/<name>.md`.
+If no profile matches, suggest the closest profiles from `vault/people/` and stop.
 
-## Contrainte absolue
+## Absolute constraint
 
-**LECTURE SEULE.** Ne jamais envoyer de message, mail ou réaction, ne jamais poster nulle part.
-Produire uniquement un fichier markdown local dans le vault.
+**READ-ONLY.** Never send a message, email or reaction, never post anywhere.
+Produce only a local markdown file in the vault.
 
-## Étape 0 — Sens du 1-1 (détermine la structure de sortie)
+## Step 0 — Direction of the 1-1 (determines the output structure)
 
-Deux cas, selon ta relation avec la personne (déduis-le de son rôle dans `vault/people/<nom>.md` ;
-en cas de doute, demande) :
+Two cases, depending on your relationship with the person (infer it from their role in `vault/people/<name>.md`;
+when in doubt, ask):
 
-- **A · 1-1 avec TON manager** (tu es le/la managé·e) → structure « **ce que je veux porter** ».
-- **B · 1-1 avec quelqu'un que TU manages** (report, ou pair que tu coaches) → structure
-  « **suivi + opérationnel + KPI** ».
+- **A · 1-1 with YOUR manager** (you are the managee) → "**what I want to raise**" structure.
+- **B · 1-1 with someone YOU manage** (a report, or a peer you coach) → "**follow-up + operational + KPI**"
+  structure.
 
-## Étape 1 — Collecte (fan-out, LECTURE SEULE)
+## Step 1 — Collection (fan-out, READ-ONLY)
 
-En parallèle (architecture de [`sync-sources`](../sync-sources/SKILL.md), résumés ~500 tokens) :
+In parallel ([`sync-sources`](../sync-sources/SKILL.md) architecture, ~500-token summaries):
 
-- **Cache backlog** : `vault/backlog/<nom>.md` — actions ouvertes / récurrentes (un point demandé
-  2+ fois sans clôture est prioritaire).
-- **Dernier 1-1** : la note dans `vault/meetings/` (ou via ton connecteur Calendar) — transcript lu
-  par un sous-agent isolé (jamais de transcript brut dans le contexte principal). Noter aussi le
-  **prochain** 1-1 (date du fichier de sortie ; sinon date du jour).
-- **Delta depuis le dernier 1-1** : messagerie, mail, réunions partagées — selon tes connecteurs.
+- **Backlog cache**: `vault/backlog/<name>.md` — open / recurring actions (a point raised
+  2+ times without closure is a priority).
+- **Last 1-1**: the note in `vault/meetings/` (or via your Calendar connector) — transcript read
+  by an isolated sub-agent (never raw transcript in the main context). Also note the
+  **next** 1-1 (date of the output file; otherwise today's date).
+- **Delta since the last 1-1**: messaging, email, shared meetings — depending on your connectors.
 
-## Étape 2 — Écriture du briefing
+## Step 2 — Writing the briefing
 
-Écrire dans `vault/prep-1-1/YYYY-MM-DD-prep-1-1-<nom>.md` (date du prochain 1-1 ; créer le dossier
-au besoin), selon le cas détecté à l'étape 0.
+Write to `vault/prep-1-1/YYYY-MM-DD-prep-1-1-<name>.md` (date of the next 1-1; create the folder
+if needed), according to the case detected in step 0.
 
-### Cas A — 1-1 avec ton manager (tu portes les sujets)
+### Case A — 1-1 with your manager (you carry the topics)
 
 ```markdown
-# Prep 1-1 — [Prénom] (mon manager) — [date]
+# Prep 1-1 — [First name] (my manager) — [date]
 
-## Ce que je veux porter (Top 3)
-Les sujets à ne pas rater, par impact. Pour chacun : où on en est, ce que j'attends de lui/elle
-(décision, soutien, info, déblocage).
-1. **[Titre]** — [contexte 1 ligne] → J'attends : [décision / soutien / arbitrage]
+## What I want to raise (Top 3)
+The topics not to miss, by impact. For each: where we stand, what I expect from them
+(decision, support, info, unblocking).
+1. **[Title]** — [1-line context] → I expect: [decision / support / arbitration]
 
-## Depuis la dernière fois
-Ce qui a bougé et mérite d'être remonté ou partagé (avancées, risques, signaux). De quoi avoir
-« des choses à se mettre sous la dent » au lieu d'arriver les mains vides.
+## Since last time
+What has moved and is worth reporting or sharing (progress, risks, signals). Enough to have
+"something to chew on" instead of arriving empty-handed.
 
-## Questions / demandes
-Ce que je veux clarifier ou obtenir (priorités, ressources, feedback sur moi).
+## Questions / requests
+What I want to clarify or obtain (priorities, resources, feedback on me).
 
-## Mes engagements en cours
-Ce que je m'étais engagé à faire — statut tenu / en cours / à risque.
+## My commitments in progress
+What I had committed to do — status kept / in progress / at risk.
 ```
 
-### Cas B — 1-1 avec quelqu'un que tu manages (suivi + opérationnel + KPI)
+### Case B — 1-1 with someone you manage (follow-up + operational + KPI)
 
 ```markdown
-# Prep 1-1 — [Prénom] — [date]
+# Prep 1-1 — [First name] — [date]
 
-## Suivi des engagements
-- **Ce que l'autre s'est engagé à faire** (depuis le dernier 1-1) : statut tenu / en cours / non fait.
-- **Ce que je veux lui confier** (nouvelles délégations, responsabilités).
-(S'appuie sur le backlog `vault/backlog/<nom>.md`, trié par ancienneté.)
+## Commitment follow-up
+- **What the other person committed to do** (since the last 1-1): status kept / in progress / not done.
+- **What I want to delegate to them** (new delegations, responsibilities).
+(Draws on the backlog `vault/backlog/<name>.md`, sorted by age.)
 
-## Sujets opérationnels importants
-Les 2-3 sujets chauds du périmètre à aborder, avec la question concrète à poser.
+## Important operational topics
+The 2-3 hot topics in the scope to address, with the concrete question to ask.
 
-## Revue de KPI            # 🔧 À AFFINER : définis TES indicateurs ici
-Collecte + revue des métriques qui comptent pour vous. Exemples possibles (à remplacer par les
-tiens) : DORA (lead time, fréquence de déploiement, MTTR, change-fail rate), qualité, delivery,
-satisfaction, capacity… Pour chaque KPI : valeur / tendance / question à creuser.
-| KPI | Valeur / tendance | Question |
+## KPI review            # 🔧 TO REFINE: define YOUR metrics here
+Collection + review of the metrics that matter for you. Possible examples (replace with your
+own): DORA (lead time, deployment frequency, MTTR, change-fail rate), quality, delivery,
+satisfaction, capacity… For each KPI: value / trend / question to dig into.
+| KPI | Value / trend | Question |
 |---|---|---|
-| [ton KPI] | [↑/↓/→] | [ce que tu veux comprendre] |
+| [your KPI] | [↑/↓/→] | [what you want to understand] |
 
-## Signaux faibles
-Tensions, frustrations, surcharge, sujets esquivés — avec tact, sans langue de bois. (Omettre si rien.)
+## Weak signals
+Tensions, frustrations, overload, dodged topics — with tact, no beating around the bush. (Omit if nothing.)
 
-## Axes récurrents          # 🔧 À AFFINER : les 3-5 thèmes que tu suis avec chaque report
-| Axe | Signal détecté | Question par défaut |
+## Recurring focus areas          # 🔧 TO REFINE: the 3-5 themes you track with each report
+| Focus area | Detected signal | Default question |
 |---|---|---|
-| [ton axe] | [signal ou « aucun »] | [question] |
+| [your focus area] | [signal or "none"] | [question] |
 
-## Checklist (avant/pendant le 1-1)
+## Checklist (before/during the 1-1)
 - [ ] …
 ```
 
-Dans les deux cas, terminer par un bloc dépliable **« Contexte complet »** (résumé du dernier 1-1,
-décisions, actions à suivre `| # | Action | Qui | Quand | Statut |`, verbatims, activité
-messagerie/mail/réunions avec liens, qualité des sources).
+In both cases, end with a collapsible **"Full context"** block (summary of the last 1-1,
+decisions, follow-up actions `| # | Action | Who | When | Status |`, verbatims, messaging/email/meeting
+activity with links, source quality).
 
-## Étape 3 — Mettre à jour le backlog
-Dans `vault/backlog/<nom>.md` : **ajouter** les nouvelles actions, **cocher** celles dont on a la
-preuve de réalisation, **mettre à jour** la date `updated:`. Append-only sur les faits déjà consignés.
+## Step 3 — Update the backlog
+In `vault/backlog/<name>.md`: **add** the new actions, **check off** those with proof
+of completion, **update** the `updated:` date. Append-only on facts already recorded.
 
-## Règles de rédaction
-- Français, ton direct et ultra-concis ; listes à puces plutôt que paragraphes.
-- Ne pas inventer ; signaler une source partielle ou de mauvaise qualité.
-- Pas de section vide — l'omettre (sauf « Revue de KPI » et « Axes récurrents » en cas B, à garder
-  comme rappel même vides, puisque ce sont les sections que tu dois t'approprier).
-- Jamais d'URL nue : `[texte](url)`. Backlinks `[[people/prenom-nom]]` (jamais de prénom seul).
+## Writing rules
+- English, direct and ultra-concise tone; bullet lists rather than paragraphs.
+- Do not make things up; flag a partial or low-quality source.
+- No empty section — omit it (except "KPI review" and "Recurring focus areas" in case B, to keep
+  as a reminder even when empty, since these are the sections you must make your own).
+- Never a bare URL: `[text](url)`. Backlinks `[[people/firstname-lastname]]` (never a first name alone).
 
-## Affiner cette skill (c'est le but d'une skill méta)
-La structure ci-dessus est un **point de départ**. Rends-la tienne : remplace les KPI d'exemple par
-les tiens, ajoute/retire des axes récurrents, ajuste les sections au type de 1-1 que tu mènes.
-Tu peux le faire à la main (édite ce fichier) ou demander à **`/improve`** de t'accompagner.
+## Refining this skill (that's the point of a meta skill)
+The structure above is a **starting point**. Make it yours: replace the example KPIs with
+your own, add/remove recurring focus areas, adjust the sections to the type of 1-1 you run.
+You can do it by hand (edit this file) or ask **`/improve`** to assist you.
 
-## Critère de succès
-En < 2 minutes de lecture, tu sais quoi aborder, pourquoi, avec quelle question d'ouverture — et,
-côté manager, où en sont les engagements et les KPI qui comptent.
+## Success criterion
+In < 2 minutes of reading, you know what to address, why, with which opening question — and,
+on the manager side, where the commitments and the KPIs that matter stand.

@@ -1,272 +1,272 @@
 ---
 name: sync-sources
-description: "Architecture fan-out/fan-in pour aspirer le DELTA des sources externes (Slack, Google Drive / transcripts, Calendar, mail…) via des sous-agents parallèles en LECTURE SEULE. Référence technique interne — c'est le moteur de la Phase 2 du flux principal (question → sync sources en background) et d'un éventuel briefing du matin. Pas une commande utilisateur : ce sont tes questions qui déclenchent l'aspiration."
+description: "Fan-out/fan-in architecture to pull in the DELTA of external sources (Slack, Google Drive / transcripts, Calendar, mail…) via parallel READ-ONLY sub-agents. Internal technical reference — it's the engine of Phase 2 of the main flow (question → sync sources in background) and of a possible morning briefing. Not a user command: it's your questions that trigger the pull."
 version: 1.0.0
 ---
 
-# Sync sources — Architecture fan-out/fan-in (référence interne)
+# Sync sources — Fan-out/fan-in architecture (internal reference)
 
-> **Ce n'est pas une commande utilisateur.** Ce fichier documente l'architecture des sous-agents
-> de la **Phase 2** du flux principal (sync sources en background — cf. `CLAUDE.md`). Tu ne
-> déclenches jamais l'aspiration à la main : c'est la question qui la déclenche. Note : `/sync`
-> est une commande **distincte** qui synchronise le repo git entre machines.
+> **This is not a user command.** This file documents the sub-agent architecture
+> of **Phase 2** of the main flow (sync sources in background — see `CLAUDE.md`). You
+> never trigger the pull by hand: it's the question that triggers it. Note: `/sync`
+> is a **separate** command that synchronizes the git repo between machines.
 >
-> 🔧 **À adapter à tes connecteurs.** Les exemples ci-dessous référencent des outils MCP de façon
-> générique (`mcp__<slack>__…`, `mcp__<drive>__…`, `mcp__<calendar>__…`). Remplace-les par les
-> noms réels des connecteurs que tu as branchés (cf. [SETUP §6](../../../SETUP.md)). Sans connecteur
-> branché, cette skill ne fait rien — le moteur RAG répond seul depuis le vault.
+> 🔧 **Adapt to your connectors.** The examples below reference MCP tools generically
+> (`mcp__<slack>__…`, `mcp__<drive>__…`, `mcp__<calendar>__…`). Replace them with the
+> real names of the connectors you've wired up (see [SETUP §6](../../../SETUP.md)). Without a wired
+> connector, this skill does nothing — the RAG engine answers on its own from the vault.
 
-## Contrainte absolue
+## Absolute constraint
 
-**LECTURE SEULE.** Ne jamais envoyer de message, de mail, ni de réaction. Ne jamais poster dans
-un canal. Produire uniquement des fichiers markdown locaux dans le vault.
+**READ-ONLY.** Never send a message, an email, or a reaction. Never post in
+a channel. Produce only local markdown files in the vault.
 
-## Outillage des sous-agents — JAMAIS de shell pour traiter du texte
+## Sub-agent tooling — NEVER a shell to process text
 
-Les sous-agents sont des **LLM** : ils lisent et résument **par raisonnement**, pas via du shell.
-**Interdiction d'utiliser `python3 -c`, `python`, `node -e`, `awk`, `sed`, `jq`, `grep`, `cat`,
-`head`, `tail` — ou toute commande Bash — pour parser, charger, découper, slicer ou résumer un
-contenu.** Pourquoi c'est non négociable (surtout sur Claude Desktop, onglet Code) :
+The sub-agents are **LLMs**: they read and summarize **by reasoning**, not via the shell.
+**Forbidden to use `python3 -c`, `python`, `node -e`, `awk`, `sed`, `jq`, `grep`, `cat`,
+`head`, `tail` — or any Bash command — to parse, load, split, slice or summarize
+content.** Why this is non-negotiable (especially on Claude Desktop, Code tab):
 
-- chaque commande ad-hoc est **unique** → elle redéclenche une **demande d'autorisation** à chaque
-  appel (prompts sans fin, impossibles à pré-autoriser) ;
-- certaines (multi-lignes, `#` dans un argument, redirections) sont **refusées par sécurité** et
-  n'offrent même pas « Always allow » — l'utilisateur ne *peut pas* les accepter.
+- each ad-hoc command is **unique** → it re-triggers an **authorization prompt** on every
+  call (endless prompts, impossible to pre-authorize);
+- some (multi-line, `#` inside an argument, redirections) are **refused for security** and
+  don't even offer "Always allow" — the user *cannot* accept them.
 
-À la place :
-- **Lire un contenu** → outil **`Read`** (un fichier du vault ; ou un résultat d'outil volumineux
-  que Claude a déporté dans `…/tool-results/…` : lis-le avec `Read`, pas avec `python3 -c "open(...)"`).
-- **Écrire** la source brute / le briefing → outils **`Write`** / **`Edit`**.
-- **Découper** (« jusqu'à la section Détails », « les 4000 premiers caractères »…) → **dans ta tête**,
-  pas en Python.
+Instead:
+- **Read content** → the **`Read`** tool (a vault file; or a large tool result
+  that Claude offloaded to `…/tool-results/…`: read it with `Read`, not with `python3 -c "open(...)"`).
+- **Write** the raw source / the briefing → the **`Write`** / **`Edit`** tools.
+- **Split** ("up to the Details section", "the first 4000 characters"…) → **in your head**,
+  not in Python.
 
-`Read`/`Write`/`Edit` sont pré-autorisés et silencieux. Le shell ne l'est pas et ne le sera jamais
-de façon fiable : ne t'en sers pas pour de la manipulation de texte.
+`Read`/`Write`/`Edit` are pre-authorized and silent. The shell is not and never will be
+reliably so: don't use it for text manipulation.
 
-## Pourquoi cette architecture
+## Why this architecture
 
-Pour éviter le *context rot* (la qualité se dégrade dès ~50-70k tokens de contexte), on n'aspire
-**jamais** les sources dans le contexte principal. On orchestre des **sous-agents en parallèle** :
-chacun lit UNE source, en extrait le delta, et ne renvoie qu'un signal **pré-digéré (~500 tokens)**.
-Le contexte principal ne reçoit que ces résumés compacts et fait la synthèse.
+To avoid *context rot* (quality degrades as early as ~50-70k tokens of context), we **never**
+pull the sources into the main context. We orchestrate **sub-agents in parallel**:
+each reads ONE source, extracts the delta from it, and returns only a **pre-digested signal (~500 tokens)**.
+The main context only receives these compact summaries and does the synthesis.
 
 ```
-question (ou briefing du matin)
+question (or morning briefing)
     │
-    ├─► N sous-agents : transcript-extractor (un par nouveau document/transcript)
-    ├─► 1 sous-agent : chat-extractor      (mentions + DMs depuis le dernier passage)
-    ├─► 1 sous-agent : my-actions          (ce que TU as fait/écrit depuis le dernier passage)
-    ├─► 1 sous-agent : calendar-reader     (agenda du jour) — souvent rapide, peut rester inline
+    ├─► N sub-agents: transcript-extractor (one per new document/transcript)
+    ├─► 1 sub-agent: chat-extractor      (mentions + DMs since the last pass)
+    ├─► 1 sub-agent: my-actions          (what YOU did/wrote since the last pass)
+    ├─► 1 sub-agent: calendar-reader     (today's agenda) — often fast, can stay inline
     ▼
-contexte principal = synthèse finale (~3-5k tokens d'input)
-    → vault/briefings/YYYY-MM-DD.md  (si briefing)
+main context = final synthesis (~3-5k tokens of input)
+    → vault/briefings/YYYY-MM-DD.md  (if briefing)
     → vault/actions-log.md           (append)
 ```
 
-## Référentiel de personnes (backlinks)
+## People registry (backlinks)
 
-Pour des backlinks `[[people/prenom-nom]]` cohérents (pas de liens cassés), les sous-agents
-s'appuient sur les fiches de `vault/people/`. Règle : **kebab-case, sans accents**
-(`[[people/jane-doe]]`). **Jamais de prénom seul** (`[[people/jane]]` est interdit). Créer les
-backlinks même si la page cible n'existe pas (*dangling links* OK) ; ne pas créer les pages cibles.
+For consistent `[[people/firstname-lastname]]` backlinks (no broken links), the sub-agents
+rely on the cards in `vault/people/`. Rule: **kebab-case, no accents**
+(`[[people/jane-doe]]`). **Never a first name alone** (`[[people/jane]]` is forbidden). Create the
+backlinks even if the target page doesn't exist (*dangling links* OK); do not create the target pages.
 
-## Procédure
+## Procedure
 
-### Étape 1 — Découverte des sources (contexte principal)
+### Step 1 — Source discovery (main context)
 
-> **Outils natifs uniquement** (cf. constitution, section « Outillage »). Pour sonder l'état du
-> vault avant le fan-out — dossiers `vault/briefings/`, fiches `vault/people/`, présence de
-> `vault/actions-log.md` — utilise **`Glob`** et **`Read`**, **jamais** un Bash composé du genre
-> `cd … && mkdir -p … && ls … && test -f …` (prompté à chaque fois, et refusé d'office car
-> `cd`+écriture). `Write` crée les dossiers parents au moment d'écrire : pas de `mkdir` préalable.
+> **Native tools only** (see constitution, "Tooling" section). To probe the state of the
+> vault before the fan-out — `vault/briefings/` folders, `vault/people/` cards, presence of
+> `vault/actions-log.md` — use **`Glob`** and **`Read`**, **never** a compound Bash like
+> `cd … && mkdir -p … && ls … && test -f …` (prompted every time, and refused outright because
+> `cd`+write). `Write` creates the parent folders at write time: no prior `mkdir`.
 
-En parallèle, repérer ce qui est **nouveau depuis le dernier passage** (delta) :
+In parallel, spot what's **new since the last pass** (delta):
 
-- **Transcripts / documents récents** : chercher dans ton Drive les docs modifiés depuis la
-  veille (ou le dernier jour ouvré), p. ex. `mcp__<drive>__search(query="modifiedTime > 'YYYY-MM-DD…'")`.
-  Collecter les `id` + titres : chacun deviendra un sous-agent transcript-extractor.
-- **Agenda du jour** : `mcp__<calendar>__list_events` (rapide, peut rester dans le contexte principal).
+- **Recent transcripts / documents**: search your Drive for docs modified since
+  yesterday (or the last working day), e.g. `mcp__<drive>__search(query="modifiedTime > 'YYYY-MM-DD…'")`.
+  Collect the `id` + titles: each becomes a transcript-extractor sub-agent.
+- **Today's agenda**: `mcp__<calendar>__list_events` (fast, can stay in the main context).
 
-### Étape 2 — Fan-out des sous-agents (EN PARALLÈLE, un seul message)
+### Step 2 — Sub-agent fan-out (IN PARALLEL, a single message)
 
-Lancer tous les sous-agents dans **un seul bloc d'appels parallèles**. Chacun écrit sa source
-brute dans le vault et **retourne un résumé ~500 tokens max**.
+Launch all the sub-agents in **a single block of parallel calls**. Each writes its raw
+source to the vault and **returns a ~500-token-max summary**.
 
-#### Sous-agent « transcript-extractor » (un par document)
+#### "transcript-extractor" sub-agent (one per document)
 
 ```
 Agent(
   description="Extract transcript <slug>",
   prompt="""
-Tu es un agent d'extraction de transcript de réunion. LECTURE SEULE.
+You are a meeting-transcript extraction agent. READ-ONLY.
 
-TÂCHE :
-1. Lire le document <DOC_ID> via ton connecteur Drive (mcp__<drive>__read_file).
-2. Sauvegarder le contenu brut dans vault/raw-sources/transcripts/YYYY-MM-DD-<slug>.md
-   avec ce frontmatter :
+TASK:
+1. Read the document <DOC_ID> via your Drive connector (mcp__<drive>__read_file).
+2. Save the raw content to vault/raw-sources/transcripts/YYYY-MM-DD-<slug>.md
+   with this frontmatter:
    ---
    type: transcript
-   source: <connecteur>
-   meeting: "<titre>"
+   source: <connector>
+   meeting: "<title>"
    date: YYYY-MM-DD
-   captured: <date du jour>
+   captured: <today's date>
    ---
-3. Retourner un résumé structuré (~500 tokens max) :
+3. Return a structured summary (~500 tokens max):
 
-## Signaux — <titre>
-### Mes engagements        # ce que TU as promis
+## Signals — <title>
+### My commitments       # what YOU promised
 - …
-### Attentes envers moi    # ce qu'on attend de toi
+### Expectations of me    # what's expected of you
 - …
-### À escalader            # 🔧 vers ta hiérarchie / tes pairs — adapte à ton orga
+### To escalate           # 🔧 up your hierarchy / to your peers — adapt to your org
 - …
-### À partager             # 🔧 à ton équipe / tes interlocuteurs — adapte à ton orga
+### To share              # 🔧 to your team / your contacts — adapt to your org
 - …
 ### Backlinks
-- Personnes : [[people/prenom-nom]]
-- Topics : [[topics/nom-topic]]
-- Source : [[raw-sources/transcripts/YYYY-MM-DD-slug]]
+- People: [[people/firstname-lastname]]
+- Topics: [[topics/topic-name]]
+- Source: [[raw-sources/transcripts/YYYY-MM-DD-slug]]
 
-RÈGLES :
-- Ne PAS inventer d'information absente du transcript.
-- Créer les backlinks même si la page cible n'existe pas.
-- Backlinks via vault/people/ (kebab-case sans accents, jamais de prénom seul).
-- JAMAIS de shell (python3 -c, node -e, awk, sed, jq, grep, cat…) pour lire/charger/découper le
-  contenu : si tu dois relire un fichier (vault ou résultat déporté .../tool-results/...), utilise
-  l'outil Read ; le découpage et le résumé se font par raisonnement, pas en ligne de commande.
+RULES:
+- Do NOT invent information absent from the transcript.
+- Create the backlinks even if the target page doesn't exist.
+- Backlinks via vault/people/ (kebab-case no accents, never a first name alone).
+- NEVER a shell (python3 -c, node -e, awk, sed, jq, grep, cat…) to read/load/split the
+  content: if you must re-read a file (vault or offloaded result .../tool-results/...), use
+  the Read tool; splitting and summarizing are done by reasoning, not on the command line.
 """
 )
 ```
 
-#### Sous-agent « chat-extractor » (Slack/Teams/… si branché)
+#### "chat-extractor" sub-agent (Slack/Teams/… if wired)
 
 ```
 Agent(
   description="Chat 24h scan",
   prompt="""
-Tu es un agent de collecte de messagerie d'équipe. LECTURE SEULE.
+You are a team-messaging collection agent. READ-ONLY.
 
-TÂCHE : scanner les dernières 24h (ou depuis le dernier passage) pour les signaux pertinents :
-1. Mentions directes de toi et DMs des personnes clés.
-2. Quelques canaux prioritaires (🔧 à définir selon ton orga — 15-30 derniers messages).
+TASK: scan the last 24h (or since the last pass) for relevant signals:
+1. Direct mentions of you and DMs from key people.
+2. A few priority channels (🔧 to be defined according to your org — last 15-30 messages).
 
-EXTRAIRE un résumé structuré (~500 tokens max), regroupé par THÈME (pas par canal) :
+EXTRACT a structured summary (~500 tokens max), grouped by THEME (not by channel):
 
-## Signaux chat (24h)
-### Mes engagements
-### Attentes envers moi
-### À escalader        # 🔧 adapte
-### À partager         # 🔧 adapte
-### Alertes            # incidents, escalades, urgences
+## Chat signals (24h)
+### My commitments
+### Expectations of me
+### To escalate        # 🔧 adapt
+### To share           # 🔧 adapt
+### Alerts             # incidents, escalations, emergencies
 
-RÈGLES :
-- Ignorer le conversationnel pur (bonjour/merci/emoji) et les bots/notifications.
-- Backlinks via vault/people/ (jamais de prénom seul).
-- JAMAIS de shell (python3 -c, node -e, awk, sed, jq, grep, cat…) pour lire/charger/découper le
-  contenu : si tu dois relire un fichier (vault ou résultat déporté .../tool-results/...), utilise
-  l'outil Read ; le découpage et le résumé se font par raisonnement, pas en ligne de commande.
+RULES:
+- Ignore pure conversational noise (hello/thanks/emoji) and bots/notifications.
+- Backlinks via vault/people/ (never a first name alone).
+- NEVER a shell (python3 -c, node -e, awk, sed, jq, grep, cat…) to read/load/split the
+  content: if you must re-read a file (vault or offloaded result .../tool-results/...), use
+  the Read tool; splitting and summarizing are done by reasoning, not on the command line.
 """
 )
 ```
 
-#### Sous-agent « my-actions » (ce que TU as fait)
+#### "my-actions" sub-agent (what YOU did)
 
 ```
 Agent(
-  description="Mes actions depuis le dernier passage",
+  description="My actions since the last pass",
   prompt="""
-Tu es un agent de collecte de TES actions. LECTURE SEULE.
+You are a collection agent for YOUR actions. READ-ONLY.
 
-TÂCHE : trouver les messages/décisions émis PAR TOI depuis <DATE_DERNIER_PASSAGE>, et ne garder
-que les ACTIONS significatives (annonces, décisions, cadrages, validations, escalades).
-IGNORER : "ok", "merci", "je regarde", réactions, logistique.
+TASK: find the messages/decisions issued BY YOU since <LAST_PASS_DATE>, and keep only
+the significant ACTIONS (announcements, decisions, framing, sign-offs, escalations).
+IGNORE: "ok", "thanks", "I'll look", reactions, logistics.
 
-EXTRAIRE (~500 tokens max), une ligne par action :
-- [YYYY-MM-DD] <action courte> — #canal [[people/destinataire-principal]]
+EXTRACT (~500 tokens max), one line per action:
+- [YYYY-MM-DD] <short action> — #channel [[people/main-recipient]]
 
-RÈGLES :
-- CHAQUE action = UN message distinct (ne pas fusionner).
-- Lire le contenu avant de résumer (ne pas deviner d'après le canal).
-- Max ~15 actions ; au-delà, garder les plus structurantes.
-- JAMAIS de shell (python3 -c, node -e, awk, sed, jq, grep, cat…) pour lire/charger/découper le
-  contenu : si tu dois relire un fichier (vault ou résultat déporté .../tool-results/...), utilise
-  l'outil Read ; le découpage et le résumé se font par raisonnement, pas en ligne de commande.
+RULES:
+- EACH action = ONE distinct message (do not merge).
+- Read the content before summarizing (don't guess from the channel).
+- Max ~15 actions; beyond that, keep the most structuring ones.
+- NEVER a shell (python3 -c, node -e, awk, sed, jq, grep, cat…) to read/load/split the
+  content: if you must re-read a file (vault or offloaded result .../tool-results/...), use
+  the Read tool; splitting and summarizing are done by reasoning, not on the command line.
 """
 )
 ```
 
-### Étape 3 — Synthèse (contexte principal)
+### Step 3 — Synthesis (main context)
 
-Le contexte principal reçoit les résumés compacts de tous les sous-agents + l'agenda
-(~3-5k tokens). **Trier et croiser** : un même sujet vu dans un transcript ET dans le chat = signal
-fort. C'est aussi ici qu'on décide si le delta **amende la réponse en cours** (Phase 3 du flux).
+The main context receives the compact summaries from all the sub-agents + the agenda
+(~3-5k tokens). **Sort and cross-reference**: the same topic seen in a transcript AND in the chat = strong
+signal. This is also where we decide whether the delta **amends the answer in progress** (Phase 3 of the flow).
 
-### Étape 4 — Écriture du briefing (si briefing du matin)
+### Step 4 — Writing the briefing (if morning briefing)
 
-Écrire dans `vault/briefings/YYYY-MM-DD.md` :
+Write to `vault/briefings/YYYY-MM-DD.md`:
 
 ```markdown
 ---
 type: briefing
 date: YYYY-MM-DD
 architecture: fan-out/fan-in
-sources: ["[[raw-sources/transcripts/...]]", "chat (24h)", "calendar (jour)"]
+sources: ["[[raw-sources/transcripts/...]]", "chat (24h)", "calendar (day)"]
 tags: [briefing]
 ---
 
 # Briefing — YYYY-MM-DD
 
-## ✅ Ce que tu as fait depuis le dernier briefing
-- [YYYY-MM-DD] [action] — #canal [[people/destinataire]]
+## ✅ What you did since the last briefing
+- [YYYY-MM-DD] [action] — #channel [[people/recipient]]
 
-## 🔴 Tes engagements (ce que tu as promis)
-- **[engagement]** — contexte, source [[raw-sources/...]]
+## 🔴 Your commitments (what you promised)
+- **[commitment]** — context, source [[raw-sources/...]]
 
-## 🟡 Ce qu'on attend de toi
-- ⚠️ Urgent : [deadlines du jour]
-- Pending : [[people/prenom-nom]] : [attente]
+## 🟡 What's expected of you
+- ⚠️ Urgent: [today's deadlines]
+- Pending: [[people/firstname-lastname]]: [expectation]
 
-## 🔵 À escalader / 🟢 À partager   # 🔧 sections à adapter à ton organisation
+## 🔵 To escalate / 🟢 To share   # 🔧 sections to adapt to your organization
 
-## 📅 Agenda du jour
-| Heure | Réunion | Préparation |
+## 📅 Today's agenda
+| Time | Meeting | Preparation |
 |---|---|---|
-| HH:MM | **[réunion]** | [contexte/action] |
+| HH:MM | **[meeting]** | [context/action] |
 
 ## Caveats
-- [qualité des transcripts, confusions de noms, contexte manquant]
+- [transcript quality, name confusions, missing context]
 ```
 
-Pas de section vide — l'omettre. Chaque signal cite sa source (crochets ou backlink).
+No empty section — omit it. Each signal cites its source (brackets or backlink).
 
-### Étape 5 — Append dans `vault/actions-log.md`
+### Step 5 — Append to `vault/actions-log.md`
 
-**Appender** (créer le fichier s'il n'existe pas) une ligne plate par action, préfixée de la date —
-pas de frontmatter, fichier *grep-able* :
+**Append** (create the file if it doesn't exist) one flat line per action, prefixed with the date —
+no frontmatter, *grep-able* file:
 
 ```markdown
-## [YYYY-MM-DD] <action> — #canal [[people/destinataire]]
+## [YYYY-MM-DD] <action> — #channel [[people/recipient]]
 ```
 
-**Append-only** : ne jamais réécrire les lignes existantes. Usage : « qu'est-ce que j'ai fait sur
-X ? » → `grep -i "X" vault/actions-log.md` puis enrichissement via les briefings référencés.
+**Append-only**: never rewrite the existing lines. Usage: "what did I do on
+X?" → `grep -i "X" vault/actions-log.md` then enrich via the referenced briefings.
 
-## Mode re-exécution (même jour)
+## Re-run mode (same day)
 
-Si `vault/briefings/YYYY-MM-DD.md` existe déjà : le relire, re-scanner les sources, et n'ajouter
-qu'une section `## 🔄 Mise à jour HH:MM` en tête s'il y a du nouveau. Sinon afficher
-« Pas de nouveauté » sans modifier le fichier.
+If `vault/briefings/YYYY-MM-DD.md` already exists: re-read it, re-scan the sources, and only add
+a `## 🔄 Update HH:MM` section at the top if there's something new. Otherwise show
+"Nothing new" without modifying the file.
 
-## Conventions backlinks
+## Backlink conventions
 
-| Contexte | Syntaxe |
+| Context | Syntax |
 |---|---|
-| Personne | `[[people/prenom-nom]]` (kebab-case, sans accents) |
+| Person | `[[people/firstname-lastname]]` (kebab-case, no accents) |
 | Transcript | `[[raw-sources/transcripts/YYYY-MM-DD-slug]]` |
-| Topic | `[[topics/nom-topic]]` |
-| Briefing antérieur | `[[briefings/YYYY-MM-DD]]` |
+| Topic | `[[topics/topic-name]]` |
+| Prior briefing | `[[briefings/YYYY-MM-DD]]` |
 
-## Critère de succès
+## Success criterion
 
-En < 1 minute de lecture, tu sais (a) ce que tu dois faire aujourd'hui et (b) ce que tu dois
-pousser vers les autres — zéro signal important perdu depuis le dernier passage.
+In < 1 minute of reading, you know (a) what you have to do today and (b) what you have to
+push toward others — zero important signal lost since the last pass.
