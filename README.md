@@ -40,13 +40,17 @@ A **memory external to you**: your notes, your decisions and your work exchanges
 place, that you query in natural language and that answers you **instantly, with the sources to back
 it up**.
 
-Three properties define it:
+A few properties define it:
 
 - **It's yours.** Everything lives in a folder of notes (a *vault*) versioned in **your private git
   repo**. You're not renting from an online service: you own your data.
 - **It remembers.** Every answer, every new piece of info is persisted (local git commit). Your
   brain builds up an actionable record — and can **follow you from one machine to another** as soon
   as you wire it to a remote repository (optional).
+- **It keeps itself up to date — on its own.** Once you've connected your sources (Slack, Drive,
+  email, calendar, meeting transcripts…), it **pulls in what's new automatically**, with **no explicit
+  request from you**: you never have to tell it to "go sync". When you ask a question, it quietly
+  catches up in the background and folds anything new into its answer.
 - **It cites its sources.** No answers out of thin air: you can always trace back to the original
   note or message, with its date.
 
