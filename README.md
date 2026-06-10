@@ -156,7 +156,12 @@ Install me a second brain named "second-brain" (name to be confirmed) from this 
 That's the whole manual part — **no cloning, no commands, no key to wrangle in chat.** Claude does
 everything else for you. Here's what happens behind the scenes 👇
 
-![Install flow in four steps: clone the launcher → answer 4 questions in chat → the brain folder is created → open a new conversation rooted in it](docs/img/install-flow.svg)
+> 👉 **The one thing to keep in mind:** what you're pasting into right now is the **installer**. Your
+> **second brain is a *separate place*** that Claude opens for you at the very **end** — you don't ask
+> it questions *here*. That last hop (open your brain in a **brand-new** conversation) is the single
+> step people miss — we flag it loud and clear when you get there.
+
+![Install flow in four steps: clone the launcher → answer 4 questions in chat → the brain folder is created → open your brain in a brand-new conversation](docs/img/install-flow.svg)
 
 <a id="how-do-i-choose-my-semantic-search-my-rag"></a>
 
@@ -222,8 +227,11 @@ leaves you **3 moves**:
 2. **💾 Remote repository?** Claude will ask whether you want a **remote** git repository (backup +
    multi-machine). **Saying no is risk-free**: everything stays versioned locally, nothing is lost,
    and auto-commit **pushes nowhere** (push opt-in disabled by default). You can add one later.
-3. **🔄 Reopen Claude Code** in the **brain folder that was created** (e.g. `~/second-brain`) — this
-   activates the search engine. (The launcher itself can be reused for another brain or deleted.)
+3. **🧠 Leave the installer — open your brain in a *brand-new* conversation.** Not this one: start a
+   **new** conversation (CLI) / **new session** (Desktop) **in the brain folder that was created**
+   (e.g. `~/second-brain`) — *that* is what activates the search engine. ⚠️ **Just switching the
+   folder of *this* conversation won't work** — it has to be a new one. (The installer itself can be
+   reused for another brain or deleted.)
    👉 **This is the step most often missed on Claude Desktop — see just below.**
 
 #### 🖱️ On Claude Desktop (Code tab): opening your brain in the RIGHT place
