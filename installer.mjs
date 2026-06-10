@@ -287,12 +287,12 @@ const EMBEDDER_LABELS = {
     hint: "🟢 private + free + offline. ~1.5 GB RAM at rest, up to ~6 GB during indexing (16 GB+ recommended). Apple Silicon / Windows.",
   },
   api: {
-    title: "With an API key (Gemini, OpenAI, or your company's endpoint)",
-    hint: "🟡 light on the machine, but your notes go through the provider — \"free ≠ private\" (see below).",
+    title: "Via an API (Gemini, OpenAI, Mistral, or your own endpoint)",
+    hint: "🟡 light on the machine; your notes' text is sent to the provider. In many cases it's NOT used for training — depending on the provider & plan, pick the right settings (paid tier or a \"no-training\"/data-controls option).",
   },
   ollama: {
-    title: "Local via Ollama (advanced)",
-    hint: "🟢 nothing leaves either, but a separate app to install + a model to download.",
+    title: "A model running locally on your machine, via Ollama",
+    hint: "🟢 nothing leaves either, but a separate app to install + a model to download. Setup for the most technically advanced users.",
   },
 };
 
@@ -319,9 +319,10 @@ function printEmbedderEducation() {
   );
   console.log("  lightweight (≈ a few hundred MB), not a large LLM. The LLM that ANSWERS is still Claude.");
   console.log(`\n${c.B}Privacy scale:${c.X}`);
-  console.log("  🟢 fully-local (option 1/3) — nothing leaves your machine. Free, max privacy.");
-  console.log("  🟡 paid API key / company endpoint — leaves, but 0 training (contractual).");
-  console.log("  🔴 FREE API key (free Gemini included) — often exploited. Paying ≈ makes it private.");
+  console.log("  🟢 fully-local (option 1 or 3) — nothing leaves your machine. Free, max privacy.");
+  console.log("  🟡 via an API (option 2) — your notes' text leaves the machine. In many cases it's");
+  console.log("     NOT used for training; depending on the provider & plan, pick the right settings");
+  console.log("     (a paid tier, or the provider's \"no-training\" / data-controls option).");
   console.log(`\n${c.B}And your notes?${c.X} never lost: switching embedder re-encodes (a few minutes), that's all.`);
 }
 
@@ -353,7 +354,7 @@ if (interactive) {
   } else {
     // "API key" option → sub-choice Gemini (simple) or OpenAI-compatible endpoint.
     const sub = await ask(
-      "  a) Gemini key (simple)   b) OpenAI-compatible endpoint (OpenAI / Azure / company)",
+      "  a) Gemini key (simple)   b) OpenAI-compatible endpoint (OpenAI / Mistral / Azure / company)",
       "a",
     );
     if (/^b/i.test(sub)) {
@@ -364,13 +365,14 @@ if (interactive) {
       apiKey = await ask("  API key (Enter if the endpoint doesn't require one)");
     } else {
       providerKey = "gemini";
-      // "free ≠ private" framing BEFORE asking for the key (ADR 0007 requirement).
+      // Honest, calm framing BEFORE asking for the key (ADR 0007): notes leave the
+      // machine, but training-use depends on the plan/settings — not a blanket scare.
       console.log(
-        `\n  ${c.Y}⚠️ "free ≠ private"${c.X}: with a Gemini key, the text of your notes is sent to Google.`,
+        `\n  ${c.Y}ℹ Good to know${c.X}: with a Gemini key, the text of your notes is sent to Google.`,
       );
-      console.log(`     • ${c.B}FREE${c.X} tier → ⚠️ Google may exploit your data (avoid for a confidential vault).`);
-      console.log(`     • ${c.B}PAID${c.X} tier → a few tens of cents/month, and that is what guarantees non-exploitation.`);
-      console.log(`     ${c.C}Going paid = privacy. For truly-nothing-leaves free: pick option 1.${c.X}`);
+      console.log(`     • ${c.B}FREE${c.X} tier → convenient, but your data MAY be used for training — avoid for a confidential vault.`);
+      console.log(`     • ${c.B}PAID${c.X} tier (a few tens of cents/month) → enable billing / data controls so it is NOT used for training.`);
+      console.log(`     ${c.C}So: pick the right plan/settings for your privacy needs. For truly-nothing-leaves: option 1 or 3.${c.X}`);
       console.log(`     Free key: ${c.C}https://aistudio.google.com/apikey${c.X}`);
       geminiKey = await ask("  Paste your Gemini key (or Enter to configure later)");
     }

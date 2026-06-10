@@ -137,8 +137,9 @@ node installer.mjs --non-interactive --name "<name>" --dest "<parent-location>" 
      ```
      Then tell them exactly what to do: "I've opened your `.env` in TextEdit — paste your key right
      after `GOOGLE_GEMINI_API_KEY=`, save (⌘S), and let me know when it's done." *(free key:
-     https://aistudio.google.com/apikey ; **repeat the "free ≠ private" framing** — for a confidential
-     vault, enable billing, see SETUP §9; or switch to option 1 fully-local.)* **If nothing opens**
+     https://aistudio.google.com/apikey ; **repeat the calm framing** — notes' text leaves the machine,
+     and for a confidential vault you'd enable billing / data-controls so it isn't used for training,
+     see SETUP §9; or switch to option 1 fully-local.)* **If nothing opens**
      (no GUI editor, headless), chain the fallbacks without waiting: reveal in Finder
      (`open -R "$HOME/<sub-path>/.env"`), or VS Code (`code "<path>/.env"`); only as a last resort,
      give the path + the line to fill in. **The key stays edited in `.env` by the user — never pasted

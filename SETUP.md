@@ -13,9 +13,10 @@
 > **embedding engine** among 3 options, with a **recommendation tailored to your machine**:
 > **1. Fully on your machine** ("Gemma inside", `in-process`) — 🟢 private + free + offline,
 > **nothing to install** (recommended if ≥ 12 GB of RAM and not an Intel Mac);
-> **2. API key** — Gemini, OpenAI, or your company's endpoint (⚠️ "free ≠ private": Gemini's
-> free tier may exploit your data; paying a few cents/month makes it private);
-> **3. Local via Ollama** (advanced). Only option 2-Gemini requires the key above; options
+> **2. Via an API** — Gemini, OpenAI, Mistral, or your own endpoint (🟡 your notes' text is sent to
+> the provider; in many cases it's **not** used for training — depending on the provider & plan, pick
+> the right settings: a paid tier or a "no-training" / data-controls option);
+> **3. A model running locally, via Ollama** (for the most technically advanced). Only option 2-Gemini requires the key above; options
 > 1 and 3 write `EMBEDDING_PROVIDER` to `.env` (see `.env.example`) and **skip the key step**.
 
 > **Cross-OS**: macOS, Linux and Windows (cmd or PowerShell). The installer and hooks
@@ -292,8 +293,8 @@ changes from the other machine.
 
 ## 9. Data privacy
 
-Your vault may contain **professional / confidential** material. Two services see your content —
-and in both cases, you can **prevent its exploitation**.
+Your vault may contain **professional / confidential** material. Two services may see your content —
+and in both cases, the right plan/settings keep it from being **used for training**.
 
 ### Claude (the reasoning)
 
