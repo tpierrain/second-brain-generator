@@ -17,6 +17,8 @@ import {
   writeFileSync,
   copyFileSync,
   mkdirSync,
+  readdirSync,
+  cpSync,
 } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,6 +32,7 @@ import { clearExampleNotes } from "./scripts/lib/example-notes.mjs";
 import { isInstallerStub } from "./scripts/lib/claude-md.mjs";
 import { parseAnswers, resolveTargetDir, resolveRunMode } from "./scripts/lib/installer-args.mjs";
 import { parseLsFilesZ, filterCopyable } from "./scripts/lib/tracked-files.mjs";
+import { resolveLocale, chooseLocale } from "./scripts/lib/locale.mjs";
 import {
   buildShLauncher,
   buildCmdLauncher,
@@ -244,6 +247,25 @@ for (const rel of tracked) {
   copyFileSync(join(ROOT, rel), dst);
 }
 ok(`dossier cerveau créé : ${TARGET} (${tracked.length} fichiers copiés depuis le launcher)`);
+
+// ── 2bis. Overlay des artefacts LOCALISÉS (constitution, skills, vault de démo) ─
+// `--lang` (la langue des notes) pilote AUSSI la langue des artefacts générés.
+// Les sources localisées vivent sous templates/<locale>/ (exclues de la copie en
+// masse) ; on superpose ICI la seule locale choisie sur le cerveau, aux chemins
+// relatifs. Tant que templates/ n'est pas peuplé, chooseLocale renvoie null →
+// aucune superposition → les artefacts hérités (racine) restent en place.
+const locale = resolveLocale(language);
+const templatesRoot = join(ROOT, "templates");
+const availableLocales = existsSync(templatesRoot)
+  ? readdirSync(templatesRoot, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name)
+  : [];
+const chosenLocale = chooseLocale(locale, availableLocales);
+if (chosenLocale) {
+  cpSync(join(templatesRoot, chosenLocale), TARGET, { recursive: true });
+  ok(`artefacts localisés superposés : locale « ${chosenLocale} » (demandé : « ${locale} »)`);
+}
 
 // ── 3. Moteur d'embedding (privé local / clé d'API) ──────────────────────────
 // Décision D1 (ADR 0007) : choix explicite à 3, reco ADAPTATIVE selon la machine.

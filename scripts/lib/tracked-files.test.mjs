@@ -50,6 +50,18 @@ test("filterCopyable — exclut l'outillage de mesure rag/scripts/ (dev-only : c
   );
 });
 
+test("filterCopyable — excludes templates/ (locale sources are overlaid, not bulk-copied)", () => {
+  assert.deepEqual(
+    filterCopyable([
+      "README.md",
+      "templates/en/CLAUDE.md.template",
+      "templates/fr/vault/README.md",
+      "rag/src/index.ts",
+    ]),
+    ["README.md", "rag/src/index.ts"],
+  );
+});
+
 test("filterCopyable — exclut l'outillage d'eval-set (dev-only : sert à choisir l'embedder du launcher)", () => {
   assert.deepEqual(
     filterCopyable([

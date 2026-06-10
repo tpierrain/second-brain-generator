@@ -32,6 +32,10 @@ const DEV_ONLY_PREFIXES = [
   "scripts/lib/eval-",
   "scripts/lib/mcp-search",
   "rag/scripts/",
+  // Localized artefact sources (constitution, skills, demo vault) live under
+  // templates/<locale>/. They are NOT bulk-copied: the installer overlays only
+  // the chosen locale onto the brain (cf. resolveLocale/chooseLocale).
+  "templates/",
 ];
 
 // Retient, parmi les chemins suivis, ceux à copier dans le cerveau généré.
