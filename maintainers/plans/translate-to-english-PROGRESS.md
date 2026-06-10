@@ -27,7 +27,7 @@ cd rag && npm test                                     # RAG engine (Lot 6)
 - [x] **Lot 4** — RAG ADRs (`3a108ab`)
 - [x] **Lot 5** — scripts code + tests (`619599e`)
 - [x] **Lot 6** — RAG engine + agnostic tests (`2acbf7b`) ✅ suite 114/114, no residual FR in `rag/src`
-- [ ] **Lot 7** — Demo vault (localized) + demo canary
+- [x] **Lot 7** — Demo vault (localized) + locale-aware canary (`a1251ca`) ✅ harness 132/132, grep-proof both locales
 - [ ] **Lot 8** — Maintainer internal
 - [ ] **Lot 9** — Final (full suite, E2E per language, residual grep, PR)
 
@@ -51,6 +51,15 @@ cd rag && npm test                                     # RAG engine (Lot 6)
   comments/JSDoc/strings/log/error messages + MCP tool descriptions + test names → EN; test assertions
   synced to EN wording where they checked French strings. `tsc --noEmit` clean; `cd rag && npm test`
   114/114 green; no residual FR in `rag/src` (proper nouns excepted).
+- **Lot 7 — Demo vault + locale-aware canary** (`a1251ca`). Root `vault/**` → EN (Flemmr), FR preserved
+  verbatim under `templates/fr/vault/**`. Slugs renamed at root (`inertia-trophy`, `harness`, `personal`;
+  `flemmr`/`jean-kevin-de-la-glandee` kept = proper nouns). `demo.mjs` now locale-aware via a tiny
+  `demo-locale.mjs` marker (`en` at root, `fr` via overlay) + `DEMO_BY_LOCALE`; canary token `Mollecuisse`
+  identical both locales. `demo.test.mjs` locks grep-proof for BOTH locales. New `locale-overlay.mjs`
+  (TDD 3/3): the vault is replaced WHOLESALE on overlay (renamed slugs ⇒ no en-slug orphans in an fr brain);
+  installer wired to it. SETUP/README demo prose aligned to EN vocab (Inertia Trophy, DNR, new slug).
+  EN vocab is fixed by `eval-set.mjs` (already EN): Do-Nothing Rate (DNR), Inertia Trophy, Hammock as a
+  Service, slogan "Do nothing. We've got it covered.". Harness suite 132/132.
 
 ## 🔑 KEY DECISIONS / refinements made during execution (carry these forward)
 
@@ -71,6 +80,19 @@ cd rag && npm test                                     # RAG engine (Lot 6)
    (plan §2.2 option A).
 5. **GitHub "About" description** (currently FR) → update to EN **at the very end (post-merge)** with
    `gh repo edit --description "..."`, to avoid an EN-description / FR-content-on-main mismatch.
+6. **Slug-rename rule (refines Lot 7):** translated TERMS get translated slugs (`trophee-de-l-inertie`
+   → `inertia-trophy`, `harnais` → `harness`, `perso` → `personal`); KEPT proper-noun slugs stay
+   (`flemmr`, `jean-kevin-de-la-glandee` — the person's NAME is kept per `eval-set.mjs` canon + decision
+   #3). The `people/jean-kevin-de-la-glandee` slug is therefore NOT renamed (proper noun), unlike what
+   the original Lot 7 note suggested.
+7. **Overlay must REPLACE the vault wholesale (refines plan §1a):** per-locale renamed slugs break the
+   in-place-merge overlay (Lot 0) — a plain `cpSync` merge leaves en-slug orphans (`harness.md`, …) in an
+   fr brain. `scripts/lib/locale-overlay.mjs` (`WHOLESALE_DIRS = ["vault"]`) wipes `TARGET/vault` before
+   copying; other dirs (skills, constitution, `demo-locale.mjs` marker) still merge in place (same paths).
+8. **Locale-aware demo (D from Lot 7 question):** `demo-locale.mjs` exports `BRAIN_LOCALE` (`en` at root,
+   `fr` shipped via `templates/fr/scripts/lib/demo-locale.mjs` overlay). `demo.mjs` reads it to pick from
+   `DEMO_BY_LOCALE`. No `.env`/installer plumbing: `verify-rag` (in an fr brain) and the launcher self-test
+   (en root) both resolve automatically.
 
 ## 🔭 REMAINING
 
