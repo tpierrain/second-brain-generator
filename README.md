@@ -213,11 +213,11 @@ This is **the** privacy choice, and it boils down to one question: *who's allowe
 to index them?* Three answers — and you can **change your mind whenever you want** (we re-index in a
 few minutes, nothing is lost):
 
-| Option | For whom | Privacy | Cost |
-|---|---|---|---|
-| 🟢 **On your machine** *(recommended default)* | Machine with ≥ 12 GB RAM, not an Intel Mac | **Nothing leaves** your computer | Free |
-| 🟡 **With an API key** | Small setup, or Intel Mac | Your notes go through the provider — Gemini, OpenAI, **your company's endpoint** | ~€0.10 / 1,000 notes · ~€1 / 10,000 |
-| 🟢 **Ollama, locally** *(advanced)* | Comfortable installing an app | **Nothing leaves** either | Free |
+| Option | Engine & model | For whom | Privacy | Cost |
+|---|---|---|---|---|
+| 🟢 **On your machine** *(recommended default)* | **EmbeddingGemma-300M** (local, ONNX) | Machine with ≥ 12 GB RAM, not an Intel Mac | **Nothing leaves** your computer | Free |
+| 🟡 **With an API key** | **`gemini-embedding-001`** — or OpenAI / Mistral / OpenAI-compatible | Small setup, or Intel Mac | Your notes go through the provider — Gemini, OpenAI, **your company's endpoint** | ~€0.10 / 1,000 notes · ~€1 / 10,000 |
+| 🟢 **Ollama, locally** *(advanced)* | Any Ollama model — e.g. **`bge-m3`** | Comfortable installing an app | **Nothing leaves** either | Free |
 
 > 💶 With an API key, Gemini's **free** tier is enough to get started. Depending on the provider & plan,
 > pick the right settings so your notes aren't used for training (e.g. enable billing — a few cents per
