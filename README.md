@@ -1,6 +1,6 @@
 <img src="docs/img/kenjaku.png" alt="Kenjaku — the Second Brain Generator's mascot" align="right" width="160">
 
-# Second Brain Generator (Kenjaku) &nbsp;<img src="docs/img/rag-inside.svg" alt="RAG inside" height="34" valign="middle">
+# Kenjaku — Second Brain Generator &nbsp;<img src="docs/img/rag-inside.svg" alt="RAG inside" height="34" valign="middle">
 
 *By Thomas Pierrain (VP Tech at [shodo](https://shodo.io/))*
 
