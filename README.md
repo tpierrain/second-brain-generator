@@ -471,9 +471,9 @@ it gives you the engine and the method to let **your own** emerge.
 The "why" behind this repo — to be read in order, each episode tells one step (and its owned-up
 missteps):
 
-1. [Mon second cerveau a pivoté 2 fois en 3 jours](https://medium.com/@tpierrain/mon-second-cerveau-a-pivot%C3%A9-2-fois-en-3-jours-d846b7b2cbb5)
-2. [J'ai mis un coach vénère dans mon second cerveau](https://medium.com/@tpierrain/jai-mis-un-coach-v%C3%A9n%C3%A9re-dans-mon-second-cerveau-c5593bbfd7d7)
-3. [Pourquoi mon second cerveau parlait sans comprendre](https://medium.com/@tpierrain/pourquoi-mon-second-cerveau-parlait-sans-comprendre-6848fcf98421)
+1. [My second brain pivoted twice in 3 days](https://medium.com/@tpierrain/my-second-brain-pivoted-twice-in-3-days-0e6a723faf34)
+2. [I hired a no-bullshit coach in my second brain](https://medium.com/@tpierrain/i-hired-a-no-bullshit-coach-in-my-second-brain-e7b1ce5702c5)
+3. [Why my second brain was talking without understanding](https://medium.com/@tpierrain/why-my-second-brain-was-talking-without-understanding-103d5c305341)
 
 ---
 
