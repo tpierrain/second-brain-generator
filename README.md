@@ -215,9 +215,12 @@ few minutes, nothing is lost):
 
 | Option | Engine & model | For whom | Privacy | Cost |
 |---|---|---|---|---|
-| 🟢 **On your machine** *(recommended default)* | **EmbeddingGemma-300M** (local, ONNX) | Machine with ≥ 12 GB RAM, not an Intel Mac | **Nothing leaves** your computer | Free |
+| 🟢 **On your machine** *(recommended default)* | 📱 **EmbeddingGemma-300M** (local, ONNX) | Machine with ≥ 12 GB RAM, not an Intel Mac | **Nothing leaves** your computer | Free |
 | 🟡 **With an API key** | **`gemini-embedding-001`** — or OpenAI / Mistral / OpenAI-compatible | Small setup, or Intel Mac | Your notes go through the provider — Gemini, OpenAI, **your company's endpoint** | ~€0.10 / 1,000 notes · ~€1 / 10,000 |
 | 🟢 **Ollama, locally** *(advanced)* | Any Ollama model — e.g. **`bge-m3`** | Comfortable installing an app | **Nothing leaves** either | Free |
+
+> 📱 **Why "on your machine" is so light:** **EmbeddingGemma** is Google's embedding model **designed
+> to run on-device — even on a phone**. So it sits comfortably on a laptop, with nothing leaving it.
 
 > 💶 With an API key, Gemini's **free** tier is enough to get started. Depending on the provider & plan,
 > pick the right settings so your notes aren't used for training (e.g. enable billing — a few cents per
