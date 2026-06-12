@@ -11,7 +11,7 @@
 
 **🛟 Bulletproof & zero chores.** Backup, freshness, recovery after a glitch: **its** job, not yours. *You just have to talk.*
 
-**[🧠 What's a second brain?](#what-is-a-second-brain) · [🚀 Install yours now](#ready-to-try-it)**
+**[🧠 What's a second brain?](#what-is-a-second-brain) · [🚀 Install yours now](#ready-to-try-it) · [📖 View the articles](#the-article-series)**
 
 > 🧑 *"Where are we on the billing project — who owns what, and what's been decided?"*
 >
