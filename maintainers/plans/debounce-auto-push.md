@@ -30,10 +30,19 @@
   - [x] ajouter un bloc `"Stop"` → `{{NODE}} "{{PROJECT_ROOT}}/scripts/auto-push.mjs"` (timeout 30000) _(JSON validé)_
   - [x] PostToolUse `Write|Edit` reste → `auto-commit.mjs` (inchangé côté câblage)
   - [x] vérifier que l'installer rend bien le template tel quel (substitution `{{NODE}}`/`{{PROJECT_ROOT}}`) — pas de hooks hardcodés ailleurs _(`gen()` installer.mjs:440 ; `{{NODE}}`=launcher run-node self-heal donc PATH-résilient ; `git ls-files`/`filterCopyable` copient auto-push.mjs + git-push.mjs dans le cerveau)_
-- [ ] **Part 5 — Doc**
-  - [ ] MAJ `SETUP.md` (section auto-commit/push) : commits locaux par édition, push 1×/tour, rattrapage au Stop suivant, multi-machine = skill `sync`
-  - [ ] MAJ `CLAUDE.md.template` si la mécanique y est décrite (auto-commit/push)
-  - [ ] note de suivi : backport manuel possible sur les cerveaux déjà générés (Inqom Rain)
+- [x] **Part 5 — Doc** _(2026-06-13)_
+  - [x] MAJ `SETUP.md` (section auto-commit/push) : commits locaux par édition, push 1×/tour, rattrapage au Stop suivant, multi-machine = skill `sync` _(§2 + §7)_
+  - [x] MAJ `CLAUDE.md.template` si la mécanique y est décrite (auto-commit/push) _(ligne « enable auto-push » précisée : 1×/tour, non-bloquant)_
+  - [x] note de suivi : backport manuel possible sur les cerveaux déjà générés (Inqom Rain) _(voir « Backport » ci-dessous)_
+
+### Backport (cerveaux déjà générés — ex. Inqom Rain)
+Les settings/scripts d'un cerveau déjà installé sont **figés** (copiés à l'install). Pour bénéficier
+du debounce sur un cerveau existant, backport **manuel** dans le dossier du cerveau :
+1. copier `scripts/auto-push.mjs` + `scripts/lib/git-push.mjs` depuis le launcher ;
+2. remplacer le bloc push de `scripts/auto-commit.mjs` (le rendre commit-only) ;
+3. ajouter le bloc `"Stop"` dans `<brain>/.claude/settings.json` (même `{{NODE}}` que les autres hooks,
+   déjà substitué dans le fichier généré) ;
+4. relancer une conversation neuve rootée dans le cerveau.
 - [ ] **Validation**
   - [ ] suite complète verte (incl. `git-push.test.mjs` + `auto-push.test.mjs` + `auto-commit.test.mjs` MAJ)
   - [ ] install jetable + remote bidon : N éditions dans un tour → N commits, **1 seul push** (observer `git log`/reflog du remote, ou tracer les invocations)

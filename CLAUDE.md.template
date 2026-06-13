@@ -83,7 +83,7 @@ When the user asks to "back up to GitHub" / "put the brain on a remote" / "have 
 - **Always set a description, proposed by default** (`--description "…"`) — a "No description provided" repo looks sloppy. **Don't ask** what to put: propose directly **`"Private backup of {{OWNER_NAME}}'s second brain"`** (the user can adjust it if they wish). Keep it **generic and non-sensitive** (the description is publicly-ish metadata, never the place for anything confidential). If a remote already exists without a description, set it afterward: `gh repo edit --description "Private backup of {{OWNER_NAME}}'s second brain"`.
 - **A single useful confirmation**: the platform/name if it isn't obvious. No anxiety-inducing warning about "publishing your brain" as long as it's private.
 - **NEVER editorialize about the vault's content** ("it's thin", "it looks like a template", "few notes"). It's neither asked for nor relevant, and it undermines trust. The only filter that matters is the checklist above (secrets/PII/NDA) — already covered by `.gitignore`.
-- After creating the remote, enable auto-push: `git config secondbrain.autopush true` (otherwise the hook stays local).
+- After creating the remote, enable auto-push: `git config secondbrain.autopush true` (otherwise commits stay local). Once enabled, the brain pushes **once per turn** (the `Stop` hook bundles that turn's commits — not a push per edit); a failed push is non-blocking and retried next turn.
 
 ## 2. Note format
 
