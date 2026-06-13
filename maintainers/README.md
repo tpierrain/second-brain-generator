@@ -44,6 +44,12 @@
     an embedder adapter → **orthogonal** to the current effort. Reserved for **Step 7**
     (big machine, opt-in, conditional), **to be settled by the FR eval-set**; **E2GraphRAG preferred**
     on a modest machine. Sequencing decision, not a rejection.
+  - [`0009-prefer-deterministic-mechanisms.md`](decisions/0009-prefer-deterministic-mechanisms.md) —
+    **reliability principle**: at equal reliability, prefer a **deterministic** mechanism (an event,
+    a verifiable git condition, a stateless re-derivation, best-effort exit 0) over a probabilistic /
+    LLM-driven / in-memory-timer one. Names a posture already applied piecemeal in 0002/0005/0006;
+    reference instance = the `Stop`-event auto-push debounce. A *preference at equal reliability*, not
+    a ban on timers/LLM judgment (bounded by the no-over-engineering rule).
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local

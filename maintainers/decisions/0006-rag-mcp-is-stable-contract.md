@@ -4,7 +4,9 @@
 - **Related:** [`0004-claude-only-for-now.md`](0004-claude-only-for-now.md)
   (reinforces its invariant "RAG server = standard MCP, no dependency on a proprietary API"),
   [`0003-no-brain-capability-upgrade.md`](0003-no-brain-capability-upgrade.md) (tension
-  examined below), [`0005-support-desktop-code-tab.md`](0005-support-desktop-code-tab.md).
+  examined below), [`0005-support-desktop-code-tab.md`](0005-support-desktop-code-tab.md),
+  [`0009-prefer-deterministic-mechanisms.md`](0009-prefer-deterministic-mechanisms.md) (the
+  confirm-gate-on-a-deterministic-index-identity below is one instance of that principle).
 - **Associated implementation plan:** [`../plans/archived/onglet-code-desktop.md`](../plans/archived/onglet-code-desktop.md) (§8).
 
 ## Context

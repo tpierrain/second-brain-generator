@@ -6,7 +6,9 @@
   central decision of this ADR) remains **unchanged**; only the *way we make it reliable* changes.
 - **Related:** [`0004-claude-only-for-now.md`](0004-claude-only-for-now.md) (the Code
   tab is **another surface of the same Claude Code** — it does NOT reopen cross-AI),
-  [`0006-rag-mcp-is-stable-contract.md`](0006-rag-mcp-is-stable-contract.md).
+  [`0006-rag-mcp-is-stable-contract.md`](0006-rag-mcp-is-stable-contract.md),
+  [`0009-prefer-deterministic-mechanisms.md`](0009-prefer-deterministic-mechanisms.md) (this ADR's
+  fail-loud is one instance of that broader reliability principle).
 - **Associated implementation plan:** [`../plans/archived/onglet-code-desktop.md`](../plans/archived/onglet-code-desktop.md).
 
 ## Context
