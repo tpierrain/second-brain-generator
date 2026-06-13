@@ -9,13 +9,13 @@
 
 ## Tracking
 
-- [ ] **Part 0 — Pré-requis / vérif rapide**
-  - [ ] Confirmer que `Stop` est bien l'event Claude Code voulu (≠ `SubagentStop`) et qu'un hook `Stop` qui sort `exit 0` ne force pas de continuation
-  - [ ] Relire `.claude/settings.json.template` (hooks) + `scripts/auto-commit.mjs` + `scripts/auto-commit.test.mjs`
-- [ ] **Part 1 — Extraire un seam de push testable (`scripts/lib/git-push.mjs`, TDD)**
-  - [ ] `shouldPush({ hasRemote, autopush, hasUpstream, unpushedCount })` → `boolean` (matrice : no-remote→false, autopush≠true→false, pas d'upstream→false*, 0 commit en attente→false, sinon true)
-  - [ ] `git-push.test.mjs` vert (matrice complète)
-  - [ ] (*) décider du cas « remote + autopush mais pas d'upstream » : skip best-effort + message (pas de `-u` automatique ici — câblé à l'install)
+- [x] **Part 0 — Pré-requis / vérif rapide** _(2026-06-13)_
+  - [x] Confirmer que `Stop` est bien l'event Claude Code voulu (≠ `SubagentStop`) et qu'un hook `Stop` qui sort `exit 0` ne force pas de continuation _(confirmé : seul exit 2 / decision:block rebloque ; exit 0 = stop normal)_
+  - [x] Relire `.claude/settings.json.template` (hooks) + `scripts/auto-commit.mjs` + `scripts/auto-commit.test.mjs` _(push par-édition = auto-commit.mjs:46-55 ; template rendu par installer.mjs:440, pas de hook hardcodé ailleurs)_
+- [x] **Part 1 — Extraire un seam de push testable (`scripts/lib/git-push.mjs`, TDD)** _(2026-06-13)_
+  - [x] `shouldPush({ hasRemote, autopush, hasUpstream, unpushedCount })` → `boolean` (matrice : no-remote→false, autopush≠true→false, pas d'upstream→false*, 0 commit en attente→false, sinon true)
+  - [x] `git-push.test.mjs` vert (matrice complète) _(5/5)_
+  - [x] (*) décidé : « remote + autopush mais pas d'upstream » → **skip best-effort** (pas de `-u` automatique ici — câblé à l'install)
 - [ ] **Part 2 — `scripts/auto-push.mjs` (nouveau hook `Stop`, best-effort)**
   - [ ] dérive REPO depuis la position du script (comme auto-commit) ; runner git injectable pour le test
   - [ ] lit `git remote`, `git config secondbrain.autopush`, upstream, `git rev-list @{u}..HEAD --count`
