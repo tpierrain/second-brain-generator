@@ -4,6 +4,7 @@
   forbid installs" is **reversed** in favor of "trust Claude + fail loud". See the
   **"Revision 2026-06-06"** section at the end of the document. The official desktop target (the
   central decision of this ADR) remains **unchanged**; only the *way we make it reliable* changes.
+- **Scope:** Both — installing from the desktop Code tab AND using the brain there at runtime.
 - **Related:** [`0004-claude-only-for-now.md`](0004-claude-only-for-now.md) (the Code
   tab is **another surface of the same Claude Code** — it does NOT reopen cross-AI),
   [`0006-rag-mcp-is-stable-contract.md`](0006-rag-mcp-is-stable-contract.md),

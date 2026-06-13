@@ -1,6 +1,7 @@
 # ADR 0001 — Reusable launcher vs brain created elsewhere
 
 - **STATUS:** ACCEPTED (2026-06-03) — supersedes the "transform in-place" approach.
+- **Scope:** Both — *this ADR defines the launcher↔brain split that the Scope field itself rests on.*
 - **Associated implementation plan:** [`../plans/archived/launcher-vs-brain.md`](../plans/archived/launcher-vs-brain.md) (DELIVERED).
 
 ## Context

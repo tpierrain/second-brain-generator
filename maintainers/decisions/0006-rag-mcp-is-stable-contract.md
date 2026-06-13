@@ -1,6 +1,7 @@
 # ADR 0006 — The RAG's MCP server is a stable interface contract
 
 - **STATUS:** ACCEPTED (2026-06-06).
+- **Scope:** Brain (runtime) — the RAG the generated brain queries day to day.
 - **Related:** [`0004-claude-only-for-now.md`](0004-claude-only-for-now.md)
   (reinforces its invariant "RAG server = standard MCP, no dependency on a proprietary API"),
   [`0003-no-brain-capability-upgrade.md`](0003-no-brain-capability-upgrade.md) (tension

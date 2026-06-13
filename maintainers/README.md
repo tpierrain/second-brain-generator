@@ -14,6 +14,11 @@
 ## Contents
 
 - **`decisions/`** — the architecture decisions (ADRs): the *why*, durable.
+  > **Each ADR carries a `Scope:` line** (right under `STATUS`) situating it on the project's
+  > backbone — the **launcher↔brain split** of ADR 0001. Three values: **Launcher / installer** (how
+  > a brain is *created*), **Brain (runtime)** (the generated brain in *daily use*), **Both**. A
+  > reading aid, not a taxonomy: it forces the author to ask "am I deciding about the install, the
+  > brain, or both?" — and lets a reader filter at a glance.
   - [`0001-launcher-vs-brain.md`](decisions/0001-launcher-vs-brain.md) — reusable read-only launcher
     vs brain created elsewhere; rename `starter` → `generator`.
   - [`0002-in-house-installer-vs-plugin.md`](decisions/0002-in-house-installer-vs-plugin.md) —
