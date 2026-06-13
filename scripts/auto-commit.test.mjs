@@ -110,14 +110,19 @@ test("auto-commit — remote present but autopush OFF (default): local commit, N
   }
 });
 
-test("auto-commit — autopush ON: effective push to the chosen remote", () => {
+// auto-commit is now COMMIT-ONLY: the push moved to the Stop hook (auto-push.mjs)
+// so it happens once per turn, not once per edit. auto-commit must NEVER push —
+// even with a remote AND autopush ON. (The push itself is covered by
+// auto-push.test.mjs / git-push.test.mjs.)
+test("auto-commit — autopush ON: still COMMIT-ONLY, never pushes (push moved to Stop hook)", () => {
   const { root, git } = makeRepo();
   const { bare, headCount } = addBareRemote(root, git);
   try {
     git(["config", "secondbrain.autopush", "true"]);
     writeFileSync(join(root, "note.md"), "# to back up\n");
     runAutoCommit(root); // exit 0
-    assert.ok(headCount() >= 1, "the remote did receive the commit (push)");
+    assert.equal(git(["status", "--porcelain"]).trim(), "", "local commit OK");
+    assert.equal(headCount(), 0, "the remote receives NOTHING — push is no longer auto-commit's job");
   } finally {
     rmSync(root, { recursive: true, force: true });
     rmSync(bare, { recursive: true, force: true });

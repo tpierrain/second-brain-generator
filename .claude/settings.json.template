@@ -69,6 +69,18 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{NODE}} \"{{PROJECT_ROOT}}/scripts/auto-push.mjs\"",
+            "timeout": 30000
+          }
+        ]
+      }
     ]
   }
 }

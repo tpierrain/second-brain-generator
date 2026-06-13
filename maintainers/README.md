@@ -14,6 +14,12 @@
 ## Contents
 
 - **`decisions/`** — the architecture decisions (ADRs): the *why*, durable.
+  > **Each ADR carries a `Scope:` line** (right under `STATUS`) situating it on the project's
+  > backbone — the **launcher↔brain split** of ADR 0001. Three explicit values: **Installer** (how a
+  > brain is *created*), **Second brain (runtime)** (the generated brain in *daily use*), or both
+  > spelled out as **Second brain (runtime) + Installer**. A reading aid, not a taxonomy: it forces
+  > the author to ask "am I deciding about the installer, the second brain, or both?" — and lets a
+  > reader filter at a glance.
   - [`0001-launcher-vs-brain.md`](decisions/0001-launcher-vs-brain.md) — reusable read-only launcher
     vs brain created elsewhere; rename `starter` → `generator`.
   - [`0002-in-house-installer-vs-plugin.md`](decisions/0002-in-house-installer-vs-plugin.md) —
@@ -44,6 +50,19 @@
     an embedder adapter → **orthogonal** to the current effort. Reserved for **Step 7**
     (big machine, opt-in, conditional), **to be settled by the FR eval-set**; **E2GraphRAG preferred**
     on a modest machine. Sequencing decision, not a rejection.
+  - [`0009-prefer-deterministic-mechanisms.md`](decisions/0009-prefer-deterministic-mechanisms.md) —
+    **reliability principle**: at equal reliability, prefer a **deterministic** mechanism (an event,
+    a verifiable git condition, a stateless re-derivation, best-effort exit 0) over a probabilistic /
+    LLM-driven / in-memory-timer one. Names a posture already applied piecemeal in 0002/0005/0006;
+    reference instance = the `Stop`-event auto-push debounce. A *preference at equal reliability*, not
+    a ban on timers/LLM judgment (bounded by the no-over-engineering rule).
+  - [`0010-debounce-auto-push-to-stop-hook.md`](decisions/0010-debounce-auto-push-to-stop-hook.md) —
+    **debounce auto-push to the `Stop` hook**: keep the per-edit local commit, but move `git push`
+    out of the per-edit hook to a once-per-turn `Stop` hook (N edits → N commits + 1 push,
+    best-effort `exit 0`, auto-catch-up of `@{u}..HEAD`). The reference instance of 0009. Records the
+    rejected alternatives (per-edit / 60 s throttle / state-file / pull-rebase) and the honest
+    validation boundary (logic + git proven; live `Stop`-firing assumed from docs). **Scope: Second
+    brain (runtime).**
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
@@ -69,6 +88,11 @@
       provider**, plain-language "embedder ≠ chat LLM", eval-first. **STATUS: 🔬 STUDY — nothing
       enacted.** *(feeds the SPI plan + ADR 0007)*
   - **`plans/archived/`** — shipped/closed plans (kept for the detail of the steps):
+    - [`debounce-auto-push.md`](plans/archived/debounce-auto-push.md) — **debounce the auto-push**: keep
+      per-edit local commits, but move `git push` out of the per-edit hook to a **`Stop` hook**
+      (push once per turn) to avoid micro-pushes / rate-limiting. Indexing already debounced +
+      incremental (no change). **STATUS: ✅ SHIPPED** (2026-06-13; 157/157 tests; empirically proven —
+      5 edits/turn → 1 push, KO non-blocking, off/no-remote skip silently).
     - [`auto-open-env-gemini.md`](plans/archived/auto-open-env-gemini.md) — make the **installer open
       `.env` itself** on the Gemini-key path (CASE B), deterministically (tested seam
       `scripts/lib/open-env.mjs`, guard `SBG_NO_OPEN_ENV`), instead of relying on the Claude-driven

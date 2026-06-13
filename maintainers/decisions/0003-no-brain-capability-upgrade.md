@@ -1,6 +1,7 @@
 # ADR 0003 — No (yet) upgradability of generated brains' capabilities
 
 - **STATUS:** ACCEPTED (2026-06-05).
+- **Scope:** Second brain (runtime) + Installer — the launcher↔brain relationship (the installer deliberately does NOT push upgrades to already-generated brains).
 - **Related:** [`0001-launcher-vs-brain.md`](0001-launcher-vs-brain.md) (the launcher→brain link
   is severed "by construction" — that's the cause of this consequence), [`0002-in-house-installer-vs-plugin.md`](0002-in-house-installer-vs-plugin.md).
 

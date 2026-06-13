@@ -129,9 +129,14 @@ node installer.mjs --non-interactive --name "second-brain" --owner "Jane Doe" --
 - **No link to the launcher, by construction.** The installer **creates a fresh folder**, copies
   the tracked files into it (never the launcher's `.git`), then runs `git init` + 1st commit in it. The brain
   therefore has **no remote** — nothing to detach, no git surgery. The launcher is never modified.
-- **No leak possible: push is opt-in.** The auto-commit hook **only pushes if you have
-  explicitly enabled** `git config secondbrain.autopush true` (set by the "remote repo" step
-  below). By default **off** → even a stray remote never receives your notes.
+- **No leak possible: push is opt-in.** Pushing happens **only if you have explicitly enabled**
+  `git config secondbrain.autopush true` (set by the "remote repo" step below). By default **off**
+  → even a stray remote never receives your notes.
+- **Commit per edit, push once per turn.** Each file change is committed locally and instantly
+  (the `Write|Edit` hook). The actual **push is debounced**: it runs **once per turn**, at the end
+  (the `Stop` hook), pushing all the turn's commits in one go — instead of a network push per edit.
+  A failed push is non-blocking: your commits stay local and the **next turn catches up**. For
+  syncing changes made on *another* machine mid-session, use the `/sync` skill.
 - **Remote repo: decided afterwards, never imposed.** The install creates no remote. You can wire
   one up whenever you want (see §7) — remembering to enable `secondbrain.autopush`. In assisted
   startup, Claude will **offer** to create one (backup + multi-machine) — answering no is risk-free.
@@ -293,7 +298,8 @@ git remote add origin <url-of-your-private-repo>
 git push -u origin main
 git config secondbrain.autopush true   # ← enables the hook's automatic push
 ```
-The auto-commit hook will then push on every change. On the other machine: `git clone <your-private-repo>`
+The brain will then push **once per turn** (the `Stop` hook), bundling that turn's commits; a failed
+push is non-blocking and retried at the next turn. On the other machine: `git clone <your-private-repo>`
 then, **in the cloned folder**, `cd rag && npm install` and re-enter the key in `.env` (the index
 rebuilds at the 1st startup). *(No need for the installer here: it serves to **generate** a brain,
 not to re-hydrate an already-existing brain.)* During a session, the `/sync` skill retrieves the

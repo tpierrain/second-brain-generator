@@ -1,6 +1,7 @@
 # ADR 0002 — In-house installer/generator rather than a Claude plugin
 
 - **STATUS:** ACCEPTED (2026-06-05).
+- **Scope:** Installer.
 - **Related:** [`0001-launcher-vs-brain.md`](0001-launcher-vs-brain.md) (the launcher↔brain
   architecture this decision dresses up), [`0003-no-brain-capability-upgrade.md`](0003-no-brain-capability-upgrade.md)
   (updatability, a direct consequence of the choice), [`0004-claude-only-for-now.md`](0004-claude-only-for-now.md).
