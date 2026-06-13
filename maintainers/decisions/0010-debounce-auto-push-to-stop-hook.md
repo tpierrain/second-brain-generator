@@ -13,7 +13,7 @@ The brain persists notes with a `PostToolUse Write|Edit → auto-commit.mjs` hoo
 **every** edit. That part is wanted and kept. The problem was that the **same** hook also **pushed**:
 once `git config secondbrain.autopush true` is set, every edit fired a **network `git push`** — plus
 a blocking `sleepSync(3000)` retry on failure. On a normal turn (dozens of edits) that meant **dozens
-of pushes**, which Thomas felt directly on his own brain (Inqom Rain) as "wasted time" and which
+of pushes**, which Thomas felt directly on his own brain in daily use as "wasted time" and which
 risks **rate-limiting** on GitHub/GitLab. Only the *push* cadence is the issue — the per-edit local
 commits are fine.
 
@@ -76,7 +76,7 @@ Visually, over a single exchange — many edits, many local commits, **one** pus
 - **Multi-window / multi-machine** → non-fast-forward races are possible; best-effort by design, the
   loser repushes next `Stop`. **Documented limit, not handled here** (use `/sync`).
 - **Hook timeout** raised to 30 s (the one retry/pause no longer slows every save).
-- **Already-generated brains** (Inqom Rain) have **frozen** settings → **manual backport** (procedure
+- **Already-generated brains** have **frozen** settings → **manual backport** (procedure
   in the plan): copy `auto-push.mjs` + `lib/git-push.mjs`, make `auto-commit.mjs` commit-only, add the
   `Stop` block to `<brain>/.claude/settings.json`, reopen a fresh conversation.
 - This is the concrete **reference instance of ADR 0009**: a pure tested `shouldPush(...)` (rung 1) +
@@ -92,5 +92,5 @@ Visually, over a single exchange — many edits, many local commits, **one** pus
   turn** and that returning `exit 0` does **not** block the turn — these rest on **documented hook
   semantics**, not an observed run (the simulation invoked `auto-push.mjs` directly). **Accepted at
   merge** because the failure mode is benign: if `Stop` misbehaves, the push simply doesn't happen and
-  the **local commits stay safe — nothing is lost**. To be confirmed in real use on Inqom Rain; if it
+  the **local commits stay safe — nothing is lost**. To be confirmed in real use on a generated brain; if it
   ever proves wrong, revisit here.

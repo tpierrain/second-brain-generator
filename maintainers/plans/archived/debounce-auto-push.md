@@ -44,9 +44,9 @@
 - [x] **Part 5 — Doc** _(2026-06-13)_
   - [x] MAJ `SETUP.md` (section auto-commit/push) : commits locaux par édition, push 1×/tour, rattrapage au Stop suivant, multi-machine = skill `sync` _(§2 + §7)_
   - [x] MAJ `CLAUDE.md.template` si la mécanique y est décrite (auto-commit/push) _(ligne « enable auto-push » précisée : 1×/tour, non-bloquant)_
-  - [x] note de suivi : backport manuel possible sur les cerveaux déjà générés (Inqom Rain) _(voir « Backport » ci-dessous)_
+  - [x] note de suivi : backport manuel possible sur les cerveaux déjà générés _(voir « Backport » ci-dessous)_
 
-### Backport (cerveaux déjà générés — ex. Inqom Rain)
+### Backport (cerveaux déjà générés)
 Les settings/scripts d'un cerveau déjà installé sont **figés** (copiés à l'install). Pour bénéficier
 du debounce sur un cerveau existant, backport **manuel** dans le dossier du cerveau :
 1. copier `scripts/auto-push.mjs` + `scripts/lib/git-push.mjs` depuis le launcher ;
@@ -102,7 +102,7 @@ Stop                       →  scripts/auto-push.mjs     (git push si condition
 5. Pas d'upstream → skip propre + message (jamais throw ; `-u` reste câblé à l'install).
 6. Tours sans édition → `@{u}..HEAD` vide → sortie rapide, **pas d'appel réseau**.
 7. `timeout` du hook `Stop` confortable (30 s) ; le retry/sleep ne ralentit plus chaque save.
-8. Cerveaux déjà générés (Inqom Rain) = settings figés → backport manuel (note de suivi).
+8. Cerveaux déjà générés = settings figés → backport manuel (note de suivi).
 9. Tests : `auto-commit` devient « ne pousse jamais » ; le push part dans `auto-push.test.mjs`.
 
 ## Commits suggérés (séparés, sur la branche)
