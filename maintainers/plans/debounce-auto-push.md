@@ -16,12 +16,12 @@
   - [x] `shouldPush({ hasRemote, autopush, hasUpstream, unpushedCount })` → `boolean` (matrice : no-remote→false, autopush≠true→false, pas d'upstream→false*, 0 commit en attente→false, sinon true)
   - [x] `git-push.test.mjs` vert (matrice complète) _(5/5)_
   - [x] (*) décidé : « remote + autopush mais pas d'upstream » → **skip best-effort** (pas de `-u` automatique ici — câblé à l'install)
-- [ ] **Part 2 — `scripts/auto-push.mjs` (nouveau hook `Stop`, best-effort)**
-  - [ ] dérive REPO depuis la position du script (comme auto-commit) ; runner git injectable pour le test
-  - [ ] lit `git remote`, `git config secondbrain.autopush`, upstream, `git rev-list @{u}..HEAD --count`
-  - [ ] si `shouldPush` → `git push` ; échec → 1 retry après pause courte → si encore KO, message `⚠️ PUSH FAILED…`, **exit 0**
-  - [ ] **TOUJOURS `exit 0`** (jamais bloquant) ; ignore le stdin du hook
-  - [ ] `auto-push.test.mjs` : push only when remote+autopush+unpushed ; skip sinon ; throw du runner avalé → exit 0 ; rien à pousser → pas d'appel réseau
+- [x] **Part 2 — `scripts/auto-push.mjs` (nouveau hook `Stop`, best-effort)** _(2026-06-13)_
+  - [x] dérive REPO depuis la position du script (comme auto-commit) ; runner git injectable pour le test _(cœur `attemptPush({git, sleep})` + entrée CLI guardée `import.meta`)_
+  - [x] lit `git remote`, `git config secondbrain.autopush`, upstream, `git rev-list @{u}..HEAD --count`
+  - [x] si `shouldPush` → `git push` ; échec → 1 retry après pause courte → si encore KO, message `⚠️ PUSH FAILED…`, **exit 0**
+  - [x] **TOUJOURS `exit 0`** (jamais bloquant) ; ignore le stdin du hook
+  - [x] `auto-push.test.mjs` : push only when remote+autopush+unpushed ; skip sinon ; throw du runner avalé → exit 0 ; rien à pousser → pas d'appel réseau _(5/5)_
 - [ ] **Part 3 — `scripts/auto-commit.mjs` devient commit-only**
   - [ ] retirer le bloc push (`hasRemote && autopush && git push` + `sleepSync`)
   - [ ] garder add + commit + le early-exit « rien de sale »
