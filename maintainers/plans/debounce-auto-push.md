@@ -26,10 +26,10 @@
   - [x] retirer le bloc push (`hasRemote && autopush && git push` + `sleepSync`) _(sleepSync mort retiré aussi)_
   - [x] garder add + commit + le early-exit « rien de sale »
   - [x] MAJ `auto-commit.test.mjs` : « commit-only, ne pousse JAMAIS » (même avec remote+autopush) _(4/4)_
-- [ ] **Part 4 — Câbler le hook `Stop` dans `.claude/settings.json.template`**
-  - [ ] ajouter un bloc `"Stop"` → `{{NODE}} "{{PROJECT_ROOT}}/scripts/auto-push.mjs"` (timeout 30000)
-  - [ ] PostToolUse `Write|Edit` reste → `auto-commit.mjs` (inchangé côté câblage)
-  - [ ] vérifier que l'installer rend bien le template tel quel (substitution `{{NODE}}`/`{{PROJECT_ROOT}}`) — pas de hooks hardcodés ailleurs
+- [x] **Part 4 — Câbler le hook `Stop` dans `.claude/settings.json.template`** _(2026-06-13)_
+  - [x] ajouter un bloc `"Stop"` → `{{NODE}} "{{PROJECT_ROOT}}/scripts/auto-push.mjs"` (timeout 30000) _(JSON validé)_
+  - [x] PostToolUse `Write|Edit` reste → `auto-commit.mjs` (inchangé côté câblage)
+  - [x] vérifier que l'installer rend bien le template tel quel (substitution `{{NODE}}`/`{{PROJECT_ROOT}}`) — pas de hooks hardcodés ailleurs _(`gen()` installer.mjs:440 ; `{{NODE}}`=launcher run-node self-heal donc PATH-résilient ; `git ls-files`/`filterCopyable` copient auto-push.mjs + git-push.mjs dans le cerveau)_
 - [ ] **Part 5 — Doc**
   - [ ] MAJ `SETUP.md` (section auto-commit/push) : commits locaux par édition, push 1×/tour, rattrapage au Stop suivant, multi-machine = skill `sync`
   - [ ] MAJ `CLAUDE.md.template` si la mécanique y est décrite (auto-commit/push)
