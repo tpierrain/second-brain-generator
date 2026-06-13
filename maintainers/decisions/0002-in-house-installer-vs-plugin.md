@@ -27,8 +27,10 @@ Two forces settle the answer:
 
 The generator stays an **in-house installer**: a launcher you clone, driven by a **conversational
 bootstrap stub** (the launcher's `CLAUDE.md`) that has Claude gather the answers **in chat**, then
-runs **ONE** command `node bootstrap.mjs --non-interactive`. The deterministic script does
-everything (copy, generation, `git init` of the brain, RAG install, MCP smoke-test).
+runs **ONE** command `node bootstrap.mjs --non-interactive` *(the script has since been renamed
+**`installer.mjs`** — the name above is kept as the historical record of this decision)*. The
+deterministic script does everything (copy, generation, `git init` of the brain, RAG install, MCP
+smoke-test).
 
 We **do not package** the generator as a plugin/marketplace for now.
 
