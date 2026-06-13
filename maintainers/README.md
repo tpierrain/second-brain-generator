@@ -68,6 +68,10 @@
       **refreshed** watch (EmbeddingGemma, bge-m3, Qwen3, E2GraphRAG…), **privacy scale by
       provider**, plain-language "embedder ≠ chat LLM", eval-first. **STATUS: 🔬 STUDY — nothing
       enacted.** *(feeds the SPI plan + ADR 0007)*
+    - [`debounce-auto-push.md`](plans/debounce-auto-push.md) — **debounce the auto-push**: keep
+      per-edit local commits, but move `git push` out of the per-edit hook to a **`Stop` hook**
+      (push once per turn) to avoid micro-pushes / rate-limiting. Indexing already debounced +
+      incremental (no change). **STATUS: ⏳ PENDING** — to run after a `/clear`.
   - **`plans/archived/`** — shipped/closed plans (kept for the detail of the steps):
     - [`auto-open-env-gemini.md`](plans/archived/auto-open-env-gemini.md) — make the **installer open
       `.env` itself** on the Gemini-key path (CASE B), deterministically (tested seam
