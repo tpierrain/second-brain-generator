@@ -1,7 +1,7 @@
 # ADR 0009 — Prefer deterministic mechanisms (reliability principle)
 
 - **STATUS:** ACCEPTED (2026-06-13).
-- **Scope:** Both — a cross-cutting reliability principle (brain runtime first, installer too).
+- **Scope:** Second brain (runtime) + Installer — a cross-cutting reliability principle (brain runtime first, installer too).
 - **Related:** [`0002-in-house-installer-vs-plugin.md`](0002-in-house-installer-vs-plugin.md)
   (the install is **one deterministic script**), [`0005-support-desktop-code-tab.md`](0005-support-desktop-code-tab.md)
   (trust + **fail-loud**, deterministic pre-flight, visible startup status),

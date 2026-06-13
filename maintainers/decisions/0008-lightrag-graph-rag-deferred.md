@@ -3,7 +3,7 @@
 - **STATUS:** ACCEPTED (2026-06-08) for the **direction**: we **do not wire in** LightRAG (nor a
   graph-RAG) in the current effort; we **reserve it for later**, conditioned on a measurement. This
   is a **sequencing and scope** decision, not a definitive rejection.
-- **Scope:** Brain (runtime) — the brain's retrieval paradigm (a graph-RAG would live behind the same MCP contract).
+- **Scope:** Second brain (runtime) — the brain's retrieval paradigm (a graph-RAG would live behind the same MCP contract).
 - **Related:**
   [`0006-rag-mcp-is-stable-contract.md`](0006-rag-mcp-is-stable-contract.md)
   (the MCP contract stays stable; a graph-RAG would live *behind* that contract, not in its place),

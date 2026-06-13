@@ -3,7 +3,7 @@
 - **STATUS:** ACCEPTED (2026-06-08) for the **direction** (the three adapters + the privacy scale).
   **Open question #1 (default embedder at install) → SETTLED on 2026-06-09**: cf. **Addendum D1** at
   the end of the ADR (explicit 3-way choice, recommended default = in-process "Gemma inside").
-- **Scope:** Brain (runtime) — the embedder the brain uses to index/search; the install merely picks the default.
+- **Scope:** Second brain (runtime) — the embedder the brain uses to index/search; the install merely picks the default.
 - **Related:** [`0006-rag-mcp-is-stable-contract.md`](0006-rag-mcp-is-stable-contract.md)
   (this ADR **makes concrete** its "interchangeable embedder" SPI by naming the targeted adapters),
   [`0004-claude-only-for-now.md`](0004-claude-only-for-now.md) (the LLM that answers
