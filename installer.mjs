@@ -10,7 +10,7 @@
 //
 //   Usage:  node installer.mjs
 // ═══════════════════════════════════════════════════════════════════════════
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import {
   existsSync,
   readFileSync,
@@ -49,6 +49,7 @@ import {
   envConfigForEmbedder,
   embedderReady,
 } from "./scripts/lib/embedder-choice.mjs";
+import { openEnvInEditor } from "./scripts/lib/open-env.mjs";
 
 // ROOT = the LAUNCHER (this cloned repo). READ-ONLY, reusable source: the
 // installer NEVER writes to it. It CREATES a brain folder elsewhere (TARGET),
@@ -696,10 +697,25 @@ console.log(`Your second brain was created in: ${c.C}${TARGET}${c.X}`);
 // missing (fully-local / endpoint option → no Gemini key to request).
 const geminiKeyMissing = embedderCfg.needsGeminiKey && !geminiKey;
 if (geminiKeyMissing) {
-  console.log(
-    `\n${c.B}⚠️ Gemini key not provided yet.${c.X} Before opening Claude Code, paste it into`
-  );
-  console.log(`   ${c.C}${toPosix(envPath)}${c.X} (line ${c.C}GOOGLE_GEMINI_API_KEY=${c.X}).`);
+  // CASE B only (Gemini chosen, key still missing): pop the user's editor on the
+  // .env so they don't have to hunt for a hidden file. Best-effort & non-fatal —
+  // if nothing opens we keep printing the path as the fallback.
+  const { opened } = openEnvInEditor(envPath, {
+    platform: process.platform,
+    env: process.env,
+    spawn,
+  });
+  if (opened) {
+    console.log(
+      `\n${c.B}✓ I opened your .env in your editor.${c.X} Paste your Gemini key right after`
+    );
+    console.log(`   ${c.C}GOOGLE_GEMINI_API_KEY=${c.X}, save${process.platform === "darwin" ? " (⌘S)" : ""}, then open Claude Code in the brain.`);
+  } else {
+    console.log(
+      `\n${c.B}⚠️ Gemini key not provided yet.${c.X} Before opening Claude Code, paste it into`
+    );
+    console.log(`   ${c.C}${toPosix(envPath)}${c.X} (line ${c.C}GOOGLE_GEMINI_API_KEY=${c.X}).`);
+  }
   console.log(
     `   If you open Claude Code first: paste the key then ask your question again (the server re-reads`
   );
