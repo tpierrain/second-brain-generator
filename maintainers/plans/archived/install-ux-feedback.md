@@ -1,5 +1,10 @@
 # Plan — Install UX feedback (v2 EN field test, 2026-06-10)
 
+> **STATUS: ✅ SHIPPED 2026-06-10** — all items A→G done & pushed (E `e993af4`, F `a16711c`,
+> G `03717ce`; A–D in the launcher stub `CLAUDE.md` + the `installer.mjs` menu via item F). The
+> end-of-install **handoff** feedback (separate Gemini QA, P1–P5) is tracked apart and was
+> deliberately parked by Thomas — not part of this plan's scope.
+
 > Source: Thomas live-tested the **v2 English install** end-to-end (clone → chat-driven
 > `--non-interactive` install → first conversation inside the brain `brainy`) and sent a series of
 > field-feedback screenshots. This plan collects **all** the resulting changes so they can be

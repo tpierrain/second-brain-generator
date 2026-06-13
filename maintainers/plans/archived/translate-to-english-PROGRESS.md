@@ -5,6 +5,9 @@
 
 # FR→EN translation — progress & resumption note
 
+> **STATUS: ✅ SHIPPED 2026-06-10** — translation delivered (PR #2 merged into `main`, `V2` tag).
+> Companion of [`translate-to-english.md`](translate-to-english.md). Kept for the lot-by-lot history.
+
 **Branch:** `chore/translate-to-english` (never work on `main`).
 **Full plan:** `maintainers/plans/translate-to-english.md`.
 **Net FR (filet):** `git checkout V1`.

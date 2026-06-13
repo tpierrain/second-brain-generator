@@ -48,24 +48,31 @@
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
   embedders (Step 4). `node scripts/run-eval.mjs`. **Dev-only** (excluded from the generated brain).
-- **`plans/`** — implementation plans, with a `STATUS` at the top (SHIPPED / IN PROGRESS / ABANDONED).
-  **Shipped** plans are moved to **`plans/archived/`**; only the plans still **open** stay at the
-  root of `plans/`.
-  - [`rag-embedder-plan-action.md`](plans/rag-embedder-plan-action.md) — **🗺️ action plan**
-    that **orchestrates** the embedder effort into **self-contained steps** (port → eval-set →
-    OpenAI-compatible adapter → measurement → onboarding → conditional levers), with a **progress
-    table** to drive it session by session (a `/clear` between each). A layer above the SPI plan +
-    study + ADR 0007. **STATUS: 🗺️ ACTION PLAN.**
-  - [`etude-rag-local-criteres-et-veille.md`](plans/etude-rag-local-criteres-et-veille.md) — **study/watch**:
-    offer a **range of RAG alternatives according to people's needs/constraints** (privacy, budget,
-    machine power, OS, install friction). Office / big-machine / API-endpoint profiles +
-    **refreshed** watch (EmbeddingGemma, bge-m3, Qwen3, E2GraphRAG…), **privacy scale by
-    provider**, plain-language "embedder ≠ chat LLM", eval-first. **STATUS: 🔬 STUDY — nothing
-    enacted.** *(feeds the SPI plan + ADR 0007)*
-  - [`translate-to-english.md`](plans/translate-to-english.md) — full FR → EN translation of the
-    generator (docs, skills, code, demo), tests made language-agnostic, on a dedicated branch.
-    **STATUS: TODO — pushed to the VERY END.**
-  - **`plans/archived/`** — shipped plans (archive, kept for the detail of the steps):
+- **`plans/`** — implementation plans, each with a `STATUS` line at the **top**
+  (🗺️ ACTION PLAN / 🔬 STUDY / ⏳ PENDING / IN PROGRESS / ✅ SHIPPED / ABANDONED).
+  > **Definition of done = archived.** The moment a plan ships, in the **same change**: set its top
+  > `STATUS` to ✅ (with the proof — commit SHAs / what was verified) **and `git mv` it into
+  > [`plans/archived/`](plans/archived/)**. Never leave a shipped plan at the root, and never delete it
+  > (the archive keeps the step-by-step detail). Only plans still **open** — action plans mid-flight,
+  > living studies, pending fixes — stay at the root of `plans/`.
+  - **Active (root of `plans/`):**
+    - [`rag-embedder-plan-action.md`](plans/rag-embedder-plan-action.md) — **🗺️ action plan**
+      that **orchestrates** the embedder effort into **self-contained steps** (port → eval-set →
+      OpenAI-compatible adapter → measurement → onboarding → conditional levers), with a **progress
+      table** to drive it session by session (a `/clear` between each). A layer above the SPI plan +
+      study + ADR 0007. **STATUS: 🗺️ ACTION PLAN** — Steps 1–5 shipped; Steps 6/7 (reranker /
+      big-machine graph-RAG) **conditional**, opened only if a quality ceiling is hit.
+    - [`etude-rag-local-criteres-et-veille.md`](plans/etude-rag-local-criteres-et-veille.md) — **study/watch**:
+      offer a **range of RAG alternatives according to people's needs/constraints** (privacy, budget,
+      machine power, OS, install friction). Office / big-machine / API-endpoint profiles +
+      **refreshed** watch (EmbeddingGemma, bge-m3, Qwen3, E2GraphRAG…), **privacy scale by
+      provider**, plain-language "embedder ≠ chat LLM", eval-first. **STATUS: 🔬 STUDY — nothing
+      enacted.** *(feeds the SPI plan + ADR 0007)*
+    - [`auto-open-env-gemini.md`](plans/auto-open-env-gemini.md) — make the **installer open `.env`
+      itself** on the Gemini-key path (CASE B), deterministically, instead of relying on the
+      Claude-driven amorce. Diagnosed (**not** a code regression — the old behaviour was the amorce,
+      non-deterministic). **STATUS: ⏳ PENDING** — fix to run after a `/clear`.
+  - **`plans/archived/`** — shipped/closed plans (kept for the detail of the steps):
     - [`embedder-spi.md`](plans/archived/embedder-spi.md) — abstract the RAG's embedder behind an
       `Embedder` SPI port + stamp the index with an identity (provider/model/dimension) to make a
       swap **safe** (natural-language confirm-gate, never a silent reindex). Concretizes
@@ -83,6 +90,19 @@
       from nvm (resolved by `run-node`). **STATUS: SHIPPED.**
     - [`rename-bootstrap-to-installer.md`](plans/archived/rename-bootstrap-to-installer.md) — rename
       `bootstrap` → `installer`. **STATUS: SHIPPED.**
+    - [`translate-to-english.md`](plans/archived/translate-to-english.md) — full FR → EN translation of
+      the generator (docs, skills, code, demo), tests made language-agnostic, on a dedicated branch.
+      **STATUS: ✅ DELIVERED 2026-06-10** (PR #2 merged into `main`, `V2` tag; FR preserved via `--lang fr`).
+    - [`translate-to-english-PROGRESS.md`](plans/archived/translate-to-english-PROGRESS.md) — lot-by-lot
+      resumption note for the translation chantier (companion of the plan above). **STATUS: ✅ SHIPPED.**
+    - [`inprocess-en-canary-fix.md`](plans/archived/inprocess-en-canary-fix.md) — fix the **in-process +
+      EN** post-flight canary failure: the winning chunk ranked #9 but `SEARCH_DEFAULT_LIMIT` was 5.
+      Fix "Both": raise the limit 5→8 **and** re-phrase the EN inertia-trophy note so the chunk ranks #1.
+      **STATUS: ✅ SHIPPED 2026-06-10** (commits `4dc2200` + `aa60ede`; EN & FR in-process exit 0).
+    - [`install-ux-feedback.md`](plans/archived/install-ux-feedback.md) — changes from the **v2 EN
+      install field test** (location question, embedder wording, Desktop-first recap, example-notes
+      purge, installer menu, README findability). Items A→G. **STATUS: ✅ SHIPPED 2026-06-10**
+      (E `e993af4`, F `a16711c`, G `03717ce`).
 - **`retrospectives/`** — 📝 **takeaway-oriented retros**: the **story** of a notable session
   (the starting question, the path investigation→measurement→fix, the transferable lessons). To be
   distinguished from ADRs (the *why* of a decision) and plans (the *what/how*): here it's the

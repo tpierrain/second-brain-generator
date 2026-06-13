@@ -1,5 +1,10 @@
 # Plan — Fix the in-process + EN canary failure (2026-06-10)
 
+> **STATUS: ✅ SHIPPED 2026-06-10** — fix "Both" delivered (commits `4dc2200` *raise
+> `SEARCH_DEFAULT_LIMIT` 5→8* + `aa60ede` *re-phrase EN inertia-trophy note so the winner chunk ranks #1*).
+> `SEARCH_DEFAULT_LIMIT = 8` (`rag/src/lib/config.ts:44`); EN **and** FR in-process installs exit 0;
+> grep-proof 3-stage canary preserved. Memory `en-translation-broke-inprocess-canary.md` marked RESOLVED.
+
 > **Delegated after `/clear`.** Branch: `chore/install-ux-feedback` (E/F/G already shipped & pushed).
 > Decision taken by Thomas: **"Both"** — re-phrase the EN demo notes to lift the winner chunk into
 > the default top-K **and** bump `SEARCH_DEFAULT_LIMIT`. TDD where it applies; validate **empirically**
