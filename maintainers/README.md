@@ -56,6 +56,13 @@
     LLM-driven / in-memory-timer one. Names a posture already applied piecemeal in 0002/0005/0006;
     reference instance = the `Stop`-event auto-push debounce. A *preference at equal reliability*, not
     a ban on timers/LLM judgment (bounded by the no-over-engineering rule).
+  - [`0010-debounce-auto-push-to-stop-hook.md`](decisions/0010-debounce-auto-push-to-stop-hook.md) —
+    **debounce auto-push to the `Stop` hook**: keep the per-edit local commit, but move `git push`
+    out of the per-edit hook to a once-per-turn `Stop` hook (N edits → N commits + 1 push,
+    best-effort `exit 0`, auto-catch-up of `@{u}..HEAD`). The reference instance of 0009. Records the
+    rejected alternatives (per-edit / 60 s throttle / state-file / pull-rebase) and the honest
+    validation boundary (logic + git proven; live `Stop`-firing assumed from docs). **Scope: Second
+    brain (runtime).**
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local

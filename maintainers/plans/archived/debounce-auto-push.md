@@ -7,6 +7,9 @@
 > empiriquement (shim git comptant les push) : 5 éditions/tour → 0 push, 1 seul push au `Stop`,
 > rattrapage complet ; push KO → exit 0 + ⚠️ + commits intacts ; no-remote & autopush=off → skip
 > silencieux. Indexation hors-scope (déjà debouncée + incrémentale).
+>
+> **Décision (le « why » durable) :** [`../../decisions/0010-debounce-auto-push-to-stop-hook.md`](../../decisions/0010-debounce-auto-push-to-stop-hook.md)
+> (ADR 0010) — instance de référence d'[`../../decisions/0009-prefer-deterministic-mechanisms.md`](../../decisions/0009-prefer-deterministic-mechanisms.md).
 
 > **À exécuter après un `/clear`.** Branche : `feat/debounce-auto-push`.
 > Objectif Thomas : les **commits permanents** lui vont, mais le **push à chaque édition** doit être

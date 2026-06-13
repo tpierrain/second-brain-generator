@@ -7,7 +7,8 @@
   (trust + **fail-loud**, deterministic pre-flight, visible startup status),
   [`0006-rag-mcp-is-stable-contract.md`](0006-rag-mcp-is-stable-contract.md)
   (embedder swap = **confirm-gate, never a silent reindex**).
-- **Reference instance:** [`../plans/archived/debounce-auto-push.md`](../plans/archived/debounce-auto-push.md)
+- **Reference instance:** [`0010-debounce-auto-push-to-stop-hook.md`](0010-debounce-auto-push-to-stop-hook.md)
+  / [`../plans/archived/debounce-auto-push.md`](../plans/archived/debounce-auto-push.md)
   (the `Stop` event **is** the debounce — no timer, no state file).
 
 ## Context
