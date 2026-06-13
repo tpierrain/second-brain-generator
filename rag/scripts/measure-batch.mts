@@ -1,16 +1,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// measure-batch.mts — mesure footprint de l'indexation IN-PROCESS sur un vault dense
-// (Étape 4-ter du plan embedder : caler le plafond de lot `EMBED_BATCH`).
+// measure-batch.mts — measure the footprint of IN-PROCESS indexing on a dense vault
+// (Step 4-ter of the embedder plan: tune the batch cap `EMBED_BATCH`).
 //
 //   node --import tsx scripts/measure-batch.mts <batchSize> [vaultPath]
 //
-// Réplique le câblage in-process de selectEmbedder (EmbeddingGemma-300m ONNX q8 +
-// prompts de tâche) et le pipeline d'indexation (scan → parse → chunk → embed par
-// doc), mais avec une persistance NEUTRE (compte seulement). Rien n'est écrit, rien
-// ne sort du process (embedder local). Échantillonne le RSS pour en sortir le PIC.
+// Replicates selectEmbedder's in-process wiring (EmbeddingGemma-300m ONNX q8 +
+// task prompts) and the indexing pipeline (scan → parse → chunk → embed per
+// doc), but with a NEUTRAL persistence (counts only). Nothing is written, nothing
+// leaves the process (local embedder). Samples the RSS to extract the PEAK.
 //
-// Sortie = une ligne CSV-like : batch, notes, chunks, pic RSS, temps, chunks/s.
-// Tout le reste de l'instrument est inchangé entre runs → comparaison honnête.
+// Output = one CSV-like line: batch, notes, chunks, peak RSS, time, chunks/s.
+// Everything else in the instrument is unchanged between runs → honest comparison.
 // ─────────────────────────────────────────────────────────────────────────────
 import { readFile, readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -25,9 +25,9 @@ import {
 
 const MODEL = "onnx-community/embeddinggemma-300m-ONNX";
 
-// Défaut public-safe = le vault d'exemple du repo (Flemmr, 7 notes). Pour caler le
-// plafond, pointer un VRAI vault dense via l'argument ou $MEASURE_VAULT (jamais
-// codé en dur ici — un chemin personnel n'a rien à faire dans le dépôt).
+// Public-safe default = the repo's example vault (Flemmr, 7 notes). To tune the
+// cap, point at a REAL dense vault via the argument or $MEASURE_VAULT (never
+// hard-coded here — a personal path has no business in the repo).
 const REPO_VAULT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "vault");
 const batchSize = Number(process.argv[2]);
 const vaultPath = process.argv[3] ?? process.env.MEASURE_VAULT ?? REPO_VAULT;
@@ -35,12 +35,12 @@ const vaultPath = process.argv[3] ?? process.env.MEASURE_VAULT ?? REPO_VAULT;
 if (!Number.isInteger(batchSize) || batchSize < 1) {
   console.error(
     "usage: node --import tsx scripts/measure-batch.mts <batchSize> [vaultPath]\n" +
-      "       (sinon $MEASURE_VAULT, sinon le vault d'exemple du repo)"
+      "       (otherwise $MEASURE_VAULT, otherwise the repo's example vault)"
   );
   process.exit(1);
 }
 
-/** Liste récursive des .md sous `dir`. */
+/** Recursive list of .md files under `dir`. */
 async function listMarkdown(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
   const files: string[] = [];
@@ -52,7 +52,7 @@ async function listMarkdown(dir: string): Promise<string[]> {
   return files;
 }
 
-/** Échantillonne le RSS en continu et retient le pic (bytes). */
+/** Continuously samples the RSS and keeps the peak (bytes). */
 function startRssSampler(): { stop: () => number } {
   let peak = process.memoryUsage().rss;
   const timer = setInterval(() => {
@@ -68,7 +68,7 @@ const gib = (bytes: number) => (bytes / 1024 ** 3).toFixed(2);
 async function main() {
   const files = await listMarkdown(vaultPath);
 
-  // Phase 1 — scan + parse + chunk (sans embed), comme index-manager.
+  // Phase 1 — scan + parse + chunk (no embed), like index-manager.
   const docs: { path: string; contents: string[] }[] = [];
   let totalChunks = 0;
   for (const abs of files) {
@@ -88,17 +88,17 @@ async function main() {
   });
 
   console.error(
-    `[batch=${batchSize}] ${docs.length} notes · ${totalChunks} chunks · chargement du modèle + indexation…`
+    `[batch=${batchSize}] ${docs.length} notes · ${totalChunks} chunks · loading the model + indexing…`
   );
 
   const sampler = startRssSampler();
   const t0 = process.hrtime.bigint();
 
-  // Phase 2 — embed par doc + persistance NEUTRE (on jette les vecteurs, on compte).
+  // Phase 2 — embed per doc + NEUTRAL persistence (we drop the vectors, we count).
   let embedded = 0;
   for (const doc of docs) {
     const vectors = await embedder.embedDocuments(doc.contents);
-    embedded += vectors.length; // « persiste » : ici on compte seulement
+    embedded += vectors.length; // "persists": here we only count
   }
 
   const seconds = Number(process.hrtime.bigint() - t0) / 1e9;
@@ -108,9 +108,9 @@ async function main() {
     `batch=${batchSize}`,
     `notes=${docs.length}`,
     `chunks=${embedded}`,
-    `picRSS=${gib(peak)}Go`,
-    `temps=${(seconds / 60).toFixed(2)}min`,
-    `débit=${(embedded / seconds).toFixed(1)}chunks/s`,
+    `peakRSS=${gib(peak)}GB`,
+    `time=${(seconds / 60).toFixed(2)}min`,
+    `throughput=${(embedded / seconds).toFixed(1)}chunks/s`,
   ].join(" · ");
   console.log(line);
 }
