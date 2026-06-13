@@ -11,15 +11,25 @@
 
 ## Context
 
-This project ships to **non-developers** who run it on **bare machines** (no dev tooling), often
-through the **desktop app** (minimal PATH, frozen working directory). In that setting, anything that
-depends on a probabilistic guess, an in-memory timer, an LLM remembering to do the right thing, or a
-piece of hidden state that can drift, is a **latent failure** — and a failure a non-dev cannot
-diagnose. Several earlier ADRs each reached, independently, for the **same answer**: lean on
-something **deterministic** and **observable** rather than something clever-but-fragile.
+A second brain is a **trust artifact**: it holds the user's own thinking, and day after day they
+**offload** to it — they stop re-checking whether a note was saved, whether an answer really came
+from *their* vault, whether today's edits were backed up. That offloading **is** the value; it is
+also the exposure. The failures that break a second brain are the **silent** ones — a note not
+persisted, a search that answers from *outside* the vault, a push that quietly never happened —
+precisely because, by design, the user is no longer watching. A **deterministic, observable**
+mechanism is how the brain earns the right to be trusted **unwatched**.
 
-That recurring reasoning was never written down as a principle — only as the local conclusion of
-0002, 0005, 0006. This ADR **names it**, so future decisions can cite it instead of re-deriving it.
+Two facts sharpen this. The brain runs **unattended on the user's machine** — hooks fire on every
+edit, the RAG answers in the background — so a flaky step has no human in the loop to catch it. And
+it ships to **non-developers on bare machines** (minimal PATH, frozen working directory, often the
+desktop app) who **cannot diagnose** a probabilistic glitch when one slips through. So anything that
+rests on a guessed timer, an in-memory state that can drift, or "the LLM will remember to do it" is a
+**latent, undiagnosable failure** — exactly where a second brain loses trust and never gets it back.
+
+Several earlier ADRs each reached, independently, for the **same answer**: lean on something
+**deterministic** and **observable** rather than clever-but-fragile. That reasoning was never written
+down as a principle — only as the local conclusion of 0002, 0005, 0006. This ADR **names it**, so
+future decisions can cite it instead of re-deriving it.
 
 ## Decision
 
@@ -44,18 +54,35 @@ LLM remembering or on timing luck when a deterministic seam is available for rou
 
 ## Instances (this principle, already applied)
 
+**In the brain's daily use (the heart of it):**
+
+- **Your notes are persisted on an event, not on a memory** — auto-commit fires on **every**
+  `Write|Edit` (PostToolUse hook): a note is committed locally the instant it changes, no batching,
+  no "save later". The brain's most basic promise — *your writing is never lost* — rests on the edit
+  event itself, not on anyone (human or LLM) remembering to save.
+- **debounce-auto-push (2026-06-13)** — the **`Stop` hook event IS the debounce**: N edits in a turn
+  → N local commits + **exactly 1 push**, with **no in-memory timer and no state file**. A 60 s
+  throttle was explicitly rejected as probabilistic over-engineering. Push is **best-effort, exit 0**;
+  a failure self-recovers at the next `Stop`. Changes *when* the brain backs up without ever risking
+  the durable copy.
+- **The RAG answers FROM the vault, or says so out loud** — the install's **sourced canary** (proves
+  the answer came from the vault, not the open web) and the embedder **confirm-gate** keyed on a
+  deterministic index identity (provider/model/dimension, ADR 0006): a search **never silently**
+  returns from outside the vault or off an incompatible index — it surfaces an explicit signal.
+  Trust in the brain's *answers* rests on a checkable identity, not on hope.
+
+**In the installer / onboarding (the aggravating circumstance — non-dev, bare machine):**
+
 - **0002** — the whole install is **one deterministic script** (`installer.mjs --non-interactive`),
   not a chat sequence the model might fumble.
 - **0005** — install gate reversed to **trust + fail-loud**: deterministic pre-flight, GUI-visible
   startup status, sourced post-flight canary — catch loudly rather than prevent probabilistically.
-- **0006 (addendum)** — embedder swap is a **natural-language confirm-gate** keyed on a deterministic
-  index identity (provider/model/dimension), **never a silent reindex** that would search wrong.
-- **debounce-auto-push (2026-06-13)** — the **`Stop` hook event IS the debounce**: N edits in a turn
-  → N local commits + **exactly 1 push**, with **no in-memory timer and no state file**. A 60 s
-  throttle was explicitly rejected as probabilistic over-engineering. Push is **best-effort, exit 0**;
-  a failure self-recovers at the next `Stop`.
+
+**Spanning both (the brain runs on the same bare machine it was installed on):**
+
 - **run-node self-heal** — the hooks **re-resolve** node's location on **every** run (enriched PATH),
-  rather than baking a path that can rot when the machine changes.
+  rather than baking a path that can rot when the machine changes — so auto-commit/push and the RAG
+  keep working at runtime, not just at install time.
 
 ## Consequences
 
