@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
 // auto-commit.mjs — deterministic vault persistence. Called by the PostToolUse
-// hook (Write|Edit): commit (+ push if a remote exists) on every file
-// modification — hence the "auto: …" commits.
+// hook (Write|Edit): commits on every file modification — hence the "auto: …"
+// commits. COMMIT-ONLY: it never pushes. The push is debounced to once per turn
+// by the Stop hook (scripts/auto-push.mjs), so N edits = N local commits + 1
+// push (avoids a network push per edit + its blocking retry pause).
 //
 // Cross-OS: pure Node, no shell dependency. The repo root is derived from the
 // script location (not the hook's cwd).
@@ -26,30 +28,11 @@ function git(args) {
   }
 }
 
-// Synchronous pause (the hook runs in blocking mode, with a timeout on the Claude Code side).
-function sleepSync(ms) {
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-}
-
 const dirty = git(["status", "--porcelain"]).out.trim().length > 0;
 if (!dirty) process.exit(0);
 
 git(["add", "."]);
 git(["commit", "-m", "auto: vault/claude sync"]);
-
-// Explicit OPT-IN push (Layer 1): the mere presence of a remote is NOT enough.
-// We only push if the user has enabled it (`git config secondbrain.autopush
-// true`, set by the "remote repository" step of the install).
-// Guarantee: an inherited remote (a clone still linked to the generator) NEVER
-// receives the private notes — leaking is impossible by default, without
-// touching .git.
-const hasRemote = git(["remote"]).out.trim().length > 0;
-const autopush = git(["config", "--get", "secondbrain.autopush"]).out.trim() === "true";
-if (hasRemote && autopush && !git(["push"]).ok) {
-  sleepSync(3000);
-  if (!git(["push"]).ok) {
-    process.stdout.write(
-      "\n⚠️  PUSH FAILED — local commit OK but not pushed. Check your network then: git push\n"
-    );
-  }
-}
+// No push here — the Stop hook (auto-push.mjs) pushes pending commits once per
+// turn. The opt-in gate (secondbrain.autopush) + inherited-remote safety now
+// live there.

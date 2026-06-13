@@ -22,10 +22,10 @@
   - [x] si `shouldPush` → `git push` ; échec → 1 retry après pause courte → si encore KO, message `⚠️ PUSH FAILED…`, **exit 0**
   - [x] **TOUJOURS `exit 0`** (jamais bloquant) ; ignore le stdin du hook
   - [x] `auto-push.test.mjs` : push only when remote+autopush+unpushed ; skip sinon ; throw du runner avalé → exit 0 ; rien à pousser → pas d'appel réseau _(5/5)_
-- [ ] **Part 3 — `scripts/auto-commit.mjs` devient commit-only**
-  - [ ] retirer le bloc push (`hasRemote && autopush && git push` + `sleepSync`)
-  - [ ] garder add + commit + le early-exit « rien de sale »
-  - [ ] MAJ `auto-commit.test.mjs` : « commit-only, ne pousse JAMAIS » (même avec remote+autopush)
+- [x] **Part 3 — `scripts/auto-commit.mjs` devient commit-only** _(2026-06-13)_
+  - [x] retirer le bloc push (`hasRemote && autopush && git push` + `sleepSync`) _(sleepSync mort retiré aussi)_
+  - [x] garder add + commit + le early-exit « rien de sale »
+  - [x] MAJ `auto-commit.test.mjs` : « commit-only, ne pousse JAMAIS » (même avec remote+autopush) _(4/4)_
 - [ ] **Part 4 — Câbler le hook `Stop` dans `.claude/settings.json.template`**
   - [ ] ajouter un bloc `"Stop"` → `{{NODE}} "{{PROJECT_ROOT}}/scripts/auto-push.mjs"` (timeout 30000)
   - [ ] PostToolUse `Write|Edit` reste → `auto-commit.mjs` (inchangé côté câblage)
