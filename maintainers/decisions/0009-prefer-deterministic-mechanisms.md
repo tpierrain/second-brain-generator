@@ -10,6 +10,9 @@
 - **Reference instance:** [`0010-debounce-auto-push-to-stop-hook.md`](0010-debounce-auto-push-to-stop-hook.md)
   / [`../plans/archived/debounce-auto-push.md`](../plans/archived/debounce-auto-push.md)
   (the `Stop` event **is** the debounce — no timer, no state file).
+- **Names a split this principle implies:** [`0011-distinct-triggers-indexing-vs-git.md`](0011-distinct-triggers-indexing-vs-git.md)
+  (the `chokidar` indexer and the git hooks stay on **distinct triggers** — rungs 3 and 4 below are
+  not unified into one watcher).
 
 ## Context
 

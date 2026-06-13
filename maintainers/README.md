@@ -63,6 +63,16 @@
     rejected alternatives (per-edit / 60 s throttle / state-file / pull-rebase) and the honest
     validation boundary (logic + git proven; live `Stop`-firing assumed from docs). **Scope: Second
     brain (runtime).**
+  - [`0011-distinct-triggers-indexing-vs-git.md`](decisions/0011-distinct-triggers-indexing-vs-git.md) —
+    **indexing and git auto-save keep distinct triggers**: `chokidar` (MCP process) drives **indexing
+    only**; the Claude **`PostToolUse`/`Stop`** hooks drive **git**. We do **not** unify on the
+    file-watcher (it would **share git's fate with the RAG's failure domain** — MCP down ⇒ backup down,
+    the unsaved note being the worst failure — lose Claude's **intent-bearing commit messages** for a
+    watcher's blind diff, put a timer in the commit path, and amplify the multi-window race; all for a
+    coverage win the watcher's own lifecycle only half-delivers). Documents the **accepted gap**
+    (non-Claude/Obsidian edits) + the on-brand remedy held in reserve (an event-bound `git add -A`
+    sweep on `SessionStart`/`Stop`, gated on a *proven* need). Names the split ADR 0009 already
+    implied. **Scope: Second brain (runtime).**
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
