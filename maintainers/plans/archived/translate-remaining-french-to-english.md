@@ -1,6 +1,9 @@
 # Plan — Translate the remaining French to English (international OSS)
 
-> **STATUS: 🚧 IN PROGRESS** (created 2026-06-12). Lots 1 & 2 ✅ SHIPPED (`fbd70ba` + this lot). Lot 3 pending.
+> **STATUS: ✅ DONE** (created 2026-06-12, completed 2026-06-13). Lot 1 ✅ (`fbd70ba`), Lot 2 ✅
+> (`e6e1801`), Lot 3 ✅ (nothing to translate — all residual FR is intentional records/keeps). The
+> repo's remaining accented strings are now 100% accounted for as documented intentional keeps
+> (loanword `à la carte`, `--lang français` alias, demo proper nouns, the `fr`-locale demo/stopwords).
 > Thomas decision (scope question): **"Everything, including archived plans"** — translate ALL
 > remaining French prose in the repo, **preserving quoted French** (real commit messages in
 > backticks, screenshot quotes, the `starter→générateur` naming analysis which is *about* French).
@@ -11,8 +14,12 @@
 
 - [x] **Lot 1** — `.gitignore` + measure scripts (✅ SHIPPED `fbd70ba`)
 - [x] **Lot 2** — active maintainer docs + coordinated anchor renames (✅ all 7 anchors repointed to the live EN headings, verified by slugger; the two FR *records* — QA-screenshot quote + real commit message — kept verbatim) _(2026-06-13)_
-- [ ] **Lot 3** — archived plans (prose only, quoted French preserved)
-- [ ] **On completion** — STATUS ✅ + `git mv` to `plans/archived/` + refresh README
+- [x] **Lot 3** — archived plans: **nothing to translate** — every residual FR string is an
+  intentional *record* (the bodies were already EN from the earlier PR #2 effort). Verified file by
+  file: French commit-message suggestions in backticks, demo proper-noun slugs, the `--lang français`
+  alias, the naming-analysis of "générateur", Thomas's quoted `"A pour l'instant"` decision, and the
+  documented "FR-to-keep" list — all kept verbatim by design. _(2026-06-13)_
+- [x] **On completion** — STATUS ✅ + `git mv` to `plans/archived/` + refresh README _(2026-06-13)_
 
 ## Hard guardrails (the project is in heavy active use — ZERO regression)
 
@@ -73,22 +80,26 @@ French heading anchors to rename + their referrers:
 github-slugger reproduction — **all resolve** (they were dangling on French slugs before). Re-grep
 for `#étape|#étude|défaut-dembedder` returns only this plan file (its own task descriptions).
 
-## Lot 3 — Archived plans (prose translated, quoted French preserved)  ⬜ TODO
+## Lot 3 — Archived plans (prose translated, quoted French preserved)  ✅ SHIPPED _(2026-06-13)_
 
-Files with FR (line counts at creation). **Rule of thumb: translate explanatory prose, keep verbatim
-any *record*** (real commit messages, CLI invocations actually run, screenshot quotes, the analysis
-of a French word):
+**Outcome: nothing to translate.** The explanatory prose in every archived plan was already English
+(translated during the earlier PR #2 effort). The only residual FR is exactly the *records* the rule
+of thumb says to keep verbatim (real commit messages, CLI invocations actually run, screenshot/decision
+quotes, the analysis of a French word). Triaged file by file:
 
-- [ ] `launcher-vs-brain.md` (8 — contains the `starter→générateur` **naming analysis**, inherently
-  about French → keep the French *words under analysis*)
-- [ ] `translate-to-english-PROGRESS.md` (8 — partly the documented "intentional FR to keep" list)
-- [ ] `translate-to-english.md` (4)
-- [ ] `claude-driven-install.md` (3 — French `--lang français` examples + `--context` notes)
-- [ ] `harden-run-node-smoke-and-coverage.md` (3 — **French commit-message suggestions** in backticks
-  → keep verbatim, they're records)
-- [ ] `fix-hooks-node-nvm.md` (2 — same)
-- [ ] `inprocess-en-canary-fix.md` (3)
-- [ ] `install-ux-feedback.md` (1)
+- [x] `launcher-vs-brain.md` — the `starter→générateur` **naming analysis**: French words *under
+  analysis* + quoted file contents → **kept** (translating them would destroy the analysis).
+- [x] `translate-to-english-PROGRESS.md` — the documented "intentional FR to keep" list + proper-noun
+  slugs → **kept** (it literally enumerates the strings to preserve).
+- [x] `translate-to-english.md` — loanword `à-la-carte` + demo proper nouns/slugs → **kept**.
+- [x] `claude-driven-install.md` — `--lang français` / `language: "français"` alias examples → **kept**.
+- [x] `harden-run-node-smoke-and-coverage.md` — **French commit-message suggestions** in backticks
+  (records) → **kept verbatim**.
+- [x] `fix-hooks-node-nvm.md` — same (French commit-message suggestions in backticks) → **kept**.
+- [x] `inprocess-en-canary-fix.md` — only `Pélagie de Mollecuisse` / `jean-kevin-de-la-glandee`
+  proper nouns (the canary) → **kept**.
+- [x] `install-ux-feedback.md` — `à la carte` anchor + Thomas's quoted decision `"A pour l'instant"`
+  (a record) → **kept**.
 
 Already clean (0, nothing to do): `embedder-spi.md`, `onglet-code-desktop.md`, `rename-bootstrap-to-installer.md`.
 

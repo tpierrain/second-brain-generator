@@ -103,6 +103,11 @@
       install field test** (location question, embedder wording, Desktop-first recap, example-notes
       purge, installer menu, README findability). Items A→G. **STATUS: ✅ SHIPPED 2026-06-10**
       (E `e993af4`, F `a16711c`, G `03717ce`).
+    - [`translate-remaining-french-to-english.md`](plans/archived/translate-remaining-french-to-english.md) —
+      mop-up of the **last French** left after PR #2, in dev-only surfaces (comments, measure scripts,
+      `maintainers/**`). Lot 1 = `.gitignore` + measure scripts; Lot 2 = repoint 7 dangling cross-doc
+      `#anchor` links onto the live EN headings; Lot 3 = archived plans (nothing to translate — all
+      residual FR is intentional records/keeps). **STATUS: ✅ SHIPPED 2026-06-13** (`fbd70ba`, `e6e1801`).
 - **`retrospectives/`** — 📝 **takeaway-oriented retros**: the **story** of a notable session
   (the starting question, the path investigation→measurement→fix, the transferable lessons). To be
   distinguished from ADRs (the *why* of a decision) and plans (the *what/how*): here it's the
