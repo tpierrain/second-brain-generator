@@ -61,3 +61,31 @@ We **do not package** the generator as a plugin/marketplace for now.
   discoverability, but multiplies the maintenance surface (package + marketplace + script) for a
   benefit that only materializes with a user base. **Not rejected forever**: to reconsider at
   publication, leaning on feedback (cf. ADR 0003 and 0004).
+
+## Addendum (2026-06-14) — a plugin can't *replace* the scaffolder, but it can *distribute* it
+
+A fair challenge (Thomas) on the wording above: *"No plugin does that — you'd need a scaffolder on top
+anyway"* can be **misread as "a plugin is incapable of installing a brain"**. That overstates it.
+The precise picture:
+
+- A Claude Code plugin bundles skills + **slash-commands** + hooks + MCP servers + agents, and a
+  command **can run arbitrary code**. So a plugin can perfectly well **ship `installer.mjs` and expose
+  a `/install-second-brain` command** that runs it — with the marketplace's discoverability as a bonus.
+- What stays true is narrower: a plugin **cannot *replace* the scaffolder** (a plugin adds *shared
+  capabilities* to an existing Claude env; it does not, by itself, create the *owned per-user
+  git repo + constitution + auto-commit*). It can only **distribute** that scaffolder. The brain's
+  hooks still land in the **brain's local `settings.json`** (written by the scaffolder), not as global
+  plugin hooks — so the hook-targeting concern above is unaffected.
+
+This is exactly the **"Hybrid (npm engine + plugin + thin scaffolder)"** alternative already listed —
+which we **did not reject**, only deferred to publication. So the decision is unchanged (in-house
+installer **for now**, audience + maintenance-surface trade-offs), but the *reason* is "trade-offs",
+**not** "impossibility".
+
+**External data point.** [`codejunkie99/familiar-second-brain`](https://github.com/codejunkie99/familiar-second-brain)
+("Familiar", an Obsidian + Kimi-agents second brain) independently reached the **same architecture**:
+not a plugin, but a **clone-and-run installer** (`python3 scripts/install.py`, dry-run + smoke test)
+that scaffolds a **per-user vault + a local MCP server + a skill**, then plugs into MCP clients
+(Claude, Cursor, Codex). A separate project, same conclusion — corroborates the "you still need a
+scaffolder" core, even as it confirms the *plugin/marketplace-as-distribution* layer remains the open
+question for **when we publish**.
