@@ -13,13 +13,17 @@
 
 ## Contents
 
-- **`decisions/`** — the architecture decisions (ADRs): the *why*, durable.
+- **`decisions/`** — the decisions (ADRs): the *why*, durable. Not only product/architecture —
+  **structural process / maintainer-workflow decisions are recorded here too** (precedent: 0009–0011 for
+  engineering discipline, 0013 for the dev workflow). **The habit:** any decision that is *structural and
+  contestable later* gets an ADR (not typos/renames — those stay simple `DEVELOPING.md` Dev rules, which
+  may *link* to an ADR for the rationale).
   > **Each ADR carries a `Scope:` line** (right under `STATUS`) situating it on the project's
-  > backbone — the **launcher↔brain split** of ADR 0001. Three explicit values: **Installer** (how a
-  > brain is *created*), **Second brain (runtime)** (the generated brain in *daily use*), or both
-  > spelled out as **Second brain (runtime) + Installer**. A reading aid, not a taxonomy: it forces
-  > the author to ask "am I deciding about the installer, the second brain, or both?" — and lets a
-  > reader filter at a glance.
+  > backbone — the **launcher↔brain split** of ADR 0001. Values: **Installer** (how a brain is
+  > *created*), **Second brain (runtime)** (the generated brain in *daily use*), both spelled out as
+  > **Second brain (runtime) + Installer**, or — for process ADRs — **Generator development (maintainer
+  > workflow)** (how we develop the generator itself). A reading aid, not a taxonomy: it forces the
+  > author to ask "what am I deciding about?" — and lets a reader filter at a glance.
   - [`0001-launcher-vs-brain.md`](decisions/0001-launcher-vs-brain.md) — reusable read-only launcher
     vs brain created elsewhere; rename `starter` → `generator`.
   - [`0002-in-house-installer-vs-plugin.md`](decisions/0002-in-house-installer-vs-plugin.md) —
@@ -82,6 +86,14 @@
     is *never* deleted/overwritten, structurally. Three **regimes** (replace / merge-3way / never-touch),
     Engine versioned as a **vector**. **Phased + channel-deferred** (decouple now, defer npm/plugin to
     proven need; engine must start **offline**). **Scope: Second brain (runtime) + Installer.**
+  - [`0013-resume-via-single-open-pr.md`](decisions/0013-resume-via-single-open-pr.md) —
+    **resume multi-session work via the maintainer's single open PR** (the first *maintainer-workflow*
+    ADR). Invariant: **at most one open PR authored by `tpierrain`** (the agent never opens a 2nd, never
+    merges/closes on its own). Resume = *"reprends le plan où on en était sur la PR ouverte"* → list
+    `author:tpierrain` open PRs → the only one → checkout its branch → the plan's **Progress checklist**
+    → first unchecked big step. **Discoverable from any branch (even `main`)**, closing the egg-and-chicken
+    where the branch name only lived on the branch; **several PRs → a menu to pick** (never guess), zero →
+    ask. Operative rule = `DEVELOPING.md` §7. **Scope: Generator development (maintainer workflow).**
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
