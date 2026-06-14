@@ -60,10 +60,13 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
       **engine-owned scripts** to replace (the `merge` *scripts* — `auto-commit`/`auto-push`/`status-line`/
       `verify-rag` — **plus `update-engine` itself → self-updating**). **Invariant guard:** the plan
       **never** lists `CLAUDE.md`, `.claude/settings.json`, any `.claude/skills/**`, the vault, or `.env`.
-      _(2026-06-14 · single-arg `computeApplyPlan(targetManifest)`: the Phase-1 plan is fully determined by
-      the **target** engine's declared regimes + an intrinsic sacred denylist — the local manifest governs
-      the **reindex** decision (Step 5) and the Phase-2 3-way, not the file-action list, so feeding it here
-      would be a dead param. Noted for the maintainer.)_
+      _(2026-06-14 · single-arg `computeApplyPlan(targetManifest)` — **DECISION VALIDATED with the
+      maintainer**: the Phase-1 plan is fully determined by the **target** engine's declared regimes + an
+      intrinsic sacred denylist; the local manifest governs the **reindex** decision (Step 5) and the
+      Phase-2 3-way (a future, separate merge-planner — base+local+target), not the file-action list, so
+      feeding it here would be a dead param. Upgradeability is unaffected: `update-engine` **self-replaces**
+      (core + libs in the allowlist), so widening this signature later ships free with the new engine — the
+      only forward-frozen contract is the brain's recorded manifest shape, already seeded at Step 1.)_
   - [x] `scripts/lib/engine-apply-plan.mjs` (pure: target manifest → file action list). Tests. _(TDD
         baby-steps: `overwrite` ← `replace`, `regenerate` ← launchers, `replaceScripts` ← `merge` ∩
         `scripts/*.mjs` incl. `update-engine.mjs`; user merge files (CLAUDE.md/settings/skills) excluded.
@@ -77,6 +80,21 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
       `.sh`+`.cmd` launchers, replace the engine-owned scripts (update-engine script **last**), then
       `npm install` in `rag/`. Everything outside the plan is untouched. Tests assert byte-identity of
       vault/`.env`/`CLAUDE.md`/settings/skills before vs after.
+  - [ ] **⚠️ CRITICAL for upgradeability (raised with the maintainer 2026-06-14) — the engine must carry
+        its OWN code in the allowlist, or a brain installed by this PR can never be cleanly upgraded.** The
+        shipped `engine-manifest.json` currently declares only 4 top-level scripts (`auto-commit`,
+        `auto-push`, `status-line`, `verify-rag`); but the `update-engine` machinery lives in
+        **`scripts/update-engine.mjs`** (the core) **and `scripts/lib/**`** (`engine-fetch`,
+        `engine-apply-plan`, `engine-source`, `glob-match`, + future). If these are not engine-owned in the
+        manifest, an upgrade would replace the core but leave its libs stale → incoherent engine. So at this
+        step we MUST: (a) **add `scripts/update-engine.mjs` + `scripts/lib/**` to the manifest** as
+        Engine-owned (likely `replace`, since they are pure overwrite-on-update, not user-merge); (b) make
+        `computeApplyPlan` cover **`scripts/lib/**`** — today `ENGINE_SCRIPT = /^scripts\/[^/]+\.mjs$/` is
+        **top-level only**, so a lib listed under `merge` would be missed (covering them via `replace` side-
+        steps that; if any engine script needs to live under `merge`, extend the regex/classification); and
+        (c) ship the brain copy of these libs at install (verify the installer copies `scripts/lib/**`). Add
+        a guard test: every engine `.mjs` the core imports is `planTouches`-true (the engine fully replaces
+        itself, libs included).
   - [ ] `scripts/update-engine.mjs` (deterministic core wiring 1→4). Tests + the **Gate goes GREEN here**.
 - [ ] **Step 5 — Reindex iff the index schema moved.** Compare the brain's `indexSchemaVersion` to the
       target's; on change → run the **existing confirm→reindex** path (ADR 0007 machinery + the Phase 0
