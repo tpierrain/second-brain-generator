@@ -88,7 +88,13 @@ function engineFiles(tag) {
   };
 }
 
-function manifest({ ragVersion, indexSchemaVersion, ref }) {
+// fingerprint, as engine-source records it (self-describing sha256) — used to assert
+// the provenance base is preserved / refreshed correctly after the swap (Step 5).
+function fp(content) {
+  return "sha256:" + createHash("sha256").update(content).digest("hex");
+}
+
+function manifest({ ragVersion, indexSchemaVersion, ref, provenance = {} }) {
   return JSON.stringify(
     {
       manifestVersion: 1,
@@ -110,7 +116,7 @@ function manifest({ ragVersion, indexSchemaVersion, ref }) {
       },
       engineMcpServers: ["vault-rag"],
       source: { repo: "https://example.test/launcher.git", ref },
-      provenance: {},
+      provenance,
     },
     null,
     2,
@@ -126,7 +132,22 @@ function buildBrain() {
   const dir = mkdtempSync(join(tmpdir(), "sbg-brain-"));
   for (const [rel, content] of Object.entries(flat(engineFiles("vA")))) writeFile(dir, rel, content);
   for (const [rel, content] of Object.entries(SACRED)) writeFile(dir, rel, content);
-  writeFile(dir, "engine-manifest.json", manifest({ ragVersion: "1.0.0", indexSchemaVersion: 1, ref: "v1.0.0" }));
+  writeFile(
+    dir,
+    "engine-manifest.json",
+    manifest({
+      ragVersion: "1.0.0",
+      indexSchemaVersion: 1,
+      ref: "v1.0.0",
+      // The base the engine last delivered: a user merge file (CLAUDE.md) + a vA
+      // engine script. Step 5 must PRESERVE the former (never re-delivered) and
+      // REFRESH the latter (re-delivered as vB).
+      provenance: {
+        "CLAUDE.md": fp(SACRED["CLAUDE.md"]),
+        "scripts/auto-commit.mjs": fp(engineFiles("vA").engineScripts["scripts/auto-commit.mjs"]),
+      },
+    }),
+  );
   return dir;
 }
 
@@ -232,6 +253,20 @@ for (const platform of ["posix", "win32"]) {
     assert.equal(m.engineVersion.rag, "1.1.0", "manifest engineVersion.rag must be bumped to the target");
     assert.equal(m.indexSchemaVersion, 2, "manifest indexSchemaVersion must follow the target");
     assert.equal(m.source.ref, "v1.1.0", "manifest source.ref must record the pulled ref");
+
+    // 6. PROVENANCE RE-SEED (Step 5): the base for the re-delivered engine script is
+    //    refreshed to vB, while the user merge file's base (never touched) is preserved
+    //    — so Phase 2's 3-way still detects any edit the user made to CLAUDE.md.
+    assert.equal(
+      m.provenance["scripts/auto-commit.mjs"],
+      fp(engineFiles("vB").engineScripts["scripts/auto-commit.mjs"]),
+      "re-delivered engine script's provenance base must be refreshed to vB",
+    );
+    assert.equal(
+      m.provenance["CLAUDE.md"],
+      fp(SACRED["CLAUDE.md"]),
+      "an untouched user merge file's provenance base must be preserved",
+    );
   });
 }
 

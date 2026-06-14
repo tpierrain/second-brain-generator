@@ -11,6 +11,7 @@ import {
   buildProvenance,
   buildSource,
   enrichManifest,
+  reseedProvenance,
   recordSourceAndProvenance,
 } from "./engine-source.mjs";
 
@@ -107,6 +108,47 @@ test("enrichManifest — sets source + provenance, preserves the rest, never mut
   // The input object is left untouched (still the empty provenance, still no source).
   assert.deepEqual(original.provenance, {});
   assert.equal("source" in original, false);
+});
+
+// ── reseedProvenance: refresh the 3-way base after an update-engine swap (Step 5) ──
+// After the engine swap, the base for Phase 2's 3-way must track ONLY the files the
+// engine actually re-delivered (the merge-bucket engine scripts). Files the engine
+// replaces outright (rag/src…) never carry a provenance base — same as at install.
+
+test("reseedProvenance — refreshes the base ONLY for re-delivered merge files (replace-regime files stay out)", () => {
+  const target = {
+    regimes: {
+      replace: ["rag/src/**"],
+      merge: ["CLAUDE.md", "scripts/auto-commit.mjs"],
+    },
+  };
+  const deliveredFileMap = {
+    "scripts/auto-commit.mjs": "// auto-commit vB", // a re-delivered merge file → refresh
+    "rag/src/index.ts": "// engine vB", // replace-regime → must NOT enter provenance
+  };
+
+  const reseeded = reseedProvenance({ priorProvenance: {}, manifest: target, deliveredFileMap });
+
+  assert.deepEqual(reseeded, {
+    "scripts/auto-commit.mjs": fingerprint("// auto-commit vB"),
+  });
+});
+
+test("reseedProvenance — a user merge file the swap never touched KEEPS its prior base (Phase 2 still sees the edit)", () => {
+  const target = { regimes: { merge: ["CLAUDE.md", "scripts/auto-commit.mjs"] } };
+  const prior = {
+    "CLAUDE.md": fingerprint("the engine's last-delivered constitution"),
+    "scripts/auto-commit.mjs": fingerprint("// auto-commit vA"),
+  };
+  // Phase 1 re-delivers ONLY the engine script; CLAUDE.md is never touched.
+  const deliveredFileMap = { "scripts/auto-commit.mjs": "// auto-commit vB" };
+
+  const reseeded = reseedProvenance({ priorProvenance: prior, manifest: target, deliveredFileMap });
+
+  assert.deepEqual(reseeded, {
+    "CLAUDE.md": fingerprint("the engine's last-delivered constitution"), // preserved
+    "scripts/auto-commit.mjs": fingerprint("// auto-commit vB"), // refreshed
+  });
 });
 
 // ── The thin I/O orchestrator the installer calls (real fs, git facts injected) ──

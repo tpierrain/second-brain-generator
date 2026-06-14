@@ -52,6 +52,20 @@ export function enrichManifest(manifest, { source, provenance }) {
   return { ...manifest, source, provenance };
 }
 
+// After an update-engine swap, refresh the provenance base for ONLY the merge files
+// the engine actually re-delivered (`deliveredFileMap` = {rel: new content}). Files
+// the engine replaces outright (rag/src…) never carry a base — same as at install.
+// User merge files the swap never touched (CLAUDE.md/settings/skills) keep their
+// prior base untouched, so Phase 2's 3-way still detects the user's edits against
+// the version the engine last delivered. (Plan Step 5.)
+export function reseedProvenance({ priorProvenance, manifest, deliveredFileMap }) {
+  const redelivered = selectMergeFiles(manifest, Object.keys(deliveredFileMap));
+  const refreshed = buildProvenance(
+    Object.fromEntries(redelivered.map((rel) => [rel, deliveredFileMap[rel]])),
+  );
+  return { ...priorProvenance, ...refreshed };
+}
+
 // ─── I/O orchestrator (the installer's thin wiring) ──────────────────────────
 // Real fs on the brain dir; the launcher git facts are passed in as data (no git
 // spawn / network here → unit-testable on a temp fixture brain). Walks the brain

@@ -102,11 +102,22 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
         imported ESM, so self-replacing the `.mjs` on disk mid-run never perturbs the running process.
         Refactor: extracted the duplicated dir walk into `scripts/lib/fs-walk.mjs` (TDD, 2 tests) and
         rewired `engine-source` onto it.
-- [ ] **Step 5 — Reindex iff the index schema moved.** Compare the brain's `indexSchemaVersion` to the
+- [x] **Step 5 — Reindex iff the index schema moved.** Compare the brain's `indexSchemaVersion` to the
       target's; on change → run the **existing confirm→reindex** path (ADR 0007 machinery + the Phase 0
       index schema stamp); else skip. Then update the brain's recorded `engineVersion` + `source.ref` and
-      **re-seed `provenance`** for the new `merge` files.
-  - [ ] reindex-trigger lib + tests (stale → reindex; fresh → skip).
+      **re-seed `provenance`** for the new `merge` files. _(2026-06-14 · two pure libs extracted + wired into
+      the core; harness **200 tests, fail 0, todo 0**.)_
+  - [x] reindex-trigger lib + tests (stale → reindex; fresh → skip). _(`scripts/lib/reindex-trigger.mjs`:
+        `needsReindex({local, target})` — pure, replaces the core's inline `!==`; 3 tests: stale→reindex,
+        fresh→skip, **pre-stamp brain (no recorded schema) → reindex** (the safe call). ADR 0009: a
+        verifiable condition, not a guess.)_
+  - [x] **provenance re-seed** (the other half of Step 5, deferred by Step 4's core). `reseedProvenance` in
+        `engine-source.mjs` (reuses `selectMergeFiles`+`buildProvenance`): refreshes the 3-way base for ONLY
+        the merge files the engine **re-delivered** (the engine-owned scripts, read back from disk), while
+        the user's untouched merge files (CLAUDE.md/settings/skills) **keep their prior base** — so a future
+        Phase 2 3-way still detects the user's edits. 2 unit tests + the **Gate** now seeds a base and
+        asserts post-swap that the engine script's base is refreshed to vB **and** CLAUDE.md's base is
+        preserved.
 - [ ] **Step 6 — Brain-side `update-engine` skill (Claude-driven UX) — [ADR 0016](../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md).**
       A skill shipped by the installer into the brain that confirms with the user (opt-in, **never** auto),
       calls the core, and reports what changed / whether a reindex ran. Deterministic work stays in the

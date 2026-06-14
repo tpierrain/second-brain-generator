@@ -23,6 +23,8 @@ import { join, dirname } from "node:path";
 
 import { fetchSource as defaultFetchSource, readTargetManifest } from "./lib/engine-fetch.mjs";
 import { computeApplyPlan } from "./lib/engine-apply-plan.mjs";
+import { needsReindex } from "./lib/reindex-trigger.mjs";
+import { reseedProvenance } from "./lib/engine-source.mjs";
 import { matchesAny } from "./lib/glob-match.mjs";
 import { listFilesRelPosix } from "./lib/fs-walk.mjs";
 import {
@@ -101,16 +103,28 @@ export async function updateEngine({
   await runInstall({ ragDir: join(brainDir, "rag"), platform });
 
   // 6. Reindex IFF the index schema moved (else the existing index stays valid).
-  const reindexed = target.indexSchemaVersion !== local.indexSchemaVersion;
+  //    The decision is the deterministic `needsReindex` (Step 5, ADR 0009).
+  const reindexed = needsReindex({ local, target });
   if (reindexed) await runReindex({ brainDir, platform });
 
-  // 7. Record the new engine version + the ref we pulled. (Re-seeding `provenance`
-  //    for the new `merge` files is Step 5 — out of this step's scope.)
+  // 7. Record the new engine version + the ref we pulled, and RE-SEED `provenance`
+  //    (Step 5): refresh the 3-way base for the merge files the engine just
+  //    re-delivered (the engine-owned scripts, read back from disk), while the user's
+  //    untouched merge files (CLAUDE.md/settings/skills) keep their prior base — so a
+  //    future Phase 2 3-way still detects the user's edits.
+  const deliveredFileMap = Object.fromEntries(
+    copied.map((rel) => [rel, readFileSync(join(brainDir, rel), "utf8")]),
+  );
   const updated = {
     ...local,
     engineVersion: target.engineVersion,
     indexSchemaVersion: target.indexSchemaVersion,
     source: { ...source, ref: target.source?.ref ?? source.ref },
+    provenance: reseedProvenance({
+      priorProvenance: local.provenance ?? {},
+      manifest: target,
+      deliveredFileMap,
+    }),
   };
   writeFileSync(manifestPath, JSON.stringify(updated, null, 2) + "\n");
 
