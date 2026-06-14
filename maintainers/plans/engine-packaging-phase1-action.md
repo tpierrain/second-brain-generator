@@ -17,14 +17,16 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
       engine vA + a launcher source at vB>vA → `update-engine` brings `rag/src` + launchers + engine
       scripts to vB, `npm install`, reindex **iff** the index schema moved, and leaves
       vault/`.env`/`CLAUDE.md`/`.claude/settings.json`/skills **byte-identical**. Verified on **both**
-      the `win32` and posix branches (ADR 0015). _(authored 2026-06-14 · RED by design — goes GREEN at
-      Step 4; harness suite 164 tests, 161 pass, the 3 fails ARE this gate.)_
-  - [x] write the failing acceptance test in `scripts/lib/update-engine.test.mjs` (drives the core).
-        _(3 guards: posix+win32 schema-moved scenario, schema-unchanged scenario; seams injected — no
-        real git/npm/ONNX; self-contained synthetic manifest.)_
+      the `win32` and posix branches (ADR 0015). _(authored 2026-06-14 · PENDING — goes GREEN at Step 4.
+      Marked `{ todo }` so the suite stays GREEN, **we only ever commit green** — harness 174 tests, 171
+      pass, **fail 0, 3 todo**, exit 0.)_
+  - [x] write the acceptance test in `scripts/lib/update-engine.test.mjs` (drives the core), each guard
+        flagged `{ todo: "GREEN at Step 4" }`. _(3 guards: posix+win32 schema-moved scenario,
+        schema-unchanged scenario; seams injected — no real git/npm/ONNX; self-contained synthetic
+        manifest.)_
   - [x] each guard proven fail-first: all 3 fail with `ERR_MODULE_NOT_FOUND` (the absent core), loaded
-        lazily per-guard so each bites individually. _(Per-guard perturbation against the LIVE core is
-        re-confirmed at Step 4 when the apply step turns them green one by one.)_
+        lazily per-guard so each bites individually — but reported as **todo, not failures** (green
+        suite). At Step 4 the `{ todo }` flags are DROPPED and they become enforcing assertions.
 - [x] **Step 1 — Record the engine source + seed provenance at install.** The installer writes, into the
       brain's copied `engine-manifest.json`, a `source: { repo, ref }` (the launcher git URL + the
       tag/commit it was generated from) and fills `provenance` with a **base fingerprint (sha256)** for
@@ -39,7 +41,8 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
         _(call before the brain's first commit; git facts read from the launcher ROOT. **Smoke install
         PROVEN end-to-end (exit 0)**: brain manifest got `source` = launcher origin + branch, `provenance`
         = sha256 per merge file (6 skills' SKILL.md, generated `.claude/settings.json`, `CLAUDE.md`, 4
-        engine scripts); vault note / `.env` / `rag/src` NEVER fingerprinted.)_
+        engine scripts); vault note / `.env` / `rag/src` NEVER fingerprinted. Harness 174 tests, 171
+        pass, fail 0, 3 todo — green.)_
 - [ ] **Step 2 — Resolve + fetch the pinned target ref (cross-platform).** A lib that spawns
       `git clone --depth 1 --branch <ref>` (or fetch) of the recorded repo into a temp dir, then reads the
       **fetched** `engine-manifest.json` → target `engineVersion` vector + `indexSchemaVersion`. Pure Node,
