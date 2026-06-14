@@ -2,8 +2,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   checkIndexFreshness,
+  checkSchemaFreshness,
   shouldStamp,
   staleIndexMessage,
+  staleSchemaMessage,
 } from "./index-freshness.js";
 import type { EmbedderIdentity } from "./vector-store.js";
 
@@ -35,6 +37,25 @@ test("index with no stamp (from before this plan) → stale, stamped = null", ()
   const verdict = checkIndexFreshness(null, gemini);
 
   assert.deepEqual(verdict, { fresh: false, stamped: null, current: gemini });
+});
+
+test("schema freshness: stamped version equals the running constant → fresh", () => {
+  assert.equal(checkSchemaFreshness(1, 1), true);
+});
+
+test("schema freshness: stamped version older than the running constant → stale", () => {
+  assert.equal(checkSchemaFreshness(1, 2), false);
+});
+
+test("schema freshness: index stamped before schema versioning (null) → fresh (grandfathered, no prompt)", () => {
+  assert.equal(checkSchemaFreshness(null, 1), true);
+});
+
+test("stale-schema message: offers the re-index, no \"undefined\" (embedder is unchanged)", () => {
+  const msg = staleSchemaMessage();
+
+  assert.ok(!msg.includes("undefined"), "no undefined in the prose");
+  assert.match(msg, /re-?index/i);
 });
 
 test("reindex force → we (re)stamp (everything is re-encoded with the current embedder)", () => {

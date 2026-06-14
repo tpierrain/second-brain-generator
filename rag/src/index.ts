@@ -8,8 +8,16 @@ import {
   listDocuments,
   getStats,
   currentIndexIdentity,
+  currentIndexSchemaVersion,
+  INDEX_SCHEMA_VERSION,
 } from "./lib/vector-store.js";
-import { checkIndexFreshness, staleIndexMessage } from "./lib/index-freshness.js";
+import {
+  checkIndexFreshness,
+  checkSchemaFreshness,
+  staleIndexMessage,
+  staleSchemaMessage,
+} from "./lib/index-freshness.js";
+import { loadEngineVersion, formatEngineVersionReport } from "./lib/engine-version.js";
 import {
   VAULT_DIR,
   SEARCH_DEFAULT_LIMIT,
@@ -33,7 +41,9 @@ import { resolve, relative } from "path";
 
 const server = new McpServer({
   name: "vault-rag",
-  version: "1.0.0",
+  // Single source of truth for the Engine version: rag/package.json (the same
+  // value surfaced via vault_stats), never a second literal that could drift.
+  version: loadEngineVersion().rag,
 });
 
 // Real-time liveness of the live-update watcher: refs shared between the watcher
@@ -63,6 +73,11 @@ server.tool(
           { type: "text", text: staleIndexMessage(verdict.stamped, verdict.current) },
         ],
       };
+    }
+    // Same gate, second reason: the index format moved (schema version bump).
+    // The embedder is unchanged, so this routes to its own reindex offer.
+    if (!checkSchemaFreshness(currentIndexSchemaVersion(), INDEX_SCHEMA_VERSION)) {
+      return { content: [{ type: "text", text: staleSchemaMessage() }] };
     }
 
     let queryEmbedding: number[];
@@ -205,9 +220,15 @@ server.tool(
       state: liveScheduler?.state() ?? null,
     });
 
+    const engineReport = formatEngineVersionReport(loadEngineVersion(), {
+      stamped: currentIndexSchemaVersion(),
+      running: INDEX_SCHEMA_VERSION,
+    });
+
     const typeLines = stats.types.map((t) => `  - ${t.type}: ${t.n}`).join("\n");
     const text =
       `**RAG status**\n${status}\n${watcherLine}\n\n` +
+      `${engineReport}\n\n` +
       `**Vault index**\n` +
       `- Documents: ${stats.docCount}\n` +
       `- Chunks: ${stats.chunkCount}\n` +

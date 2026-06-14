@@ -8,6 +8,15 @@ export type { EmbedderIdentity };
 
 let db: Database.Database | null = null;
 
+/**
+ * Index schema version (engine-packaging Phase 0, ADR 0012). Bump this when the
+ * stored index format changes incompatibly (a MAJOR `rag` bump): a brain then
+ * detects its index stale and offers a reindex — reusing the embedder-swap gate.
+ * An index stamped before this existed (null) is grandfathered as schema v1
+ * (compatible) → no reindex prompt for existing brains.
+ */
+export const INDEX_SCHEMA_VERSION = 1;
+
 /** Creates the schema (idempotent) on a given DB — testable in-memory. */
 export function applySchema(database: Database.Database): void {
   database.exec(`
@@ -36,23 +45,56 @@ export function applySchema(database: Database.Database): void {
       dimension INTEGER NOT NULL
     );
   `);
+  // Migration for brains whose index_meta predates schema versioning: the
+  // CREATE above is a no-op on an existing table, so add the column out of band.
+  // Nullable on purpose — a pre-existing row reads back null (grandfathered v1).
+  if (!hasColumn(database, "index_meta", "index_schema_version")) {
+    database.exec(`ALTER TABLE index_meta ADD COLUMN index_schema_version INTEGER`);
+  }
 }
 
-/** Stamps the identity of the current embedder (single row, upsert). */
+function hasColumn(
+  database: Database.Database,
+  table: string,
+  column: string
+): boolean {
+  const cols = database
+    .prepare(`PRAGMA table_info(${table})`)
+    .all() as Array<{ name: string }>;
+  return cols.some((c) => c.name === column);
+}
+
+/**
+ * Stamps the identity of the current embedder (single row, upsert), together
+ * with the schema version that produced this index (defaults to the running
+ * constant — a stamp always reflects the schema of the run that wrote it).
+ */
 export function writeIndexIdentity(
   database: Database.Database,
-  identity: EmbedderIdentity
+  identity: EmbedderIdentity,
+  schemaVersion: number = INDEX_SCHEMA_VERSION
 ): void {
   database
     .prepare(
-      `INSERT INTO index_meta (id, provider_id, model, dimension)
-       VALUES (1, ?, ?, ?)
+      `INSERT INTO index_meta (id, provider_id, model, dimension, index_schema_version)
+       VALUES (1, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          provider_id = excluded.provider_id,
          model = excluded.model,
-         dimension = excluded.dimension`
+         dimension = excluded.dimension,
+         index_schema_version = excluded.index_schema_version`
     )
-    .run(identity.providerId, identity.model, identity.dimension);
+    .run(identity.providerId, identity.model, identity.dimension, schemaVersion);
+}
+
+/** Reads the schema version stamped on the index, or null if never stamped. */
+export function readIndexSchemaVersion(
+  database: Database.Database
+): number | null {
+  const row = database
+    .prepare("SELECT index_schema_version FROM index_meta WHERE id = 1")
+    .get() as { index_schema_version: number | null } | undefined;
+  return row?.index_schema_version ?? null;
 }
 
 /** Reads back the stamped identity, or null if the index was never stamped. */
@@ -90,6 +132,11 @@ export function stampIndexIdentity(identity: EmbedderIdentity): void {
 /** Identity stamped on the active index, or null if never stamped. */
 export function currentIndexIdentity(): EmbedderIdentity | null {
   return readIndexIdentity(getDb());
+}
+
+/** Schema version stamped on the active index, or null if never stamped. */
+export function currentIndexSchemaVersion(): number | null {
+  return readIndexSchemaVersion(getDb());
 }
 
 export function getDocumentHash(path: string): string | null {

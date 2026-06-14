@@ -13,8 +13,8 @@ at the bottom.
 
 - [x] **Gate #0** — survival test written (RED by design until Step 3). `scripts/lib/engine-manifest.test.mjs`.
 - [x] **Step 1** — Relocatable paths (`config.ts` → `resolvePath` + env vars). RAG suite green, tsc clean.
-- [ ] **Step 2** — Observable version vector (semver + `vault_stats` + index schema stamp). ⬅ **NEXT**
-- [ ] **Step 3** — Ownership manifest (`engine-manifest.json`) → **turns gate #0 green**; full test file.
+- [x] **Step 2** — Observable version vector (semver + `vault_stats` + index schema stamp). RAG suite green, tsc clean.
+- [ ] **Step 3** — Ownership manifest (`engine-manifest.json`) → **turns gate #0 green**; full test file. ⬅ **NEXT**
 - [ ] **Definition of done** — STATUS → ✅ with commit SHAs + what was verified, then `git mv` into
   [`plans/archived/`](archived/).
 
@@ -315,7 +315,31 @@ same branch unless told otherwise. **One `/clear` (fresh window) between steps**
 - **First-run note for a fresh window:** `rag/` deps aren't vendored — run `cd rag && npm install` before
   `npm test`.
 
-### ⏭️ Next: Step 2 — Observable version vector (fresh window)
-Open a new session, give it the kickoff prompt (Execution kickoff §) but targeting **Step 2 only**, on
-branch `claude/engine-packaging-phase0-wmfjxz`. Keep gate #0 red (it goes green at Step 3) and the RAG
-suite green. Then Step 3 turns gate #0 green and finishes the plan.
+### ✅ Step 2 — Observable version vector (DONE, green)
+- **2a — semver + version vector.** `rag/package.json` bumped `1.0.0` → **`1.1.0`** (honest MINOR: Step 1
+  relocatable paths + Step 2 observability are additive behind the stable MCP port). New
+  `rag/src/lib/engine-version.ts`: pure `engineVersionVector(pkg)` → `{ rag }`, `loadEngineVersion()`
+  reads the **live** `rag/package.json` (not a frozen copy), `formatEngineVersionReport(...)` for the
+  `vault_stats` "Engine" section. `index.ts` `McpServer` version now derives from `loadEngineVersion().rag`
+  (single source of truth, no second literal to drift). The vector is `{ rag }` for now;
+  `constitutionTemplate`/`scripts` join it from the manifest in Step 3.
+- **2b — index schema version in the stamp.** `INDEX_SCHEMA_VERSION = 1` in `vector-store.ts`. `index_meta`
+  gains a **nullable** `index_schema_version` column (guarded `ALTER` migrates existing brains' DBs);
+  `writeIndexIdentity` stamps it (defaulted), `readIndexSchemaVersion` / `currentIndexSchemaVersion` read
+  it back. `index-freshness.ts`: `checkSchemaFreshness(stamped, current)` — stale only on a **real** bump;
+  an index stamped **before** versioning (null) is **grandfathered fresh** → no reindex prompt for existing
+  brains (acceptance #2). `staleSchemaMessage()` offers the reindex via the **same gate** (embedder
+  unchanged, so the embedder-swap prose would mislead). Wired into `search_vault` next to the existing
+  embedder-freshness gate.
+- **2c — surface via `vault_stats`.** Added an **Engine** section (version vector + schema **running vs
+  stamped**, so a drift is visible). Additive only (ADR 0006) → no contract breakage.
+- **Tests (TDD, baby-steps):** `engine-version.test.ts` (vector, live-package read, report incl. drift &
+  grandfather), `vector-store.test.ts` (schema round-trip + null-before-versioning), `index-freshness.test.ts`
+  (schema fresh/stale/grandfather + stale message). Suite: `cd rag && npm test` → **129/129** (was 118),
+  `npx tsc --noEmit` clean. Harness suite unchanged: **144/145** (the 1 red is still gate #0, by design).
+
+### ⏭️ Next: Step 3 — Ownership manifest (fresh window) → turns gate #0 green
+Open a new session, kickoff prompt targeting **Step 3 only**, on branch `claude/engine-packaging-phase0-wmfjxz`.
+Create `engine-manifest.json` (regimes + `engineMcpServers`) keyed per ADR 0012; flesh out the survival test
+file so **gate #0 goes green**. That finishes the plan (Definition of done: STATUS → ✅ + `git mv` to
+`plans/archived/`).
