@@ -4,6 +4,16 @@
 on the trigger it named itself ("publication widens the user base"). Feeds a future ADR + action plan.
 **Scope:** Installer + Second brain (runtime) — the launcher↔brain split of ADR 0001.
 
+> 🧱 **FOUNDING PRINCIPLE — extensibility, set by Thomas (2026-06-14), non-negotiable from day one.**
+> Upgrading the engine **MUST NEVER delete or overwrite anything a user added** — home-made skills,
+> custom scripts, sub-agents, hooks, notes. The brain is **extensible by design**: user additions are
+> sacred. Mechanically this means the upgrade is **additive-only** — it touches *only* the engine files
+> explicitly listed in the manifest (a **write-allowlist**), as a **managed file set**, **never** by
+> "replace the folder" / `rsync --delete`. Anything not in the manifest is, by construction,
+> untouchable. This is **stronger** than ADR 0003's "non-destructive": a structural guarantee, not a
+> careful behaviour — an unknown file *cannot even be enumerated* for deletion. Every track below
+> inherits this as a hard constraint; a track that can't honour it is rejected.
+
 ---
 
 ## 1. The problem, in the user's words
@@ -18,16 +28,68 @@ launcher→brain link "by construction"; ADR 0003 accepts the consequence). We w
 (the RAG/MCP motor) an **independently replaceable unit**, while the **vault**, the **constitution**,
 the **skills** and the **connectors** stay owned and **never overwritten**.
 
-Three buckets, and which side of the line they sit on:
+**Thomas's vocabulary (2026-06-14) — three things, fixed for all our exchanges.** The brain world has
+**exactly three** parts, and when Thomas says **"the engine"** he means the **middle** one:
 
-| Bucket | Examples | Owner | On upgrade |
+| Term | What it is | Lives | On an engine upgrade |
 |---|---|---|---|
-| **Engine (the motor)** | `rag/src/**`, `rag/package.json`, engine-side `scripts/*` | Maintainer | **Replaced** |
-| **Content** | `vault/**`, `CLAUDE.md`, retros/daily/people notes | User | **Untouched** |
-| **Tools** | `.mcp.json` connector entries, `.claude/skills/**` (incl. home-made), `.env` | User | **Preserved / merged** |
+| **Installer** | the launcher + all it needs to generate a brain (`installer.mjs`, install-side `scripts/lib/`, `templates/`) | the **launcher** repo (read-only, reusable — ADR 0001) | **out of scope** — it's the tool that *performs* an upgrade, not a thing upgraded inside a brain |
+| **Engine** *(= "the motor")* | everything that makes a brain *run*: RAG, runtime hooks/scripts, shared skills, the constitution `CLAUDE.md`, `.mcp.json` | inside the **brain** | **the subject of this study** — upgradable, under the founding principle |
+| **Content** | the user's notes — their data | the brain's `vault/**` | **never touched** |
 
-The whole study is about drawing that line **explicitly** (today it is implicit) and choosing a
-**distribution channel** for the engine bucket.
+So: **"engine", in our conversations, = the runtime machinery of a brain, excluding both the installer
+and the content.** It has several sub-parts that may each need a different packaging strategy
+(§1.bis) — but the word always points at this middle category.
+
+**The catch — and the founding principle above.** "Engine = everything but content" does **not** mean
+"the upgrade may rewrite all of it". Inside the engine, a **second axis** decides what an upgrade may
+touch: **who authored it.** The user *extends and edits* the engine (home-made skills, custom
+scripts/sub-agents, a personalised `CLAUDE.md`, configured connectors) — and those additions are
+**sacred** (founding principle). So the real upgrade boundary is not content-vs-engine, it's
+**upstream-provided vs locally-added/edited**, *inside* the engine. The whole study is about drawing
+**that** line explicitly (today it's implicit) and choosing a distribution channel for the
+upstream-provided part.
+
+## 1.bis "The engine" is really 3+1 versioned layers (refined 2026-06-14)
+
+Field input (Thomas): the planned refactor — and the very word "engine" — spans **more than `rag/src`**.
+What he wants to repackage and improve covers **three sub-systems at once**, each with a **different
+upgrade rule**. Treating them as one undivided "engine bucket" is wrong — they must be **versioned and
+upgraded independently**:
+
+| Layer | Files | Protected by | Upgrade rule |
+|---|---|---|---|
+| **A — Retrieval (RAG)** | `rag/src/**` | ADR 0006 (stable MCP port) | Replaceable cleanly; format change → reindex (ADR 0007) |
+| **B — Constitution** | `CLAUDE.md` (+ `templates/<locale>/CLAUDE.md.template`) | ADR 0003 | **Never overwritten** (user-edited); a slimmer template helps *future* brains only; existing brains via an **opt-in non-destructive diff** |
+| **C — Hooks/scripts** | `auto-commit`, `auto-push`, `status-line`, `verify-rag` | — (the "undecided" of §3.4) | Engine-owned but **re-substituted** on upgrade (`{{NODE}}`/`{{PROJECT_ROOT}}`), opt-in only |
+| **(D — Skills)** | `.claude/skills/**` (incl. home-made) | ADR 0003 | Separate `update-skills`, 3-way merge, never overwrite a fork |
+
+**Three upgrade regimes** fall out of the two axes (content/engine × upstream-provided/locally-added).
+Every engine file lands in exactly one:
+1. **Replace (re-substituted)** — pure upstream machinery the user never edits: `rag/src/**`, the
+   provided runtime hooks/scripts. Overwritten on upgrade (placeholders re-substituted) — but **only the
+   files named in the manifest**; a user-added script sitting next to them is invisible to the upgrade
+   and survives untouched.
+2. **Merge 3-way (opt-in)** — upstream-provided **but** user-editable: the constitution `CLAUDE.md`, the
+   shipped skills (`coach`, `sync`…). **Never** overwritten; the new version is offered as a diff the
+   user accepts hunk by hunk → a fork is protected.
+3. **Never touch** — the vault **and** every local addition (home-made skills, custom scripts/sub-agents,
+   `.env`, configured connectors). Absent from the manifest ⇒ **structurally** untouchable.
+
+Regime 3 is the founding principle made mechanical; regime 2 is what makes "engine = everything but
+content" *safe* even though the constitution and the shipped skills live inside the engine.
+
+**Consequence for Phase 0:** the "observable version" (study §4 Track D, plan step 2) is **not one
+number** — it's a small **version vector** (`rag` / `constitution-template` / `scripts`). And the
+manifest's ownership map gets **one bucket per regime** (replace / merge / never-touch), not a single
+`owned.replace`.
+
+**On "`CLAUDE.md` too big"** (Thomas's example, layer B): that's a **context/prompt** optimisation, *not*
+RAG. The constitution is **auto-loaded every session** → its size costs tokens each turn and dilutes
+Claude's attention. The idiomatic move: **slim the constitution to invariants + pointers** and push the
+bulk into **skills** (loaded on demand, not permanently). It improves *new* installs immediately; for
+existing brains it can only land via the opt-in diff above (their `CLAUDE.md` is personalised — never
+force-replaced, per ADR 0003).
 
 ## 2. What already makes this feasible (don't re-pay)
 
