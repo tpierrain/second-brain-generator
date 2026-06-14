@@ -333,6 +333,84 @@ test("gate — schema UNCHANGED → engine still swapped but NO reindex", async 
   assertSacredUntouched(brainDir, before);
 });
 
+// ── ANTI-REGRESSION (PR #10 QA findings): update-engine must apply the SAME two
+//    refinements the installer does over the manifest globs (see engine-copy-select):
+//    F1 — never leak the dev-only scripts/lib/eval-*/mcp-search.* into a brain;
+//    F2 — never overwrite the brain's locale-owned scripts/lib/demo-locale.mjs.
+//    The source declares `scripts/lib/**` under `replace` (as the real launcher does),
+//    so a naive glob copy would drag both in.
+test("gate — F1/F2: dev-only files never land, and the brain keeps its installed locale", async (t) => {
+  const brainDir = mkdtempSync(join(tmpdir(), "sbg-brain-loc-"));
+  const sourceDir = mkdtempSync(join(tmpdir(), "sbg-source-loc-"));
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+
+  // A brain installed with --lang fr: its demo-locale marker reads "fr".
+  const brainLocaleFr = '// demo-locale (fr overlay)\nexport const BRAIN_LOCALE = "fr";\n';
+  writeFile(brainDir, "scripts/lib/demo-locale.mjs", brainLocaleFr);
+  writeFile(brainDir, "scripts/lib/engine-fetch.mjs", "// engine-fetch vA\n");
+  writeFile(brainDir, "rag/src/index.ts", "// engine vA\n");
+  for (const [rel, content] of Object.entries(SACRED)) writeFile(brainDir, rel, content);
+  writeFile(
+    brainDir,
+    "engine-manifest.json",
+    JSON.stringify(
+      {
+        manifestVersion: 1,
+        engineVersion: { rag: "1.0.0", constitutionTemplate: "1.0.0", scripts: "1.0.0" },
+        indexSchemaVersion: 1,
+        regimes: { replace: ["rag/src/**", "scripts/lib/**"], regenerate: [], merge: [] },
+        source: { repo: "https://example.test/launcher.git", ref: "v1.0.0" },
+        provenance: {},
+      },
+      null,
+      2,
+    ),
+  );
+
+  // The fetched source: a newer engine-fetch, dev-only files, a ROOT demo-locale ("en")
+  // and the fr/en locale owners under templates/.
+  writeFile(sourceDir, "rag/src/index.ts", "// engine vB\n");
+  writeFile(sourceDir, "scripts/lib/engine-fetch.mjs", "// engine-fetch vB\n");
+  writeFile(sourceDir, "scripts/lib/eval-set.mjs", "// dev-only eval tooling\n");
+  writeFile(sourceDir, "scripts/lib/mcp-search.mjs", "// dev-only mcp-search\n");
+  writeFile(sourceDir, "scripts/lib/demo-locale.mjs", '// root\nexport const BRAIN_LOCALE = "en";\n');
+  writeFile(sourceDir, "templates/fr/scripts/lib/demo-locale.mjs", 'export const BRAIN_LOCALE = "fr";\n');
+  writeFile(sourceDir, "templates/en/scripts/lib/demo-locale.mjs", 'export const BRAIN_LOCALE = "en";\n');
+  writeFile(
+    sourceDir,
+    "engine-manifest.json",
+    JSON.stringify(
+      {
+        manifestVersion: 1,
+        engineVersion: { rag: "1.1.0", constitutionTemplate: "1.0.0", scripts: "1.0.0" },
+        indexSchemaVersion: 1,
+        regimes: { replace: ["rag/src/**", "scripts/lib/**"], regenerate: [], merge: [] },
+        source: { repo: "https://example.test/launcher.git", ref: "v1.1.0" },
+        provenance: {},
+      },
+      null,
+      2,
+    ),
+  );
+
+  await runUpdate({ brainDir, sourceDir, platform: "posix" });
+
+  // A real engine lib WAS swapped to vB…
+  assert.equal(readFileSync(join(brainDir, "scripts/lib/engine-fetch.mjs"), "utf8"), "// engine-fetch vB\n");
+  // …but F1: the dev-only files never landed.
+  assert.equal(existsSync(join(brainDir, "scripts/lib/eval-set.mjs")), false, "F1: eval-* must not leak into the brain");
+  assert.equal(existsSync(join(brainDir, "scripts/lib/mcp-search.mjs")), false, "F1: mcp-search must not leak into the brain");
+  // …and F2: the brain KEEPS its installed fr locale marker (not overwritten by root "en").
+  assert.equal(
+    readFileSync(join(brainDir, "scripts/lib/demo-locale.mjs"), "utf8"),
+    brainLocaleFr,
+    "F2: update-engine must not overwrite the brain's locale-owned demo-locale.mjs (fr→en regression)",
+  );
+});
+
 test("gate — no tag resolvable (offline / no semver tag) → fall back to the pinned ref, update still applies", async (t) => {
   const brainDir = buildBrain(); // pinned at v1.0.0
   const sourceDir = buildSource({ indexSchemaVersion: 1 });

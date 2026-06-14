@@ -30,8 +30,8 @@ import {
 import { computeApplyPlan } from "./lib/engine-apply-plan.mjs";
 import { needsReindex } from "./lib/reindex-trigger.mjs";
 import { reseedProvenance } from "./lib/engine-source.mjs";
-import { matchesAny } from "./lib/glob-match.mjs";
 import { listFilesRelPosix } from "./lib/fs-walk.mjs";
+import { selectEngineFilesToCopy } from "./lib/engine-copy-select.mjs";
 import {
   buildShLauncher,
   buildCmdLauncher,
@@ -110,17 +110,20 @@ export async function updateEngine({
 
   // 3. Apply the COPY buckets — overwrite (`replace`) + the engine-owned scripts
   //    (incl. update-engine.mjs → self-update). Globs are resolved against the files
-  //    the fetched source actually carries. The launchers (`regenerate`) are NOT
-  //    copied — they are rebuilt below. Self-replacement mid-run is safe: Node caches
-  //    imported modules, so overwriting the .mjs on disk never perturbs this process.
+  //    the fetched source actually carries, then refined by `selectEngineFilesToCopy`
+  //    with the SAME two exclusions the INSTALLER applies (so update-engine never
+  //    copies more than the install would, PR #10 QA findings): F1 drops the dev-only
+  //    files (scripts/lib/eval-*/mcp-search.*), F2 keeps the brain's locale-owned
+  //    files (scripts/lib/demo-locale.mjs → no fr→en regression). The launchers
+  //    (`regenerate`) are NOT copied — they are rebuilt below. Self-replacement mid-run
+  //    is safe: Node caches imported modules, so overwriting the .mjs on disk never
+  //    perturbs this process.
   const copyGlobs = [...plan.overwrite, ...plan.replaceScripts];
-  const copied = [];
-  for (const rel of listFilesRelPosix(sourceDir)) {
-    if (matchesAny(copyGlobs, rel)) {
-      copyInto(sourceDir, brainDir, rel);
-      copied.push(rel);
-    }
-  }
+  const copied = selectEngineFilesToCopy({
+    sourceFiles: listFilesRelPosix(sourceDir),
+    copyGlobs,
+  });
+  for (const rel of copied) copyInto(sourceDir, brainDir, rel);
 
   // 4. Regenerate the launchers (both halves, ADR 0015).
   const regenerated = plan.regenerate.length > 0;
