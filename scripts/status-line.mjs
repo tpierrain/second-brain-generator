@@ -21,13 +21,15 @@ import { createRequire } from "node:module";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { hasGeminiKey } from "./lib/gemini-key.mjs";
+import { geminiKeyWarning } from "./lib/gemini-key.mjs";
+import { formatEngineVersion } from "./lib/engine-version.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, "..");
 const VAULT = join(REPO, "vault");
 const DB_PATH = join(REPO, "rag", ".cache", "vault.db");
 const ENV_PATH = join(REPO, ".env");
+const MANIFEST_PATH = join(REPO, "engine-manifest.json");
 
 // Runs git read-only and returns the output (empty string on failure).
 function git(args) {
@@ -89,9 +91,24 @@ if (scanned === 0) {
   ragSeg = remaining <= 0 ? `🧠 RAG ${docs}/${scanned}` : `🧠 RAG ${docs}/${scanned} (${remaining}⏳)`;
 }
 
-// ─── Key segment: STRONG flag if the Gemini key is missing (RAG inoperative) ──
+// ─── Key segment: STRONG flag if a REQUIRED Gemini key is missing (RAG inoperative).
+// Gated on geminiKeyRequired (via geminiKeyWarning): keyless embedders
+// (in-process / openai-compatible / Ollama) must NOT show a bogus warning.
 const envContent = existsSync(ENV_PATH) ? readFileSync(ENV_PATH, "utf8") : null;
-const keySeg = hasGeminiKey(envContent) ? null : "⚠️ Gemini key missing";
+const keySeg = geminiKeyWarning(envContent);
+
+// ─── Engine segment: the brain's pinned version, read OFFLINE from the manifest
+// (ADR 0017). Pure file read — fail-silent: no manifest / unparseable → no
+// segment. The "update available" suffix is DEFERRED (read from a cache later).
+function readEngineSeg() {
+  if (!existsSync(MANIFEST_PATH)) return null;
+  try {
+    return formatEngineVersion(JSON.parse(readFileSync(MANIFEST_PATH, "utf8")));
+  } catch {
+    return null;
+  }
+}
+const engineSeg = readEngineSeg();
 
 // ─── A single line, segments separated by "·" ────────────────────────────────
-process.stdout.write([gitSeg, ragSeg, keySeg].filter(Boolean).join(" · "));
+process.stdout.write([gitSeg, ragSeg, engineSeg, keySeg].filter(Boolean).join(" · "));

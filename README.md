@@ -391,6 +391,50 @@ It's **opt-in**: as long as you haven't wired it up, **nothing is pushed** (anti
 default). You can do it right away **or weeks later**, without breaking anything. Once in place, the
 auto-commit hook **pushes on every change** — backup and switching between laptops become seamless.
 
+## 🔄 Keeping your brain up to date (its engine)
+
+Your brain runs on an **engine** — the search code, the launchers and a handful of housekeeping
+scripts. Over time that engine improves (faster search, new safeguards, fixes). The good news:
+**your brain knows how to upgrade its own engine — and it never touches a single one of your notes.**
+
+A few plain ideas first (the mental model):
+
+- **The launcher was a one-time thing.** You used the installer (the *launcher*) **once**, on install
+  day. To upgrade later you **don't re-run it**, and you **don't start over from a fresh launcher
+  folder** — you don't even reopen it.
+- **Your brain carries its own updater.** Every brain ships with a small built-in updater
+  (`update-engine`) that travels **inside** the brain. Upgrading is just asking your brain to use it.
+- **`engine-manifest.json` is the map.** A readable file in your brain that spells out exactly *what
+  counts as the engine* — and records *where* a newer engine can be pulled from (the launcher's
+  address + the exact version your engine was built from). It's how the brain tells what is "engine"
+  (upgradable) from what is **yours** (off-limits).
+- **An upgrade is a throw-away errand.** When you accept one, the brain fetches a **temporary,
+  disposable copy** of the newer engine into a temp folder, takes only the engine pieces it needs,
+  applies them, then **deletes that temp folder.** Nothing lingers, no new folder left on your machine.
+
+**What you actually do — nothing technical:**
+
+> 🧑 *"Update your engine, please."*
+>
+> 🧠 *"You're on engine v1.0; v1.2 is available — want me to update? Your notes won't be touched."*
+> → you say **yes**.
+
+That's the whole thing: **ask in plain words, confirm.** No terminal, no installer, no new folder.
+(Because your brain can *see* its own version, it may even **offer** the update on its own.)
+
+**Sacred — never touched by an update:** your **notes**, your `.env` (keys), your **`CLAUDE.md`**
+constitution, your **settings** and your **custom skills**. An update only ever swaps **engine**
+files, and it **re-indexes only if** the new engine changed the index format (a few minutes) —
+otherwise your search keeps working untouched.
+
+> 🔧 **What you need at upgrade time** (same as install): **git**, **npm** and a **network**
+> connection — the brain briefly reaches out to fetch the newer engine. *(That `npm` step just
+> installs the search engine's **dependencies on your machine**; it does **not** pull your brain from
+> any app store or central registry — your brain stays **self-hosted**, exactly as it was generated.)*
+
+The hands-on steps (and how to run it yourself, if you're technical) are in
+[SETUP §10](SETUP.md).
+
 ## And the privacy of my data?
 
 A fair question: your vault can be **confidential**. Depending on the search option you chose, **one

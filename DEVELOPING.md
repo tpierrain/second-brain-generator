@@ -147,6 +147,23 @@ exhaustive enumeration: the impoverished smoke test is the **safety net** for ev
    - *Note:* a local hook can't stop a human from clicking "New PR" on GitHub; this rule binds **the
      agent's** behaviour (never opens a 2nd, flags any extra it sees), which covers the practical risk.
 
+8. **Cross-platform parity — Mac AND Windows are first-class, at parity (HARD requirement).** *Rationale:
+   [`maintainers/decisions/0015-cross-platform-parity.md`](maintainers/decisions/0015-cross-platform-parity.md).*
+   The generator, the installer, the Engine and every hook/launcher **must work on macOS, Linux AND
+   Windows** — Windows is not a "later" target, it is a release gate. Concretely, on **any** change:
+   - **Never ship a POSIX-only path.** Any shell launcher gets **both** a `.sh` **and** a `.cmd` variant
+     (`run-node.{sh,cmd}`, `launch.{sh,cmd}`); the `engine-manifest.json` `regenerate` bucket must list
+     **both**. A new launcher with only one half is a regression.
+   - **Pure Node at the core** (no `bash`/`jq`/`sqlite3`/`sed` dependency in hooks or the installer);
+     spawn external tools cross-platform (`process.platform` switch), never assume a POSIX shell.
+   - **Paths:** build with `path`/`path.posix` as appropriate, normalise JSON-stored paths to `/`
+     (`toPosix`), never hardcode `/` separators or `$HOME`-only expansions; resolve via env, not literals.
+   - **No Unix-only commands** (`open`, `xdg-open`, `start` all have OS variants — see
+     `CLAUDE.md.template` Obsidian/timestamp blocks for the pattern).
+   - **Verify the Windows half**, at least by unit test on the `win32` branch (as `run-node` already does),
+     even when the dev machine is a Mac. ⚠️ Known carve-out: **in-process embedder excludes Intel Macs**
+     (`darwin/x64`) — that's a documented hardware limit (ADR 0007), not a license to drop Windows.
+
 ## Improvement ideas (informal backlog)
 
 - ~~Optional external connectors (Slack/Drive/Notion)~~ ✅ shipped: guided wizard at step

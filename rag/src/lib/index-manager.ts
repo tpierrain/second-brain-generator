@@ -11,8 +11,10 @@ import {
   getStats,
   stampIndexIdentity,
   currentIndexIdentity,
+  currentIndexSchemaVersion,
+  INDEX_SCHEMA_VERSION,
 } from "./vector-store.js";
-import { shouldStamp } from "./index-freshness.js";
+import { reindexForce, shouldStamp } from "./index-freshness.js";
 import { indexPreparedDocs, type PreparedDoc, type IndexPorts, type IndexRunResult } from "./indexer.js";
 import { ReindexLock } from "./reindex-lock.js";
 import { ReindexReporter } from "./reindex-reporter.js";
@@ -81,10 +83,20 @@ export async function reindex(
 }
 
 async function runReindex(
-  force: boolean,
+  requestedForce: boolean,
   embedder: Embedder,
   reporter: ReindexReporter
 ): Promise<IndexResult> {
+  // A stale index SCHEMA can only be repaired by a full re-encode: an incremental
+  // run skips unchanged docs (old format left in place) AND never re-stamps the
+  // schema version (shouldStamp returns false on an already-stamped index), so the
+  // staleness gate (index.ts) would loop forever on every search. So a schema bump
+  // forces a full reindex — which also restamps the schema via stampIndexIdentity.
+  const force = reindexForce(
+    requestedForce,
+    currentIndexSchemaVersion(),
+    INDEX_SCHEMA_VERSION
+  );
   const files = await scanVault();
   const result: IndexResult = {
     scanned: files.length,

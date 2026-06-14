@@ -371,3 +371,58 @@ re-encodes in a few minutes, **without losing a single note**.
 
 > Anthropic's and Google's terms **evolve**: check them at the time you read this (Anthropic
 > Privacy Center · *Gemini API Additional Terms of Service*).
+
+## 10. Keeping your engine up to date (`update-engine`)
+
+Your brain ships with a built-in, **opt-in** updater for its **engine** — the RAG search code
+(`rag/src`), the launchers, and the engine-owned scripts (`scripts/`). It **never** touches your
+notes, `.env`, `CLAUDE.md`, `.claude/settings.json` or your custom skills: it only writes files that
+`engine-manifest.json` declares Engine-owned.
+
+> 🗺️ **`engine-manifest.json` is the readable map.** It lists *what counts as the engine* and records a
+> `source: { repo, ref }` — the launcher's git URL and the exact tag/commit your engine was built from.
+> That's where a newer engine is pulled from. You **don't** re-run the installer to upgrade, and you
+> **don't** start over from a fresh launcher folder: the updater lives **inside** your brain
+> (`scripts/update-engine.mjs` + `scripts/lib/**`, both carried by every brain — so the updater can
+> even update **itself**).
+
+### To trigger it — just ask, in plain conversation
+
+> *"Update your engine."* · *"Is there a newer version of your engine?"* · *"Upgrade the brain's
+> search engine."*
+
+The brain confirms with you first (**opt-in, never automatic**), runs the update, then reports what
+changed: **new version · files swapped · whether a reindex ran · "your files were untouched".**
+Because the engine is **observable** (it knows its own version), the brain may also **proactively
+offer** the update.
+
+### What it does, step by step
+
+1. **Shallow-clones** the pinned `source` into a **temporary** directory (discarded at the end).
+2. Reads the **target** `engine-manifest.json` → the new `engineVersion` + `indexSchemaVersion`.
+3. Computes a **write-allowlist** plan: overwrite the `replace` bucket (`rag/src`, etc.),
+   **regenerate** the `.sh`/`.cmd` launchers, replace the engine-owned scripts (including the updater
+   itself).
+4. Runs `npm install` in `rag/` — this installs the engine's **dependencies locally**; it does **not**
+   pull your brain from any registry (self-hosted, ADR 0001).
+5. **Reindexes only if** `indexSchemaVersion` changed (a few minutes); otherwise your index is left
+   as-is.
+6. Records the new `engineVersion` + `source.ref` and re-seeds the provenance fingerprints.
+
+### Prerequisites & guarantees
+
+- **Prereqs** (same as install): **git**, **npm**, and a **network** connection to reach the recorded
+  `source`.
+- **Fails loud, never half-applies.** If a step fails, it stops with a clear error (non-zero exit) and
+  leaves your brain working as before.
+- **Sacred by construction.** An update never writes to your `vault/` notes, `.env`, `CLAUDE.md`,
+  `.claude/settings.json`, or anything under `.claude/skills/` you customized. This is enforced
+  mechanically — the plan is a **write-allowlist** driven by `engine-manifest.json`, plus a
+  defense-in-depth scrub of those paths (never an `rsync --delete` of the folder).
+
+> 🛠️ **Run it yourself** (technical, optional). From the brain folder:
+> ```bash
+> node scripts/update-engine.mjs
+> ```
+> Same deterministic core the skill drives; exits non-zero on failure. (Day to day you don't need
+> this — just ask your brain.)

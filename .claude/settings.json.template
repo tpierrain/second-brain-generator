@@ -1,4 +1,7 @@
 {
+  "env": {
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "350000"
+  },
   "permissions": {
     "allow": [
       "Read",

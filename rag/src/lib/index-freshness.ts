@@ -53,6 +53,50 @@ export function staleIndexMessage(
   );
 }
 
+/**
+ * Is the index's stamped schema version compatible with the running Engine?
+ * Fresh unless a real bump happened. An index stamped **before** schema
+ * versioning (null) is grandfathered as compatible → no reindex prompt for
+ * existing brains (the embedder identity already guards genuine incompatibility).
+ */
+export function checkSchemaFreshness(
+  stamped: number | null,
+  current: number
+): boolean {
+  return stamped === null || stamped === current;
+}
+
+/**
+ * Should this reindex run as a FULL re-encode (force)? A schema-format bump can
+ * ONLY be repaired by re-encoding every doc: an incremental run skips unchanged
+ * docs (leaving the old format in place) AND never re-stamps the schema version
+ * (`shouldStamp` returns false on an already-stamped index) → the staleness gate
+ * would loop forever. So a stale schema forces a full reindex, exactly like an
+ * explicit `force`. A grandfathered index (`stamped === null`) stays compatible
+ * (cf. `checkSchemaFreshness`) → no forced reindex.
+ */
+export function reindexForce(
+  requested: boolean,
+  stampedSchema: number | null,
+  currentSchema: number
+): boolean {
+  return requested || !checkSchemaFreshness(stampedSchema, currentSchema);
+}
+
+/**
+ * Confirm-gate prose for a schema-format bump (the embedder is unchanged, so the
+ * embedder-swap message would mislead). Same reindex path, different reason: the
+ * index layout moved and the documents must be re-encoded into the new format.
+ */
+export function staleSchemaMessage(): string {
+  return (
+    `My fast, semantic search relies on an index whose internal format has ` +
+    `changed in this version of the engine. Your documents haven't changed — ` +
+    `they just need to be re-indexed into the new format. This may take a ` +
+    `little while. Do you want me to do it now?`
+  );
+}
+
 export function checkIndexFreshness(
   stamped: EmbedderIdentity | null,
   current: EmbedderIdentity

@@ -94,6 +94,34 @@
     → first unchecked big step. **Discoverable from any branch (even `main`)**, closing the egg-and-chicken
     where the branch name only lived on the branch; **several PRs → a menu to pick** (never guess), zero →
     ask. Operative rule = `DEVELOPING.md` §7. **Scope: Generator development (maintainer workflow).**
+  - [`0014-ship-update-engine-before-mass-deployment.md`](decisions/0014-ship-update-engine-before-mass-deployment.md) —
+    **re-times Phase 1 of 0012**: build `update-engine` (Track A) **now, before the mass deployment**, not
+    on later "my brain is stale" feedback. Rationale = an **egg-and-chicken**: the updater is *brain-side*,
+    so brains shipped to non-technical users without it have **no carrier** for the first engine
+    improvement → manual per-user migration (the very nightmare 0003's invariant spares them). The model
+    (0012) and invariant (0003) are unchanged — only the *timing* moves. **Scope: Second brain (runtime) +
+    Installer.**
+  - [`0015-cross-platform-parity.md`](decisions/0015-cross-platform-parity.md) —
+    **Mac AND Windows are first-class, at parity (HARD requirement, release gate).** Enshrines a
+    requirement that previously lived only in (archived) plans. Every launcher ships `.sh` **and** `.cmd`;
+    pure-Node core (no `bash`/`jq`); paths normalised; the Windows half is unit-tested even on a Mac.
+    Only sanctioned gap = the in-process embedder's **Intel-Mac** carve-out (ADR 0007). Operative rule =
+    `DEVELOPING.md` §8. **Scope: Second brain (runtime) + Installer.**
+  - [`0016-update-engine-is-a-skill-not-an-mcp-tool.md`](decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md) —
+    **`update-engine` = a Claude-driven *skill* + a deterministic Node *core* (`scripts/update-engine.mjs`),
+    NOT a tool on the `vault-rag` MCP server** (and not a terminal CLI). Keeps the MCP retrieval contract
+    clean (0006), matches the Claude-driven ethos (0002), stays testable/deterministic (0009). User
+    triggers it in conversation (or the brain offers it, thanks to Phase 0 observability). **Scope: Second
+    brain (runtime) + Installer.**
+  - [`0017-engine-version-reference-is-git-tags.md`](decisions/0017-engine-version-reference-is-git-tags.md) —
+    **the engine version is a git TAG, displayed OFFLINE** from the brain's pinned `source.ref` (no hand-bumped
+    file, no phone-home). The "update available" check is **deferred** (opt-in, non-blocking, cache-decoupled).
+    First semver tag = `v3.0.0`. **Scope: Second brain (runtime) + Installer.**
+  - [`0018-force-autocompaction-350k-out-of-the-box.md`](decisions/0018-force-autocompaction-350k-out-of-the-box.md) —
+    **every brain forces aggressive auto-compaction**: bakes `CLAUDE_CODE_AUTO_COMPACT_WINDOW=350000` so **no
+    brain exceeds a 350k effective context out of the box** ("levier 2"). Absolute `…WINDOW` var (reliable, self-
+    clamps ≤ model limit → inert/harmless on 200k plans) over the buggy percentage override. **Scope: Second
+    brain (runtime) + Installer.**
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
@@ -163,6 +191,18 @@
       `maintainers/**`). Lot 1 = `.gitignore` + measure scripts; Lot 2 = repoint 7 dangling cross-doc
       `#anchor` links onto the live EN headings; Lot 3 = archived plans (nothing to translate — all
       residual FR is intentional records/keeps). **STATUS: ✅ SHIPPED 2026-06-13** (`fbd70ba`, `e6e1801`).
+    - [`post-phase1-version-and-autocompact-action.md`](plans/archived/post-phase1-version-and-autocompact-action.md) —
+      **comet-tail of Phase 1** (PR #10): surface the engine version **offline** in the status-line (from the
+      brain's pinned `source.ref`, ADR 0017) + bake `CLAUDE_CODE_AUTO_COMPACT_WINDOW=350000` into every brain.
+      "Update available" detection **deferred** (opt-in, non-blocking). **STATUS: ✅ DONE 2026-06-14**
+      (`aaa0f64`, `de21eee`, `05ab1b1`; harness 212/212). Not yet merged — maintainer merges post-demos, tag `v3.0.0`.
+    - [`post-qa-comet-tail-polish-action.md`](plans/archived/post-qa-comet-tail-polish-action.md) — **post-QA
+      polish** of the comet-tail (PR #10), from the maintainer's manual QA: **Item 1** = make the *conversational*
+      "which version?" answer **deterministic** by single-sourcing it (`vault_stats` headlines the engine **tag**
+      from `source.ref`, demotes the mechanical `rag`/schema numbers to "internal build"; ADR 0017 §1.bis) +
+      EN/FR constitution & skill guidance; **Item 2** = stop the false "⚠️ Gemini key missing" status-line segment
+      on **keyless** embedders (shared `geminiKeyWarning`). **STATUS: ✅ DONE 2026-06-14** (`311b009`, `2d5cbe3`,
+      `acd032c`; harness 216/216, RAG 137/137, tsc clean). Not yet merged — maintainer QA + merge post-demos.
 - **`retrospectives/`** — 📝 **takeaway-oriented retros**: the **story** of a notable session
   (the starting question, the path investigation→measurement→fix, the transferable lessons). To be
   distinguished from ADRs (the *why* of a decision) and plans (the *what/how*): here it's the

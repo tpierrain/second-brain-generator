@@ -50,6 +50,8 @@ import {
   embedderReady,
 } from "./scripts/lib/embedder-choice.mjs";
 import { openEnvInEditor } from "./scripts/lib/open-env.mjs";
+import { recordSourceAndProvenance } from "./scripts/lib/engine-source.mjs";
+import { resolveLatestTag } from "./scripts/lib/engine-fetch.mjs";
 
 // ROOT = the LAUNCHER (this cloned repo). READ-ONLY, reusable source: the
 // installer NEVER writes to it. It CREATES a brain folder elsewhere (TARGET),
@@ -515,6 +517,43 @@ function setEnvVar(env, key, value) {
   if (providerLines.length) ok(`embedder configured in .env (${providerKey})`);
   if (geminiKey) ok("Gemini key saved in .env");
   if (apiKey) ok("endpoint API key saved in .env");
+}
+
+// Record, into the brain's engine-manifest.json, WHERE a future `update-engine`
+// should pull a newer Engine from (`source: {repo, ref}` = the LAUNCHER's git
+// origin + the tag/commit it was generated from) and a base sha256 PER `merge`
+// file (`provenance`) — the base a Phase 2 3-way merge will diff against. Done
+// HERE, after all files reached their installed state but BEFORE the brain's first
+// commit, so the enriched manifest is part of the initial history. Git facts come
+// from the launcher (ROOT); a missing remote → repo:null (update-engine then asks).
+{
+  const refOf = (args) => {
+    const r = run("git", ["-C", ROOT, ...args]);
+    return r.ok ? r.out.trim() : "";
+  };
+  const gitSeam = (args) => {
+    const r = run("git", ["-C", ROOT, ...args]);
+    return { out: r.ok ? r.out : "", ok: r.ok };
+  };
+  const branch = refOf(["rev-parse", "--abbrev-ref", "HEAD"]);
+  const repo = refOf(["remote", "get-url", "origin"]);
+  // The brain's recorded version = the LATEST semver release tag on the remote
+  // (ADR 0017) so a fresh brain displays `vX.Y.Z`, not a branch name. Fall back to
+  // an exact-match tag on HEAD, else null (update-engine then keeps the branch ref).
+  const tag =
+    (repo ? resolveLatestTag({ repo, git: gitSeam }) : null) ||
+    refOf(["describe", "--tags", "--exact-match"]) ||
+    null;
+  recordSourceAndProvenance({
+    brainDir: TARGET,
+    git: {
+      repo,
+      tag,
+      branch: branch === "HEAD" ? null : branch || null, // "HEAD" = detached → no branch
+      commit: refOf(["rev-parse", "HEAD"]) || null,
+    },
+  });
+  ok("engine source + provenance recorded in engine-manifest.json");
 }
 
 // Git repo OF THE BRAIN — foundation of auto-commit. NEW folder → `git init`

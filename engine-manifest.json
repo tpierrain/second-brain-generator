@@ -1,0 +1,38 @@
+{
+  "manifestVersion": 1,
+  "engineVersion": { "rag": "1.1.0", "constitutionTemplate": "1.0.0", "scripts": "1.0.0" },
+  "indexSchemaVersion": 1,
+  "regimes": {
+    "replace": [
+      "rag/src/**",
+      "rag/package.json",
+      "rag/package-lock.json",
+      "rag/tsconfig.json",
+      "scripts/update-engine.mjs",
+      "scripts/lib/**"
+    ],
+    "regenerate": [
+      "rag/launch.sh",
+      "rag/launch.cmd",
+      "scripts/run-node.sh",
+      "scripts/run-node.cmd"
+    ],
+    "merge": [
+      "CLAUDE.md",
+      ".claude/settings.json",
+      ".claude/skills/coach/**",
+      ".claude/skills/sync/**",
+      ".claude/skills/sync-sources/**",
+      ".claude/skills/improve/**",
+      ".claude/skills/prepare-1-1/**",
+      ".claude/skills/tdd-discipline/**",
+      ".claude/skills/update-engine/**",
+      "scripts/auto-commit.mjs",
+      "scripts/auto-push.mjs",
+      "scripts/status-line.mjs",
+      "scripts/verify-rag.mjs"
+    ]
+  },
+  "engineMcpServers": ["vault-rag"],
+  "provenance": {}
+}
