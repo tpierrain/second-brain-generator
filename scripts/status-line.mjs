@@ -21,7 +21,7 @@ import { createRequire } from "node:module";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { hasGeminiKey } from "./lib/gemini-key.mjs";
+import { geminiKeyWarning } from "./lib/gemini-key.mjs";
 import { formatEngineVersion } from "./lib/engine-version.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -91,9 +91,11 @@ if (scanned === 0) {
   ragSeg = remaining <= 0 ? `🧠 RAG ${docs}/${scanned}` : `🧠 RAG ${docs}/${scanned} (${remaining}⏳)`;
 }
 
-// ─── Key segment: STRONG flag if the Gemini key is missing (RAG inoperative) ──
+// ─── Key segment: STRONG flag if a REQUIRED Gemini key is missing (RAG inoperative).
+// Gated on geminiKeyRequired (via geminiKeyWarning): keyless embedders
+// (in-process / openai-compatible / Ollama) must NOT show a bogus warning.
 const envContent = existsSync(ENV_PATH) ? readFileSync(ENV_PATH, "utf8") : null;
-const keySeg = hasGeminiKey(envContent) ? null : "⚠️ Gemini key missing";
+const keySeg = geminiKeyWarning(envContent);
 
 // ─── Engine segment: the brain's pinned version, read OFFLINE from the manifest
 // (ADR 0017). Pure file read — fail-silent: no manifest / unparseable → no

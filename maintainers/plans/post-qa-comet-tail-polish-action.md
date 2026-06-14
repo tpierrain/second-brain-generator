@@ -51,15 +51,14 @@ before the Mon/Tue demos.**
           mechanics**. _(2026-06-14 · bullet under the retrieval rules, ~line 173)_
     - [x] **constitution FR** (`templates/fr/CLAUDE.md.template`): same, in French. _(2026-06-14 · ~line 160)_
     - [x] **`update-engine` SKILL.md**: one line pointing the version-reporting path to `source.ref`. _(2026-06-14)_
-- [ ] **Item 2 — status-line: stop the false "⚠️ Gemini key missing" on keyless embedders.** _(pre-existing bug,
+- [x] **Item 2 — status-line: stop the false "⚠️ Gemini key missing" on keyless embedders.** _(2026-06-14)_ _(pre-existing bug,
       now QA-confirmed user-visible on an in-process brain — CLI screenshot 2026-06-14.)_
-  - [ ] `scripts/status-line.mjs`: gate `keySeg` behind **`geminiKeyRequired(envContent)`** (import it from
-        `./lib/gemini-key.mjs`) — only warn when a Gemini key is **required** (provider gemini/default) **and**
-        missing. In-process / ollama / openai-compatible brains → **no warning**. (Same fix already applied to
-        `session-status.mjs` at embedder Étape 5 — status-line was missed.)
-  - [ ] guard: `gemini-key.mjs` is already unit-tested (`geminiKeyRequired` covers in-process/openai/gemini);
-        add a minimal test only if the status-line wiring is extractable — else rely on the lib tests + a manual
-        re-check (in-process brain → no "key missing" segment).
+  - [x] `scripts/status-line.mjs`: gate `keySeg` behind the required-AND-missing check — only warn when a Gemini
+        key is **required** (provider gemini/default) **and** missing. In-process / ollama / openai-compatible
+        brains → **no warning**. _(2026-06-14 · via the new shared `geminiKeyWarning(envContent)` helper)_
+  - [x] guard: extracted the decision into a pure **`geminiKeyWarning(envContent)`** in `./lib/gemini-key.mjs`
+        (deterministic, ADR 0009) and unit-tested it (4 tests: required+missing/present, in-process, openai-compat);
+        plus a manual smoke re-check (in-process brain → **no** "key missing" segment; gemini-without-key → warning). _(2026-06-14)_
   - [ ] _(optional, decide with maintainer)_ also surface the engine version in the **CLI startup banner**
         (`session-status.mjs` `systemMessage`) — currently intentionally skipped (status-line covers both
         surfaces). 2 lines if wanted; otherwise leave.

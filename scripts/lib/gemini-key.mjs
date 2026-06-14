@@ -20,3 +20,14 @@ export function geminiKeyRequired(envContent) {
   const provider = m ? m[1].trim() : "";
   return provider !== "in-process" && provider !== "openai-compatible";
 }
+
+// PURE: the "Gemini key missing" warning string, or null if no warning is due.
+// Warns ONLY when a Gemini key is BOTH required (provider gemini/default) AND
+// missing — so keyless embedders (in-process / openai-compatible / Ollama) never
+// see a bogus warning. Single source of truth shared by the status-line and the
+// session-status hook (both surfaces).
+export function geminiKeyWarning(envContent) {
+  return geminiKeyRequired(envContent) && !hasGeminiKey(envContent)
+    ? "⚠️ Gemini key missing"
+    : null;
+}
