@@ -113,6 +113,15 @@
     clean (0006), matches the Claude-driven ethos (0002), stays testable/deterministic (0009). User
     triggers it in conversation (or the brain offers it, thanks to Phase 0 observability). **Scope: Second
     brain (runtime) + Installer.**
+  - [`0017-engine-version-reference-is-git-tags.md`](decisions/0017-engine-version-reference-is-git-tags.md) —
+    **the engine version is a git TAG, displayed OFFLINE** from the brain's pinned `source.ref` (no hand-bumped
+    file, no phone-home). The "update available" check is **deferred** (opt-in, non-blocking, cache-decoupled).
+    First semver tag = `v3.0.0`. **Scope: Second brain (runtime) + Installer.**
+  - [`0018-force-autocompaction-350k-out-of-the-box.md`](decisions/0018-force-autocompaction-350k-out-of-the-box.md) —
+    **every brain forces aggressive auto-compaction**: bakes `CLAUDE_CODE_AUTO_COMPACT_WINDOW=350000` so **no
+    brain exceeds a 350k effective context out of the box** ("levier 2"). Absolute `…WINDOW` var (reliable, self-
+    clamps ≤ model limit → inert/harmless on 200k plans) over the buggy percentage override. **Scope: Second
+    brain (runtime) + Installer.**
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
