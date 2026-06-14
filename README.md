@@ -4,12 +4,18 @@
 
 *By Thomas Pierrain (VP Tech at [shodo](https://shodo.io/))*
 
+[![Latest release](https://img.shields.io/github/v/release/tpierrain/second-brain-generator?sort=semver&display_name=tag&label=latest&color=2ea44f&logo=github)](https://github.com/tpierrain/second-brain-generator/releases/latest)
+&nbsp;[![Engine: self-upgradable since v3.0.0](https://img.shields.io/badge/engine-self--upgradable%20since%20v3.0.0-2ea44f?logo=rocket&logoColor=white)](#keeping-your-brain-up-to-date-its-engine)
+&nbsp;[![Privacy: local by default](https://img.shields.io/badge/privacy-local%20by%20default-1f6feb?logo=lock&logoColor=white)](#and-the-privacy-of-my-data)
+
 **Ask it like you'd ask a personal assistant — no dev skills required — and pull up any decision or piece of info from your work in seconds, always with the sources.**
 *In Claude Desktop or on the command line, your call.*
 
 **🔒 Private by default, search à la carte.** Your notes are indexed **on your machine by default — nothing leaves it**. Or hand the job to the API of your choice, right down to your company's own endpoint: **you decide who touches your data**.
 
 **🛟 Bulletproof & zero chores.** Backup, freshness, recovery after a glitch: **its** job, not yours. *You just have to talk.*
+
+**🔄 Self-upgradable — new in v3.0.0.** Your brain keeps **its own engine** up to date: *ask in plain words, confirm,* and it pulls the latest search engine — **without ever touching a single one of your notes.** No terminal, no re-install. *([how it works](#keeping-your-brain-up-to-date-its-engine))*
 
 **[🧠 What's a second brain?](#what-is-a-second-brain) · [🚀 Install yours now](#ready-to-try-it) · [📖 View the articles](#the-article-series)**
 
@@ -393,6 +399,9 @@ auto-commit hook **pushes on every change** — backup and switching between lap
 
 ## 🔄 Keeping your brain up to date (its engine)
 
+> 🆕 **New in v3.0.0.** Brains generated from **v3.0.0 onward** ship with this built-in updater — so
+> they keep improving long after install day, opt-in and on your say-so.
+
 Your brain runs on an **engine** — the search code, the launchers and a handful of housekeeping
 scripts. Over time that engine improves (faster search, new safeguards, fixes). The good news:
 **your brain knows how to upgrade its own engine — and it never touches a single one of your notes.**
@@ -416,7 +425,7 @@ A few plain ideas first (the mental model):
 
 > 🧑 *"Update your engine, please."*
 >
-> 🧠 *"You're on engine v1.0; v1.2 is available — want me to update? Your notes won't be touched."*
+> 🧠 *"You're on engine v3.0.0; v3.1.0 is available — want me to update? Your notes won't be touched."*
 > → you say **yes**.
 
 That's the whole thing: **ask in plain words, confirm.** No terminal, no installer, no new folder.
