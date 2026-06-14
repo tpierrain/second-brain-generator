@@ -14,9 +14,9 @@ at the bottom.
 - [x] **Gate #0** — survival test written (RED by design until Step 3). `scripts/lib/engine-manifest.test.mjs`.
 - [x] **Step 1** — Relocatable paths (`config.ts` → `resolvePath` + env vars). RAG suite green, tsc clean.
 - [x] **Step 2** — Observable version vector (semver + `vault_stats` + index schema stamp). RAG suite green, tsc clean.
-- [ ] **Step 3** — Ownership manifest (`engine-manifest.json`) → **turns gate #0 green**; full test file. ⬅ **NEXT**
+- [x] **Step 3** — Ownership manifest (`engine-manifest.json`) → **gate #0 green**; full test file (4 guards). RAG suite green, tsc clean.
 - [ ] **Definition of done** — STATUS → ✅ with commit SHAs + what was verified, then `git mv` into
-  [`plans/archived/`](archived/).
+  [`plans/archived/`](archived/). ⬅ **NEXT**
 
 Enacts **Phase 0** of
 [`engine-packaging-study.md`](engine-packaging-study.md) (Track D), under the four-part model and the
@@ -338,8 +338,34 @@ same branch unless told otherwise. **One `/clear` (fresh window) between steps**
   (schema fresh/stale/grandfather + stale message). Suite: `cd rag && npm test` → **129/129** (was 118),
   `npx tsc --noEmit` clean. Harness suite unchanged: **144/145** (the 1 red is still gate #0, by design).
 
-### ⏭️ Next: Step 3 — Ownership manifest (fresh window) → turns gate #0 green
-Open a new session, kickoff prompt targeting **Step 3 only**, on branch `claude/engine-packaging-phase0-wmfjxz`.
-Create `engine-manifest.json` (regimes + `engineMcpServers`) keyed per ADR 0012; flesh out the survival test
-file so **gate #0 goes green**. That finishes the plan (Definition of done: STATUS → ✅ + `git mv` to
-`plans/archived/`).
+### ✅ Step 3 — Ownership manifest (DONE, green)
+- **3a — `engine-manifest.json`** at the launcher root, keyed by the three ADR-0012 regimes. Lists **only
+  Engine paths**; everything unlisted is, by construction, a Personal Extension or Content → untouchable.
+  - `replace`: `rag/src/**`, `rag/package.json`, `rag/package-lock.json`, `rag/tsconfig.json` (the engine
+    source — blind-replaceable, no user edits expected; `rag/scripts/` is dev-only and not copied, so absent).
+  - `regenerate`: `rag/launch.sh`, `rag/launch.cmd`, `scripts/run-node.sh`, `scripts/run-node.cmd` — the
+    **install-generated** self-heal launchers (built by `scripts/lib/rag-launcher.mjs`, not present in the
+    launcher repo) → rebuilt deterministically, never diffed. *(Extended the plan's draft, which named only
+    `rag/launch.*`: the `run-node.*` hook launchers are the same family and must be managed too, else they'd
+    be left unowned.)*
+  - `merge`: `CLAUDE.md`, `.claude/settings.json`, the **six shipped skills listed one by one**
+    (`coach`, `sync`, `sync-sources`, `improve`, `prepare-1-1`, `tdd-discipline` — **never** a blanket
+    `.claude/skills/**`), and the four hook/runtime scripts (`auto-commit`, `auto-push`, `status-line`,
+    `verify-rag`). Q#4 + Q#5 of the study resolved per ADR 0012: Engine, but `merge` (a user may have forked
+    them → offer a diff, never blind-overwrite).
+  - `engineMcpServers: ["vault-rag"]`; `provenance: {}` **reserved** for Phase 1's per-file fingerprint.
+- **3b — `.mcp.json` marker.** Declared via `engineMcpServers` (no schema extension on `.mcp.json`); a future
+  `update-engine` rewrites only that key and deep-merges the user's connectors. Data only — no Phase-0 runtime.
+- **Tests (gate #0 written RED first → GREEN here) — `scripts/lib/engine-manifest.test.mjs`, 4 guards:**
+  (1) **survival test** (gate #0) — a home-made skill / custom script / sub-agent / vault note fall in **no**
+  writable regime nor `engineMcpServers`; (2) **regime disjointness** — `replace`/`merge`/`regenerate`
+  pairwise disjoint; (3) **no over-broad glob** — a *random* skill folder / script is never matched (catches a
+  blanket subtree); (4) **engine paths only** — every `engineMcpServers` key exists in `.mcp.json.template`
+  and every `merge` skill glob resolves to a shipped skill folder (anti-drift). Each guard verified fail-first
+  by perturbation before being committed green.
+- **Suites:** harness `node --test scripts/lib/*.test.mjs` → **148/148** (was 144/145 — gate #0 was the lone
+  red, now green, +3 new guards). RAG `cd rag && npm test` → **129/129**, `npx tsc --noEmit` clean (rag/
+  untouched). *(Reminder: `cd rag && npm install` first — deps not vendored.)*
+
+### ⏭️ Next: Definition of done — set STATUS → ✅ (commit SHAs + what was verified) and `git mv` this file into
+`plans/archived/`. **No merge to `main`** before the client demos (ADR 0012 / rule 4) — the PR stays a draft.
