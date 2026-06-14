@@ -25,13 +25,21 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
   - [x] each guard proven fail-first: all 3 fail with `ERR_MODULE_NOT_FOUND` (the absent core), loaded
         lazily per-guard so each bites individually. _(Per-guard perturbation against the LIVE core is
         re-confirmed at Step 4 when the apply step turns them green one by one.)_
-- [ ] **Step 1 — Record the engine source + seed provenance at install.** The installer writes, into the
+- [x] **Step 1 — Record the engine source + seed provenance at install.** The installer writes, into the
       brain's copied `engine-manifest.json`, a `source: { repo, ref }` (the launcher git URL + the
       tag/commit it was generated from) and fills `provenance` with a **base fingerprint (sha256)** for
       each `merge`-bucket file. v1 reads `source` to know where to pull; `provenance` seeds the future
-      3-way (Phase 2) at **no extra cost now**.
-  - [ ] pure-Node lib `scripts/lib/engine-source.mjs` (compute source record + provenance map). Unit tests.
-  - [ ] wire it into `installer.mjs` (write the enriched manifest into the brain). Tests / smoke.
+      3-way (Phase 2) at **no extra cost now**. _(2026-06-14)_
+  - [x] pure-Node lib `scripts/lib/engine-source.mjs` (compute source record + provenance map). Unit tests.
+        _(TDD baby-steps: `fingerprint` (self-describing sha256), `selectMergeFiles` (manifest globs incl.
+        `**` subtrees — user files never matched), `buildProvenance`, `buildSource` (ref = exact tag ›
+        branch › commit; no remote → `repo:null`), `enrichManifest` (non-mutating), + I/O orchestrator
+        `recordSourceAndProvenance`. 10 tests green.)_
+  - [x] wire it into `installer.mjs` (write the enriched manifest into the brain). Tests / smoke.
+        _(call before the brain's first commit; git facts read from the launcher ROOT. **Smoke install
+        PROVEN end-to-end (exit 0)**: brain manifest got `source` = launcher origin + branch, `provenance`
+        = sha256 per merge file (6 skills' SKILL.md, generated `.claude/settings.json`, `CLAUDE.md`, 4
+        engine scripts); vault note / `.env` / `rag/src` NEVER fingerprinted.)_
 - [ ] **Step 2 — Resolve + fetch the pinned target ref (cross-platform).** A lib that spawns
       `git clone --depth 1 --branch <ref>` (or fetch) of the recorded repo into a temp dir, then reads the
       **fetched** `engine-manifest.json` → target `engineVersion` vector + `indexSchemaVersion`. Pure Node,
