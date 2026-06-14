@@ -39,6 +39,23 @@ Three deliverables, independent, shippable one at a time (a `/clear` between eac
    (replace / merge / never-touch) + an Engine marker for `.mcp.json` — with the **survival test** as the
    plan's first acceptance gate.
 
+## Session protocol (the maintainer's standing working agreement — honour it without being re-asked)
+
+These rules are **fixed by the maintainer (Thomas)** and apply to **every** session running this plan, so
+he never has to restate them in a new prompt:
+
+1. **One big step per fresh window.** Each **big step** (gate #0, Step 1, Step 2, Step 3) is executed in
+   its **own new session** — never drag a long conversation across steps (context rot). The committed docs
+   (ADR 0012 + this plan, incl. the **Progress log** at the bottom) are the **only** external memory a new
+   window needs.
+2. **Update the Progress log as you go.** Whenever you advance, **edit this plan's Progress log in the same
+   breath** — record where we are (what's done, the branch, commit SHAs, what's next), so the next window
+   can pick up cold.
+3. **Stop and ask before the next big step.** At the **end of each big step**, **do NOT roll into the next
+   one.** Report where we are and **explicitly ask the maintainer** (via `AskUserQuestion`) whether to
+   continue in this session or open a fresh window. Wait for the answer — the default expectation is a
+   fresh window.
+
 ## Execution kickoff (run in a fresh window — avoid context rot)
 
 Execute this plan from a **new session**, not by dragging a long conversation along. The committed docs
@@ -47,13 +64,14 @@ it only:
 
 > Read and follow `maintainers/decisions/0012-engine-packaging-four-part-model.md` and
 > `maintainers/plans/engine-packaging-phase0-action.md` **to the letter** (four-part model, additive-only
-> founding principle, three regimes). Work on branch **`claude/engine-packaging-phase0-impl`**. **Do NOT
-> merge to `main`** (demo week — runtime code merges only after). **TDD strict** (skill `tdd-discipline`):
-> write **gate #0** (the survival test) first, then **Step 1 only**, then stop and show me the diff. Keep
-> the `rag` suite green; commit + push to the impl branch.
+> founding principle, three regimes — and the **Session protocol** + **Progress log**). Work on the branch
+> named in the Progress log (currently **`claude/engine-packaging-phase0-wmfjxz`**). **Do NOT merge to
+> `main`** (demo week — runtime code merges only after). **TDD strict** (skill `tdd-discipline`): do **the
+> single next big step named in the Progress log**, then stop and show me the diff. Keep the `rag` suite
+> green; commit + push to that branch; update the Progress log; then **ask me** before the next big step.
 
-**Steps 2 and 3 each get their own fresh window**, same pattern (one clean context per step — the
-tablet-friendly equivalent of `/clear` between steps). Branch off `main` once the framing PR is merged;
+**Each big step gets its own fresh window** (one clean context per step — the tablet-friendly equivalent
+of `/clear` between steps), per the **Session protocol** above. Branch off `main` once the framing PR is merged;
 otherwise branch off `claude/engine-packaging-study-2nzmkg`.
 
 ## Acceptance gate #0 — the founding principle, made testable (do this first)
