@@ -121,7 +121,8 @@ exhaustive enumeration: the impoverished smoke test is the **safety net** for ev
    green. Deliberate and **explicitly flagged** exception: the purely mechanical / not unit-testable
    (renaming, a message, trivial config, the Gemini network integration) — no artificial test
    just for form's sake.
-7. **Resuming a multi-session plan — the "one open PR of mine" convention (harness rule).** Long plans
+7. **Resuming a multi-session plan — the "one open PR of mine" convention (harness rule).** *Rationale &
+   rejected alternatives: [`maintainers/decisions/0013-resume-via-single-open-pr.md`](maintainers/decisions/0013-resume-via-single-open-pr.md).* Long plans
    run across several fresh sessions (one big step per window, to avoid context rot). So that the
    maintainer **never has to say where we are or which branch**, resumption is anchored on **his open
    PR**, and this is a standing rule — **not to be re-described each time**:
