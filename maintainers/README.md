@@ -27,7 +27,7 @@
     plugin / marketplace.
   - [`0003-no-brain-capability-upgrade.md`](decisions/0003-no-brain-capability-upgrade.md) —
     no (yet) upgradability of capabilities: disproportionate complexity + simple local iteration
-    (home-grown skills); to be reopened on feedback.
+    (home-grown skills); to be reopened on feedback. **SUPERSEDED by 0012.**
   - [`0004-claude-only-for-now.md`](decisions/0004-claude-only-for-now.md) —
     Claude-only for now (vault + RAG already agnostic); cross-platform not ruled out, on
     feedback, with the orchestration layer to adapt.
@@ -73,6 +73,15 @@
     (non-Claude/Obsidian edits) + the on-brand remedy held in reserve (an event-bound `git add -A`
     sweep on `SessionStart`/`Stop`, gated on a *proven* need). Names the split ADR 0009 already
     implied. **Scope: Second brain (runtime).**
+  - [`0012-engine-packaging-four-part-model.md`](decisions/0012-engine-packaging-four-part-model.md) —
+    **engine packaging, supersedes 0003**: reopens upgradability on the trigger 0003 named (production +
+    parallel evolution). Fixes the **four-part vocabulary** — **Installer** (out of scope) / **Engine**
+    (the upstream-provided runtime machinery = the upgrade subject) / **Personal Extensions** (user-made
+    tooling grafted on, sacred) / **Content** (the vault, never touched). Sets the **founding principle**:
+    additive-only upgrade (write-allowlist + managed file set, never `rsync --delete`) — a user addition
+    is *never* deleted/overwritten, structurally. Three **regimes** (replace / merge-3way / never-touch),
+    Engine versioned as a **vector**. **Phased + channel-deferred** (decouple now, defer npm/plugin to
+    proven need; engine must start **offline**). **Scope: Second brain (runtime) + Installer.**
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
