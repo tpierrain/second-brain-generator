@@ -21,6 +21,9 @@ export function parseLsFilesZ(output) {
 //     the instrument used to CHOOSE the launcher's embedder (Gemini vs local
 //     measurement). No value in a user brain (Flemmr notes purged → everything FAILs).
 //     Excluded by PREFIX → covers the .mjs AND their .test.mjs at once.
+//   - scripts/lib/install-handoff: the installer's end-of-install banner. Purely
+//     launcher-side (like installer.mjs) — printed once at install time, no use in
+//     a brain. Excluded by PREFIX → covers the .mjs AND its .test.mjs.
 //   - rag/scripts/: engine MEASUREMENT tooling (measure-batch — tune EMBED_BATCH
 //     on a dense corpus; measure-contention — prove that search and indexing share
 //     a warm session). Dev-only: imports the TS source and targets a confidential
@@ -31,6 +34,10 @@ const DEV_ONLY_PREFIXES = [
   "scripts/run-eval.mjs",
   "scripts/lib/eval-",
   "scripts/lib/mcp-search",
+  // install-handoff: the installer's end-of-install banner (buildHandoff). Pure
+  // launcher-side, like installer.mjs itself — useless in a brain. Covers the .mjs
+  // AND its .test.mjs via the prefix.
+  "scripts/lib/install-handoff",
   "rag/scripts/",
   // Localized artefact sources (constitution, skills, demo vault) live under
   // templates/<locale>/. They are NOT bulk-copied: the installer overlays only

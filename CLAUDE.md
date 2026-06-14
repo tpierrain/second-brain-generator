@@ -169,6 +169,12 @@ node installer.mjs --non-interactive --name "<name>" --dest "<parent-location>" 
      GitHub = the simple case; other platforms = best-effort + guidance.
 3. **Open a NEW CONVERSATION rooted in the brain** — present this as the **TWO WAYS TO USE YOUR
    SECOND BRAIN** (critical step, the most-often-missed; without it **the brain doesn't work**).
+   ⚠️ **ANCHOR ON THE INSTALLER'S BANNER, DON'T FREE-COMPOSE.** The installer prints, as the **very
+   last thing on screen**, a deterministic hand-off banner ("⚠️ THIS WINDOW IS THE INSTALLER — NOT
+   your second brain", then Desktop-first / terminal-second, then the optional purge). **Reproduce
+   that banner VERBATIM** in your closing message — same wording, same order — instead of writing your
+   own. **NEVER** replace it with a bare `cd … && claude` line, and **never** drop the Desktop option.
+   The template below mirrors that banner; keep it faithful.
    ⚠️ **PRESENTATION MANDATORY — NEVER collapse this to a single `cd … && claude` line**, and never
    render it as a small / discreet grey subtitle. Put it **at the TOP of your final message** (before
    the recap), as a **can't-miss block**: a heading in **UPPERCASE framed by ⚠️** (e.g.
@@ -241,4 +247,12 @@ node installer.mjs --non-interactive --name "<name>" --dest "<parent-location>" 
   and never offered as the first/default choice. Default is Home (`~/<name>`); see Step 2.
 - **Refusal if the folder exists**: re-running with the **same name + location** fails cleanly
   (non-zero exit, nothing is modified). To start over: different name/location, or delete the folder.
+- **Post-install tweaks are brain-side, NOT a re-run of the installer.** `installer.mjs` **refuses an
+  existing folder**, so it can never touch a brain you already created — **never** tell the user to
+  re-run it to purge demo notes or add connectors. The correct commands, run **from inside the brain**
+  (a new rooted conversation):
+  - **Purge the example notes** → `node scripts/clear-example-notes.mjs` (the brain-side script).
+  - **Connectors** are **not** replayable standalone (interactive logic lives in `installer.mjs`) →
+    add/remove them by **editing `.mcp.json` / `.claude/settings.json`** by hand (or re-install
+    interactively toward a **brand-new** brain).
 - **Don't pretend**: if the script exits with an error, say so and relay the message.

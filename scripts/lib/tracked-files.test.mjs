@@ -86,6 +86,18 @@ test("filterCopyable — KEEPS the brain-side update-engine SKILL (it must ship 
   assert.deepEqual(filterCopyable([skill, "README.md"]), [skill, "README.md"]);
 });
 
+test("filterCopyable — excludes install-handoff (launcher-only: the installer's end banner, no use in a brain)", () => {
+  assert.deepEqual(
+    filterCopyable([
+      "scripts/verify-rag.mjs", // brain-side: copied
+      "scripts/lib/install-handoff.mjs",
+      "scripts/lib/install-handoff.test.mjs",
+      "rag/src/index.ts",
+    ]),
+    ["scripts/verify-rag.mjs", "rag/src/index.ts"],
+  );
+});
+
 test("filterCopyable — excludes the eval-set tooling (dev-only: used to choose the launcher's embedder)", () => {
   assert.deepEqual(
     filterCopyable([

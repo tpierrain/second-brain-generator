@@ -19,7 +19,7 @@ import {
   mkdirSync,
   readdirSync,
 } from "node:fs";
-import { dirname, resolve, join } from "node:path";
+import { dirname, resolve, join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir, homedir, totalmem } from "node:os";
 import { createInterface } from "node:readline/promises";
@@ -50,6 +50,7 @@ import {
   embedderReady,
 } from "./scripts/lib/embedder-choice.mjs";
 import { openEnvInEditor } from "./scripts/lib/open-env.mjs";
+import { buildHandoff } from "./scripts/lib/install-handoff.mjs";
 import { recordSourceAndProvenance } from "./scripts/lib/engine-source.mjs";
 import { resolveLatestTag } from "./scripts/lib/engine-fetch.mjs";
 
@@ -760,10 +761,17 @@ if (geminiKeyMissing) {
   );
   console.log(`   .env on its own); worst case, ${c.C}/mcp${c.X} to reconnect, or restart Claude Code.`);
 }
-console.log(`Next steps:`);
-console.log(`  1. ${c.C}cd ${toPosix(TARGET)} && claude${c.X}   ← open Claude Code in the brain folder`);
-console.log(`  2. Ask a question, e.g.:`);
-console.log(`     ${c.C}"${DEMO}"${c.X}`);
-console.log(`     → Claude answers from the vault, sources cited.`);
-console.log(`  3. Replace the example notes with your own, edit ${c.C}CLAUDE.md${c.X} to suit you.`);
-console.log(`\nFull docs: ${c.C}SETUP.md${c.X}`);
+// Deterministic hand-off banner (ADR 0009): the LAST thing on screen, so neither
+// a human reading the terminal nor a Claude session driving the install can miss
+// that THIS window is the launcher — the brain lives in a NEW, rooted conversation
+// (Desktop first). A driving session is told (priming CLAUDE.md) to relay it verbatim.
+for (const line of buildHandoff({
+  target: toPosix(TARGET),
+  name: basename(TARGET),
+  platform: process.platform,
+  demo: DEMO,
+})) {
+  // Highlight the framed ⚠️ header lines; everything else prints as-is.
+  console.log(line.includes("⚠️") ? `${c.B}${c.Y}${line}${c.X}` : line);
+}
+console.log(`Full docs: ${c.C}SETUP.md${c.X}`);
