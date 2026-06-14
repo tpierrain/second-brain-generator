@@ -73,21 +73,23 @@ post-demo merge.
           **cache-as-contract** lets the future producer slot in behind the A1 display; hooks can spawn a
           detached non-blocking child. _(Optional now: ship the status-line's cache **read** in A1 so the future
           producer is a literal drop-in — decide at implementation; low risk, but the door is open regardless.)_
-- [ ] **Chantier B — Bake the autocompact threshold into every generated brain.**
+- [x] **Chantier B — Bake the autocompact threshold into every generated brain.** _(done 2026-06-14)_
       _(value chosen WITH the maintainer 2026-06-14: **350000**, the "levier 2" of the article.)_
       ✅ **Variable name CONFIRMED EMPIRICALLY** (the memory's "non confirmé" is resolved): it is
       **`CLAUDE_CODE_AUTO_COMPACT_WINDOW`** (a **string**), inside the **`"env"` block** of `settings.json` —
       proven by the maintainer's own `~/.claude/settings.json` (machine-level, set to `"300000"`). The
       **300K the maintainer sees today comes from his machine**, not this project; the brain template has
       **no `env` block**, so a fresh brain on a non-dev machine would NOT inherit it → bake it in.
-  - [ ] add `"env": { "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "350000" }` to `.claude/settings.json.template`
+  - [x] add `"env": { "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "350000" }` to `.claude/settings.json.template`
         (a static block — the installer's `gen()` only substitutes `{{…}}` placeholders, so a literal `env`
-        block flows through verbatim).
-  - [ ] guard test: assert the templated/generated `settings.json` carries
-        `env.CLAUDE_CODE_AUTO_COMPACT_WINDOW === "350000"` (no settings-content test exists yet — add a
-        minimal one; substitute the `{{…}}` placeholders first since the raw template isn't valid JSON).
-  - [ ] _(optional)_ one line in SETUP/README that every brain forces autocompact at 350k tokens — decide if
-        worth it (small, audience = curious).
+        block flows through verbatim). _(done 2026-06-14)_
+  - [x] guard test: assert the templated/generated `settings.json` carries
+        `env.CLAUDE_CODE_AUTO_COMPACT_WINDOW === "350000"` — new `scripts/lib/settings-template.test.mjs`
+        (mirrors `gen()`'s `{{…}}` substitution, then `JSON.parse` + asserts the value AND that it's a string).
+        _(2/2 green)_
+  - [x] _(optional — SKIPPED)_ one line in SETUP/README: **not worth it** — autocompact is an internal tuning
+        detail that "just works"; surfacing it to non-dev users adds noise for no action they can take.
+        Decision 2026-06-14.
 - [ ] **Definition of done** — harness `node --test` green (fail 0, todo 0), RAG untouched (no `rag/` code
       change), `tsc` n/a; tick all boxes with _(date · commit)_; refresh the PR #10 body; **NO `main` merge**
       (the maintainer merges post-demos). When done, `git mv` this plan into
