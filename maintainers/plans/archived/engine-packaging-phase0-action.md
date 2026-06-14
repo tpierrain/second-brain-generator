@@ -7,6 +7,25 @@ to `main` before the client demos, ADR 0012 / rule 4). All three deliverables la
 `node --test scripts/lib/*.test.mjs` → **148/148** (gate #0 now green); RAG `cd rag && npm test` →
 **129/129**; `cd rag && npx tsc --noEmit` clean. Full detail in the **Progress log** at the bottom.
 
+## In essence — what Phase 0 actually achieved (the *what*, not the *how*)
+
+> The steps below are the *how*. This is the *what*, so it survives a `/clear`: **Phase 0 turned the
+> Engine into something that knows how to describe itself and knows its own boundaries — so that, later,
+> it can be updated inside an already-installed brain without ever touching the user's notes or personal
+> extensions.** Phase 0 updates nothing; it lays the **safety contract** that makes a future
+> `update-engine` (Phase 1) safe *before a single line of upgrade code exists*.
+
+Three acquisitions:
+
+1. **The Engine became *observable*.** It now announces its version and its index freshness — so we can
+   one day say "this brain runs v1.0, a v1.1 is available." Before, the running version was invisible.
+2. **The Engine became *relocatable*.** It no longer assumes hard-coded paths; it can live anywhere — the
+   prerequisite for moving/reinstalling it without breaking everything.
+3. **The Engine now knows its own boundaries** (`engine-manifest.json`): an explicit declaration of *which
+   files belong to the Engine* and *how each must be updated* (replace / regenerate / merge). Corollary by
+   construction: **anything not listed = the user's property (notes, personal extensions) = untouchable.**
+   This is the launcher↔brain contract made explicit and verifiable (4 guards test it).
+
 ## ▶ Progress checklist (SOURCE OF TRUTH — resume at the first unchecked box)
 
 > To resume, the maintainer only says **“reprends le plan en cours”**. The agent then locates the plan
