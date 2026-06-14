@@ -170,6 +170,7 @@ The RAG (`rag/`) splits each Markdown file into **chunks** (one per `#`/`##`/`##
 - Structural navigation (known file) → `Read` directly, no RAG.
 - `search_vault` is fast and cheap — don't hesitate when the question is semantic.
 - The index rebuilds automatically, incrementally (only modified files are re-indexed). No manual maintenance. Forced rebuild: `cd rag && npm run reindex`.
+- **"Which engine version do I have?"** → the engine **TAG** is the answer: the **"Version"** line of `vault_stats` (= the brain's pinned `source.ref`, the same value the status-line shows). The `rag X.Y.Z` / index-schema numbers on the `vault_stats` "internal build" line are **internal mechanics**, *not* the version — never report them as "the version" (ADR 0017).
 
 **⚠️ Fail-loud — never a disguised out-of-vault answer.** If the `mcp__vault-rag__*` tools are **unavailable, missing, or return an error** (MCP server not loaded, missing Gemini key, empty index…), you must **SAY IT LOUDLY** — "⚠️ RAG unavailable: I can't query the vault" — and **REFUSE to fabricate an answer** from the Internet or your general knowledge. A second brain that answers beside the vault *while appearing to work* is worse than a brain that frankly says it's down. This applies **in particular to the demo question** (the user's first contact): no plausible but out-of-vault answer. Instead, indicate how to fix it (key in `.env`, restart Claude Code, `/mcp`).
 

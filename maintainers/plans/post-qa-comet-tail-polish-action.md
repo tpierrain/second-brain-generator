@@ -20,7 +20,7 @@ before the Mon/Tue demos.**
 > **commits green only** ([[commit-only-green-todo-gate]]), ticks the box in the finishing commit, and mirrors
 > progress in the PR #10 body.
 
-- [ ] **Item 1 — Make the conversational version answer = the engine TAG, reliably** _(= the maintainer's "A";
+- [x] **Item 1 — Make the conversational version answer = the engine TAG, reliably** _(2026-06-14)_ _(= the maintainer's "A";
       aligns the spoken answer with [`ADR 0017`](../decisions/0017-engine-version-reference-is-git-tags.md) and
       with the status-line)._ ⚠️ **Key insight (maintainer, 2026-06-14):** prose guidance to an LLM is **itself
       probabilistic** — it biases the coin flip, it doesn't remove it ([`ADR 0009`](../decisions/0009-prefer-deterministic-mechanisms.md):
@@ -44,13 +44,13 @@ before the Mon/Tue demos.**
     - [x] **addendum to [`ADR 0017`](../decisions/0017-engine-version-reference-is-git-tags.md)** (§1.bis):
           the conversational/tool path single-sources the version from `source.ref` (vault_stats), so the answer is
           deterministic, not prose-dependent. _(2026-06-14)_
-  - [ ] **1b — Guidance (complement to 1a, cheap, doc-only).** With 1a the data is already right everywhere; this
+  - [x] **1b — Guidance (complement to 1a, cheap, doc-only).** _(2026-06-14)_ With 1a the data is already right everywhere; this
         just removes any residual phrasing ambiguity.
-    - [ ] **constitution EN** (`CLAUDE.md.template`): when asked "what's your engine version", report the engine
+    - [x] **constitution EN** (`CLAUDE.md.template`): when asked "what's your engine version", report the engine
           **tag** (`source.ref` / `vault_stats` "Version") as THE version; the `rag`/schema vector is **internal
-          mechanics**. Natural home: near the "intent → MCP tool" table (line ~164).
-    - [ ] **constitution FR** (`templates/fr/CLAUDE.md.template`): same, in French (table ~line 151).
-    - [ ] **`update-engine` SKILL.md**: one line pointing the version-reporting path to `source.ref`.
+          mechanics**. _(2026-06-14 · bullet under the retrieval rules, ~line 173)_
+    - [x] **constitution FR** (`templates/fr/CLAUDE.md.template`): same, in French. _(2026-06-14 · ~line 160)_
+    - [x] **`update-engine` SKILL.md**: one line pointing the version-reporting path to `source.ref`. _(2026-06-14)_
 - [ ] **Item 2 — status-line: stop the false "⚠️ Gemini key missing" on keyless embedders.** _(pre-existing bug,
       now QA-confirmed user-visible on an in-process brain — CLI screenshot 2026-06-14.)_
   - [ ] `scripts/status-line.mjs`: gate `keySeg` behind **`geminiKeyRequired(envContent)`** (import it from

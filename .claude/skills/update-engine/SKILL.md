@@ -24,6 +24,10 @@ version: 1.0.0
   pull from in `engine-manifest.json`), you may **offer** an update — but **never run it
   without the user's explicit go-ahead**.
 
+> **Reporting the current version?** The engine version is the brain's pinned git **TAG** —
+> the manifest's `source.ref` (surfaced as the **"Version"** line of `vault_stats` and on the
+> status-line), **not** the `rag X.Y.Z` / index-schema "internal build" numbers (ADR 0017).
+
 ## Golden rule — OPT-IN, NEVER automatic
 
 Do **not** run the core until the user has clearly confirmed. An engine update changes
