@@ -1,6 +1,9 @@
 # Engine packaging — Phase 0 action plan (Track D: decouple now, defer the channel)
 
-**STATUS: 🗺️ ACTION PLAN — not started.** Enacts **Phase 0** of
+**STATUS: 🚧 IN PROGRESS.** Gate #0 written (red, by design) + **Step 1 done** on branch
+`claude/engine-packaging-phase0-wmfjxz`. See **Progress log** at the bottom before continuing.
+
+Enacts **Phase 0** of
 [`engine-packaging-study.md`](engine-packaging-study.md) (Track D), under the four-part model and the
 founding principle of [`ADR 0012`](../decisions/0012-engine-packaging-four-part-model.md). Makes the
 **Engine observable and relocatable** without choosing a distribution channel yet. **Scope:** Second
@@ -227,3 +230,38 @@ for Phase 1.
   0002-addendum hybrid, enacted on proven user-base need.
 
 The framing is now fixed by **ADR 0012**; this plan is its first, smallest, fully-reversible increment.
+
+---
+
+## Progress log (external memory — read this to continue in a fresh window)
+
+**Branch:** `claude/engine-packaging-phase0-wmfjxz` (NOT `main` — demo week). Steps continue here on the
+same branch unless told otherwise. **One `/clear` (fresh window) between steps** to avoid context rot.
+
+### ✅ Gate #0 — survival test (written RED, by design)
+- `scripts/lib/engine-manifest.test.mjs` — the founding-principle gate: a home-made skill, a custom
+  script, a custom sub-agent and a vault note are **not** in `replace ∪ merge ∪ regenerate` nor under
+  `engineMcpServers`. Self-contained (inlined glob→RegExp matcher; reads `engine-manifest.json` from the
+  repo root).
+- **Intentionally red** until Step 3 (the manifest doesn't exist yet): it is the **only** failing test
+  in the harness suite (`node --test scripts/lib/*.test.mjs` → 144/145; the 1 fail is this gate). The
+  **RAG suite stays green** — that is the kickoff's "keep the rag suite green", harness gate excepted.
+
+### ✅ Step 1 — Relocatable paths (DONE, green)
+- `rag/src/lib/config.ts`: added pure `export function resolvePath(envValue, fallback)` (env non-empty,
+  trimmed → `resolve(envValue)`; else fallback verbatim). Wired `VAULT_DIR`/`CACHE_DIR`/`envPath` through
+  it via `process.env.VAULT_DIR` / `CACHE_DIR` / `SBG_ENV_PATH`. Defaults unchanged → zero behaviour
+  change for existing brains.
+- Tests: `rag/src/lib/paths.test.ts` (absolute→resolved, unset→fallback, empty/whitespace→fallback,
+  relative→resolved-vs-cwd). Suite: `cd rag && npm test` → **118/118**, `npx tsc --noEmit` clean.
+  *(Note: test named `paths.test.ts`, not `.mts` as the body text sketched — `.mts` wouldn't match the
+  runner glob `src/lib/*.test.ts`.)*
+- `.env.example`: documented `VAULT_DIR` / `CACHE_DIR` / `SBG_ENV_PATH` as **advanced/optional**.
+- `.mcp.json.template` left untouched (out of scope — defaults cover the current layout).
+- **First-run note for a fresh window:** `rag/` deps aren't vendored — run `cd rag && npm install` before
+  `npm test`.
+
+### ⏭️ Next: Step 2 — Observable version vector (fresh window)
+Open a new session, give it the kickoff prompt (Execution kickoff §) but targeting **Step 2 only**, on
+branch `claude/engine-packaging-phase0-wmfjxz`. Keep gate #0 red (it goes green at Step 3) and the RAG
+suite green. Then Step 3 turns gate #0 green and finishes the plan.

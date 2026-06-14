@@ -7,13 +7,27 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const projectRoot = resolve(__dirname, "../../..");
 
-const envPath = resolve(projectRoot, ".env");
+// Relocatable paths (engine-packaging Phase 0): the Engine reads where the vault,
+// cache and .env live from the environment, defaulting to today's relative paths.
+// Pure + unit-testable: a non-empty env value wins (resolved to absolute),
+// otherwise the historical fallback is kept verbatim (regression guard).
+export function resolvePath(
+  envValue: string | undefined,
+  fallback: string
+): string {
+  return envValue && envValue.trim() ? resolve(envValue) : fallback;
+}
+
+const envPath = resolvePath(process.env.SBG_ENV_PATH, resolve(projectRoot, ".env"));
 if (existsSync(envPath)) {
   config({ path: envPath });
 }
 
-export const VAULT_DIR = resolve(projectRoot, "vault");
-export const CACHE_DIR = resolve(__dirname, "../../.cache");
+export const VAULT_DIR = resolvePath(process.env.VAULT_DIR, resolve(projectRoot, "vault"));
+export const CACHE_DIR = resolvePath(
+  process.env.CACHE_DIR,
+  resolve(__dirname, "../../.cache")
+);
 export const DB_PATH = resolve(CACHE_DIR, "vault.db");
 export const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY ?? "";
 
