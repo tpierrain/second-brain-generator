@@ -28,27 +28,28 @@ launcher→brain link "by construction"; ADR 0003 accepts the consequence). We w
 (the RAG/MCP motor) an **independently replaceable unit**, while the **vault**, the **constitution**,
 the **skills** and the **connectors** stay owned and **never overwritten**.
 
-**Thomas's vocabulary (2026-06-14) — three things, fixed for all our exchanges.** The brain world has
-**exactly three** parts, and when Thomas says **"the engine"** he means the **middle** one:
+**Thomas's vocabulary (2026-06-14) — four things, fixed for all our exchanges.** The brain world has
+**exactly four** parts, and when Thomas says **"the engine"** he means the one labelled so:
 
 | Term | What it is | Lives | On an engine upgrade |
 |---|---|---|---|
-| **Installer** | the launcher + all it needs to generate a brain (`installer.mjs`, install-side `scripts/lib/`, `templates/`) | the **launcher** repo (read-only, reusable — ADR 0001) | **out of scope** — it's the tool that *performs* an upgrade, not a thing upgraded inside a brain |
-| **Engine** *(= "the motor")* | everything that makes a brain *run*: RAG, runtime hooks/scripts, shared skills, the constitution `CLAUDE.md`, `.mcp.json` | inside the **brain** | **the subject of this study** — upgradable, under the founding principle |
-| **Content** | the user's notes — their data | the brain's `vault/**` | **never touched** |
+| **Installer** | the launcher + all it needs to generate a brain (`installer.mjs`, install-side `scripts/lib/`, `templates/`) | the **launcher** repo (read-only, reusable — ADR 0001) | **out of scope** — it *performs* an upgrade, it isn't a thing upgraded inside a brain |
+| **Engine** *(= "the motor")* | the **upstream-provided** runtime machinery: RAG, runtime hooks/scripts, the shipped skills, the constitution `CLAUDE.md`, `.mcp.json` | inside the **brain** | **the subject of this study** — upgradable, under the founding principle |
+| **Personal Extensions** *(short: "Extensions")* | the **user-made** tooling grafted onto the brain: home-made skills, custom scripts/sub-agents/hooks. Machinery, but authored locally — **not** content | inside the **brain** | **never touched** (sacred — founding principle) |
+| **Content** | the user's notes — their **data** | the brain's `vault/**` | **never touched** |
 
-So: **"engine", in our conversations, = the runtime machinery of a brain, excluding both the installer
-and the content.** It has several sub-parts that may each need a different packaging strategy
-(§1.bis) — but the word always points at this middle category.
+So: **"engine", in our conversations, = the upstream-provided runtime machinery of a brain** — excluding
+the installer, the user's own **Personal Extensions**, and the content. A brain is **plastic**: people
+graft their own tooling onto it, and that tooling is a **first-class category**, sacred like the content
+but for a different reason — Personal Extensions are theirs **by authorship**, content is theirs **by
+data**.
 
-**The catch — and the founding principle above.** "Engine = everything but content" does **not** mean
-"the upgrade may rewrite all of it". Inside the engine, a **second axis** decides what an upgrade may
-touch: **who authored it.** The user *extends and edits* the engine (home-made skills, custom
-scripts/sub-agents, a personalised `CLAUDE.md`, configured connectors) — and those additions are
-**sacred** (founding principle). So the real upgrade boundary is not content-vs-engine, it's
-**upstream-provided vs locally-added/edited**, *inside* the engine. The whole study is about drawing
-**that** line explicitly (today it's implicit) and choosing a distribution channel for the
-upstream-provided part.
+**The catch — and the founding principle above.** The split isn't only "machinery vs data": the user
+also *edits* engine files (a personalised `CLAUDE.md`, a forked `coach` skill). The decisive axis is
+**who authored it** — **Engine (upstream-provided)** vs **Personal Extensions (locally-added or -edited)**.
+Personal Extensions are **sacred**. The **merge regime** (below) handles the overlap — when a user edits an
+upstream file. The whole study is about drawing **that** line explicitly (today it's implicit) and
+choosing a distribution channel for the **Engine** part only.
 
 ## 1.bis "The engine" is really 3+1 versioned layers (refined 2026-06-14)
 

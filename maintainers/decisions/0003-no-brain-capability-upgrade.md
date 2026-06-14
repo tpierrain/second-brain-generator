@@ -1,6 +1,8 @@
 # ADR 0003 — No (yet) upgradability of generated brains' capabilities
 
-- **STATUS:** ACCEPTED (2026-06-05).
+- **STATUS:** ACCEPTED (2026-06-05) — **SUPERSEDED by [`0012`](0012-engine-packaging-four-part-model.md)
+  (2026-06-14)**, which enacts the reopening this ADR scheduled for itself. The "no upgrade for now" is
+  lifted; the sovereignty invariant below is **kept and strengthened** (now a structural write-allowlist).
 - **Scope:** Second brain (runtime) + Installer — the launcher↔brain relationship (the installer deliberately does NOT push upgrades to already-generated brains).
 - **Related:** [`0001-launcher-vs-brain.md`](0001-launcher-vs-brain.md) (the launcher→brain link
   is severed "by construction" — that's the cause of this consequence), [`0002-in-house-installer-vs-plugin.md`](0002-in-house-installer-vs-plugin.md).
