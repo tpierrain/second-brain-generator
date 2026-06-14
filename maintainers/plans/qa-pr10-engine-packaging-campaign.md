@@ -307,10 +307,12 @@ status-line **doit** avertir tant que la clé manque (et `verify-rag` échoue br
 > est plus large que ce qui appartient à un cerveau, et **ni dev-only-aware, ni locale-aware**,
 > contrairement à l'installeur (`filterCopyable` + overlay de locale).
 
-- [ ] **Finding #3 (mineur, pré-existant) — `npm audit` : 1 vulnérabilité high severity** dans les
-  deps du moteur RAG, signalée à chaque `npm install` (install + update-engine). Non spécifique à
-  cette PR, non bloquant ; la skill la **remonte honnêtement** sans rien appliquer. À traiter à
-  part (bump de dep), pas un bloquant merge.
+- [x] **Finding #3 (mineur, pré-existant) — `npm audit` : 1 vulnérabilité high severity** dans les
+  deps du moteur RAG. _(CORRIGÉ 2026-06-15)_ : `esbuild` (transitif via `tsx`, utilisé au runtime par
+  `reindex`/`index`) bumpé `0.28.0 → 0.28.1` (hors plage vulnérable `0.17.0–0.28.0`, advisories
+  GHSA-gv7w-rqvm-qjhr + GHSA-g7r4-m6w7-qqqr). `tsx ~0.28.0` autorisait déjà 0.28.1 → **seul
+  `rag/package-lock.json` change** (régime `replace` → voyage vers les cerveaux à l'update ; un
+  `npm install` frais installe 0.28.1). `npm audit` = **0 vulnérabilité** ; RAG 141/141 ; tsc clean.
 
 ---
 
