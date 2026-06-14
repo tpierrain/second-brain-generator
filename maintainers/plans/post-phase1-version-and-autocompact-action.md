@@ -20,10 +20,12 @@ post-demo merge.
 > (skill `tdd-discipline`), **commits green only** ([[commit-only-green-todo-gate]]), ticks the box in the
 > finishing commit, and mirrors progress in the PR body.
 
-- [ ] **Chantier A — Surface the engine version in the status-line (offline display + network "update available").**
-      Decoupled into the cheap-offline half and the costly-network half (the parked design call). _(scope
-      chosen WITH the maintainer 2026-06-14: **BOTH halves**.)_
-  - [ ] **A1 — Offline version display (cheap, deterministic, no network).**
+- [ ] **Chantier A — Surface the engine version in the status-line.** _(scope **revised** with the maintainer
+      2026-06-14, see [`ADR 0017`](../decisions/0017-engine-version-reference-is-git-tags.md): ship the
+      **offline display NOW** (A1); the **"update available" detection is DEFERRED** to a later, **opt-in,
+      non-blocking, background** iteration (A2) — the first draft's silent startup ping was dropped because it
+      re-coupled the brain to the generator, against ADR 0001/0014.)_
+  - [ ] **A1 — Offline version display (cheap, deterministic, no network) — THE work to do now.**
     - [ ] pure lib `scripts/lib/engine-version.mjs`: `formatEngineVersion(manifest)` → `"engine <source.ref>"`
           — **the displayed version is the git TAG the brain was generated/last-updated from**
           (`source.ref`, already recorded in the manifest at install), NOT a hand-maintained number. E.g.
@@ -36,37 +38,39 @@ post-demo merge.
           status-line contract is **READ-ONLY + FAST** — this is a plain file read, safe here.
     - [ ] _(optional)_ also surface it in `scripts/session-status.mjs` `systemMessage` for the CLI startup
           banner — decide if worth the duplication; status-line already covers Desktop + persistence.
-  - [ ] **A2 — Network "update available" check (throttled + cached + fail-silent).**
-        ⚠️ **Architecture invariant:** the network call **MUST NOT** live in `status-line.mjs` (it runs
-        continuously and is contractually READ-ONLY / no-network / no-write). It lives in
-        `session-status.mjs` (the **SessionStart** hook — runs **once** at startup and **already** does
-        network: `git pull --rebase`). The status-line only **reads a cache** and appends a suffix.
-    - [ ] pure lib `scripts/lib/engine-update-check.mjs` (TDD baby-steps): `shouldCheck({now, lastCheckedAt,
-          ttlMs})` (throttle ~once/24h) · `latestVersionFromRefs(refs)` (newest semver tag from
-          `git ls-remote --tags` output) · `isUpdateAvailable({current, latest})` where **`current` = the
-          brain's `source.ref`** (the git tag it's pinned to) — semver compare · `formatUpdateSuffix({latest})`
-          → `" (v<latest> dispo ⬆)"`. All pure, all unit-tested.
-    - [ ] a **testable spawn seam** for `git ls-remote --tags <source.repo>` (inject the spawn fn, mirroring
-          `engine-fetch.mjs`); **time-boxed** + **never throws** (fail-silent offline).
-          🛡️ **NO GitHub / `gh` / platform-API dependency (maintainer constraint, 2026-06-14):** this is plain
-          **`git`** (a primitive already present in every brain — it's a git repo + Phase 1 needs git), reading
-          **tags from any remote** (GitHub, GitLab, Azure, self-hosted) via the recorded `source.repo` **URL**.
-          The end-user (non-dev) **never invokes git/GitHub** — the hook runs it under the hood; they only see
-          the status-line suffix. This is the **least** host-coupled network option (a raw-file HTTP fetch
-          would be GitHub-specific — rejected); aligns with **ADR 0001** (self-hosted, no registry/platform API).
-    - [ ] wire into `session-status.mjs`: on startup, if the cache is stale (> ttl), run the fail-silent
-          check against the brain's recorded `source.repo` (from `engine-manifest.json`), then **write** the
-          cache `{ checkedAt, current, latest, updateAvailable }`. **Never block startup.** Cache path:
-          `rag/.cache/engine-update-check.json` (the `.cache/` dir is already gitignored — throwaway).
-          ⚠️ The **launcher itself records no `source`** (only generated brains do) → the check fail-silents
-          here, which is correct (the launcher is not a brain).
-    - [ ] wire into `status-line.mjs`: read that cache (**read-only**); if `updateAvailable`, append the
-          `formatUpdateSuffix` to the `engine v…` segment → `engine v1.1.0 (v1.2 dispo ⬆)`.
-    - [ ] **add `scripts/session-status.mjs` to the manifest `merge` list** (it carries engine logic now, so
-          `update-engine` must self-update it — today it's referenced by the settings template but **absent
-          from `engine-manifest.json`**, a pre-existing gap). Confirm the `engine-manifest.test.mjs` gate.
-  - [ ] **Cross-platform (ADR 0015):** `git` is a real exe on both OSes (no `process.platform` branch for
-        `ls-remote`, same as `engine-fetch`); cache path via `path.join`. Keep tests OS-agnostic.
+  - [ ] **A2 — "Update available" detection — DEFERRED (do NOT build now).** Comes back in a few days as a
+        separate, **opt-in, non-blocking, background** iteration (maintainer's call 2026-06-14). Captured here
+        so the design is ready; **nothing in A1 closes this door** (see "future-proofing" below). Constraints
+        when it lands (per [`ADR 0017`](../decisions/0017-engine-version-reference-is-git-tags.md)):
+    - [ ] **Opt-in, default OFF** (a setting the user enables) — honours ADR 0014 ("user-triggered, never a
+          standing remote or a silent auto-update").
+    - [ ] **Never blocks startup.** A **detached, fire-and-forget background producer** (the SessionStart hook
+          spawns a child it does **not** await — `child.unref()` — or an equivalent background task) does a
+          throttled (~once/24h), **fail-silent** `git ls-remote --tags <source.repo>`. Deterministic detached
+          process **preferred** over an LLM sub-agent for a mechanical fetch (ADR 0009), but the architecture
+          supports either.
+    - [ ] **Producer/consumer decoupled via a cache** (the contract that makes A2 a drop-in): the producer
+          **writes** `rag/.cache/engine-update-check.json` (`{ checkedAt, current: source.ref, latest, updateAvailable }`,
+          `.cache/` already gitignored); the **status-line is the consumer** — reads it **read-only** and, if
+          flagged, appends `formatUpdateSuffix` → `engine v1.1.0 (v1.2 dispo ⬆)`. Producer & consumer never
+          share a synchronous path.
+    - [ ] pure libs (TDD when built): `engine-update-check.mjs` — `latestVersionFromRefs(refs)` (newest semver
+          tag) · `isUpdateAvailable({current: source.ref, latest})` · `shouldCheck({now, lastCheckedAt, ttlMs})`
+          · `formatUpdateSuffix({latest})`. Spawn seam injected (like `engine-fetch.mjs`), time-boxed, never throws.
+    - [ ] **NO GitHub / `gh` / platform-API dependency** (maintainer constraint): plain **`git ls-remote`** on
+          the recorded **URL** — host-agnostic (GitHub/GitLab/Azure/self-hosted), `git` already present, run by
+          the machine **never** the non-dev user. The recorded `source` pointer is **not** a git remote / link
+          (ADR 0001) — only the explicit, opt-in reference Phase 1 already records. Raw-file HTTP fetch =
+          rejected (GitHub-specific).
+    - [ ] when built, **add `scripts/session-status.mjs` (or wherever the producer lives) to the manifest
+          `merge` list** so `update-engine` self-updates it (today it's referenced by the settings template but
+          **absent from `engine-manifest.json`** — a pre-existing gap to close then). **Cross-platform (ADR 0015):**
+          `git` is a real exe on both OSes (no `process.platform` branch); cache path via `path.join`.
+    - [ ] **Future-proofing check (the maintainer's question, answered):** our setup **already supports** this
+          second phase with **no rework** — `source.ref` + `engine-fetch.mjs` (Phase 1) give the fetch; the
+          **cache-as-contract** lets the future producer slot in behind the A1 display; hooks can spawn a
+          detached non-blocking child. _(Optional now: ship the status-line's cache **read** in A1 so the future
+          producer is a literal drop-in — decide at implementation; low risk, but the door is open regardless.)_
 - [ ] **Chantier B — Bake the autocompact threshold into every generated brain.**
       _(value chosen WITH the maintainer 2026-06-14: **350000**, the "levier 2" of the article.)_
       ✅ **Variable name CONFIRMED EMPIRICALLY** (the memory's "non confirmé" is resolved): it is
@@ -89,7 +93,12 @@ post-demo merge.
 
 ## Decisions settled (2026-06-14, with the maintainer)
 
-- **Chantier A scope = BOTH halves** (offline display **and** the throttled network update-available check).
+- **Chantier A scope (REVISED 2026-06-14) = offline display NOW; "update available" DEFERRED.** The
+  availability check returns later as an **opt-in, non-blocking, background** producer writing a cache the
+  status-line reads. The first draft's silent SessionStart ping was **dropped** — it re-coupled the brain to
+  the generator (against ADR 0001/0014). The brain's own git remote (the user's note backup) is **never**
+  involved in versioning, and the recorded `source` pointer is **not** a git link — only Phase 1's explicit,
+  opt-in reference. _(graved in [`ADR 0017`](../decisions/0017-engine-version-reference-is-git-tags.md).)_
 - **Version reference = git TAGS, not a hand-maintained number in a repo file** — gravé dans
   [`ADR 0017`](../decisions/0017-engine-version-reference-is-git-tags.md). The maintainer's reasoning:
   a tag is an **intentional, maintainer-controlled, marketing** act ("c'est moi qui décide"), **decoupled from

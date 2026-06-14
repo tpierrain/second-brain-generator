@@ -2,15 +2,18 @@
 
 - **STATUS:** ACCEPTED (2026-06-14).
 - **Scope:** Second brain (runtime) + Installer — the installer records the pinned `source.ref` into the
-  brain; the runtime (status-line + SessionStart hook) reads it offline and checks for newer tags.
-- **Related:** [`0001`](0001-launcher-vs-brain.md) (self-hosted, no registry / no platform API — the
-  constraint this honours), [`0009`](0009-prefer-deterministic-mechanisms.md) (a verifiable, offline read +
-  a throttled, fail-silent check over a probabilistic guess), [`0014`](0014-ship-update-engine-before-mass-deployment.md)
-  + [`0016`](0016-update-engine-is-a-skill-not-an-mcp-tool.md) (`update-engine` and its **proactive offer**,
-  which this version surfacing feeds), [`0015`](0015-cross-platform-parity.md) (`git` is a real exe on both
-  OSes). Implements the version-reference half of the plan
+  brain; the runtime reads it **offline** to display the version. (A future, opt-in availability check is also
+  runtime.)
+- **Related:** [`0001`](0001-launcher-vs-brain.md) (launcher↔brain decoupled; self-hosted, no registry / no
+  platform API — the constraint this honours), [`0009`](0009-prefer-deterministic-mechanisms.md) (a
+  deterministic offline read now; the future background check stays deterministic, throttled, fail-silent,
+  non-blocking), [`0014`](0014-ship-update-engine-before-mass-deployment.md) (`update-engine`'s coupling is
+  **explicit, pinned, user-triggered — "never a standing remote or a silent auto-update"**: the principle that
+  forces the deferral here), [`0016`](0016-update-engine-is-a-skill-not-an-mcp-tool.md) (the proactive offer
+  this feeds), [`0015`](0015-cross-platform-parity.md) (`git` is a real exe on both OSes). Plan:
   [`post-phase1-version-and-autocompact-action.md`](../plans/post-phase1-version-and-autocompact-action.md).
-  Phase 1 already records `source: { repo, ref }` in each brain ([Step 1](../plans/archived/engine-packaging-phase1-action.md)).
+  Phase 1 already records `source: { repo, ref }` in each brain
+  ([Step 1](../plans/archived/engine-packaging-phase1-action.md)).
 
 ## Context
 
@@ -20,74 +23,86 @@ ADR 0016 says the brain *may proactively offer* an update:
 1. **"Which engine version do I have?"** — cheap, must work **offline**.
 2. **"Is a newer version available?"** — the genuinely actionable signal, but it costs a **network** call.
 
-Deciding this means picking a **source of truth for the version number** and a way to detect "newer". Three
-forces shape the choice:
+**Crucial clarification — two completely different URLs must not be confused:**
 
-- **The audience is non-technical.** Brain users have **no git/GitHub CLI** and never run commands. The
-  maintainer was explicit: *no strong dependency on GitHub* — "à part les URL".
-- **ADR 0001** keeps the product self-hosted: no package registry, no platform API; a brain works against
-  whatever git remote URL it recorded.
-- **A version number should be an intentional, maintainer-controlled act** (a release / marketing decision),
-  **not** a value coupled to incidental repo file churn. A hand-bumped number in a tracked file drifts and
-  lies; the maintainer wanted the version to be something *they* decide, deliberately.
+- **The brain's own git remote** (optional) = the **user's private backup** of their notes. It lives wherever
+  the user wants and has **nothing to do** with engine versions. The brain is created as a fresh `git init`
+  with **no link to the generator** (ADR 0001).
+- **The recorded `source: { repo, ref }`** in `engine-manifest.json` = a **pointer to the generator/launcher**,
+  written at install by Phase 1. It is **not** a configured git remote and **not** a link (no shared history):
+  it is a memorized **URL**, queried **only** when the user opts into `update-engine`. This is the coupling
+  ADR 0014 re-introduced **deliberately, explicitly, pinned, and user-triggered — "never a standing remote or a
+  silent auto-update."**
 
-A first design treated the manifest's `engineVersion` (a hand-maintained vector `{rag, constitutionTemplate,
-scripts}`) as the displayed version. That couples "the version" to file edits and forces a 3-vector into a
-single user-facing label.
+So the sovereignty stance forbids the brain from **routinely, silently phoning home** to the generator. A
+version *display* that reads a local value is fine; a recurring automatic network check at every startup is
+**not** — it would re-introduce, in spirit, the standing coupling we severed. (A first draft of this ADR made
+exactly that mistake; it is corrected below.)
+
+Separately, the *version number* needs a source of truth. A hand-maintained `engineVersion` in a tracked file
+drifts and lies, and couples "the version" to incidental repo file churn. The maintainer wanted the version to
+be an **intentional, maintainer-controlled act** ("c'est moi qui décide"), not a side effect of editing files.
 
 ## Decision
 
-**The user-facing engine version is a git tag.** Concretely:
+**1. The user-facing version is a git tag, displayed offline.** What is shown = the brain's recorded
+**`source.ref`** — the git **tag** it was generated from (or last updated to; refreshed by `update-engine`,
+Phase 1 Step 5). It is a **purely local read**: no network, no coupling, no phone-home. Surfaced as a discreet
+status-line suffix (e.g. `engine v1.1.0`). There is **no hand-maintained version number** in any repo file.
+When `source.ref` is not a semver tag (dev launcher / branch install), show it verbatim — never invent.
 
-- **The displayed version = the brain's recorded `source.ref`** — the git **tag** the brain was generated
-  from (or last updated to), already written into `engine-manifest.json` at install (Phase 1, Step 1). It is
-  read **offline**, with **no number to hand-maintain anywhere**. Surfaced as a discreet status-line suffix
-  (e.g. `engine v1.1.0`).
-- **"Newer available" = the newest git tag** obtained with **`git ls-remote --tags <source.repo>`**,
-  semver-compared to `source.ref`. This runs **throttled (~once/day), cached, and fail-silent** in the
-  **SessionStart hook** (which already does network: `git pull --rebase`) — **never** in the continuously-run,
-  contractually read-only/no-network `status-line`. The status-line only **reads the cache** and appends
-  `(v<latest> dispo ⬆)`.
-- **No GitHub / `gh` / platform-API dependency.** The check is **plain `git`** — a primitive already present
-  in every brain (it is a git repo; Phase 1 already requires git) — reading **tags from any remote**
-  (GitHub, GitLab, Azure, self-hosted) via the recorded **URL**. The non-technical user **never invokes
-  git/GitHub**; the hook does it under the hood. GitHub **Releases** stay an **optional, maintainer-side**
-  marketing veneer (creating a Release just creates a tag); the brain reads only the underlying **git tag**.
-- **`engineVersion` (the vector) and `indexSchemaVersion` stay for the mechanics only** — they drive the
-  `update-engine` apply/reindex decisions of Phase 1 (e.g. reindex iff `indexSchemaVersion` moved). They are
-  **no longer "the user-facing version"**.
-- **Tag convention = `vMAJOR.MINOR.PATCH`** (semver-parseable, e.g. `v1.2.0`). **Release ritual** (maintainer,
-  automatable later): `git tag v1.2.0 && git push --tags`. When `source.ref` is **not** a semver tag (the dev
-  launcher, or a brain installed from a branch), the version **fails-silent** for the "available" check and the
-  ref is shown verbatim — an honest "no release signal", never a fabricated one.
+**2. The version-number reference is a git tag, not a tracked file.** A tag is an intentional, maintainer-
+controlled release act, decoupled from file churn; GitHub surfaces it under Releases/Tags for free. The
+manifest's `engineVersion` vector + `indexSchemaVersion` stay for the **mechanics** (`update-engine`'s
+apply/reindex decisions) — **not** as the user-facing version. **Tag convention `vMAJOR.MINOR.PATCH`**; release
+ritual = `git tag v1.2.0 && git push --tags` (automatable later).
+
+**3. "Is a newer version available?" is DEFERRED — and, when it lands, will be opt-in, non-blocking, and
+producer/consumer-decoupled, never a synchronous or silent startup ping.** Shipping now = the **offline display
+only**. The availability check returns in a later iteration under these constraints:
+
+- **Opt-in, default OFF** (the user enables it) — honours ADR 0014's "user-triggered, never standing/silent".
+- **Never blocks startup.** A **detached, fire-and-forget background producer** (a child the hook does not
+  await — `child.unref()` — or an equivalent background task) does a throttled (~once/24h), **fail-silent**
+  `git ls-remote --tags <source.repo>`, then **writes a cache** (e.g. `rag/.cache/engine-update-check.json`).
+- **Decoupled via that cache.** The **status-line is the consumer**: it reads the cache (read-only) and, if an
+  update is flagged, appends `(v<latest> dispo ⬆)`. Producer and consumer never share a synchronous path.
+- **No GitHub / `gh` / platform-API dependency.** Plain `git ls-remote` on the recorded **URL** — host-agnostic
+  (GitHub/GitLab/Azure/self-hosted), `git` already present, run by the machine **never** the non-dev user
+  (ADR 0001). GitHub **Releases** stay an optional, maintainer-side veneer (they just create a tag).
+- **Deterministic over agentic where possible** (ADR 0009): a detached deterministic process is preferred to an
+  LLM "agent" for a mechanical fetch, though the producer/consumer architecture supports either.
+
+**Our setup already supports this second phase with no rework**: `source.ref` + the `engine-fetch` machinery
+(Phase 1) provide the fetch; the **cache-as-contract** lets the future producer slot in behind the already-
+shipped display; hooks can spawn a detached non-blocking child. Nothing shipped now closes that door.
 
 ## Consequences
 
-- **The version is an intentional act, decoupled from file churn.** The maintainer decides when a version
-  exists by pushing a tag — not by editing a tracked number. GitHub shows it under Releases/Tags for free.
-- **Zero new dependency, least possible coupling.** `git ls-remote` on a URL is host-agnostic and the *least*
-  platform-coupled network option available; a raw-file HTTP fetch would have been GitHub-specific. Honours
-  ADR 0001; needs only `git` (present), never `gh`.
-- **Honest, offline self-knowledge.** "Which version do I have" is a deterministic offline read of the very
-  ref the brain is pinned to — it cannot drift from reality, because it *is* what `update-engine` pins.
-- **Feeds ADR 0016's proactive offer.** Once "newer available" is cached, the brain can offer the opt-in
-  update in plain language.
-- **A light release ritual is now expected of the maintainer** (tag + push on each engine release). Acceptable
-  and automatable; a later guard could assert the latest tag matches the manifest mechanics.
-- **The launcher itself displays no "available" signal** (it records no `source`) — correct: the launcher is
-  not a brain.
+- **Offline self-knowledge is honest and coupling-free**: the brain shows exactly the ref it is pinned to, with
+  zero network.
+- **The version is an intentional act** (a tag), decoupled from file churn; visible on the generator's
+  Releases/Tags for free.
+- **The brain does not routinely contact the generator.** The only generator reference is the explicit, opt-in
+  `source` pointer used by `update-engine` — sovereignty (ADR 0001/0014) intact.
+- **The proactive offer (ADR 0016) remains reachable** later via the opt-in, non-blocking background producer +
+  cache — additive, not a redesign.
+- A light **release ritual** (tag + push) is expected of the maintainer; automatable later.
+- The **launcher shows no "available" signal** (records no `source`) — correct: it is not a brain.
 
 ## Rejected alternatives
 
-- **Hand-maintained `engineVersion` in the manifest as the headline.** Couples "the version" to incidental
-  file edits (drifts, lies), and squeezes a 3-vector into one user label. Kept only for mechanics.
-- **A dedicated root `VERSION` file as the single scalar truth.** Introduces a *second* place to keep in sync
-  with the manifest mechanics; the tag already is the intentional scalar, with no extra file to maintain.
-- **Read a raw file over HTTPS** (e.g. `raw.githubusercontent.com/.../engine-manifest.json`). GitHub-specific
-  — exactly the platform coupling the maintainer rejected; breaks on self-hosted remotes; against ADR 0001.
+- **Hand-maintained `engineVersion` as the headline.** Couples the version to incidental file edits (drifts,
+  lies) and squeezes a 3-vector into one user label. Kept for mechanics only.
+- **A dedicated root `VERSION` file.** A *second* place to keep in sync with the manifest mechanics; the tag is
+  already the intentional scalar, with no extra file to maintain.
+- **Read a raw file over HTTPS** (e.g. `raw.githubusercontent.com/.../engine-manifest.json`). GitHub-specific —
+  the platform coupling the maintainer rejected; breaks on self-hosted remotes; against ADR 0001.
 - **Shallow-clone the default branch and read its manifest each check.** "Available" would track `main`, not a
-  deliberate release, and costs a clone per check. Tags express *intent to release*; the default branch does not.
-- **GitHub Releases API / the `gh` CLI.** Platform lock-in and an extra binary; non-technical users have no
-  `gh`. The underlying git tag carries everything we need via plain `git`.
-- **Run the network check in the status-line.** Violates the status-line's read-only/no-network/fast contract
-  (it re-runs continuously). The throttled check belongs in the once-per-startup SessionStart hook.
+  deliberate release, and costs a clone per check. A tag expresses *intent to release*; the default branch does
+  not.
+- **GitHub Releases API / the `gh` CLI.** Platform lock-in and an extra binary non-technical users lack; the
+  underlying git tag carries everything via plain `git`.
+- **A synchronous or silent automatic startup ping** (this ADR's first draft). Re-introduces, in spirit, the
+  standing coupling ADR 0001/0014 severed, and risks blocking startup. Replaced by the deferred, **opt-in,
+  non-blocking, cache-decoupled** producer above.
