@@ -22,17 +22,18 @@ import { createHash } from "node:crypto";
 // user's notes / `.env` / `CLAUDE.md` / `.claude/settings.json` / custom skills
 // BYTE-IDENTICAL (ADR 0003 / 0012 / 0014).
 //
-// PENDING until Step 4: `scripts/update-engine.mjs` does not exist yet, so each guard
-// is marked `{ todo }` → it runs and fails fail-first (clear "cannot find module"),
-// but node:test reports it as TODO, NOT a failure (exit 0) — so the suite stays GREEN
-// and we only ever commit green (every guard is loaded lazily per test to fail-first).
-// At Step 4, when the core lands and the guards pass, we DROP the `{ todo }` flags and
-// they become enforcing assertions. The LAST one to go green is the apply step.
+// GREEN since Step 4: `scripts/update-engine.mjs` (the apply core) now exists, so these
+// guards ENFORCE (the `{ todo }` flags were dropped). The core is loaded lazily per
+// test so a regression that removes it fails THIS file fail-first, not the whole load.
 //
-// Network / npm / reindex are SEAMS injected by the test (no real git, npm or ONNX)
-// so the gate is deterministic and offline. Cross-platform (ADR 0015): the scenario
-// is run under BOTH a posix and a win32 `platform`, and both launcher flavours
-// (.sh AND .cmd) are asserted regenerated regardless of platform.
+// Network / npm / reindex / launcher-regeneration are SEAMS injected by the test
+// (no real git, npm or ONNX) so the gate is deterministic and offline. The launchers
+// are REGENERATED (ADR 0015 "launcher-regeneration"), not copied from the clone: they
+// are pure, machine-independent `rag-launcher.mjs` builder output and aren't even
+// git-tracked, so a `git clone` would not carry them. The gate therefore injects a
+// `regenerateLaunchers` seam (like `runInstall`/`runReindex`) and asserts it ran once
+// for the platform, with BOTH `.sh` AND `.cmd` halves present. Cross-platform
+// (ADR 0015): the scenario is run under BOTH a posix and a win32 `platform`.
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function loadCore() {
@@ -160,13 +161,21 @@ function assertSacredUntouched(brainDir, before) {
 // object records the side effects we assert on.
 async function runUpdate({ brainDir, sourceDir, platform }) {
   const updateEngine = await loadCore();
-  const calls = { install: [], reindex: [] };
+  const calls = { install: [], reindex: [], regenerate: [] };
   const report = await updateEngine({
     brainDir,
     platform,
     fetchSource: async ({ repo, ref }) => {
       calls.fetch = { repo, ref };
       return sourceDir;
+    },
+    regenerateLaunchers: async ({ brainDir: bd, platform: p }) => {
+      // The real seam calls the rag-launcher.mjs builders (pure, machine-independent).
+      // ADR 0015: BOTH halves are (re)written regardless of the host platform.
+      calls.regenerate.push(p);
+      for (const rel of ["rag/launch.sh", "rag/launch.cmd", "scripts/run-node.sh", "scripts/run-node.cmd"]) {
+        writeFile(bd, rel, `# regenerated ${rel} (${p})\n`);
+      }
     },
     runInstall: async ({ ragDir }) => {
       calls.install.push(ragDir);
@@ -179,7 +188,7 @@ async function runUpdate({ brainDir, sourceDir, platform }) {
 }
 
 for (const platform of ["posix", "win32"]) {
-  test(`gate [${platform}] — engine swapped to vB, schema moved → reindex, user files untouched`, { todo: "GREEN at Step 4 (apply step)" }, async (t) => {
+  test(`gate [${platform}] — engine swapped to vB, schema moved → reindex, user files untouched`, async (t) => {
     const brainDir = buildBrain();
     const sourceDir = buildSource({ indexSchemaVersion: 2 }); // schema 1 → 2
     t.after(() => {
@@ -190,9 +199,10 @@ for (const platform of ["posix", "win32"]) {
 
     const { calls } = await runUpdate({ brainDir, sourceDir, platform });
 
-    // 1. Every engine file now carries the vB bytes (replace + regenerate + scripts,
-    //    incl. update-engine.mjs self-update). Both launcher flavours, both platforms.
-    const expected = flat(engineFiles("vB"));
+    // 1. Every COPIED engine file now carries the vB bytes — the `replace` bucket and
+    //    the engine-owned scripts (incl. update-engine.mjs self-update). The launchers
+    //    are not copied: they are regenerated (asserted just below).
+    const expected = { ...engineFiles("vB").replace, ...engineFiles("vB").engineScripts };
     for (const [rel, content] of Object.entries(expected)) {
       assert.equal(
         readFileSync(join(brainDir, rel), "utf8"),
@@ -200,8 +210,13 @@ for (const platform of ["posix", "win32"]) {
         `engine file not upgraded to vB — ${rel}`,
       );
     }
+    // 1.bis The launchers were REGENERATED (ADR 0015), not copied: the seam ran once
+    //       for this platform, and BOTH `.sh` and `.cmd` halves are present.
+    assert.deepEqual(calls.regenerate, [platform], "launchers must be regenerated once, for this platform");
     assert.ok(existsSync(join(brainDir, "rag/launch.sh")), "the .sh launcher must exist");
     assert.ok(existsSync(join(brainDir, "rag/launch.cmd")), "the .cmd launcher must exist");
+    assert.ok(existsSync(join(brainDir, "scripts/run-node.sh")), "the .sh node-runner must exist");
+    assert.ok(existsSync(join(brainDir, "scripts/run-node.cmd")), "the .cmd node-runner must exist");
 
     // 2. npm install ran in the brain's rag/.
     assert.deepEqual(calls.install, [join(brainDir, "rag")], "npm install must run once in <brain>/rag");
@@ -220,7 +235,7 @@ for (const platform of ["posix", "win32"]) {
   });
 }
 
-test("gate — schema UNCHANGED → engine still swapped but NO reindex", { todo: "GREEN at Step 4 (apply step)" }, async (t) => {
+test("gate — schema UNCHANGED → engine still swapped but NO reindex", async (t) => {
   const brainDir = buildBrain();
   const sourceDir = buildSource({ indexSchemaVersion: 1 }); // same schema as the brain
   t.after(() => {

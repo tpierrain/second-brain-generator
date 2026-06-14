@@ -1,5 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 
 import { computeApplyPlan, planTouches } from "./engine-apply-plan.mjs";
 
@@ -85,6 +88,39 @@ test("computeApplyPlan — SAFETY CORE: a manifest mis-declaring a sacred file a
   assert.deepEqual(plan.overwrite, ["rag/src/**"], "CLAUDE.md and .env scrubbed from overwrite");
   assert.deepEqual(plan.regenerate, ["rag/launch.sh"], ".claude/settings.json scrubbed from regenerate");
   assert.deepEqual(plan.replaceScripts, ["scripts/auto-commit.mjs"], "skills never reach replaceScripts");
+});
+
+// ─── SELF-CARRY guard (plan Step 4) ─────────────────────────────────────────
+// The engine must replace its OWN machinery on an upgrade, or a brain installed by
+// this PR can never be cleanly upgraded: the core would land but its libs would stay
+// stale → an incoherent engine. So the SHIPPED engine-manifest.json must declare
+// `scripts/update-engine.mjs` AND every `scripts/lib/**` the core imports as Engine-
+// owned, and the plan derived from it must `planTouches`-cover them.
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+function shippedManifest() {
+  return JSON.parse(readFileSync(resolve(repoRoot, "engine-manifest.json"), "utf8"));
+}
+
+test("SELF-CARRY — the plan covers update-engine + every lib the core depends on (else a brain can't be upgraded)", () => {
+  const plan = computeApplyPlan(shippedManifest());
+  // The core (scripts/update-engine.mjs) and the libs it imports. The engine fully
+  // replaces itself, libs included — otherwise an upgrade swaps the core but leaves
+  // these behind.
+  for (const engineFile of [
+    "scripts/update-engine.mjs",
+    "scripts/lib/engine-fetch.mjs",
+    "scripts/lib/engine-apply-plan.mjs",
+    "scripts/lib/engine-source.mjs",
+    "scripts/lib/glob-match.mjs",
+    "scripts/lib/fs-walk.mjs",
+    "scripts/lib/rag-launcher.mjs",
+  ]) {
+    assert.equal(
+      planTouches(plan, engineFile),
+      true,
+      `the engine must self-carry ${engineFile} (declare it Engine-owned in engine-manifest.json) or an upgrade leaves it stale`,
+    );
+  }
 });
 
 test("planTouches — NEVER touches the user's files; DOES touch the engine's", () => {

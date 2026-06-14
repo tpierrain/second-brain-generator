@@ -8,9 +8,10 @@
 // PURE by design: the installer performs the git/FS I/O and passes the facts in.
 // ─────────────────────────────────────────────────────────────────────────────
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, readdirSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { globToRegExp } from "./glob-match.mjs";
+import { listFilesRelPosix } from "./fs-walk.mjs";
 
 // Self-describing digest so the manifest records WHICH algorithm produced it
 // (future-proofs the Phase 2 3-way if the hash ever changes).
@@ -53,30 +54,15 @@ export function enrichManifest(manifest, { source, provenance }) {
 
 // ─── I/O orchestrator (the installer's thin wiring) ──────────────────────────
 // Real fs on the brain dir; the launcher git facts are passed in as data (no git
-// spawn / network here → unit-testable on a temp fixture brain). Walks the brain,
-// fingerprints exactly the `merge` files, records where to pull a future update
-// from, and writes the enriched engine-manifest.json back in place.
-
-// All file paths under `dir`, relative + POSIX-separated, skipping VCS/build dirs
-// that are never Engine content (and don't exist yet at install time anyway).
-function listFiles(dir, base = dir) {
-  const out = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.isDirectory()) {
-      if (entry.name === ".git" || entry.name === "node_modules") continue;
-      out.push(...listFiles(join(dir, entry.name), base));
-    } else if (entry.isFile()) {
-      out.push(relative(base, join(dir, entry.name)).split(sep).join("/"));
-    }
-  }
-  return out;
-}
+// spawn / network here → unit-testable on a temp fixture brain). Walks the brain
+// (shared fs-walk), fingerprints exactly the `merge` files, records where to pull a
+// future update from, and writes the enriched engine-manifest.json back in place.
 
 export function recordSourceAndProvenance({ brainDir, git }) {
   const manifestPath = join(brainDir, "engine-manifest.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
-  const mergeFiles = selectMergeFiles(manifest, listFiles(brainDir));
+  const mergeFiles = selectMergeFiles(manifest, listFilesRelPosix(brainDir));
   const fileMap = Object.fromEntries(
     mergeFiles.map((rel) => [rel, readFileSync(join(brainDir, rel), "utf8")]),
   );

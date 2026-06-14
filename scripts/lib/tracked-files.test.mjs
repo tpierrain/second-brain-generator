@@ -62,6 +62,21 @@ test("filterCopyable — excludes templates/ (locale sources are overlaid, not b
   );
 });
 
+test("filterCopyable — KEEPS the update-engine core + its libs (a brain must self-carry its updater)", () => {
+  // The engine must travel into every brain WITH its own machinery, or a brain
+  // installed by this launcher can never be cleanly upgraded (plan Step 4, the
+  // self-carry invariant). A future DEV_ONLY_PREFIX must never strand these.
+  const engine = [
+    "scripts/update-engine.mjs",
+    "scripts/lib/engine-fetch.mjs",
+    "scripts/lib/engine-apply-plan.mjs",
+    "scripts/lib/engine-source.mjs",
+    "scripts/lib/glob-match.mjs",
+    "scripts/lib/fs-walk.mjs",
+  ];
+  assert.deepEqual(filterCopyable(engine), engine);
+});
+
 test("filterCopyable — excludes the eval-set tooling (dev-only: used to choose the launcher's embedder)", () => {
   assert.deepEqual(
     filterCopyable([

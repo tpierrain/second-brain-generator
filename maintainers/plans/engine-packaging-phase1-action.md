@@ -76,26 +76,32 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
         buggy/hostile manifest mis-declaring `CLAUDE.md`/`.env`/`settings.json` as engine-owned is **scrubbed**.
         _(DRY: extracted the one manifest glob dialect into `scripts/lib/glob-match.mjs`, refactored
         `engine-source` onto it, +4 direct tests. Harness 191 tests, 188 pass, fail 0, 3 todo — green.)_
-- [ ] **Step 4 — Apply (opt-in, non-destructive).** Execute the plan: overwrite `replace`, regenerate the
-      `.sh`+`.cmd` launchers, replace the engine-owned scripts (update-engine script **last**), then
-      `npm install` in `rag/`. Everything outside the plan is untouched. Tests assert byte-identity of
-      vault/`.env`/`CLAUDE.md`/settings/skills before vs after.
-  - [ ] **⚠️ CRITICAL for upgradeability (raised with the maintainer 2026-06-14) — the engine must carry
-        its OWN code in the allowlist, or a brain installed by this PR can never be cleanly upgraded.** The
-        shipped `engine-manifest.json` currently declares only 4 top-level scripts (`auto-commit`,
-        `auto-push`, `status-line`, `verify-rag`); but the `update-engine` machinery lives in
-        **`scripts/update-engine.mjs`** (the core) **and `scripts/lib/**`** (`engine-fetch`,
-        `engine-apply-plan`, `engine-source`, `glob-match`, + future). If these are not engine-owned in the
-        manifest, an upgrade would replace the core but leave its libs stale → incoherent engine. So at this
-        step we MUST: (a) **add `scripts/update-engine.mjs` + `scripts/lib/**` to the manifest** as
-        Engine-owned (likely `replace`, since they are pure overwrite-on-update, not user-merge); (b) make
-        `computeApplyPlan` cover **`scripts/lib/**`** — today `ENGINE_SCRIPT = /^scripts\/[^/]+\.mjs$/` is
-        **top-level only**, so a lib listed under `merge` would be missed (covering them via `replace` side-
-        steps that; if any engine script needs to live under `merge`, extend the regex/classification); and
-        (c) ship the brain copy of these libs at install (verify the installer copies `scripts/lib/**`). Add
-        a guard test: every engine `.mjs` the core imports is `planTouches`-true (the engine fully replaces
-        itself, libs included).
-  - [ ] `scripts/update-engine.mjs` (deterministic core wiring 1→4). Tests + the **Gate goes GREEN here**.
+- [x] **Step 4 — Apply (opt-in, non-destructive).** Execute the plan: overwrite `replace`, regenerate the
+      `.sh`+`.cmd` launchers, replace the engine-owned scripts, then `npm install` in `rag/`. Everything
+      outside the plan is untouched; the Gate asserts byte-identity of vault/`.env`/`CLAUDE.md`/settings/
+      skills before vs after. _(2026-06-14 · **Gate GREEN** — both posix & win32 + schema-unchanged,
+      enforcing, `{ todo }` dropped. Harness **194 tests, fail 0, todo 0**; RAG **129 pass**.)_
+  - [x] **⚠️ Self-carry (CRITICAL upgradeability invariant) — DONE.** (a) Added `scripts/update-engine.mjs`
+        + `scripts/lib/**` to the manifest's **`replace`** regime. (b) **No `computeApplyPlan` change
+        needed**: `replace` flows verbatim into the `overwrite` bucket, so the engine libs are covered
+        without touching `ENGINE_SCRIPT` (the top-level scripts stay in `merge` → `replaceScripts` as
+        before). The manifest's `no over-broad glob` / disjointness / survival guards still hold
+        (`scripts/lib/**` never matches a top-level user `scripts/x.mjs`; users own `scripts/*.mjs` &
+        `.claude/skills/**`, the engine owns `scripts/lib/**`). (c) Installer copies them by construction
+        (all tracked, non-dev-only files) — **locked** by a `filterCopyable` guard. New guard test:
+        `computeApplyPlan(shippedManifest)` `planTouches`-covers the core **and every lib it imports**.
+  - [x] `scripts/update-engine.mjs` (deterministic core wiring 1→7). _(Reads brain manifest → `fetchSource`
+        the pinned `source` → `readTargetManifest` → `computeApplyPlan` → copy `overwrite`+engine-scripts
+        (globs resolved against the fetched source via the shared `fs-walk`) → **regenerate launchers via a
+        seam** → `npm install` → reindex **iff** schema moved → record new `engineVersion`+`ref`.)
+        **DECISION (ADR 0015): launchers are REGENERATED, not copied.** They are pure, machine-independent
+        `rag-launcher.mjs` builder output and are **not git-tracked**, so a `git clone` can't carry them —
+        copy-from-source would be a silent no-op on real upgrades. The Gate was refit to inject a
+        `regenerateLaunchers` seam (consistent with `runInstall`/`runReindex`) and assert it ran once for
+        the platform with **both `.sh`+`.cmd`** present. **"update-engine last" is moot** — Node caches
+        imported ESM, so self-replacing the `.mjs` on disk mid-run never perturbs the running process.
+        Refactor: extracted the duplicated dir walk into `scripts/lib/fs-walk.mjs` (TDD, 2 tests) and
+        rewired `engine-source` onto it.
 - [ ] **Step 5 — Reindex iff the index schema moved.** Compare the brain's `indexSchemaVersion` to the
       target's; on change → run the **existing confirm→reindex** path (ADR 0007 machinery + the Phase 0
       index schema stamp); else skip. Then update the brain's recorded `engineVersion` + `source.ref` and

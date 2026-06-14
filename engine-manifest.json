@@ -7,7 +7,9 @@
       "rag/src/**",
       "rag/package.json",
       "rag/package-lock.json",
-      "rag/tsconfig.json"
+      "rag/tsconfig.json",
+      "scripts/update-engine.mjs",
+      "scripts/lib/**"
     ],
     "regenerate": [
       "rag/launch.sh",
