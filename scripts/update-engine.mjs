@@ -19,7 +19,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { join, dirname } from "node:path";
+import { join, dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { fetchSource as defaultFetchSource, readTargetManifest } from "./lib/engine-fetch.mjs";
 import { computeApplyPlan } from "./lib/engine-apply-plan.mjs";
@@ -60,6 +61,21 @@ async function defaultRegenerateLaunchers({ brainDir }) {
   writeFileSync(join(brainDir, "rag", "launch.cmd"), buildCmdLauncher());
   writeFileSync(join(brainDir, "scripts", "run-node.sh"), buildNodeRunnerSh());
   writeFileSync(join(brainDir, "scripts", "run-node.cmd"), buildNodeRunnerCmd());
+}
+
+// Human summary the brain-side `update-engine` skill shows the user (Step 6, ADR
+// 0016). Pure so the wording is unit-tested; the CLI entry only wires the I/O.
+export function formatReport(report) {
+  const { ref, engineVersion, copied, regenerated, reindexed } = report;
+  const lines = [
+    `✅ Engine updated to ${ref} (rag ${engineVersion?.rag}).`,
+    `   • ${copied.length} engine file(s) swapped` + (regenerated ? " + launchers regenerated" : ""),
+    reindexed
+      ? `   • reindexed — the index format changed (your notes were re-encoded, nothing lost)`
+      : `   • index format unchanged — no reindex needed`,
+    `   Your notes, .env, constitution, settings and custom skills were left untouched.`,
+  ];
+  return lines.join("\n");
 }
 
 export async function updateEngine({
@@ -129,4 +145,22 @@ export async function updateEngine({
   writeFileSync(manifestPath, JSON.stringify(updated, null, 2) + "\n");
 
   return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed };
+}
+
+// ── CLI entry (the command the brain-side `update-engine` skill runs) ─────────
+// Guarded so importing this module in tests does NOT run it. Operates on the brain
+// the script lives in (<brain>/scripts/update-engine.mjs → brainDir = its parent),
+// with the real git/npm/ONNX seams. FAIL LOUD (the project's strategy): on any
+// error, print it to stderr and exit non-zero — never pretend it worked.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const brainDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  updateEngine({ brainDir })
+    .then((report) => {
+      process.stdout.write(formatReport(report) + "\n");
+      process.exit(0);
+    })
+    .catch((e) => {
+      process.stderr.write(`\n❌ update-engine failed — the brain was NOT changed past this point.\n${e?.message ?? e}\n`);
+      process.exit(1);
+    });
 }

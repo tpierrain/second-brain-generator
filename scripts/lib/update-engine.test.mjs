@@ -41,6 +41,39 @@ async function loadCore() {
   return (await import("../update-engine.mjs")).updateEngine;
 }
 
+// ── formatReport: the human summary the brain-side skill prints (Step 6) ──────
+// Pure (report object → string) so the wording is unit-tested; the CLI entry holds
+// only the untestable I/O wiring (ADR 0009).
+import { formatReport } from "../update-engine.mjs";
+
+test("formatReport — schema moved → reports the new version, the swap, and that a reindex ran", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts", "rag/package.json", "scripts/auto-commit.mjs"],
+    regenerated: true,
+    reindexed: true,
+  });
+  assert.match(out, /v1\.1\.0/);
+  assert.match(out, /1\.1\.0/); // rag version
+  assert.match(out, /3/); // file count
+  assert.match(out, /reindex/i);
+  // The survival promise is restated to the user.
+  assert.match(out, /untouched|notes|\.env/i);
+});
+
+test("formatReport — schema unchanged → states no reindex was needed (never a misleading 'reindexed')", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: true,
+    reindexed: false,
+  });
+  assert.match(out, /no reindex|unchanged/i);
+  assert.doesNotMatch(out, /reindexed —/);
+});
+
 function sha256(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
 }

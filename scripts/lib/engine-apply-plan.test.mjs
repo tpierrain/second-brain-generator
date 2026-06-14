@@ -111,6 +111,7 @@ test("SELF-CARRY — the plan covers update-engine + every lib the core depends 
     "scripts/lib/engine-fetch.mjs",
     "scripts/lib/engine-apply-plan.mjs",
     "scripts/lib/engine-source.mjs",
+    "scripts/lib/reindex-trigger.mjs",
     "scripts/lib/glob-match.mjs",
     "scripts/lib/fs-walk.mjs",
     "scripts/lib/rag-launcher.mjs",

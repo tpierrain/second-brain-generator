@@ -118,11 +118,23 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
         Phase 2 3-way still detects the user's edits. 2 unit tests + the **Gate** now seeds a base and
         asserts post-swap that the engine script's base is refreshed to vB **and** CLAUDE.md's base is
         preserved.
-- [ ] **Step 6 — Brain-side `update-engine` skill (Claude-driven UX) — [ADR 0016](../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md).**
+- [x] **Step 6 — Brain-side `update-engine` skill (Claude-driven UX) — [ADR 0016](../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md).**
       A skill shipped by the installer into the brain that confirms with the user (opt-in, **never** auto),
       calls the core, and reports what changed / whether a reindex ran. Deterministic work stays in the
       `.mjs`; the skill is the thin conversational driver. **Not** a tool on the `vault-rag` MCP server.
-  - [ ] add the skill to the launcher's shipped skills + manifest `merge` list; install-copy verified.
+      _(2026-06-14 · skill + a thin CLI entry on the core + the testable `formatReport`; harness **203 tests,
+      fail 0, todo 0**.)_
+  - [x] add the skill to the launcher's shipped skills + manifest `merge` list; install-copy verified.
+        _(`.claude/skills/update-engine/SKILL.md` (EN) + FR overlay `templates/fr/.claude/skills/update-engine/`;
+        added `.claude/skills/update-engine/**` to the manifest `merge` list — the engine-manifest gate now
+        cross-checks the folder exists. **Install-copy verified** by a `filterCopyable` guard (the SKILL.md
+        survives the bulk copy; FR layered by the locale overlay). The skill calls the core via
+        `node scripts/update-engine.mjs` (plain `node`, like `verify-rag` — `run-node` is hook-only); the CLI
+        is the guarded `import.meta.url` entry (untestable wiring, like `auto-push`), fails LOUD (exit 1 +
+        clear message — smoke-proven in the launcher, which has no `source` recorded), and on success prints
+        the pure, unit-tested `formatReport` (new version · files swapped · reindex ran-or-not · "your files
+        untouched"). Also made the **self-carry guards honest**: added the Step-5 import `scripts/lib/reindex-trigger.mjs`
+        to both the `planTouches` and `filterCopyable` lib lists.)_
 - [ ] **Step 7 — Cross-platform parity gate (ADR 0015 §8).** Confirm every launcher/script touched has
       **both** `.sh` and `.cmd`; `win32`-branch unit tests pass; note the periodic real bare-Windows check.
 - [ ] **Step 8 (one of the LAST steps) — Document second-brain maintainability for everyone.** Update the
