@@ -36,6 +36,23 @@ Three deliverables, independent, shippable one at a time (a `/clear` between eac
    (replace / merge / never-touch) + an Engine marker for `.mcp.json` — with the **survival test** as the
    plan's first acceptance gate.
 
+## Execution kickoff (run in a fresh window — avoid context rot)
+
+Execute this plan from a **new session**, not by dragging a long conversation along. The committed docs
+(ADR 0012 + this plan) **are** the external memory — the new window needs nothing else. Open it and give
+it only:
+
+> Read and follow `maintainers/decisions/0012-engine-packaging-four-part-model.md` and
+> `maintainers/plans/engine-packaging-phase0-action.md` **to the letter** (four-part model, additive-only
+> founding principle, three regimes). Work on branch **`claude/engine-packaging-phase0-impl`**. **Do NOT
+> merge to `main`** (demo week — runtime code merges only after). **TDD strict** (skill `tdd-discipline`):
+> write **gate #0** (the survival test) first, then **Step 1 only**, then stop and show me the diff. Keep
+> the `rag` suite green; commit + push to the impl branch.
+
+**Steps 2 and 3 each get their own fresh window**, same pattern (one clean context per step — the
+tablet-friendly equivalent of `/clear` between steps). Branch off `main` once the framing PR is merged;
+otherwise branch off `claude/engine-packaging-study-2nzmkg`.
+
 ## Acceptance gate #0 — the founding principle, made testable (do this first)
 
 Before any of the three steps, write the **survival test** that every later step must keep green. It is
