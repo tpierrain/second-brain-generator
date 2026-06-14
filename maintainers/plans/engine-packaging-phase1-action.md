@@ -135,8 +135,24 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
         the pure, unit-tested `formatReport` (new version · files swapped · reindex ran-or-not · "your files
         untouched"). Also made the **self-carry guards honest**: added the Step-5 import `scripts/lib/reindex-trigger.mjs`
         to both the `planTouches` and `filterCopyable` lib lists.)_
-- [ ] **Step 7 — Cross-platform parity gate (ADR 0015 §8).** Confirm every launcher/script touched has
+- [x] **Step 7 — Cross-platform parity gate (ADR 0015 §8).** Confirm every launcher/script touched has
       **both** `.sh` and `.cmd`; `win32`-branch unit tests pass; note the periodic real bare-Windows check.
+      _(2026-06-14 · harness **204 tests, fail 0, todo 0**; RAG **129 pass**.)_
+  - [x] **Durable manifest parity guard** — new gate in `engine-manifest.test.mjs`: the `regenerate`
+        bucket must pair every launcher base with **both** a `.sh` and a `.cmd` half (and contain nothing
+        but `.sh`/`.cmd` launchers). Proven fail-first (drop `rag/launch.cmd` → bites with
+        _"missing its Windows half"_). This is the regression guard ADR 0015 §8 asks for — it catches a
+        future `foo.sh` added without `foo.cmd`. Today's 4 launchers (`rag/launch.{sh,cmd}`,
+        `scripts/run-node.{sh,cmd}`) all pair; the engine-owned `merge`/`replace` scripts are pure
+        cross-platform Node (`.mjs`), so they need no shell half.
+  - [x] **`win32`-branch unit tests pass.** Verified across the whole touched surface: the `update-engine`
+        Gate runs the full swap under **both** `posix` and `win32` and asserts the launchers are regenerated
+        with both halves; `engine-fetch` has its posix+win32 parity pair; `run-node`, `rag-launcher` and
+        `open-env` carry `win32` branches. All green.
+  - [x] **Periodic real bare-Windows check — noted.** Honest boundary per ADR 0015 (Consequences) +
+        DEVELOPING §8: parity is enforced by the `win32`-branch unit tests above, backed by an occasional
+        real bare-Windows install. Full Windows CI stays deferred until proven necessary (ADR 0009 spirit) —
+        the next reinforcement if drift is ever found.
 - [ ] **Step 8 (one of the LAST steps) — Document second-brain maintainability for everyone.** Update the
       **project `README.md`** (and `SETUP.md` for the hands-on flow) to explain, in plain language, **how a
       second brain stays maintainable**: that every brain ships a built-in, opt-in `update-engine`; the
