@@ -7,7 +7,7 @@
 [![Latest release](https://img.shields.io/github/v/release/tpierrain/second-brain-generator?sort=semver&display_name=tag&label=latest&color=7c4dff&style=flat-square&logo=github&logoColor=white)](https://github.com/tpierrain/second-brain-generator/releases/latest)
 &nbsp;[![Engine: self-upgradable since v3.0.0](https://img.shields.io/badge/engine-self--upgradable%20since%20v3.0.0-651fff?style=flat-square&logo=rocket&logoColor=white)](#keeping-your-brain-up-to-date-its-engine)
 &nbsp;[![Privacy: local by default](https://img.shields.io/badge/privacy-local%20by%20default-3d5afe?style=flat-square&logo=lock&logoColor=white)](#and-the-privacy-of-my-data)
-&nbsp;[![Runs on macOS, Linux and Windows](https://img.shields.io/badge/runs%20on-macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-2979ff?style=flat-square)](#ready-to-try-it)
+&nbsp;[![Runs on macOS and Windows](https://img.shields.io/badge/runs%20on-macOS%20%C2%B7%20Windows-2979ff?style=flat-square)](#ready-to-try-it)
 
 **Ask it like you'd ask a personal assistant — no dev skills required — and pull up any decision or piece of info from your work in seconds, always with the sources.**
 *In Claude Desktop or on the command line, your call.*
