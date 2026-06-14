@@ -43,11 +43,18 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
         = sha256 per merge file (6 skills' SKILL.md, generated `.claude/settings.json`, `CLAUDE.md`, 4
         engine scripts); vault note / `.env` / `rag/src` NEVER fingerprinted. Harness 174 tests, 171
         pass, fail 0, 3 todo — green.)_
-- [ ] **Step 2 — Resolve + fetch the pinned target ref (cross-platform).** A lib that spawns
+- [x] **Step 2 — Resolve + fetch the pinned target ref (cross-platform).** A lib that spawns
       `git clone --depth 1 --branch <ref>` (or fetch) of the recorded repo into a temp dir, then reads the
       **fetched** `engine-manifest.json` → target `engineVersion` vector + `indexSchemaVersion`. Pure Node,
-      `process.platform` switch, **win32 + posix** unit-tested (git spawn stubbed).
-  - [ ] `scripts/lib/engine-fetch.mjs` + tests (stubbed spawn; temp-dir cleanup).
+      `process.platform` switch, **win32 + posix** unit-tested (git spawn stubbed). _(2026-06-14)_
+  - [x] `scripts/lib/engine-fetch.mjs` + tests (stubbed spawn; temp-dir cleanup). _(TDD baby-steps, 7 tests:
+        `buildCloneArgs` (shallow `--depth 1 --branch <ref> --single-branch`), `fetchSource` happy path
+        (returns the temp dir, drop-in for the Gate's `fetchSource` seam), failed clone → clear error **+
+        orphan temp-dir cleanup**, no recorded repo → actionable error **without spawning git**,
+        `readTargetManifest` (fetched manifest → engineVersion vector + `indexSchemaVersion` + regimes), and
+        a **posix+win32 parity pair** locking ADR 0015 — git is a real exe on both, so the clone needs **no
+        `process.platform` branch** (unlike `npm.cmd` at Step 4); the win32-style temp dir is honoured
+        verbatim. Harness 181 tests, 178 pass, fail 0, 3 todo — green.)_
 - [ ] **Step 3 — Compute the apply-plan from the manifest (the safety core).** From the local + fetched
       manifests, list exactly: `replace` files to overwrite, `regenerate` launchers to rebuild, and the
       **engine-owned scripts** to replace (the `merge` *scripts* — `auto-commit`/`auto-push`/`status-line`/
