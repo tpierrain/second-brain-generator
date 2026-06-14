@@ -1,40 +1,63 @@
 # Engine packaging — Phase 0 action plan (Track D: decouple now, defer the channel)
 
 **STATUS: 🗺️ ACTION PLAN — not started.** Enacts **Phase 0** of
-[`engine-packaging-study.md`](engine-packaging-study.md) (Track D). Makes the motor **observable and
-relocatable** without choosing a distribution channel yet. **Scope:** Second brain (runtime) + Installer.
-**Governing invariant (ADR 0003):** opt-in, non-destructive of local divergences, never reclaims the
-brain's sovereignty.
+[`engine-packaging-study.md`](engine-packaging-study.md) (Track D), under the four-part model and the
+founding principle of [`ADR 0012`](../decisions/0012-engine-packaging-four-part-model.md). Makes the
+**Engine observable and relocatable** without choosing a distribution channel yet. **Scope:** Second
+brain (runtime) + Installer.
+
+**Governing principle (ADR 0012, non-negotiable):** *additive-only upgrade.* An upgrade **never deletes
+or overwrites** a **Personal Extension** or any **Content**. Mechanically: a **write-allowlist** + a
+**managed file set**, never "replace the folder" / `rsync --delete`. Phase 0 lays the data that makes
+this guarantee *structural* (the manifest); it implements no upgrade command.
+
+**Vocabulary (ADR 0012):** *Installer* (the launcher — out of scope) · **Engine** (the upstream-provided
+runtime machinery — the subject) · **Personal Extensions** (user-made tooling grafted on — sacred) ·
+**Content** (the vault — sacred). "Engine" below always means the second one.
 
 ---
 
 ## Goal
 
-Build the **seam**, commit to **no policy**. After this plan, a brain can (a) report which motor it
-runs, (b) run an engine that lives *anywhere* (not only `<brain>/rag/`), and (c) be upgraded later by a
-follow-up (Track A/B/C) that knows exactly which files are "engine". Zero behaviour change for existing
-brains: every new input **defaults to today's value**.
+Build the **seam**, commit to **no policy**. After this plan, a brain can (a) **report** which Engine it
+runs (a version *vector*), (b) run an Engine **told where the vault is** (not welded to `<brain>/rag/`),
+and (c) be upgraded later by a follow-up (Track A/B/C) that knows, deterministically, **which files are
+Engine** — so that Personal Extensions and Content are untouchable *by construction*. **Zero behaviour
+change for existing brains:** every new input **defaults to today's value**.
 
-Three deliverables, independent, shippable one at a time (a `/clear` between each):
+Three deliverables, independent, shippable one at a time (a `/clear` between each), each in TDD
+(skill `tdd-discipline`: a failing test first, baby-steps, refactor not optional):
 
-1. **Relocatable paths** — `config.ts` reads vault/cache/env from the environment, defaulting to the
-   current relative paths.
-2. **Observable version** — real semver + `engine_version` and `index_schema_version` surfaced via
-   `vault_stats`; the index stamp carries the schema version.
-3. **Ownership map** — an explicit `engine-manifest.json` + a marker separating the engine-owned
-   `vault-rag` entry from user connector entries in `.mcp.json`.
+1. **Relocatable paths** — `config.ts` reads vault/cache/env from the environment, defaulting to today's
+   relative paths.
+2. **Observable version vector** — real semver + `engine_version` (a vector) and `index_schema_version`
+   surfaced via `vault_stats`; the index stamp carries the schema version.
+3. **Ownership manifest** — an explicit `engine-manifest.json` keyed **by upgrade regime**
+   (replace / merge / never-touch) + an Engine marker for `.mcp.json` — with the **survival test** as the
+   plan's first acceptance gate.
 
-Each is TDD (cf. skill `tdd-discipline`): a failing test first, baby-steps, refactor not optional.
+## Acceptance gate #0 — the founding principle, made testable (do this first)
 
----
+Before any of the three steps, write the **survival test** that every later step must keep green. It is
+the executable form of ADR 0012's principle:
+
+> Given a brain with a **home-made skill** (`.claude/skills/zzz-mine/SKILL.md`), a **custom script**
+> (`scripts/my-tool.mjs`), a **custom sub-agent**, and a **vault note** — none of them mentioned by
+> `engine-manifest.json` — the set of paths an upgrade is *allowed to write* (derived **only** from the
+> manifest's `replace ∪ merge ∪ regenerate ∪ engineMcpServers`) **contains none of them.**
+
+This test has no production code to pass yet (the manifest doesn't exist until Step 3); it is written
+**red** alongside Step 3 and is the gate that makes "Personal Extensions are sacred" a fact, not a hope.
+It encodes the **write-allowlist** semantics: the upgrade enumerates *what it may touch*, never *what to
+delete* — so an unmentioned file cannot even be a candidate.
 
 ## Step 1 — Relocatable paths (config.ts reads the environment)
 
 **Why:** today [`rag/src/lib/config.ts`](../../rag/src/lib/config.ts) pins everything by position
-(`resolve(__dirname, "../../..")`) → the engine is welded to `<brain>/rag/`. An upgrade channel needs the
-engine to be able to live elsewhere and be *told* where the vault is.
+(`resolve(__dirname, "../../..")`) → the Engine is welded to `<brain>/rag/`. An upgrade channel needs the
+Engine to be able to live elsewhere and be *told* where the vault is.
 
-**Change:** introduce a pure, tested resolver that prefers an env var, else falls back to today's path.
+**Change:** a pure, tested resolver that prefers an env var, else falls back to today's path.
 
 ```ts
 // pure + unit-testable: env wins, else the historical relative default
@@ -46,118 +69,144 @@ export const CACHE_DIR = resolvePath(process.env.CACHE_DIR, resolve(__dirname, "
 const envPath        = resolvePath(process.env.SBG_ENV_PATH, resolve(projectRoot, ".env"));
 ```
 
-**Tests** (`config.test.mts` or a new `paths.test.mts`):
-- env set (absolute) → returned, resolved.
-- env set (relative) → resolved against cwd.
-- env empty / whitespace / unset → historical fallback (the regression guard).
+**Tests** (`paths.test.mts`): env absolute → resolved; env relative → resolved against cwd; empty /
+whitespace / unset → historical fallback (the regression guard).
 
 **Acceptance:** existing brains — no env set — behave **identically** (same `VAULT_DIR`/`CACHE_DIR`/
-`envPath` as before). New env vars override. `rag` test suite stays green.
+`envPath`). New env vars override. `rag` suite stays green.
 
-**Out of scope here:** changing `.mcp.json.template` to *pass* those vars — do it only if Step 1's
-defaults don't already cover the current layout (they do), so leave the template alone until a channel
-(A/B) actually needs relocation. Document the vars in `.env.example` as **advanced/optional**.
+**Out of scope:** changing `.mcp.json.template` to *pass* those vars — the defaults already cover the
+current layout, so leave the template untouched until a channel (A/B) needs relocation. Document the vars
+in `.env.example` as **advanced/optional**.
 
-## Step 2 — Observable version (semver + vault_stats + index schema stamp)
+## Step 2 — Observable version vector (semver + vault_stats + index schema stamp)
 
-**Why:** `rag/package.json` is a static `1.0.0`, never bumped, and nothing surfaces it. You cannot tell a
-stale brain from a fresh one — the prerequisite of any upgrade UX and of stale-index detection.
+**Why:** `rag/package.json` is a static `1.0.0`, never bumped, surfaced nowhere. You cannot tell a stale
+brain from a fresh one — the prerequisite of any upgrade UX and of stale-index detection. And per ADR
+0012 the Engine is **several layers**, so the version is a **vector**, not one number.
 
-**2a. Real semver.** Adopt semver for `rag/package.json`. Define the bump rule in a one-paragraph note at
-the top of the engine (or in the manifest of Step 3): **MINOR** = behaviour/format change behind the
-stable MCP port; **MAJOR** = the index schema changes (forces a reindex); **PATCH** = fix, no format
-change. Start at the honest current number (keep `1.0.0` or bump to `1.1.0` with this change — decide in
-the PR).
+**2a. Real semver + version vector.** The Engine version is
+`{ rag, constitutionTemplate, scripts }`. **This step implements `rag` end-to-end** (semver in
+`rag/package.json`); `constitutionTemplate` and `scripts` start as static fields in the manifest
+(Step 3) and get their own bump discipline when those layers actually change. Bump rule for `rag`:
+**MAJOR** = index schema changes (forces a reindex) · **MINOR** = behaviour/format change behind the
+stable MCP port · **PATCH** = fix, no format change. Start at the honest current number (decide
+`1.0.0` vs `1.1.0` in the PR).
 
-**2b. Index schema version in the stamp.** Extend the existing index identity (ADR 0007 already stamps
-provider/model/dimension — find it via the embedder-identity / index-freshness code) with an
-`indexSchemaVersion` constant. On engine start, compare the running constant to the stamped value
-(reuse `index-freshness`): mismatch → the **existing** confirm-gate → reindex path. No new framework.
+**2b. Index schema version in the stamp.** Extend the existing index identity (ADR 0007 stamps
+provider/model/dimension — see the embedder-identity / index-freshness code) with an `indexSchemaVersion`
+constant. On Engine start, compare the running constant to the stamped value (reuse `index-freshness`):
+mismatch → the **existing** confirm-gate → reindex path. **No new framework** — this is the same
+machinery that already guards an embedder swap.
 
-**2c. Surface via `vault_stats`.** Add `engine_version` (from `package.json`) and `index_schema_version`
-(the stamped value + the running constant, so a drift is visible) to the `vault_stats` tool output.
-This is the only public-contract change, and it is **additive** (ADR 0006 allows generalising
-`vault_stats`; precedent set in its addendum) → no breakage.
+**2c. Surface via `vault_stats`.** Add `engine_version` (the vector, read from `package.json` + manifest)
+and `index_schema_version` (stamped value + running constant, so a drift is visible) to `vault_stats`.
+Only public-contract change, and it is **additive** (ADR 0006 allows generalising `vault_stats`) → no
+breakage.
 
-**Tests:**
-- `vault_stats` output includes `engine_version` matching `package.json` (read it, don't hardcode the
-  string — non-brittle assert per `tdd-discipline`).
-- stamp round-trip: write schema vN, read back vN.
-- drift: running constant ≠ stamped value → the stale path fires (mock the gate, assert it's called).
+**Tests:** `vault_stats` includes `engine_version.rag` matching `package.json` (read it, don't hardcode —
+non-brittle assert); stamp round-trip (write vN, read vN); drift (running ≠ stamped → stale path fires,
+gate mocked).
 
-**Acceptance:** `vault_stats` reports the motor; bumping `indexSchemaVersion` makes a brain detect its
-index as stale and offer a reindex; same-version brains see no prompt.
+**Acceptance:** `vault_stats` reports the Engine vector; bumping `indexSchemaVersion` makes a brain detect
+its index stale and offer a reindex; same-version brains see no prompt.
 
-## Step 3 — Ownership map (engine-manifest.json + .mcp.json marker)
+## Step 3 — Ownership manifest (engine-manifest.json, keyed by regime + .mcp.json marker)
 
-**Why:** today the engine/content/tools line is implicit. [`tracked-files.mjs`](../../scripts/lib/tracked-files.mjs)
+**Why:** today the four-part line is implicit. [`tracked-files.mjs`](../../scripts/lib/tracked-files.mjs)
 is an *install-time* allowlist, not an *upgrade-time* ownership map. A future `update-engine` must know,
-deterministically, what it may overwrite — and must **never** touch a user's connectors or forked skills.
+deterministically, **what it may write** — and, by the founding principle, *what it must never touch*.
 
-**3a. `engine-manifest.json`** at the launcher root (and copied into the brain): the explicit ownership
-table from the study, machine-readable. Sketch:
+**3a. `engine-manifest.json`** at the launcher root (and copied into the brain), keyed **by the three
+regimes** of ADR 0012. The file lists **only Engine paths**; everything not listed is, by construction,
+a Personal Extension or Content → untouchable.
 
 ```json
 {
-  "engineVersion": "1.1.0",
+  "manifestVersion": 1,
+  "engineVersion": { "rag": "1.1.0", "constitutionTemplate": "1.0.0", "scripts": "1.0.0" },
   "indexSchemaVersion": 1,
-  "owned": {
-    "replace": ["rag/src/**", "rag/package.json", "rag/tsconfig.json"],
-    "regenerate": ["rag/launch.sh", "rag/launch.cmd"]
+  "regimes": {
+    "replace":   ["rag/src/**", "rag/package.json", "rag/tsconfig.json"],
+    "regenerate":["rag/launch.sh", "rag/launch.cmd"],
+    "merge":     ["CLAUDE.md", ".claude/settings.json",
+                  ".claude/skills/coach/**", ".claude/skills/sync/**",
+                  ".claude/skills/sync-sources/**", ".claude/skills/improve/**",
+                  ".claude/skills/prepare-1-1/**", ".claude/skills/tdd-discipline/**",
+                  "scripts/auto-commit.mjs", "scripts/auto-push.mjs",
+                  "scripts/status-line.mjs", "scripts/verify-rag.mjs"]
   },
-  "userOwned": {
-    "neverTouch": ["vault/**", "CLAUDE.md", ".env", ".claude/skills/**"],
-    "merge": [".mcp.json", ".claude/settings.json"]
-  },
-  "undecided": ["scripts/auto-commit.mjs", "scripts/auto-push.mjs",
-                "scripts/status-line.mjs", "scripts/verify-rag.mjs"]
+  "engineMcpServers": ["vault-rag"]
 }
 ```
 
-Resolve the `undecided` list **in this PR** (it's open question #4 of the study): rule each engine-owned
-(upgradable) or frozen-at-install. Recommendation to validate: the auto-commit/push/status/verify scripts
-are **engine-owned** (they're mechanism, not the user's content) → `replace`, but only via the future
-opt-in `update-engine`, never silently.
+**Two open questions of the study, resolved here (ADR 0012 makes the call):**
 
-**3b. `.mcp.json` engine marker.** Mark the engine-owned server entry so a future merge can rewrite *only*
-it and leave connectors alone. Cheapest non-invasive option: a comment-free convention — the engine entry
-is always keyed `vault-rag`, and the manifest declares `"engineMcpServers": ["vault-rag"]`. A future
-`update-engine` rewrites only those keys, deep-merging the rest. (Avoid a custom `.mcp.json` schema
-extension — keep it a plain MCP file.)
+- **Q#4 — the hook/runtime scripts** (`auto-commit`, `auto-push`, `status-line`, `verify-rag`): Engine,
+  but **`merge`, not `replace`.** The founding principle tie-breaks: a user *might* have tweaked them, so
+  we never blind-overwrite — we offer a diff. (They also carry install-substituted placeholders
+  `{{NODE}}`/`{{PROJECT_ROOT}}`; a clean merge compares against the **template**, not the substituted
+  file — an implementation note for Phase 1.)
+- **Q#5 — the shipped skills** (`coach`, `sync`…): Engine, **`merge`.** They live in the user's
+  `.claude/skills/` and may be **forked** → never overwrite. **Critically, they are listed by name**, one
+  glob per shipped skill — **never** a blanket `.claude/skills/**`, which would swallow a home-made skill
+  and break the founding principle. A separate opt-in `update-skills` (Phase 1) drives their 3-way merge.
+
+**Replace ⇒ "replace-if-unmodified, else confirm" (the principle, even for `replace`).** Even a `replace`
+file must not blind-overwrite a locally-patched copy. So the manifest is designed to carry (or let Phase 1
+derive from git) a **provenance fingerprint** per Engine file; the upgrade overwrites only when the local
+file still matches the shipped one, otherwise it falls back to merge/confirm (dpkg-conffiles semantics).
+Phase 0 reserves the field; Phase 1 implements the comparison.
+
+**3b. `.mcp.json` Engine marker.** The Engine MCP entry is always keyed `vault-rag`; the manifest declares
+`engineMcpServers: ["vault-rag"]`. A future `update-engine` rewrites **only** those keys and **deep-merges
+the rest** (the user's Slack/Drive/Notion connectors are never enumerated for rewrite). Keep `.mcp.json` a
+plain MCP file — no custom schema extension.
 
 **Tests** (`engine-manifest.test.mjs`):
-- the manifest's `owned.replace` globs all resolve under `rag/` (no accidental vault/ entry).
-- `userOwned.neverTouch` and `owned.replace` are **disjoint** (a path can't be both) — the guard that
-  protects sovereignty.
-- `engineMcpServers` lists exactly the entries the installer writes into `.mcp.json.template`
-  (cross-check against the template) → the marker can't drift from reality.
+- **the survival test (gate #0)** — a home-made skill, a custom script, a sub-agent and a vault note are
+  **not** in `replace ∪ merge ∪ regenerate` nor under `engineMcpServers`.
+- **no over-broad glob** — no manifest glob matches a synthetic `.claude/skills/<random>/SKILL.md` or
+  `scripts/<random>.mjs` (guards against a blanket `.claude/skills/**`).
+- **regime disjointness** — `replace`, `merge`, `regenerate` are pairwise disjoint.
+- **engine paths only** — every listed path resolves to an Engine artefact the installer actually writes
+  (cross-check against `.mcp.json.template` for `engineMcpServers`; against the shipped skill folders for
+  the `merge` skill globs) → the manifest can't drift from reality.
 
-**Acceptance:** a single source of truth declares who owns what; a test fails loudly if engine and
-user buckets ever overlap. No runtime behaviour changes yet — this is data for Phase 1.
+**Acceptance:** one machine-readable source of truth, keyed by regime; the survival test is green and
+fails loudly if Engine ever overlaps a Personal Extension. **No runtime behaviour changes** — this is data
+for Phase 1.
 
 ---
 
 ## Sequencing & validation
 
-- **Order:** 1 → 2 → 3 (each independent; 2 and 3 both lean on 1 being merged but don't block on each
-  other). One `/clear` between steps.
-- **Definition of done (per house rule):** when Phase 0 ships, set this file's STATUS to ✅ with the
-  commit SHAs + what was verified, and `git mv` it into [`plans/archived/`](archived/).
-- **Whole-plan acceptance:** existing brains unchanged (no env set, no new prompts); a fresh install
-  reports `engine_version` via `vault_stats`; bumping `indexSchemaVersion` triggers the existing
-  reindex gate; the ownership manifest exists and its disjointness test is green.
-- **Explicitly NOT in Phase 0:** any re-pull/update command, any npm publish, any plugin, any
-  `.mcp.json` *merge* logic. Those are Phase 1+ (Tracks A/B/C). Phase 0 only lays the seam.
+- **Order:** gate #0 (survival test, red) → 1 → 2 → 3 (3 turns gate #0 green). Steps 1/2/3 are
+  independent; one `/clear` between them.
+- **Whole-plan acceptance:**
+  1. **Founding principle** — the survival test is green (Personal Extensions & Content are outside every
+     writable regime).
+  2. **No regression** — existing brains, no env set: identical paths, no new prompts; `rag` suite green.
+  3. **Observable** — a fresh brain reports its `engine_version` vector via `vault_stats`.
+  4. **Safe schema bump** — bumping `indexSchemaVersion` triggers the *existing* reindex gate; same
+     version → no prompt.
+- **Definition of done (house rule):** set this file's STATUS to ✅ with commit SHAs + what was verified,
+  and `git mv` it into [`plans/archived/`](archived/).
+- **Explicitly NOT in Phase 0:** any re-pull/update command, npm publish, plugin, `.mcp.json` *merge*
+  logic, fingerprint comparison, or `update-skills`. Those are Phase 1+ (Tracks A/B/C). Phase 0 lays the
+  seam only.
+- **Production note (demos in flight):** Phase 0 is non-regressive by design, but the standing rule holds
+  — **nothing merges to `main` before the client demos**; this work lands on a branch, verified by a
+  green `rag` suite + `verify-rag` on a test brain, and merges only after.
 
 ## Then what
 
-Phase 0 unblocks, in order of likely need:
-- **Phase 1 (Track A)** — opt-in `update-engine` reading `engine-manifest.json`, re-pulling the `owned`
-  set from a pinned source, reindexing iff `indexSchemaVersion` moved. Non-destructive by construction
-  (the manifest's disjointness guarantees it can't touch user buckets).
-- **Phase 2 (Tracks B → C)** — at publication: semver npm package with a vendored offline fallback, then
-  a plugin wrapping install + update. The ADR 0002-addendum hybrid, enacted on proven user-base need.
+- **Phase 1 (Track A)** — opt-in `update-engine` reading `engine-manifest.json`: re-pull the `replace`
+  set from a pinned source (replace-if-unmodified, else confirm), 3-way-merge the `merge` set, never touch
+  the rest; reindex iff `indexSchemaVersion` moved. Non-destructive **by construction** — the survival
+  test already proves the boundary. A sibling opt-in `update-skills` drives the shipped-skill merges.
+- **Phase 2 (Tracks B → C)** — at publication: semver npm package with a **vendored offline fallback**
+  (Engine must still start offline, ADR 0001/0012), then a plugin wrapping install + update. The ADR
+  0002-addendum hybrid, enacted on proven user-base need.
 
-When Phase 0 is designed enough to commit to, write the **ADR superseding 0003** (it explicitly invites
-this) recording: the engine/content/tools split, the observable-version decision, and the staged channel
-plan — with the sovereignty invariant as the non-negotiable.
+The framing is now fixed by **ADR 0012**; this plan is its first, smallest, fully-reversible increment.
