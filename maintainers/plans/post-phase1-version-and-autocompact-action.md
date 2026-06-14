@@ -25,19 +25,21 @@ post-demo merge.
       **offline display NOW** (A1); the **"update available" detection is DEFERRED** to a later, **opt-in,
       non-blocking, background** iteration (A2) — the first draft's silent startup ping was dropped because it
       re-coupled the brain to the generator, against ADR 0001/0014.)_
-  - [ ] **A1 — Offline version display (cheap, deterministic, no network) — THE work to do now.**
-    - [ ] pure lib `scripts/lib/engine-version.mjs`: `formatEngineVersion(manifest)` → `"engine <source.ref>"`
+  - [x] **A1 — Offline version display (cheap, deterministic, no network) — THE work to do now.** _(done 2026-06-14)_
+    - [x] pure lib `scripts/lib/engine-version.mjs`: `formatEngineVersion(manifest)` → `"engine <source.ref>"`
           — **the displayed version is the git TAG the brain was generated/last-updated from**
           (`source.ref`, already recorded in the manifest at install), NOT a hand-maintained number. E.g.
           `source.ref = "v1.1.0"` → `"engine v1.1.0"`. **Fallback** when `source.ref` is absent or not a
           semver tag (dev launcher, install from a branch) → show the ref verbatim, or `engineVersion.rag`
           as a last resort; never invent. Missing/invalid manifest → `null`. Unit tests first (TDD: tag ref,
-          non-semver ref, no source, missing file/null).
-    - [ ] wire into `scripts/status-line.mjs`: read `engine-manifest.json` at REPO root (**fail-silent** —
+          non-semver ref, no source, missing file/null). _(6/6 green, commit aaa0f64)_
+    - [x] wire into `scripts/status-line.mjs`: read `engine-manifest.json` at REPO root (**fail-silent** —
           no manifest → no segment), append an `engine v…` segment to the existing `· `-joined line. The
-          status-line contract is **READ-ONLY + FAST** — this is a plain file read, safe here.
-    - [ ] _(optional)_ also surface it in `scripts/session-status.mjs` `systemMessage` for the CLI startup
-          banner — decide if worth the duplication; status-line already covers Desktop + persistence.
+          status-line contract is **READ-ONLY + FAST** — this is a plain file read, safe here. _(done 2026-06-14;
+          smoke: launcher shows `engine 1.1.0` via the rag fallback — no `source` recorded, correct.)_
+    - [x] _(optional — SKIPPED)_ also surface it in `scripts/session-status.mjs` `systemMessage`: **not worth the
+          duplication** — the status-line already renders persistently on **both** surfaces (CLI terminal +
+          Desktop Code tab), whereas `systemMessage` is CLI-only. Decision 2026-06-14.
   - [ ] **A2 — "Update available" detection — DEFERRED (do NOT build now).** Comes back in a few days as a
         separate, **opt-in, non-blocking, background** iteration (maintainer's call 2026-06-14). Captured here
         so the design is ready; **nothing in A1 closes this door** (see "future-proofing" below). Constraints
