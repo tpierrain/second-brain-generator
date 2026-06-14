@@ -57,9 +57,18 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
   - [ ] add the skill to the launcher's shipped skills + manifest `merge` list; install-copy verified.
 - [ ] **Step 7 — Cross-platform parity gate (ADR 0015 §8).** Confirm every launcher/script touched has
       **both** `.sh` and `.cmd`; `win32`-branch unit tests pass; note the periodic real bare-Windows check.
+- [ ] **Step 8 (one of the LAST steps) — Document second-brain maintainability for everyone.** Update the
+      **project `README.md`** (and `SETUP.md` for the hands-on flow) to explain, in plain language, **how a
+      second brain stays maintainable**: that every brain ships a built-in, opt-in `update-engine`; the
+      **user journey** (ask → confirm → swap engine + reindex-if-needed → report; or the brain offers it
+      thanks to Phase 0 observability); what it touches vs never touches (notes/.env/constitution/settings/
+      skills are sacred); and the role of `engine-manifest.json` as the readable map of "what is the
+      engine". Reuse the PR's "In plain words" + "user journey" boxes ([ADR 0014](../decisions/0014-ship-update-engine-before-mass-deployment.md), [0016](../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md)).
+  - [ ] README: a short "Keeping your brain up to date" section (audience = everyone, incl. non-technical).
+  - [ ] SETUP: the concrete steps to trigger / accept an engine update.
 - [ ] **Definition of done** — STATUS → ✅ with commit SHAs + what was verified (harness `node --test`,
       RAG `npm test`, `tsc --noEmit`), then `git mv` this plan into [`plans/archived/`](archived/), refresh
-      the PR body, update `SETUP.md`/README if the user-facing flow changed.
+      the PR body, confirm `SETUP.md`/README reflect the shipped flow (Step 8).
 
 ## In essence — what Phase 1 delivers (the *what*)
 
