@@ -1,10 +1,20 @@
 # Engine packaging — Phase 1 action plan (Track A: `update-engine`, opt-in re-pull)
 
-**STATUS: 🚧 IN PROGRESS** on branch `engine-packaging` (PR #10, kept a **draft** —
-no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1** of
-[`engine-packaging-study.md`](engine-packaging-study.md) (Track A), **re-timed to NOW by**
-[`ADR 0014`](../decisions/0014-ship-update-engine-before-mass-deployment.md): the updater must ship
-**before** the mass deployment, or the first migration on a non-technical user's brain has no carrier.
+**STATUS: ✅ DONE** on branch `engine-packaging` (PR #10, kept a **draft** — **no merge to `main` before
+the Mon/Tue client demos**, ADR 0012 / 0014; the maintainer merges after testing the whole restructuring
+locally). Enacts **Phase 1** of [`engine-packaging-study.md`](../engine-packaging-study.md) (Track A),
+**re-timed to NOW by** [`ADR 0014`](../../decisions/0014-ship-update-engine-before-mass-deployment.md):
+the updater must ship **before** the mass deployment, or the first migration on a non-technical user's
+brain has no carrier.
+
+**Commit SHAs** (all on `engine-packaging`, pushed): Gate `4e4e097` · Step 1 `96b8b30` · Step 2 `20edec8` ·
+Step 3 `108f2be` · Step 4 `9f534b3` · Step 5 `20c6f60` · Step 6 `c48ef3f` · Step 7 `c90f222` ·
+Step 8 (docs) `999d549` · Definition of done (this archive) — see the closing commit.
+**Verified at close:** harness `node --test 'scripts/**/*.test.mjs' 'scripts/*.test.mjs'` → **204/204,
+fail 0, todo 0** (re-run twice this session; Step 8 was docs-only so the tree is byte-identical to `c90f222`
+test-wise); RAG `cd rag && npm test` → **129/129** and `cd rag && npx tsc --noEmit` clean **as of Step 7
+`c90f222`** (untouched since: Steps 8 + DoD are docs/plan-only — no `rag/` or `scripts/` code change).
+README + SETUP reflect the shipped flow (Step 8).
 
 ## ▶ Progress checklist (SOURCE OF TRUTH — resume at the first unchecked box)
 
@@ -118,7 +128,7 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
         Phase 2 3-way still detects the user's edits. 2 unit tests + the **Gate** now seeds a base and
         asserts post-swap that the engine script's base is refreshed to vB **and** CLAUDE.md's base is
         preserved.
-- [x] **Step 6 — Brain-side `update-engine` skill (Claude-driven UX) — [ADR 0016](../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md).**
+- [x] **Step 6 — Brain-side `update-engine` skill (Claude-driven UX) — [ADR 0016](../../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md).**
       A skill shipped by the installer into the brain that confirms with the user (opt-in, **never** auto),
       calls the core, and reports what changed / whether a reindex ran. Deterministic work stays in the
       `.mjs`; the skill is the thin conversational driver. **Not** a tool on the `vault-rag` MCP server.
@@ -159,7 +169,7 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
       **user journey** (ask → confirm → swap engine + reindex-if-needed → report; or the brain offers it
       thanks to Phase 0 observability); what it touches vs never touches (notes/.env/constitution/settings/
       skills are sacred); and the role of `engine-manifest.json` as the readable map of "what is the
-      engine". Reuse the PR's "In plain words" + "user journey" boxes ([ADR 0014](../decisions/0014-ship-update-engine-before-mass-deployment.md), [0016](../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md)).
+      engine". Reuse the PR's "In plain words" + "user journey" boxes ([ADR 0014](../../decisions/0014-ship-update-engine-before-mass-deployment.md), [0016](../../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md)).
       _(2026-06-14 · docs-only, no code change → harness unchanged at 204 tests, fail 0. README gets a new
       "🔄 Keeping your brain up to date (its engine)" section right after Backup — leads with the 4-element
       mental model (launcher-once / brain self-carries its updater / `engine-manifest.json` as the map +
@@ -186,9 +196,13 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
         here means installing the RAG engine's **dependencies locally**, NOT publishing/pulling a package
         from a central registry (ADR 0001: self-hosted, no registry in Phase 1).
   - [x] SETUP: the concrete steps to trigger / accept an engine update.
-- [ ] **Definition of done** — STATUS → ✅ with commit SHAs + what was verified (harness `node --test`,
-      RAG `npm test`, `tsc --noEmit`), then `git mv` this plan into [`plans/archived/`](archived/), refresh
-      the PR body, confirm `SETUP.md`/README reflect the shipped flow (Step 8).
+- [x] **Definition of done** — STATUS → ✅ with commit SHAs + what was verified (harness `node --test`,
+      RAG `npm test`, `tsc --noEmit`), then `git mv` this plan into `plans/archived/`, refresh
+      the PR body, confirm `SETUP.md`/README reflect the shipped flow (Step 8). _(2026-06-14 · STATUS bumped
+      to ✅ DONE with the full SHA list + verification record above; this plan `git mv`'d into
+      `maintainers/plans/archived/` (its fully-ticked checklist is the surviving record, cf. the
+      `plan-done-equals-archived` convention); relative links re-pointed for the new depth; PR #10 body
+      refreshed. **No `main` merge** — deferred to the maintainer post-demos per ADR 0012/0014.)_
 
 ## In essence — what Phase 1 delivers (the *what*)
 
@@ -202,7 +216,7 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
 ## Direct follow-up — surface the engine version / proactive offer (PARKED, same subject)
 
 > **Not an orphan side-task — this is the direct continuation of the observability thread** this work
-> opened (Phase 0 made the engine observable; [ADR 0016](../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md)
+> opened (Phase 0 made the engine observable; [ADR 0016](../../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md)
 > says the brain *may proactively offer* an update). Raised by the maintainer 2026-06-14. **Parked
 > deliberately: NOT in PR #10** (would widen the scope right before the 15-16 June demos), to be done as a
 > small follow-up once Phase 1 lands. Captured so it isn't lost. *(memory: `brain-version-display-idea`.)*
