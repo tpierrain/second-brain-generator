@@ -54,8 +54,14 @@ When `source.ref` is not a semver tag (dev launcher / branch install), show it v
 **2. The version-number reference is a git tag, not a tracked file.** A tag is an intentional, maintainer-
 controlled release act, decoupled from file churn; GitHub surfaces it under Releases/Tags for free. The
 manifest's `engineVersion` vector + `indexSchemaVersion` stay for the **mechanics** (`update-engine`'s
-apply/reindex decisions) — **not** as the user-facing version. **Tag convention `vMAJOR.MINOR.PATCH`**; release
-ritual = `git tag v1.2.0 && git push --tags` (automatable later).
+apply/reindex decisions) — **not** as the user-facing version. **Tag convention `vMAJOR.MINOR.PATCH`** (lowercase
+`v`, semver-parseable); release ritual = `git tag v3.0.0 && git push --tags` (automatable later).
+
+**First release under this convention = `v3.0.0`** (maintainer's call 2026-06-14). The repo's pre-existing tags
+`V1` / `V2` (uppercase, non-semver) predate this convention; the next tag — cut **when PR #10 merges to `main`**
+— is **`v3.0.0`**, starting the clean semver series. Brains installed from it record `source.ref = "v3.0.0"` →
+the status-line shows `engine v3.0.0`. (`formatEngineVersion` already tolerates the legacy form: a brain pinned
+to `V2` simply displays `engine V2` verbatim — never invented.)
 
 **3. "Is a newer version available?" is DEFERRED — and, when it lands, will be opt-in, non-blocking, and
 producer/consumer-decoupled, never a synchronous or silent startup ping.** Shipping now = the **offline display

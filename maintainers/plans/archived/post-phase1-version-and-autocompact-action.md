@@ -1,10 +1,10 @@
 # Post-Phase 1 follow-ups — engine version surfacing + autocompact threshold (PR #10 comet tail)
 
-**STATUS: 🚧 PLANNED (not started).** On branch `engine-packaging` (**PR #10**, draft), as the
-**"queue de comète"** (comet tail) of the now-closed Phase 1 `update-engine` work. **To be implemented
-AFTER a `/clear`, in a fresh window** (the maintainer's explicit call — avoid context rot). The maintainer
-wants both chantiers in PR #10 so the **whole restructuring can be tested locally tonight**, before the
-post-demo merge.
+**STATUS: ✅ DONE (2026-06-14).** Both chantiers shipped on branch `engine-packaging` (**PR #10**, draft), as
+the **"queue de comète"** (comet tail) of the now-closed Phase 1 `update-engine` work. Harness **212/212**
+green (fail 0, todo 0); **no `rag/` code touched**. Commits: `aaa0f64` (pure `formatEngineVersion`), `de21eee`
+(status-line wiring), `05ab1b1` (autocompact env block). ⚠️ **Still NOT merged to `main`** — the maintainer
+merges after the Mon/Tue demos and, at merge, cuts tag **`v3.0.0`** (ADR 0017).
 
 > These are the two **parked observability follow-ups** that lived at the bottom of the (now archived)
 > [`engine-packaging-phase1-action.md`](archived/engine-packaging-phase1-action.md). They are **additive
@@ -90,10 +90,13 @@ post-demo merge.
   - [x] _(optional — SKIPPED)_ one line in SETUP/README: **not worth it** — autocompact is an internal tuning
         detail that "just works"; surfacing it to non-dev users adds noise for no action they can take.
         Decision 2026-06-14.
-- [ ] **Definition of done** — harness `node --test` green (fail 0, todo 0), RAG untouched (no `rag/` code
-      change), `tsc` n/a; tick all boxes with _(date · commit)_; refresh the PR #10 body; **NO `main` merge**
-      (the maintainer merges post-demos). When done, `git mv` this plan into
-      [`plans/archived/`](archived/) ([[plan-done-equals-archived]]).
+- [x] **Definition of done** — harness `node --test` green (**212/212**, fail 0, todo 0), RAG untouched
+      (comet-tail commits touched **no `rag/` file**), `tsc` n/a; all boxes ticked with _(date · commit)_;
+      PR #10 body refreshed; **NO `main` merge** (the maintainer merges post-demos). When done, `git mv` this plan
+      into [`plans/archived/`](archived/) ([[plan-done-equals-archived]]). _(done 2026-06-14)_
+      - [x] **Release tag at merge = `v3.0.0`** (maintainer's call 2026-06-14, gravé [`ADR 0017`](../decisions/0017-engine-version-reference-is-git-tags.md)).
+            When PR #10 lands on `main`, cut the first semver-clean tag: `git tag v3.0.0 && git push --tags`
+            (legacy `V1`/`V2` predate the `vX.Y.Z` convention). A brain installed from it shows `engine v3.0.0`.
 
 ## Decisions settled (2026-06-14, with the maintainer)
 

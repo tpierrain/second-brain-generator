@@ -182,6 +182,11 @@
       `maintainers/**`). Lot 1 = `.gitignore` + measure scripts; Lot 2 = repoint 7 dangling cross-doc
       `#anchor` links onto the live EN headings; Lot 3 = archived plans (nothing to translate — all
       residual FR is intentional records/keeps). **STATUS: ✅ SHIPPED 2026-06-13** (`fbd70ba`, `e6e1801`).
+    - [`post-phase1-version-and-autocompact-action.md`](plans/archived/post-phase1-version-and-autocompact-action.md) —
+      **comet-tail of Phase 1** (PR #10): surface the engine version **offline** in the status-line (from the
+      brain's pinned `source.ref`, ADR 0017) + bake `CLAUDE_CODE_AUTO_COMPACT_WINDOW=350000` into every brain.
+      "Update available" detection **deferred** (opt-in, non-blocking). **STATUS: ✅ DONE 2026-06-14**
+      (`aaa0f64`, `de21eee`, `05ab1b1`; harness 212/212). Not yet merged — maintainer merges post-demos, tag `v3.0.0`.
 - **`retrospectives/`** — 📝 **takeaway-oriented retros**: the **story** of a notable session
   (the starting question, the path investigation→measurement→fix, the transferable lessons). To be
   distinguished from ADRs (the *why* of a decision) and plans (the *what/how*): here it's the
