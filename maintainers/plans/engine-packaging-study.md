@@ -216,9 +216,13 @@ no overwriting the user's vault/constitution/home-made skills/connectors).*
   `vault_stats`), env-inject the paths (defaults unchanged), write the `engine-manifest.json` ownership
   map, mark engine-vs-user entries in `.mcp.json`. Low risk, reversible, unblocks everything. *This is
   the only part worth doing before publication.*
-- **Phase 1 — on first real "my brain is stale" feedback (Track A):** ship an opt-in, manifest-driven
-  `update-engine` that re-pulls from a pinned source and reindexes if the schema moved. Stays self-hosted
-  (no registry), honours the invariant.
+- **Phase 1 — NOW, proactively, *before* the mass deployment (Track A) — re-timed by [ADR 0014](../decisions/0014-ship-update-engine-before-mass-deployment.md):**
+  ship an opt-in, manifest-driven `update-engine` that re-pulls from a pinned source and reindexes if the
+  schema moved. Stays self-hosted (no registry), honours the invariant. **Why not wait for "stale"
+  feedback** (the trigger this bullet originally carried): `update-engine` is a *brain-side* capability —
+  if brains ship to non-technical users *without* it, the first engine improvement has no carrier and the
+  first migration becomes a manual, per-user ordeal (the egg-and-chicken ADR 0014 records). The updater
+  must be **in the brain at install time**.
 - **Phase 2 — at publication, if feedback demands it (Track B, then C):** graduate the engine to a
   semver npm package with a vendored offline fallback; later wrap install + update in a plugin for
   discoverability. This is the ADR 0002-addendum hybrid, enacted only once the user base proves the need.

@@ -94,6 +94,13 @@
     → first unchecked big step. **Discoverable from any branch (even `main`)**, closing the egg-and-chicken
     where the branch name only lived on the branch; **several PRs → a menu to pick** (never guess), zero →
     ask. Operative rule = `DEVELOPING.md` §7. **Scope: Generator development (maintainer workflow).**
+  - [`0014-ship-update-engine-before-mass-deployment.md`](decisions/0014-ship-update-engine-before-mass-deployment.md) —
+    **re-times Phase 1 of 0012**: build `update-engine` (Track A) **now, before the mass deployment**, not
+    on later "my brain is stale" feedback. Rationale = an **egg-and-chicken**: the updater is *brain-side*,
+    so brains shipped to non-technical users without it have **no carrier** for the first engine
+    improvement → manual per-user migration (the very nightmare 0003's invariant spares them). The model
+    (0012) and invariant (0003) are unchanged — only the *timing* moves. **Scope: Second brain (runtime) +
+    Installer.**
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
