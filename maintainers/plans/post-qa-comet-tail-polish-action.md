@@ -48,12 +48,19 @@ ADR 0014). ⚠️ **No `main` merge before the Mon/Tue demos.**
 
 ## Findings (the QA evidence, so a fresh window has the context)
 
-- **Finding 1 (Item 1).** In Claude Desktop (Code tab, test brain), asked *"quelle version ?"* → the brain
-  answered **"rag 1.1.0"** via `vault_stats` (the mechanical `engineVersion` vector from `rag/package.json`).
-  This **contradicts ADR 0017**, which makes the **`source.ref` tag** the user-facing version and the
-  `engineVersion` vector "mechanics only". The **status-line is correct** (`engine engine-packaging`); only the
-  **conversational** answer reaches for the wrong number — because nothing tells the brain otherwise and
-  `vault_stats` hands it the mechanical value.
+- **Finding 1 (Item 1) — and it's NON-DETERMINISTIC, which is the real reason guidance is needed.** Same
+  question *"quelle version ?"*, two surfaces, two different answers:
+  - **Claude Desktop** (Code tab) → **"rag 1.1.0"** via `vault_stats` (the mechanical `engineVersion` vector
+    from `rag/package.json`) ❌ — the **wrong** number per ADR 0017.
+  - **CLI** → **"engine engine-packaging"** from `engine-manifest.json` `source.ref`, correctly citing ADR 0017
+    (offline, no network) and even spontaneously flagging the branch-vs-tag nuance ✅ — the **right** answer.
+
+  So without guidance the answer is a **coin flip** (surface/model/effort/luck) between the `source.ref` tag and
+  the mechanical vector — and the **majority audience is Desktop**, where it landed on the wrong one. ADR 0017
+  makes the **`source.ref` tag** the user-facing version and the `engineVersion` vector "mechanics only"; the
+  **status-line is always correct**, only the **conversational** answer is unreliable, because nothing tells the
+  brain which to use and `vault_stats` hands it the mechanical value. **Item 1's guidance makes the correct
+  answer reliable on every surface** (not a one-off bug — a determinism fix).
 - **Finding 2 (Item 2).** CLI **and** Desktop status-line show **`⚠️ Gemini key missing`** on the in-process test
   brain (which needs **no** key). `status-line.mjs` calls `hasGeminiKey(envContent)` unconditionally instead of
   gating on `geminiKeyRequired(envContent)`. Misleading for the keyless embedders that are now the default path.
