@@ -122,6 +122,22 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
       skills are sacred); and the role of `engine-manifest.json` as the readable map of "what is the
       engine". Reuse the PR's "In plain words" + "user journey" boxes ([ADR 0014](../decisions/0014-ship-update-engine-before-mass-deployment.md), [0016](../decisions/0016-update-engine-is-a-skill-not-an-mcp-tool.md)).
   - [ ] README: a short "Keeping your brain up to date" section (audience = everyone, incl. non-technical).
+        **Framing asked for by the maintainer (2026-06-14):** lead with **the basic concepts / the 3–4
+        elements**, then **what the user concretely does**. The mental model to convey:
+        (1) **launcher vs brain** — the launcher (installer) is used **once**, at install; you **never re-run
+        it** and **never start from a fresh installer folder** to upgrade;
+        (2) **the brain self-carries its own updater** — `update-engine.mjs` + `scripts/lib/**` travel
+        inside every brain;
+        (3) **`engine-manifest.json`** = the readable map of "what is the engine" + the recorded
+        `source: {repo, ref}` (where the brain pulls a newer engine from);
+        (4) on upgrade the brain **fetches a throw-away shallow clone** of that source into a temp dir, takes
+        what it needs, applies it, discards the temp dir.
+        **What the user does:** just **ask the brain in plain language** ("update your engine") and
+        **confirm** (opt-in) — no terminal, no installer, no new folder. **Sacred & untouched:** notes /
+        `.env` / `CLAUDE.md` / settings / custom skills. **Reindex** only if the index format changed.
+        **Prereqs at upgrade time:** `git` + `npm` + network (same as install) — note that `npm install`
+        here means installing the RAG engine's **dependencies locally**, NOT publishing/pulling a package
+        from a central registry (ADR 0001: self-hosted, no registry in Phase 1).
   - [ ] SETUP: the concrete steps to trigger / accept an engine update.
 - [ ] **Definition of done** — STATUS → ✅ with commit SHAs + what was verified (harness `node --test`,
       RAG `npm test`, `tsc --noEmit`), then `git mv` this plan into [`plans/archived/`](archived/), refresh
