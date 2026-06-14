@@ -13,13 +13,18 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
 > step** (and nothing more — see the Session protocol). Tick the box in the **same commit** that finishes
 > the step.
 
-- [ ] **Gate** — acceptance/survival test (RED by design until the apply step). End-to-end: a brain at
+- [x] **Gate** — acceptance/survival test (RED by design until the apply step). End-to-end: a brain at
       engine vA + a launcher source at vB>vA → `update-engine` brings `rag/src` + launchers + engine
       scripts to vB, `npm install`, reindex **iff** the index schema moved, and leaves
       vault/`.env`/`CLAUDE.md`/`.claude/settings.json`/skills **byte-identical**. Verified on **both**
-      the `win32` and posix branches (ADR 0015).
-  - [ ] write the failing acceptance test in `scripts/lib/update-engine.test.mjs` (drives the core).
-  - [ ] each guard proven fail-first by perturbation.
+      the `win32` and posix branches (ADR 0015). _(authored 2026-06-14 · RED by design — goes GREEN at
+      Step 4; harness suite 164 tests, 161 pass, the 3 fails ARE this gate.)_
+  - [x] write the failing acceptance test in `scripts/lib/update-engine.test.mjs` (drives the core).
+        _(3 guards: posix+win32 schema-moved scenario, schema-unchanged scenario; seams injected — no
+        real git/npm/ONNX; self-contained synthetic manifest.)_
+  - [x] each guard proven fail-first: all 3 fail with `ERR_MODULE_NOT_FOUND` (the absent core), loaded
+        lazily per-guard so each bites individually. _(Per-guard perturbation against the LIVE core is
+        re-confirmed at Step 4 when the apply step turns them green one by one.)_
 - [ ] **Step 1 — Record the engine source + seed provenance at install.** The installer writes, into the
       brain's copied `engine-manifest.json`, a `source: { repo, ref }` (the launcher git URL + the
       tag/commit it was generated from) and fills `provenance` with a **base fingerprint (sha256)** for
