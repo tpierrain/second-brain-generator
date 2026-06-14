@@ -90,7 +90,8 @@ post-demo merge.
 ## Decisions settled (2026-06-14, with the maintainer)
 
 - **Chantier A scope = BOTH halves** (offline display **and** the throttled network update-available check).
-- **Version reference = git TAGS, not a hand-maintained number in a repo file.** The maintainer's reasoning:
+- **Version reference = git TAGS, not a hand-maintained number in a repo file** — gravé dans
+  [`ADR 0017`](../decisions/0017-engine-version-reference-is-git-tags.md). The maintainer's reasoning:
   a tag is an **intentional, maintainer-controlled, marketing** act ("c'est moi qui décide"), **decoupled from
   incidental repo file churn** — a hand-bumped `engineVersion` drifts and lies; a tag doesn't. So:
   - **displayed version = the brain's `source.ref`** (the git tag it was generated / last-updated from, already
