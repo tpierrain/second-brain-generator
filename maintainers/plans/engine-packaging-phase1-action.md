@@ -55,14 +55,24 @@ no merge to `main` before the client demos, ADR 0012 / 0014). Enacts **Phase 1**
         a **posix+win32 parity pair** locking ADR 0015 — git is a real exe on both, so the clone needs **no
         `process.platform` branch** (unlike `npm.cmd` at Step 4); the win32-style temp dir is honoured
         verbatim. Harness 181 tests, 178 pass, fail 0, 3 todo — green.)_
-- [ ] **Step 3 — Compute the apply-plan from the manifest (the safety core).** From the local + fetched
-      manifests, list exactly: `replace` files to overwrite, `regenerate` launchers to rebuild, and the
+- [x] **Step 3 — Compute the apply-plan from the manifest (the safety core).** From the fetched
+      manifest, list exactly: `replace` files to overwrite, `regenerate` launchers to rebuild, and the
       **engine-owned scripts** to replace (the `merge` *scripts* — `auto-commit`/`auto-push`/`status-line`/
       `verify-rag` — **plus `update-engine` itself → self-updating**). **Invariant guard:** the plan
       **never** lists `CLAUDE.md`, `.claude/settings.json`, any `.claude/skills/**`, the vault, or `.env`.
-  - [ ] `scripts/lib/engine-apply-plan.mjs` (pure function: two manifests → file action list). Tests.
-  - [ ] guard tests: disjointness; **never-touch user files** (random vault/skill/CLAUDE/settings path
-        never in the plan); self-update entry present.
+      _(2026-06-14 · single-arg `computeApplyPlan(targetManifest)`: the Phase-1 plan is fully determined by
+      the **target** engine's declared regimes + an intrinsic sacred denylist — the local manifest governs
+      the **reindex** decision (Step 5) and the Phase-2 3-way, not the file-action list, so feeding it here
+      would be a dead param. Noted for the maintainer.)_
+  - [x] `scripts/lib/engine-apply-plan.mjs` (pure: target manifest → file action list). Tests. _(TDD
+        baby-steps: `overwrite` ← `replace`, `regenerate` ← launchers, `replaceScripts` ← `merge` ∩
+        `scripts/*.mjs` incl. `update-engine.mjs`; user merge files (CLAUDE.md/settings/skills) excluded.
+        **Write-allowlist** by construction (ADR 0003/0012) + a **sacred scrub** as defense-in-depth.)_
+  - [x] guard tests: disjointness; **never-touch user files** (random vault/skill/CLAUDE/settings/.env path
+        never in the plan, via `planTouches`); self-update entry present; **SAFETY CORE** test — a
+        buggy/hostile manifest mis-declaring `CLAUDE.md`/`.env`/`settings.json` as engine-owned is **scrubbed**.
+        _(DRY: extracted the one manifest glob dialect into `scripts/lib/glob-match.mjs`, refactored
+        `engine-source` onto it, +4 direct tests. Harness 191 tests, 188 pass, fail 0, 3 todo — green.)_
 - [ ] **Step 4 — Apply (opt-in, non-destructive).** Execute the plan: overwrite `replace`, regenerate the
       `.sh`+`.cmd` launchers, replace the engine-owned scripts (update-engine script **last**), then
       `npm install` in `rag/`. Everything outside the plan is untouched. Tests assert byte-identity of

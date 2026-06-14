@@ -10,25 +10,12 @@
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { join, relative, sep } from "node:path";
+import { globToRegExp } from "./glob-match.mjs";
 
 // Self-describing digest so the manifest records WHICH algorithm produced it
 // (future-proofs the Phase 2 3-way if the hash ever changes).
 export function fingerprint(content) {
   return "sha256:" + createHash("sha256").update(content).digest("hex");
-}
-
-// Minimal glob → RegExp (same dialect as the manifest's regimes):
-//   **  → any run of characters, including "/" (whole subtrees)
-//   *   → any run of characters except "/" (a single path segment)
-// Everything else is matched literally; the match is anchored (^…$) so a glob
-// never selects a path that merely starts/ends with it.
-function globToRegExp(glob) {
-  const escaped = glob.replace(/[.+^${}()|[\]\\]/g, "\\$&");
-  const body = escaped
-    .replace(/\*\*/g, " ") // placeholder so "*" below doesn't eat "**"
-    .replace(/\*/g, "[^/]*")
-    .replace(/ /g, ".*");
-  return new RegExp("^" + body + "$");
 }
 
 // The concrete files (from `candidates`) that fall under the manifest's `merge`
