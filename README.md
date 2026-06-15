@@ -398,6 +398,8 @@ It's **opt-in**: as long as you haven't wired it up, **nothing is pushed** (anti
 default). You can do it right away **or weeks later**, without breaking anything. Once in place, the
 auto-commit hook **pushes on every change** — backup and switching between laptops become seamless.
 
+<a id="keeping-your-brain-up-to-date-its-engine"></a>
+
 ## 🔄 Keeping your brain up to date (its engine)
 
 > 🆕 **New in v3.0.0.** Brains generated from **v3.0.0 onward** ship with this built-in updater — so
