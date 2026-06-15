@@ -4,7 +4,7 @@
 
 | Tool | Why | Installation |
 |---|---|---|
-| **Node.js ≥ 18** | Runs the RAG engine **and** the whole harness (installer + hooks are in Node, cross-OS) | https://nodejs.org (macOS: `brew install node` · Windows: `winget install OpenJS.NodeJS`) |
+| **Node.js ≥ 20** | Runs the RAG engine **and** the whole harness (installer + hooks are in Node, cross-OS). **Node 24/25/26 are covered since v3.0.1** — the engine's native deps (`better-sqlite3`) now declare the modern window, so you no longer need to downgrade Node. | https://nodejs.org (macOS: `brew install node` · Windows: `winget install OpenJS.NodeJS`) |
 | **git** | Versioning + portability across machines | https://git-scm.com |
 | **Claude Code** | The agent that queries the vault | https://claude.com/claude-code |
 | **Gemini key** *(optional)* | Embeddings — **only if you choose the Gemini embedder** (see note below) | https://aistudio.google.com/apikey |
@@ -311,7 +311,7 @@ changes from the other machine.
 
 | Symptom | Probable cause | Remedy |
 |---|---|---|
-| `npm install` fails in `rag/` | Node too old | Node ≥ 18 (`node -v`) |
+| `npm install` fails in `rag/` | Node too old (or, before v3.0.1, too new) | Node ≥ 20 (`node -v`); Node 24/25/26 are supported since v3.0.1. The installer now preflights this and tells you what to switch to (nvm/volta). |
 | `npm install` fails on **`better-sqlite3`** (Windows) | Native module without a prebuild for your Node version | Use an **LTS version** of Node (prebuilds available), or install the build tools: `npm install --global windows-build-tools` (old) or the *Visual Studio Build Tools* ("Desktop development with C++"). Then `cd rag && npm install`. |
 | Empty searches | Index not built / no key | `cd rag && npm run index` after setting the key |
 | `RESOURCE_EXHAUSTED` / 429 | Today's Gemini quota reached | auto-resume at reset (Pacific midnight), or raise `MAX_EMBED_REQUESTS_PER_DAY` |

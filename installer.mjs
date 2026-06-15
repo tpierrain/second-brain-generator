@@ -53,6 +53,7 @@ import { openEnvInEditor } from "./scripts/lib/open-env.mjs";
 import { buildHandoff } from "./scripts/lib/install-handoff.mjs";
 import { recordSourceAndProvenance } from "./scripts/lib/engine-source.mjs";
 import { resolveLatestTag } from "./scripts/lib/engine-fetch.mjs";
+import { checkNode, NODE_WINDOW } from "./scripts/lib/node-compat.mjs";
 
 // ROOT = the LAUNCHER (this cloned repo). READ-ONLY, reusable source: the
 // installer NEVER writes to it. It CREATES a brain folder elsewhere (TARGET),
@@ -143,13 +144,19 @@ function run(cmd, args, opts = {}) {
 step("1/9 · Checking prerequisites");
 let missing = false;
 
-// Node: we are already running inside it, version readable directly.
-const nodeMajor = Number(process.versions.node.split(".")[0]);
-if (nodeMajor >= 18) {
-  ok(`node found (v${process.versions.node})`);
-} else {
-  err(`Node ${nodeMajor} too old — Node ≥ 18 required: https://nodejs.org`);
+// Node: we are already running inside it, version readable directly. Compare it
+// to the engine's native-dep window (better-sqlite3@12) BEFORE `npm install`, so a
+// too-old Node fails loud here with an actionable message instead of cryptically
+// failing to build the binding later (ADR 0009/0020).
+const nodeVerdict = checkNode(process.versions.node, NODE_WINDOW);
+if (!nodeVerdict.ok) {
+  err(nodeVerdict.message);
   missing = true;
+} else if (nodeVerdict.warn) {
+  ok(`node found (v${process.versions.node})`);
+  warn(nodeVerdict.message);
+} else {
+  ok(`node found (v${process.versions.node})`);
 }
 
 const git = run("git", ["--version"]);

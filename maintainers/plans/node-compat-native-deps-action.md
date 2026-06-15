@@ -47,43 +47,43 @@
 
 ## 📋 Tracking
 
-- [ ] **1. Bump `better-sqlite3` → v12** _(applied + verified locally 2026-06-15, **uncommitted**)_
+- [x] **1. Bump `better-sqlite3` → v12** _(2026-06-15 · 75a2576)_
   - [x] 1a. `rag/package.json`: `^11.0.0 → ^12.0.0`; lockfile regenerated (`12.10.1`).
   - [x] 1b. Green on **Node 25**: rag **141/141**, `tsc --noEmit` clean, native smoke (open/WAL/prepare/
     transaction) OK.
-  - [ ] 1c. Re-confirm on a clean checkout (`npm ci` in `rag/`) before committing.
-- [ ] **2. Declare the supported Node window**
-  - [ ] 2a. Add `"engines": { "node": ">=22" }` to `rag/package.json` (and root `package.json` if present).
-  - [ ] 2b. Add a `.nvmrc` (e.g. `22` or the current LTS) at the repo root + brain template if relevant.
-  - [ ] 2c. Decide the **lower bound** consciously: ≥ 22 (drop 20?) — note it; it must match better-sqlite3's
-    window and what the installer/CI enforce.
-- [ ] **3. Installer preflight Node check (TDD)**
-  - [ ] 3a. **Pure seam** `scripts/lib/node-compat.mjs` → `checkNode(version, window)` → `{ ok, message }`.
-    RED→GREEN: in-window → ok; below → fail-loud message ("Node 18 detected; this engine needs ≥22 — use
-    nvm/volta to switch"); above declared ceiling → warn but allow (forward-friendly). Triangulate the
-    boundaries.
-  - [ ] 3b. Wire it into `installer.mjs` **before** the `npm install` of the engine; on hard-fail, exit
-    non-zero with the message (don't pretend). Keep it launcher-side (exclude from the brain like
-    `install-handoff` if it's purely install-time — decide & test, cf. [[qa-pr10-and-update-engine-fix]]).
-- [ ] **4. CI matrix (the net)**
-  - [ ] 4a. `.github/workflows/ci.yml`: matrix `node: [22, 24, 26]` × `os: [macos-latest, windows-latest]`
-    (parity ADR 0015); steps = `npm ci && npm test` in `rag/` + `node --test scripts/lib/*.test.mjs`.
-  - [ ] 4b. Confirm the matrix **goes red on the pre-bump state** (sanity: it would have caught Yann's
-    conflict) then green on the bump.
-- [ ] **5. ADR 0020 — "Node compatibility policy for native deps"**
-  - [ ] 5a. Decision: declared Node window (`engines`), CI matrix as the gate, keep-native-deps-fresh
-    (watch `better-sqlite3` + `onnxruntime`), propagation to the fleet via `update-engine`, installer
-    preflight as the fail-loud guide. Scope: **Installer + Second brain (runtime)**. Apply the Scope
-    convention ([[adr-scope-field-convention]]).
-- [ ] **6. Docs**
-  - [ ] 6a. README/SETUP: a short "Node version" note (supported window; "Node 24+ is covered since
-    v3.0.1"); existing brains get it via `update-engine` if their binding breaks after a Node bump.
-- [ ] **7. Suites green + empirical** — harness `node --test scripts/lib/*.test.mjs`; `npm test --prefix rag`;
-  `(cd rag && npx tsc --noEmit)`. **Empirical:** a **fresh install on Node 24/25** completes (native
-  binding loads, post-flight canary OK). **On ne commit que du vert** ([[commit-only-green-todo-gate]]).
+  - [x] 1c. Re-confirmed on a clean checkout (`rm -rf node_modules && npm ci` in `rag/`, Node 25) → builds
+    the native binding, rag **141/141**, smoke `better-sqlite3 v12.10.1 OK`.
+- [x] **2. Declare the supported Node window** _(2026-06-15)_
+  - [x] 2a. `rag/package.json` `"engines": { "node": ">=20" }` (no root `package.json` — harness is bare .mjs).
+  - [x] 2b. `.nvmrc` = `22` (clean LTS inside the window) at repo root.
+  - [x] 2c. **Lower bound = 20** (conscious): matches better-sqlite3@12's own floor (`20.x`); no reason to
+    drop 20. Mirrored by `NODE_WINDOW = {min:20,max:26}` (installer preflight) + the CI matrix. Noted in ADR 0020.
+- [x] **3. Installer preflight Node check (TDD)** _(2026-06-15)_
+  - [x] 3a. **Pure seam** `scripts/lib/node-compat.mjs` → `checkNode(version, window)` + shared `NODE_WINDOW`.
+    6 tests (in-window ok / below-floor fail-loud / above-ceiling warn-but-allow / on-floor / on-ceiling /
+    shared-constant), triangulated boundaries. **node-compat 6/6.**
+  - [x] 3b. Wired into `installer.mjs` step 1 **before** `npm install` (replaced the inline `≥18` check):
+    hard-fail → `err` + `missing=true` → exit non-zero; above-ceiling → `ok` + `warn`. Kept **launcher-side**
+    (excluded from the brain via `tracked-files` prefix, like `install-handoff`) — exclusion unit-tested.
+- [x] **4. CI matrix (the net)** _(2026-06-15)_
+  - [x] 4a. `.github/workflows/ci.yml`: matrix `node: [22, 24, 26]` × `os: [macos-latest, windows-latest]`
+    (parity ADR 0015); steps = harness `node --test "scripts/*.test.mjs" "scripts/lib/*.test.mjs"` +
+    `npm ci && npm test` + `npx tsc --noEmit` in `rag/` (the `npm ci` is what **builds the native binding**).
+  - [ ] 4b. Confirm green on CI once the branch is pushed (the pre-bump red is a thought-experiment:
+    `better-sqlite3@^11` lacked 24/25/26 in `engines` → `npm ci` would have failed on those cells).
+- [x] **5. ADR 0020 — "Node compatibility policy for native deps"** _(2026-06-15)_
+  - [x] 5a. Four-part policy (keep-native-deps-fresh · declared window · fail-loud preflight · CI matrix),
+    propagation to the fleet via `update-engine`. Scope: **Installer + Second brain (runtime)** (Scope
+    convention [[adr-scope-field-convention]] applied).
+- [x] **6. Docs** _(2026-06-15)_
+  - [x] 6a. README + SETUP: bumped the prereq to **Node ≥ 20**, added "Node 24/25/26 covered since v3.0.1"
+    and the preflight/troubleshooting notes.
+- [x] **7. Suites green + empirical** _(2026-06-15)_ — harness **245/245** (`scripts/*` + `scripts/lib/*`),
+  rag **141/141**, `tsc --noEmit` clean. **Empirical on Node 25:** clean `npm ci` builds the native binding;
+  `better-sqlite3 v12.10.1` open/WAL/prepare/transaction OK. **Committed green only** ([[commit-only-green-todo-gate]]).
 - [ ] **8. Ship** — PR from `node-compat`, `/code-review`, QA, merge; **tag `v3.0.1`**. Tick this plan
   _(date · commit)_ and **archive** it in `maintainers/plans/archived/` ([[plan-done-equals-archived]]).
-  Verify the fleet picks it up via `update-engine`.
+  Verify the fleet picks it up via `update-engine`. **(post-démos — Thomas's call.)**
 
 > Cocher `- [x]` _(date · commit)_ à chaque étape — mémoire qui survit aux `/clear`.
 

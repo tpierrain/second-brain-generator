@@ -98,6 +98,18 @@ test("filterCopyable — excludes install-handoff (launcher-only: the installer'
   );
 });
 
+test("filterCopyable — excludes node-compat (launcher-only: install-time Node preflight, no use in a brain)", () => {
+  assert.deepEqual(
+    filterCopyable([
+      "scripts/verify-rag.mjs", // brain-side: copied
+      "scripts/lib/node-compat.mjs",
+      "scripts/lib/node-compat.test.mjs",
+      "rag/src/index.ts",
+    ]),
+    ["scripts/verify-rag.mjs", "rag/src/index.ts"],
+  );
+});
+
 test("filterCopyable — excludes the eval-set tooling (dev-only: used to choose the launcher's embedder)", () => {
   assert.deepEqual(
     filterCopyable([

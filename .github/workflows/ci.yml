@@ -1,0 +1,50 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# CI — the net for native-dep / Node-version compatibility (ADR 0020).
+#
+# The only ABI-bound surface is native modules (better-sqlite3 — onnxruntime
+# ships broad prebuilds). This matrix builds the engine and runs the suites
+# across the supported Node window, on macOS AND Windows (parity — ADR 0015),
+# so a Node/native-dep conflict goes red HERE instead of at a colleague's
+# install (the Yann DANOT wall that motivated v3.0.1).
+# ═══════════════════════════════════════════════════════════════════════════
+name: CI
+
+on:
+  push:
+    branches: [main, node-compat]
+  pull_request:
+
+jobs:
+  test:
+    name: Node ${{ matrix.node }} · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+        node: [22, 24, 26]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # Harness suites — pure .mjs seams (node:test), no deps to install.
+      - name: Harness tests
+        run: node --test "scripts/*.test.mjs" "scripts/lib/*.test.mjs"
+
+      # Engine — `npm ci` builds the native binding (better-sqlite3) on this
+      # exact Node; the test run then exercises it. This is the real net.
+      - name: Install engine (builds native binding)
+        working-directory: rag
+        run: npm ci
+
+      - name: Engine tests
+        working-directory: rag
+        run: npm test
+
+      - name: Type-check engine
+        working-directory: rag
+        run: npx tsc --noEmit

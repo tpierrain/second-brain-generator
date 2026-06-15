@@ -241,8 +241,9 @@ preference, the local default applies on its own if the machine can handle it. *
 
 ### 📦 What you need
 
-- **[Claude Code](https://claude.com/claude-code)**, **[Node.js](https://nodejs.org) ≥ 18** and
-  **git**. *(The installer checks everything — if one is missing, it tells you cleanly.)*
+- **[Claude Code](https://claude.com/claude-code)**, **[Node.js](https://nodejs.org) ≥ 20** and
+  **git**. *(The installer checks everything — Node version included, with an actionable message — if
+  one is missing or out of range, it tells you cleanly.)* Node 24/25/26 are supported since v3.0.1.
 - **For semantic search**: nothing more if you go with the **local** option (the recommended
   default), or an **[API key](https://aistudio.google.com/apikey)** if you choose that option — see
   ["how to choose"](#how-do-i-choose-my-semantic-search-my-rag) above.

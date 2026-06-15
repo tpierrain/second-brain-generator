@@ -38,6 +38,10 @@ const DEV_ONLY_PREFIXES = [
   // launcher-side, like installer.mjs itself — useless in a brain. Covers the .mjs
   // AND its .test.mjs via the prefix.
   "scripts/lib/install-handoff",
+  // node-compat: the installer's pre-`npm install` Node-version preflight
+  // (checkNode). Pure launcher-side, like installer.mjs — useless in a brain.
+  // Covers the .mjs AND its .test.mjs via the prefix.
+  "scripts/lib/node-compat",
   "rag/scripts/",
   // Localized artefact sources (constitution, skills, demo vault) live under
   // templates/<locale>/. They are NOT bulk-copied: the installer overlays only
