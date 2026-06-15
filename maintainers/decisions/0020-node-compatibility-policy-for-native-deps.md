@@ -25,7 +25,13 @@ The only **ABI-bound** surface in the engine is **native modules**. Inventory:
   the Node version; not the bottleneck today.
 
 Everything else is pure JS, insensitive to the Node version. We just launched v3 ("install yours now"),
-so a broken install on Node 24+ kills launch momentum — this warranted a tiny, low-risk **patch (v3.0.1)**.
+so a broken install on Node 24+ kills launch momentum. The fix is a tiny, low-risk compatibility change;
+since the next release (the `import` skill, ADR 0019) is imminent, it **ships folded into v3.1.0** rather
+than as a standalone v3.0.1 patch — decided 2026-06-15. Crucially, **fresh installs consume `main` HEAD**
+directly (the launcher is `git clone`d), so unQA'd code on `main` is immediately live for every new
+install; the fleet (≥ 3.0.0) instead upgrades only to the latest **semver tag** (`update-engine` →
+`resolveLatestTag`). The discipline that follows: **don't merge to `main` until QA'd**, and gate the fleet
+behind a deliberate tag.
 
 ## Decision
 

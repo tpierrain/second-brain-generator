@@ -1,17 +1,23 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🗺️ ACTION PLAN (created 2026-06-15) — to execute, step-by-step, in TDD. -->
+<!-- STATUS: 🛠️ CODE DONE on branch `node-compat` (local, unpushed) — folds into v3.1.0. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
-# Action plan — Node-version compatibility for native deps (unblock install on Node 24/25/26) → **v3.0.1**
+# Action plan — Node-version compatibility for native deps (unblock install on Node 24/25/26) → **folds into v3.1.0**
 
-> **STATUS: 🗺️ ACTION PLAN** (created 2026-06-15). **To execute in TDD.**
+> **STATUS: 🛠️ CODE DONE** (2026-06-15, branch `node-compat`, local + unpushed). **Ships folded into v3.1.0.**
 > **Origin:** field feedback (Yann DANOT, 2026-06-15) — `better-sqlite3@^11` doesn't declare Node ≥ 24
 > support → on Node 24/25/26 the install either fails to build the native binding or forces the user to
-> **downgrade Node globally**. v3.0.1 fixes this for everyone installing on a modern Node.
-> **Ships as v3.0.1** (patch: a compatibility fix, no new feature). **Branch: `node-compat`** (deps + CI → branch + PR).
-> **Sequence (decided):** this plan ships **BEFORE** [`import-second-brain-action.md`](import-second-brain-action.md)
-> (v3.1.0). A reliable install on modern Node is the **foundation** the import skill stands on — and a
-> migrant must do a fresh install first. Patch first, feature second.
+> **downgrade Node globally**. This fix covers everyone installing on a modern Node.
+> **Release framing (decided 2026-06-15):** NOT a standalone v3.0.1. Since `import` (the next release) is
+> **imminent** (ADR 0019), this compatibility fix **ships folded into v3.1.0** alongside it — one QA pass,
+> one merge to `main`, one tag. **Why this matters:** fresh installs consume **`main` HEAD** directly
+> (`git clone`), so unQA'd code on `main` is **immediately live** for every new install; the fleet (≥ 3.0.0)
+> only upgrades to the latest **semver tag** (`update-engine`). Discipline: **don't merge to `main` until
+> QA'd**, gate the fleet behind a deliberate tag.
+> **Sequence:** `node-compat` is kept **local** as the **base branch the import work builds on**; the
+> **import PR carries both** (and lights up the CI matrix via its `pull_request` trigger). A reliable
+> install on modern Node is the **foundation** the import skill stands on — a migrant must do a fresh
+> install first. See [`import-second-brain-action.md`](import-second-brain-action.md).
 
 ---
 
@@ -76,14 +82,16 @@
     propagation to the fleet via `update-engine`. Scope: **Installer + Second brain (runtime)** (Scope
     convention [[adr-scope-field-convention]] applied).
 - [x] **6. Docs** _(2026-06-15)_
-  - [x] 6a. README + SETUP: bumped the prereq to **Node ≥ 20**, added "Node 24/25/26 covered since v3.0.1"
+  - [x] 6a. README + SETUP: bumped the prereq to **Node ≥ 20**, added "Node 24/25/26 covered since v3.1.0"
     and the preflight/troubleshooting notes.
 - [x] **7. Suites green + empirical** _(2026-06-15)_ — harness **245/245** (`scripts/*` + `scripts/lib/*`),
   rag **141/141**, `tsc --noEmit` clean. **Empirical on Node 25:** clean `npm ci` builds the native binding;
   `better-sqlite3 v12.10.1` open/WAL/prepare/transaction OK. **Committed green only** ([[commit-only-green-todo-gate]]).
-- [ ] **8. Ship** — PR from `node-compat`, `/code-review`, QA, merge; **tag `v3.0.1`**. Tick this plan
-  _(date · commit)_ and **archive** it in `maintainers/plans/archived/` ([[plan-done-equals-archived]]).
-  Verify the fleet picks it up via `update-engine`. **(post-démos — Thomas's call.)**
+- [ ] **8. Ship (folded into v3.1.0)** — **no standalone PR/tag for node-compat.** Keep this branch local
+  as the base for the **import** work; the **import PR carries both** and triggers the CI matrix. Then on
+  that single PR: `/code-review`, QA (CI green + a real install on Node 24/25), merge to `main`, **tag
+  `v3.1.0`**. Tick this plan _(date · commit)_ and **archive** it in `maintainers/plans/archived/`
+  ([[plan-done-equals-archived]]). Verify the fleet picks it up via `update-engine` at the v3.1.0 tag.
 
 > Cocher `- [x]` _(date · commit)_ à chaque étape — mémoire qui survit aux `/clear`.
 
@@ -99,5 +107,8 @@
   prebuilds larges). Les autres deps = JS pur, hors sujet.
 - **Garde-fous** : fail-loud avant `npm install` (ADR 0009) ; parité Mac/Windows en CI (ADR 0015) ; ne
   PAS bumper onnxruntime sans conflit prouvé (YAGNI) ; le fix se diffuse au parc via `update-engine`.
-- **Séquence** : **CE plan (v3.0.1) AVANT** [[import-second-brain-action]] (v3.1.0). Voir aussi
+- **Séquence** : ce plan est **codé + vert en local sur `node-compat`** (non poussé) et **folde dans
+  v3.1.0** avec [[import-second-brain-action]] — l'import se construit **sur cette branche** et porte la PR.
+  Garde-fou : `main` HEAD = ce que tirent les nouvelles installs → **ne pas merger sur main avant QA** ;
+  le parc ≥ 3.0.0 n'avance qu'au **tag** semver (`update-engine`). Voir aussi
   [[engine-packaging-phase1-active]], [[prefer-deterministic-adr-0009]], [[checkbox-plans-convention]].
