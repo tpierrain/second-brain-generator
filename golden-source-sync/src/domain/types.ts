@@ -1,0 +1,85 @@
+// Domain DTOs for golden-source-sync. The API port (IGoldenSourceSync) speaks these
+// transport-independent shapes; the MCP server merely serializes them. Several of these
+// types are intentionally lean here and grow (with their own tests) in later steps.
+
+export type ConnectorType = 'notion';
+
+export interface NotionConnectorConfig {
+  type: 'notion';
+  config: {
+    /** Root Notion page URL — golden-source-sync extracts the page id from it (PRD §2/§11). */
+    root_page_url: string;
+    /** Name of the env var holding the integration token — never the token itself (PRD §11). */
+    token_env: string;
+  };
+}
+
+/**
+ * A declared golden source — the versioned source of truth lives in the config file
+ * (`golden-source-sync.config.json`), written by `setup_source` (PRD §2, §20.2).
+ */
+export interface GoldenSourceConfig {
+  /** Short technical id = name of the subfolder under `golden-sources/` (e.g. `pa-sc`). */
+  name: string;
+  /** Human label. */
+  title: string;
+  /** Natural-language topics covered — the harness routing key (PRD §2). */
+  description: string;
+  connector: NotionConnectorConfig;
+  /** Dedicated vault subfolder (e.g. `golden-sources/pa-sc`). */
+  target_dir: string;
+}
+
+export type SyncStatus = 'ok' | 'partial' | 'failed' | 'never';
+
+/** A declared source + its synced state — returned by `listSources()`/`status()`. */
+export interface SourceState {
+  name: string;
+  title: string;
+  connector: ConnectorType;
+  /** Max(last_edited_time) at the last successful sync; null if never synced. */
+  watermark: string | null;
+  lastSyncAt: string | null;
+  lastSyncStatus: SyncStatus;
+  itemCount: number;
+}
+
+export type SourceStatus = SourceState;
+
+/** Arguments of `setupSource` — onboarding a new source (PRD §13). */
+export interface SetupRequest {
+  name: string;
+  title: string;
+  description: string;
+  rootPageUrl: string;
+  tokenEnv: string;
+}
+
+export interface SetupResult {
+  name: string;
+  ok: boolean;
+  message: string;
+}
+
+/** What a `sync` changed (PRD §9). */
+export interface SyncReport {
+  name: string;
+  status: SyncStatus;
+  written: number;
+  deleted: number;
+  unchanged: number;
+}
+
+/** Light watermark-only freshness check, no content pulled (PRD §9). */
+export interface FreshnessReport {
+  name: string;
+  behind: boolean;
+  localWatermark: string | null;
+  remoteWatermark: string | null;
+}
+
+export interface RemoveResult {
+  name: string;
+  removed: boolean;
+  cleanedUp: boolean;
+}
