@@ -118,8 +118,9 @@ vault, shows a **safe plan**, **confirms**, copies (never overwriting), reindexe
     copies via `git ls-files -z` (tracked only) → today's **untracked** core/CLI did **not** land in a
     fresh brain (only the FR skill did, via the locale fs-walk overlay; the EN skill didn't either).
     The tracked-files tests (step 6) assume they're tracked at ship time → **committing the green
-    (step 10) is what makes the feature actually ship.** Re-run a real install **after the commit** to
-    confirm `scripts/import-brain.mjs` + `scripts/lib/import-vault.mjs` + the EN skill all land.
+    (step 10) is what makes the feature actually ship.** ✅ **Confirmed after commit `af64499`**: a
+    fresh install (164 files) now lands `scripts/import-brain.mjs` + `scripts/lib/import-vault.mjs` +
+    the EN `import` skill (FR via overlay on `--lang français`).
 - [ ] **10. Ship** — PR from `import-brain`, `/code-review`, manual QA, merge; **tag `v3.1.0`** on merge
   (ADR 0017). Tick this plan _(date · commit)_ and **archive** it in `maintainers/plans/archived/`
   ([[plan-done-equals-archived]]). Verify existing ≥ 3.0.0 brains pick up `import` via `update-engine`.
