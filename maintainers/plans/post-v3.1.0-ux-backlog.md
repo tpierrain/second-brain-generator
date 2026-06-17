@@ -21,6 +21,28 @@
 
 ---
 
+## 💡 Idea — custom (Kenjaku) icon on the index-done notification
+
+The index-done toast (`rag/src/lib/notify.ts`) currently shows the **sending app's icon**
+(Script Editor, since `osascript` emits it on macOS). Nice-to-have: show the README's **Kenjaku**
+artwork instead, for brand polish.
+
+- [ ] **Decide it's worth it first.** It conflicts with the project ethos (zero extra install,
+  Mac/Win/Linux parity, deterministic best-effort — ADR 0009/0015). Captured here as cosmetic only.
+- [ ] **Known macOS constraint (the blocker):** `display notification` (AppleScript) **cannot** set a
+  custom left icon — macOS always uses the emitting app's icon. There is **no zero-dependency** way to
+  change it.
+- [ ] **Options, all costly:**
+  - [ ] A. **Status quo** — generic icon, 0 cost, works everywhere (current design). _Recommended._
+  - [ ] B. `terminal-notifier -contentImage <kenjaku.png>` — shows Kenjaku as a **right-side thumbnail**
+    (not the left icon). Cost: a **brew dependency**, **macOS-only** (fall back to `osascript` elsewhere),
+    and on recent macOS the **left** icon stays unchangeable without `-sender <bundleID>` of a real
+    installed app.
+  - [ ] C. Ship a **code-signed `.app` bundle** carrying the icon — heavy (signing, bundling,
+    cross-platform divergence); disproportionate for a best-effort toast.
+- [ ] If ever pursued: prefer B behind the existing `shouldNotify`/seam guards, ship the Kenjaku PNG in
+  the repo, and degrade to plain `osascript` when `terminal-notifier` is absent.
+
 ## 💡 Idea — a `doctor` / "am I OK?" check-up skill
 
 A brain-side, **read-only**, opt-in self-diagnosis the user can trigger in plain language
