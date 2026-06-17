@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🚧 ACTIVE — Steps 0–1 done (skeleton + API port + MCP transport). Branch: golden-source-sync. -->
+<!-- STATUS: 🚧 ACTIVE — Steps 0–2 done (skeleton + API port + MCP transport + VaultWriter/atomic write). Branch: golden-source-sync. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — `golden-source-sync`: synchronize golden-source content into the second brain's vault
@@ -107,11 +107,11 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
   - [x] MCP server (`index.ts`) declares the 6 tools (zod), 1:1 translation of the port, **no logic** (`createMcpServer(api)`; composition root + stdio boot deferred to Step 8)
   - [x] `aGoldenSourceSync()` Builder wiring the Domain Service with in-memory SPI fakes (+ `aNotionGoldenSource()` fixture)
   - [x] First acceptance test red→green at the API port: `listSources()` returns empty (+ triangulation: a declared never-synced source listed with empty state; + MCP smoke). 3 green, `tsc --noEmit` exit 0
-- [ ] **Step 2 — VaultWriter (SPI) + atomic write**
-  - [ ] `IVaultWriter` + `FsVaultWriter` (temp + `rename`, `delete`)
-  - [ ] `markdown.ts`: mandatory frontmatter (`source_url`, `last_edited_time`, `golden_source`, `source_id`, `title`)
-  - [ ] Acceptance: a `sync` over 1 stubbed page writes `golden-sources/<name>/<pageId>.md` with frontmatter
-  - [ ] Manual check: the live FileWatcher picks it up (note for Step 9 QA)
+- [x] **Step 2 — VaultWriter (SPI) + atomic write** _(2026-06-17 · 31974e4)_
+  - [x] `IVaultWriter` + `FsVaultWriter` (temp file in target dir + `rename`; idempotent `delete`) — tested on a real temp vault (4 tests)
+  - [x] `markdown.ts`: mandatory frontmatter (`golden_source`, `source_id`, `title`, `source_url`, `last_edited_time`) via gray-matter — timestamps stay quoted strings
+  - [x] Acceptance: a `sync` over stubbed page(s) writes `golden-sources/<name>/<pageId>.md` with frontmatter (+ triangulation: N pages → N files). 9 green, `tsc --noEmit` exit 0
+  - [ ] Manual check: the live FileWatcher picks it up (deferred to Step 9 QA)
 - [ ] **Step 3 — StateStore + watermark + delta**
   - [ ] `IStateStore` + `FsStateStore` on the sidecar (schema §10, `schemaVersion:1`)
   - [ ] `content-hash.ts` over the **produced markdown**; per-item persistence
