@@ -104,9 +104,9 @@ Both are solved with the **same proven seam pattern** already used by `scripts/l
 - [x] **7. Backlog — capture the `doctor` idea (+ note these 2 shipped)** _(2026-06-17)_
   - [x] 7a. New `maintainers/plans/post-v3.1.0-ux-backlog.md` (💡 BACKLOG, checkboxes): the **`doctor` / "am I OK?"
     check-up skill** + folder-picker / index-notify noted as shipped in PR #11.
-- [ ] **8. Integrate into PR #11 + push** (Thomas authorized the push for these docs/features; **merge/tag = 8d, separate green light**)
-  - [ ] 8a. Commit the features + docs + this plan; the **already-committed-but-unpushed** `b41e1f6` (QA 8c tracker) rides along.
-  - [ ] 8b. `git push` `node-compat` → PR #11 reflects everything.
+- [x] **8. Integrate into PR #11 + push** _(2026-06-17 · `3518975`)_
+  - [x] 8a. Committed features + docs + backlog + this plan in `3518975`; `b41e1f6` (QA 8c) + `5b0237a` (this plan) rode along.
+  - [x] 8b. `git push` `node-compat` → `0ace9c5..3518975` → PR #11 reflects everything.
   - [ ] 8c. Then resume the v3.1.0 ship tracker (`node-abi-skew-install-runtime-action.md` step 8d merge+tag / 8e archive) on Thomas's explicit go.
 
 > Cocher `- [x]` _(date · commit)_ à chaque étape terminée — mémoire qui survit aux `/clear`.
