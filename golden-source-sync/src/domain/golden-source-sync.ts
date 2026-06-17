@@ -19,6 +19,7 @@ import type {
 } from './ports.js';
 import { toGoldenSourceMarkdown } from '../lib/markdown.js';
 import { contentHash } from '../lib/content-hash.js';
+import { extractPageId } from '../lib/notion-url.js';
 
 /**
  * API port (driving side) — the domain contract, transport-independent (PRD §5).
@@ -124,8 +125,7 @@ export class GoldenSourceSync implements IGoldenSourceSync {
       schemaVersion: 1,
       name: config.name,
       connector: config.connector.type,
-      // URL→pageId extraction lands in Step 4; the URL is the stable root identifier for now.
-      rootPageId: previous?.rootPageId ?? config.connector.config.root_page_url,
+      rootPageId: previous?.rootPageId ?? extractPageId(config.connector.config.root_page_url),
       watermark: allOk ? perimeterMax : (previous?.watermark ?? null),
       lastSyncAt: now,
       lastSyncStatus: status,

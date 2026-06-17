@@ -100,7 +100,7 @@ export function aNotionGoldenSource(
     connector: overrides.connector ?? {
       type: 'notion',
       config: {
-        root_page_url: 'https://www.notion.so/inqom/HUB-304a2ca',
+        root_page_url: 'https://www.notion.so/inqom/HUB-304a2ca0b1c24d6e8f0a1b2c3d4e5f60',
         token_env: 'GOLDEN_PA_SC_NOTION_TOKEN',
       },
     },
