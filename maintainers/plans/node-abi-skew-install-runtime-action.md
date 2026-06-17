@@ -71,19 +71,23 @@ native dep with a pure-JS store — oversized for a risk we can heal).
     `require("better-sqlite3")` (binding loads lazily in the ctor). Wrapping the `require` would never heal →
     `vector-store.ts` now wraps the **construction** (`openDatabase`). Unit-green code would have shipped broken.
 - [x] **5. Suites green** _(done 2026-06-17)_ — harness **268/268**, rag **147/147**, `tsc` clean.
-- [~] **6. Empirical proof — a real two-Node skew** _(IN PROGRESS — resume HERE)_
+- [x] **6. Empirical proof — a real two-Node skew** _(done 2026-06-17)_
   - [x] 6a. Fetched an isolated Node 22 (ABI 127) tarball → `~/sbg-abi-proof/node-v22.12.0-darwin-arm64/bin`
     (path also in `~/sbg-abi-proof/.n22path`); current node = 25 (ABI 141). **No brew/system change.**
   - [x] 6b. **Bug reproduced (RED):** `~/sbg-abi-proof/repro` has better-sqlite3@12 built under node25;
     `new Database()` under node22 → `NODE_MODULE_VERSION 141 requires 127 / ERR_DLOPEN_FAILED`. The exact screen.
   - [x] 6d. **B heals it (end-to-end):** under node22 against the node25 binary → mismatch caught → real
     `npm rebuild better-sqlite3` under node22 → retry → DB operational (`{x:7}`). Proven via `~/sbg-abi-proof/repro/heal.mjs`.
-  - [ ] 6c. **A heals it (principle):** install with node22 first on PATH → binary ABI 127 → loads under node22
-    with **no** rebuild (aligning install-node to runtime-node removes the skew). ← **NEXT ACTION.**
-  - [ ] 6e. Clean up: `rm -rf ~/sbg-abi-proof`.
-- [ ] **7. ADR + docs** — extend ADR 0020 (or new ADR) with the **skew** dimension (install-node ≡ runtime-node
-  by construction + runtime self-heal) ; SETUP note (auto-rebuild on first run after a Node change). Flip
-  [[node-abi-skew-not-fixed-by-node-compat]] → fixed.
+  - [x] 6c. **A heals it (principle) — PROVEN 2026-06-17:** install with node22 first on PATH (what
+    `buildRagInstallInvocation` does) → binary ABI 127 → loads under node22 with **no** rebuild
+    (`probe-a.mjs`: `{x:7}`, `rebuild attempted: false`). Counter-check: the same binary under node25
+    (ABI 141) → skew detected → confirms aligning install-node to runtime-node removes the skew.
+  - [x] 6e. Clean up: `rm -rf ~/sbg-abi-proof` _(done 2026-06-17)_.
+- [x] **7. ADR + docs** _(done 2026-06-17)_ — **new ADR 0021** (`align-install-node-with-runtime-node-and-self-heal-abi`)
+  captures the skew dimension (install-node ≡ runtime-node by construction via A + runtime self-heal via B),
+  cross-linked to ADR 0020/0009/0015/0012 ; **SETUP §8** troubleshooting row added (auto-rebuild on first
+  start after a Node change + manual `npm rebuild better-sqlite3`) ; memory
+  [[node-abi-skew-not-fixed-by-node-compat]] flipped → ✅ fixed.
 - [ ] **8. Ship** — folded into the `node-compat` → v3.1.0 PR ; `/code-review` ; manual QA ; merge + tag.
   Tick this plan _(date · commit)_ and **archive** it ([[plan-done-equals-archived]]).
 
