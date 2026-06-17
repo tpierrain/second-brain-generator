@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🚧 ACTIVE — not started. Branch: golden-source-sync. -->
+<!-- STATUS: 🚧 ACTIVE — Step 0 done (skeleton + toolchain). Branch: golden-source-sync. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — `golden-source-sync`: synchronize golden-source content into the second brain's vault
@@ -97,11 +97,11 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
 > Tick as you go. Sub-boxes follow progress *within* a step; the step box + _(date · commit)_ is
 > the durable memory. **Commit only green.**
 
-- [ ] **Step 0 — Branch + package skeleton + integration scaffolding**
-  - [ ] `git checkout -b golden-source-sync` off `main` (v3.1.0 already shipped)
-  - [ ] `golden-source-sync/` package: `package.json`, `tsconfig.json`, `npm i`, `test` script wired (`node --import tsx --test`)
-  - [ ] Deps added: `@modelcontextprotocol/sdk`, `zod`, `gray-matter`, `@notionhq/client`, `notion-to-md`
-  - [ ] `npm test` / `tsc` green on an empty placeholder test (CI-of-self proven)
+- [x] **Step 0 — Branch + package skeleton + integration scaffolding** _(2026-06-17 · e94d6ec)_
+  - [x] `git checkout -b golden-source-sync` off `main` (v3.1.0 already shipped) — branch present, `main` ancestor of HEAD
+  - [x] `golden-source-sync/` package: `package.json`, `tsconfig.json`, `npm i`, `test` script wired (`node --import tsx --test src/**/*.test.ts`)
+  - [x] Deps added: `@modelcontextprotocol/sdk` `^1.12.0`, `zod` `^4.4.3`, `gray-matter` `^4.0.3`, `@notionhq/client` `^5.22.0`, `notion-to-md` `^3.1.9`
+  - [x] `npm test` / `tsc --noEmit` green on a placeholder test (CI-of-self proven); `golden-source-sync/dist/` git-ignored, `node_modules` excluded, `package-lock.json` committed
 - [ ] **Step 1 — Hexagon skeleton: API port + MCP transport**
   - [ ] `IGoldenSourceSync` API port defined (`setupSource`/`listSources`/`sync`/`checkFreshness`/`status`/`removeSource`)
   - [ ] MCP server (`index.ts`) declares the 6 tools (zod), 1:1 translation of the port, **no logic**
