@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🚧 ACTIVE — Steps 0–4 done (skeleton + API port + MCP transport + VaultWriter + StateStore/watermark/delta + NotionConnector SPI). Branch: golden-source-sync. -->
+<!-- STATUS: 🚧 ACTIVE — Steps 0–5 done (skeleton + API port + MCP transport + VaultWriter + StateStore/watermark/delta + NotionConnector SPI + deletion reconciliation/guardrail). Branch: golden-source-sync. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — `golden-source-sync`: synchronize golden-source content into the second brain's vault
@@ -121,11 +121,11 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
   - [x] `ISourceConnector` + `NotionConnector`: `listItems` (scoped `search` + **full pagination** via cursor), title from the `title`-typed property, `lastEditedTime`, `fetchContent` (`notion-to-md`); non-page results skipped
   - [x] URL→pageId extraction (`lib/notion-url.ts`, dashed UUID, 4 tests); token from env var (`token_env`) in `buildNotionConnector`, **never logged** (error names the var, not the token)
   - [x] Unit-tested against a stubbed `NotionGateway` (mapping + pagination + delegation, 4 tests; factory env plumbing, 2 tests). Real SDK isolated in `adapters/notion-gateway.ts`. Robustness (429/401/truncation) deferred to Step 5/§12. 27 green, `tsc --noEmit` exit 0
-- [ ] **Step 5 — Deletion reconciliation + reliable-perimeter guardrail (riskiest, isolated)**
-  - [ ] `reconcile.ts` pure: perimeter vs state map → writes/updates/deletes
-  - [ ] **Guardrail §7**: delete a `.md` **only if** perimeter enumeration **fully succeeded**; on any error → **skip deletions**, mark `partial`, log, do not advance watermark
-  - [ ] Acceptance: rename → same file; deletion → `.md` removed; **enumeration error → ZERO deletion**; sub-page edit detected (watermark = max)
-  - [ ] Robustness (§12): 429 backoff+jitter+cap, truncated pagination ⇒ no reconciliation, 401 distinct from "0 pages", per-source single-writer lock
+- [x] **Step 5 — Deletion reconciliation + reliable-perimeter guardrail (riskiest, isolated)** _(2026-06-17 · 2415ac2)_
+  - [x] `reconcile.ts` pure: perimeter vs state map → `pagesToDelete` (set difference, 2 leaf tests)
+  - [x] **Guardrail §7**: delete a `.md` **only if** perimeter enumeration **fully succeeded**; on any error → **skip deletions**, mark `partial`, do not advance watermark (`freezeAsPartial`)
+  - [x] Acceptance: rename → same file; deletion → `.md` removed; **enumeration error → ZERO deletion**; **empty perimeter over a non-empty corpus → ZERO deletion** (lost-scope guard); sub-page edit → watermark = max (covered in `sync-delta`)
+  - [x] Robustness (§12) — the deletion-critical parts: **truncated pagination ⇒ throw ⇒ no reconciliation** (`NotionConnector`, `has_more`+no-cursor); **401 distinct from "0 pages"** (401 throws → freeze; genuine 0-pages on first sync = ok; 0-over-non-empty = frozen). _Deferred to gateway/integration hardening (Step 8/9): 429 backoff+jitter+cap and the per-source single-writer lock — the §7 guardrail already makes a 429 damage-free (partial + resume), and single-session local concurrency on the same source is not a proven risk._
 - [ ] **Step 6 — `setup_source` (onboarding)**
   - [ ] Tool: root-page URL + token env name → test scope (scoped `search` returns only the zone; 0 pages ⇒ clear "root not connected" message)
   - [ ] First sync + sidecar write + **writes the config file** (`golden-source-sync.config.json`, §20.2)
@@ -153,11 +153,11 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
 - [ ] Read-content scoped token → access to the sub-tree only (0 pages if root not connected).
 - [ ] Sync produces `golden-sources/<name>/<pageId>.md`: frontmatter `source_url` + `last_edited_time` + `golden_source`; **atomic write**.
 - [ ] The existing FileWatcher indexes these files **with no RAG change**; the hook commits them.
-- [ ] **Rename** of a Notion page → rewrites the same file (no duplicate/orphan).
-- [ ] **Deletion / out-of-scope** of a page → the `.md` is deleted and **purged from the index**.
-- [ ] **Perimeter enumeration error (429/401/network) → ZERO deletion**; sync `partial`, watermark not advanced.
-- [ ] Sub-page edit detected (watermark = max of perimeter).
-- [ ] Delta only: a no-change sync rewrites nothing (no noise commit/reindex).
+- [x] **Rename** of a Notion page → rewrites the same file (no duplicate/orphan). _(domain-proven, Step 5)_
+- [x] **Deletion / out-of-scope** of a page → the `.md` is deleted _(domain-proven, Step 5)_; **purged from the index** = Step 9 real-vault QA.
+- [x] **Perimeter enumeration error (429/401/network) → ZERO deletion**; sync `partial`, watermark not advanced. _(domain-proven, Step 5; + empty-perimeter lost-scope guard)_
+- [x] Sub-page edit detected (watermark = max of perimeter). _(Step 3)_
+- [x] Delta only: a no-change sync rewrites nothing (no noise commit/reindex). _(Step 3)_
 - [ ] Routing: a PA question refreshes `pa-sc`, not `comex`.
 - [ ] Bounded answer + clickable citation; no secret in repo/logs; two sources without perimeter leak.
 
