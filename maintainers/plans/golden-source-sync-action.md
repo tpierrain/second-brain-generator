@@ -130,7 +130,7 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
   - [x] Tool: root-page URL + token env name → test scope (scoped `search` returns only the zone; 0 pages ⇒ clear "root not connected" message; enumeration/401 error distinct from "0 pages") — domain `setupSource`, 3 acceptance tests at the API port
   - [x] First sync + sidecar write + **writes the config file** (`golden-source-sync.config.json`, §20.2) — `FsConfigStore` SPI adapter (atomic temp+rename, `{schemaVersion:1, golden_sources:[...]}`, 6 tests on a real temp file)
   - [x] Step-by-step explanation in `SetupResult.message`; token guided into env via `token_env` only, **never through Claude's context** (MCP `setup_source` tool takes `token_env`, never the token — Step 1). 43 green, `tsc --noEmit` exit 0
-- [x] **Step 7 — `check_freshness` / `status` / `remove_source`** _(2026-06-17 · pending)_
+- [x] **Step 7 — `check_freshness` / `status` / `remove_source`** _(2026-06-17 · c5f7fac)_
   - [x] `check_freshness`: watermark-only check — enumerate perimeter metadata (no content fetched, nothing written), `remoteWatermark = max(last_edited_time)`, `behind` if remote ahead of local (incl. never-synced) (4 acceptance tests)
   - [x] `status`: last sync, watermark, item count, lateness (= `describe` for one source; never-synced ⇒ `never`; unknown ⇒ clear reject) (3 acceptance tests)
   - [x] `remove_source`: de-register from the config (versioned truth); **opt-in `cleanup`** also deletes every synced `.md` (from the state map) + the sidecar state (`IStateStore.delete` added, `FsStateStore.delete` idempotent ENOENT-swallow); unknown source = graceful no-op (3 acceptance + 1 adapter test)
