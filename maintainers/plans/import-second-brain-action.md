@@ -121,9 +121,11 @@ vault, shows a **safe plan**, **confirms**, copies (never overwriting), reindexe
     (step 10) is what makes the feature actually ship.** ✅ **Confirmed after commit `af64499`**: a
     fresh install (164 files) now lands `scripts/import-brain.mjs` + `scripts/lib/import-vault.mjs` +
     the EN `import` skill (FR via overlay on `--lang français`).
-- [ ] **10. Ship** — PR from `import-brain`, `/code-review`, manual QA, merge; **tag `v3.1.0`** on merge
-  (ADR 0017). Tick this plan _(date · commit)_ and **archive** it in `maintainers/plans/archived/`
-  ([[plan-done-equals-archived]]). Verify existing ≥ 3.0.0 brains pick up `import` via `update-engine`.
+- [~] **10. Ship** — **folded into the shared v3.1.0 ship via PR #11** (`node-compat → main` ; node-compat carries
+  import + ABI skew too). **➡️ Ship is now tracked in ONE place: step 8 of
+  `node-abi-skew-install-runtime-action.md`** (8a push+PR ✅ done · 8b `/code-review` ← next · 8c QA · 8d merge+tag
+  `v3.1.0` · 8e archive the 3 plans). PR: https://github.com/tpierrain/second-brain-generator/pull/11. On merge,
+  verify existing ≥ 3.0.0 brains pick up `import` via `update-engine`.
 - [ ] **11. Announce** — the follow-up post (pre-3.0.0 migrators) + README link; "first feature shipped on
   the v3 platform" angle.
 

@@ -87,11 +87,12 @@
 - [x] **7. Suites green + empirical** _(2026-06-15)_ — harness **245/245** (`scripts/*` + `scripts/lib/*`),
   rag **141/141**, `tsc --noEmit` clean. **Empirical on Node 25:** clean `npm ci` builds the native binding;
   `better-sqlite3 v12.10.1` open/WAL/prepare/transaction OK. **Committed green only** ([[commit-only-green-todo-gate]]).
-- [ ] **8. Ship (folded into v3.1.0)** — **no standalone PR/tag for node-compat.** Keep this branch local
-  as the base for the **import** work; the **import PR carries both** and triggers the CI matrix. Then on
-  that single PR: `/code-review`, QA (CI green + a real install on Node 24/25), merge to `main`, **tag
-  `v3.1.0`**. Tick this plan _(date · commit)_ and **archive** it in `maintainers/plans/archived/`
-  ([[plan-done-equals-archived]]). Verify the fleet picks it up via `update-engine` at the v3.1.0 tag.
+- [~] **8. Ship (folded into v3.1.0)** — **no standalone PR/tag for node-compat.** The shared `node-compat`
+  branch carries all 3 lots (node-compat + import + ABI skew) and is now open as **PR #11** (`node-compat → main`).
+  **➡️ Ship is tracked in ONE place: step 8 of `node-abi-skew-install-runtime-action.md`** (8a push+PR ✅ ·
+  8b `/code-review` ← next · 8c QA on a real install Node 24/25 · 8d merge + tag `v3.1.0` · 8e archive the 3 plans).
+  PR: https://github.com/tpierrain/second-brain-generator/pull/11. *(No active CI on this repo — don't wait on it.)*
+  Verify the fleet picks it up via `update-engine` at the v3.1.0 tag.
 
 > Cocher `- [x]` _(date · commit)_ à chaque étape — mémoire qui survit aux `/clear`.
 

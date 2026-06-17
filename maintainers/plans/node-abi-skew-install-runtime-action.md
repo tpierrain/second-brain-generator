@@ -88,10 +88,28 @@ native dep with a pure-JS store — oversized for a risk we can heal).
   cross-linked to ADR 0020/0009/0015/0012 ; **SETUP §8** troubleshooting row added (auto-rebuild on first
   start after a Node change + manual `npm rebuild better-sqlite3`) ; memory
   [[node-abi-skew-not-fixed-by-node-compat]] flipped → ✅ fixed.
-- [ ] **8. Ship** — folded into the `node-compat` → v3.1.0 PR ; `/code-review` ; manual QA ; merge + tag.
-  Tick this plan _(date · commit)_ and **archive** it ([[plan-done-equals-archived]]).
+- [~] **8. Ship v3.1.0 — THE canonical ship tracker for the 3 lots (node-compat + import + ABI skew)** _(IN PROGRESS — resume HERE)_
+  - [x] 8a. **Push + PR** _(done 2026-06-17)_ — branch `node-compat` force-pushed (the lone stale remote commit
+    `75a2576`, same change as local `ac6fcd4`, was overwritten — nothing lost). **PR #11 is OPEN**, `node-compat → main`,
+    retitled **"v3.1.0 — The One With The Kenjaku-Style Import From Your Previous Brain (and Some Node Compatibility
+    Bugfixes)"** with the simple Nouveauté/Corrections body. → https://github.com/tpierrain/second-brain-generator/pull/11
+    *(No active CI on this repo — `ci.yml` shipped in the branch but GitHub Actions isn't wired, so don't wait on it.)*
+  - [ ] 8b. **`/code-review`** on PR #11 (read-only). ← **NEXT ACTION after `/clear`.**
+  - [ ] 8c. **Manual QA** (Thomas drives the brain-rooted steps): fresh install on a modern Node, import a fake old
+    brain (canaries searchable via RAG), confirm no skew / self-heal works.
+  - [ ] 8d. **Merge PR #11 + annotated tag `v3.1.0`** with the codename + the release note (✨ import / 🐛 Node compat /
+    🐛 SQLite self-heal). Reminder: fresh installs consume `main` HEAD → **merge only QA-validated** ; the fleet ≥3.0.0
+    advances only at the semver tag. **push/merge/tag = outbound → only on Thomas's explicit green light.**
+  - [ ] 8e. **Archive the 3 plans** ([[plan-done-equals-archived]]): `git mv` → `maintainers/plans/archived/` + STATUS ✅
+    with the merge commit/tag, for `node-abi-skew-install-runtime-action.md`, `import-second-brain-action.md`,
+    `node-compat-native-deps-action.md`. Update any plan index/README.
 
 > Cocher `- [x]` _(date · commit)_ à chaque étape terminée — mémoire qui survit aux `/clear`.
+
+> 🧭 **Reprise post-`/clear` (v3.1.0 ship)** : **v3.0.0 est DÉJÀ shippée** (PR #10 mergée `f22068f` + tag) ; il ne
+> reste QUE **v3.1.0** via **PR #11** (`node-compat → main`, déjà ouverte + à jour, pas de rebase à faire). Prochaine
+> action = **8b `/code-review`**, puis 8c QA, puis 8d merge+tag, puis 8e archive. Ce plan = le tracker de ship des
+> 3 lots. Voir [[abi-skew-fix-resume]], [[node-compat-then-import-plans]], [[release-naming-the-one-with]].
 
 ---
 
