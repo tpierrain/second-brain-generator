@@ -97,7 +97,7 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
 > Tick as you go. Sub-boxes follow progress *within* a step; the step box + _(date · commit)_ is
 > the durable memory. **Commit only green.**
 
-- [x] **Step 0 — Branch + package skeleton + integration scaffolding** _(2026-06-17 · e94d6ec)_
+- [x] **Step 0 — Branch + package skeleton + integration scaffolding** _(2026-06-17 · fee5cc8)_
   - [x] `git checkout -b golden-source-sync` off `main` (v3.1.0 already shipped) — branch present, `main` ancestor of HEAD
   - [x] `golden-source-sync/` package: `package.json`, `tsconfig.json`, `npm i`, `test` script wired (`node --import tsx --test src/**/*.test.ts`)
   - [x] Deps added: `@modelcontextprotocol/sdk` `^1.12.0`, `zod` `^4.4.3`, `gray-matter` `^4.0.3`, `@notionhq/client` `^5.22.0`, `notion-to-md` `^3.1.9`
