@@ -3,7 +3,7 @@
 // OUTSIDE the indexed vault, so the FileWatcher never picks it up (PRD §7/§10). Writes are
 // atomic (temp file in the sidecar dir + rename) so a half-written state is never committed.
 
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { IStateStore, PersistedState } from '../domain/ports.js';
@@ -27,6 +27,14 @@ export class FsStateStore implements IStateStore {
     const tempPath = `${fullPath}.${randomUUID()}.tmp`;
     await writeFile(tempPath, `${JSON.stringify(state, null, 2)}\n`, 'utf8');
     await rename(tempPath, fullPath);
+  }
+
+  async delete(name: string): Promise<void> {
+    try {
+      await unlink(this.fileFor(name));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; // idempotent
+    }
   }
 
   private fileFor(name: string): string {

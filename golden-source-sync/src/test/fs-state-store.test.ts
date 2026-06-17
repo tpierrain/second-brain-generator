@@ -51,6 +51,16 @@ test('load of an unknown source returns null', async () => {
   assert.equal(await store.load('never-synced'), null);
 });
 
+test('delete removes the sidecar file and is idempotent', async () => {
+  const store = new FsStateStore(await aTempSidecar());
+  await store.save('pa-sc', aState());
+
+  await store.delete('pa-sc');
+  await store.delete('pa-sc'); // again — must not throw (ENOENT swallowed)
+
+  assert.equal(await store.load('pa-sc'), null);
+});
+
 test('save overwrites in place and leaves no temp residue', async () => {
   const sidecar = await aTempSidecar();
   const store = new FsStateStore(sidecar);

@@ -56,6 +56,8 @@ export interface PersistedState {
 export interface IStateStore {
   load(name: string): Promise<PersistedState | null>;
   save(name: string, state: PersistedState): Promise<void>;
+  /** Drop a source's sidecar state — idempotent (PRD §9, `remove_source` cleanup). */
+  delete(name: string): Promise<void>;
 }
 
 /**

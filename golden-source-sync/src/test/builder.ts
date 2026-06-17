@@ -183,6 +183,9 @@ class InMemoryStateStore implements IStateStore {
   async save(name: string, state: PersistedState): Promise<void> {
     this.states.set(name, state);
   }
+  async delete(name: string): Promise<void> {
+    this.states.delete(name);
+  }
 }
 
 class RecordingVaultWriter implements IVaultWriter {

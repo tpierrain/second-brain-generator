@@ -155,7 +155,7 @@ export class GoldenSourceSync implements IGoldenSourceSync {
     const nextItems: Record<string, PersistedItem> = {};
     let written = 0;
     let unchanged = 0;
-    let perimeterMax: string | null = null;
+    const perimeterMax = maxLastEditedTime(items); // watermark = max of the perimeter (PRD §16)
     let allOk = true;
 
     for (const item of items) {
@@ -183,9 +183,6 @@ export class GoldenSourceSync implements IGoldenSourceSync {
         // (incremental persistence) and mark the whole sync partial so the watermark freezes.
         allOk = false;
         if (tracked) nextItems[item.id] = tracked;
-      }
-      if (perimeterMax === null || item.lastEditedTime > perimeterMax) {
-        perimeterMax = item.lastEditedTime;
       }
     }
 
@@ -239,17 +236,64 @@ export class GoldenSourceSync implements IGoldenSourceSync {
     return { name: config.name, status: 'partial', written: 0, deleted: 0, unchanged: 0 };
   }
 
-  checkFreshness(_name: string): Promise<FreshnessReport> {
-    return notImplemented('checkFreshness', 'Step 7');
+  /**
+   * Light watermark-only freshness check (PRD §8/§9): enumerate the perimeter metadata (no
+   * content fetched, nothing written), take the remote max `last_edited_time`, and compare it
+   * to the local watermark. A source is `behind` when the remote perimeter holds an edit the
+   * local watermark hasn't caught yet — including a brand-new, never-synced source.
+   */
+  async checkFreshness(name: string): Promise<FreshnessReport> {
+    const config = await this.configOrThrow(name);
+    const persisted = await this.deps.stateStore.load(config.name);
+    const items = await this.deps.connectorFor(config).listItems();
+    const remoteWatermark = maxLastEditedTime(items);
+    const localWatermark = persisted?.watermark ?? null;
+    const behind = remoteWatermark !== null && (localWatermark === null || remoteWatermark > localWatermark);
+    return { name, behind, localWatermark, remoteWatermark };
   }
 
-  status(_name: string): Promise<SourceStatus> {
-    return notImplemented('status', 'Step 7');
+  /** A single source's state — last sync, watermark, item count, lateness (PRD §9). No pull. */
+  async status(name: string): Promise<SourceStatus> {
+    return this.describe(await this.configOrThrow(name));
   }
 
-  removeSource(_name: string, _cleanup?: boolean): Promise<RemoveResult> {
-    return notImplemented('removeSource', 'Step 7');
+  /** Finds a declared source by name, or throws a clear error for the caller to surface. */
+  private async configOrThrow(name: string): Promise<GoldenSourceConfig> {
+    const configs = await this.deps.configStore.loadAll();
+    const config = configs.find((c) => c.name === name);
+    if (!config) throw new Error(`Unknown golden source "${name}"`);
+    return config;
   }
+
+  /**
+   * De-register a source from the config — the versioned source of truth (PRD §9). With
+   * `cleanup`, also delete every synced `.md` (from the state map) and the sidecar state;
+   * cleanup is opt-in, so a plain de-register never touches the vault. Unknown source = no-op.
+   */
+  async removeSource(name: string, cleanup = false): Promise<RemoveResult> {
+    const configs = await this.deps.configStore.loadAll();
+    if (!configs.some((c) => c.name === name)) {
+      return { name, removed: false, cleanedUp: false };
+    }
+    if (cleanup) {
+      const persisted = await this.deps.stateStore.load(name);
+      for (const item of Object.values(persisted?.items ?? {})) {
+        await this.deps.vaultWriter.delete(item.vaultPath);
+      }
+      await this.deps.stateStore.delete(name);
+    }
+    await this.deps.configStore.remove(name);
+    return { name, removed: true, cleanedUp: cleanup };
+  }
+}
+
+/** The max `last_edited_time` over a perimeter (the watermark), or null if it is empty (PRD §16). */
+function maxLastEditedTime(items: readonly { lastEditedTime: string }[]): string | null {
+  let max: string | null = null;
+  for (const item of items) {
+    if (max === null || item.lastEditedTime > max) max = item.lastEditedTime;
+  }
+  return max;
 }
 
 /** Maps a declared config + its persisted state into the API-facing SourceState. */
@@ -290,8 +334,4 @@ function configFromRequest(req: SetupRequest): GoldenSourceConfig {
 /** A readable message from a thrown value, never leaking a token (connectors name the env var). */
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-function notImplemented(method: string, step: string): Promise<never> {
-  return Promise.reject(new Error(`${method}() is implemented in ${step}`));
 }
