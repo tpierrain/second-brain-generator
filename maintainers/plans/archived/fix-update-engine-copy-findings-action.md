@@ -1,3 +1,7 @@
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- STATUS: ✅ SHIPPED in v3.0.0 (fix 8221a56 · tag v3.0.0 · 2026-06-15). Archived. -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
 # 🔧 Fix — `update-engine` copie plus large que l'installeur (2 findings QA PR #10)
 
 > **Origine.** QA manuelle de la PR #10 (branche `engine-packaging`), 2026-06-14/15. Le Test 2 a

@@ -1,3 +1,7 @@
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- STATUS: ✅ DONE — QA campaign for v3.0.0 (PR #10), shipped & tagged v3.0.0 (2026-06-15). Archived. -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
 # 🧪 Campagne de QA manuelle — PR #10 (engine-packaging → v3.0.0)
 
 > **But.** Valider **sur ton poste**, à la main, la version à venir portée par la **PR #10**
