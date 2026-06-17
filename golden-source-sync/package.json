@@ -14,6 +14,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
     "@notionhq/client": "^5.22.0",
+    "dotenv": "^16.6.1",
     "gray-matter": "^4.0.3",
     "notion-to-md": "^3.1.9",
     "zod": "^4.4.3"
