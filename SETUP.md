@@ -319,6 +319,7 @@ changes from the other machine.
 | RAG status "unavailable" at startup | RAG engine not yet installed / DB being written | `cd rag && npm install`; the status recovers once the index is built |
 | The MCP server doesn't appear | `.mcp.json` missing / wrong path | re-run `node installer.mjs`, accept the server in Claude Code |
 | **MCP smoke-test ❌** at the end of installation ("MCP connection KO") | `rag/` not installed, `.mcp.json` poorly generated, or `npx`/`tsx` unavailable | `cd rag && npm install` then re-run `node installer.mjs`; check that `.mcp.json` points to `npx tsx rag/src/index.ts` with the right `cwd`. Manual test: `npx tsx rag/src/index.ts` should start without crashing (the Gemini key is **not** required for this test). |
+| Memory feels tight with several brains open in **Claude Desktop** | Each open brain keeps **one warm search engine** in RAM (the MCP server lives with the parent session, not your typing) | Close the brain conversations you're not using. See the README's [**Notes for Claude Desktop users**](README.md#-notes-for-claude-desktop-users). |
 
 ## 9. Data privacy
 

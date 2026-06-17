@@ -668,7 +668,12 @@ if (embedderIsReady) {
   if (providerKey === "in-process") {
     console.log("  (1st time fully-local: downloading the model weights ~28 s, then offline.)");
   }
-  const idx = run(NPM, ["run", "--silent", "index"], { cwd: rag, stdio: "inherit" });
+  const idx = run(NPM, ["run", "--silent", "index"], {
+    cwd: rag,
+    stdio: "inherit",
+    // No OS toast during install (the notify seam honours SBG_NO_NOTIFY).
+    env: { ...process.env, SBG_NO_NOTIFY: "1" },
+  });
   if (idx.ok) ok("example vault indexed");
   else warn("Indexing interrupted (quota/key/endpoint?) — it will resume the next time Claude Code starts.");
 } else if (embedderCfg.needsGeminiKey) {
@@ -704,6 +709,9 @@ try {
       args: srv.args ?? [],
       cwd: srv.cwd ?? TARGET,
       expectTools: EXPECT_TOOLS,
+      // No OS toast during the post-flight (the MCP auto-reindex would otherwise
+      // pop one); the notify seam honours SBG_NO_NOTIFY.
+      env: { SBG_NO_NOTIFY: "1" },
       // In-process reloads an ONNX session in the smoke's MCP process → we
       // allow more headroom (the fallback stays 30 s for network embedders).
       timeoutMs: providerKey === "in-process" ? 60000 : 30000,

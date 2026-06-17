@@ -46,9 +46,19 @@ conscious, accepted action.
 
 ## Procedure
 
-### Step 1 — Ask for the source path
-Ask the user for the folder of their **old brain** (or its `vault/`). The core accepts **either**
-a brain root (it resolves to `<root>/vault`) **or** a `vault/` folder directly.
+### Step 1 — Get the source path (native picker first, copy-paste fallback)
+**Try the native folder picker first** — typing a path is a wall for non-dev users. From the
+**brain folder**, run:
+```bash
+node scripts/pick-folder.mjs "Choose the folder of your previous brain"
+```
+- **It prints a path (exit 0)** → use that path as `<source>` for Steps 2–3 (reuse it for both,
+  don't pop the dialog twice).
+- **It exits non-zero** (the user cancelled, or there's no GUI — headless / CI) → **fall back** to
+  asking the user to type / paste the folder of their **old brain**.
+
+The core accepts **either** a brain root (it resolves to `<root>/vault`) **or** a `vault/` folder
+directly.
 
 > ⚠️ **The footgun, say it plainly:** they want to point at their **old brain folder**, not copy
 > the whole folder by hand. The skill copies the *vault content only* — pointing at the brain root

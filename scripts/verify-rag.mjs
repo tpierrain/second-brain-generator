@@ -46,7 +46,12 @@ if (geminiKeyRequired(envContent) && !hasGeminiKey(envContent)) {
 // 2. Blocking indexing — separates "index KO" (invalid key / quota / network)
 //    from "retrieval KO" (the RAG answers but not from the vault).
 step("Indexing the vault");
-const idx = spawnSync(NPM, ["run", "--silent", "index"], { cwd: rag, stdio: "inherit" });
+const idx = spawnSync(NPM, ["run", "--silent", "index"], {
+  cwd: rag,
+  stdio: "inherit",
+  // No OS toast during deterministic verification (the notify seam honours this).
+  env: { ...process.env, SBG_NO_NOTIFY: "1" },
+});
 if (idx.status !== 0) {
   err("Indexing failed (invalid key? Gemini quota? network?) — see SETUP.md §8/§9.");
   process.exit(1);

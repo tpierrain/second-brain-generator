@@ -47,10 +47,19 @@ cerveau est une action consciente, acceptée.
 
 ## Procédure
 
-### Étape 1 — Demander le chemin de la source
-Demande à l'utilisateur le dossier de son **ancien cerveau** (ou son `vault/`). Le cœur accepte
-**au choix** une racine de cerveau (il résout vers `<racine>/vault`) **ou** un dossier `vault/`
-directement.
+### Étape 1 — Obtenir le chemin de la source (sélecteur natif d'abord, copier-coller en secours)
+**Essaie d'abord le sélecteur de dossier natif** — taper un chemin est un mur pour les utilisateurs
+non-dev. Depuis le **dossier du cerveau**, lance :
+```bash
+node scripts/pick-folder.mjs "Choisis le dossier de ton ancien cerveau"
+```
+- **Il affiche un chemin (exit 0)** → utilise ce chemin comme `<source>` pour les étapes 2–3
+  (réutilise-le pour les deux, n'ouvre pas la fenêtre deux fois).
+- **Il sort en non-zéro** (l'utilisateur a annulé, ou pas d'interface graphique — headless / CI) →
+  **bascule** sur la demande à l'utilisateur de taper / coller le dossier de son **ancien cerveau**.
+
+Le cœur accepte **au choix** une racine de cerveau (il résout vers `<racine>/vault`) **ou** un
+dossier `vault/` directement.
 
 > ⚠️ **Le piège, dis-le clairement :** il faut pointer vers son **dossier d'ancien cerveau**, pas
 > recopier tout le dossier à la main. Le skill ne copie que le *contenu du vault* — pointer la racine

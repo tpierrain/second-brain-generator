@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { reindex } from "./lib/index-manager.js";
+import { reindex, type IndexResult } from "./lib/index-manager.js";
 import { createEmbedder } from "./lib/embedder.js";
 import {
   searchSimilar,
@@ -39,6 +39,8 @@ import { startVaultWatcher } from "./lib/vault-watcher.js";
 import { FileProgressStorage } from "./lib/reindex-reporter.js";
 import { formatLastRunMarkdown } from "./lib/progress-report.js";
 import { writeFileSync, appendFileSync } from "fs";
+import { spawn } from "child_process";
+import { notifyDone } from "./lib/notify.js";
 import { capExceededSearchMessage } from "./lib/search-degradation.js";
 import { readFile } from "fs/promises";
 import { resolve, relative } from "path";
@@ -186,6 +188,7 @@ server.tool(
         lines.push(`  - ${err}`);
       }
     }
+    notifyIfIndexed(result);
     return { content: [{ type: "text", text: lines.join("\n") }] };
   }
 );
@@ -261,6 +264,21 @@ function writeLastRunMarkdown(): void {
   }
 }
 
+// Pops an OS notification ONLY when a reindex actually picked up new/changed
+// notes (result.indexed > 0) — never on an all-unchanged pass, so a plain MCP
+// server start (everything cached) stays silent. Best-effort, never throws; the
+// SBG_NO_NOTIFY / CI / headless guards live in the notify seam.
+function notifyIfIndexed(result: IndexResult): void {
+  if (result.indexed <= 0) return;
+  notifyDone({
+    platform: process.platform,
+    env: process.env,
+    title: "Second brain",
+    body: `Indexing done — ${result.indexed} note${result.indexed > 1 ? "s" : ""} ready to search.`,
+    spawn,
+  });
+}
+
 async function main() {
   const argv = process.argv;
   // --force (or --reindex, kept as an alias): full rebuild, ignores the cache.
@@ -279,6 +297,7 @@ async function main() {
       `[vault-rag] Index: ${result.indexed} indexed, ${result.skipped} unchanged, ${result.removed} removed` +
         (result.errors.length > 0 ? `, ${result.errors.length} errors` : "")
     );
+    notifyIfIndexed(result);
     console.log(JSON.stringify(result, null, 2));
     process.exit(0);
   }
@@ -305,6 +324,10 @@ async function main() {
         scannedCount: result.scanned,
       });
       if (warning) console.error(`[vault-rag] ${warning}`);
+
+      // The background path that fires after an import: tell the user the new
+      // notes are searchable (only when something was actually indexed).
+      notifyIfIndexed(result);
 
       // "Live" freshness: once the startup reindex is done (avoiding any same-pid
       // overlap with it), we watch the vault. The scheduler debounces bursts and

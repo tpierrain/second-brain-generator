@@ -721,6 +721,16 @@ The **installer's wizard** (step 5/9) offers to wire all this up by showing you,
 *what it's for*. The full menu and the credential details are in [**CONNECTORS.md**](CONNECTORS.md)
 and [SETUP §6](SETUP.md).
 
+## 📝 Notes for Claude Desktop users
+
+A couple of things that surprise people running their brain from the **Claude Desktop** app:
+
+- **One warm engine per open brain.** The brain's search engine (the `vault-rag` MCP server) lives
+  with the **parent `claude` session**, not with your typing — Claude Desktop keeps it alive in the
+  background as long as that brain conversation is open, even between your messages. Each open brain
+  conversation therefore holds **one warm embedder in RAM**. If you juggle several brains at once and
+  your machine feels tight, **close the brain conversations you're not using** to free that memory.
+
 ## What's next?
 
 The seed gives you the **engine** and a **harness skeleton**; *your* second brain, you grow it by
