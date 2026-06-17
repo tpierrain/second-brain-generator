@@ -116,8 +116,27 @@ native dep with a pure-JS store — oversized for a risk we can heal).
       (2) `isNativeAbiError` BINDING_FAILURE_SIGNS extended with `incompatible architecture` (arch skew) + `did not self-register`
       (NAPI); the unrelated-error guard (SQLITE_CORRUPT/ENOENT → false) still holds. **RAG 151/151 (+4), harness 255/255,
       tsc clean.** Findings #3–#7 left as documented non-blocking follow-ups.
-  - [ ] 8c. **Manual QA** (Thomas drives the brain-rooted steps): fresh install on a modern Node, import a fake old
-    brain (canaries searchable via RAG), confirm no skew / self-heal works.
+  - [x] 8c. **Manual QA** _(done 2026-06-17, node25/ABI 141, launcher `node-compat` PR #11 HEAD — all green)_. Run from
+    `$HOME` (outside the launcher); brain created under `$HOME/sbg-qa/qa-3-1-0`.
+    - [x] 8c-1. **Node version** _(done)_ — `node -v` → `v25.6.0` (ABI 141), **in-window 20–26 → no warn**, exercises the
+      node-compat lot. The node-compat fix means: < 20 hard-fails at "1/9" with the actionable message; > 26 warns but proceeds.
+    - [x] 8c-2. **Fresh install (in-process, no key)** _(done)_ — `node <launcher>/installer.mjs --non-interactive --name
+      qa-3-1-0 --dest "$HOME/sbg-qa" --owner QA --lang en --embedder in-process` → **exit 0**; "1/9" printed `v25.6.0` (no warn);
+      `run-node smoke-test OK`; index 7/7; **9/9 post-flight OK — Mollecuisse canary FROM the vault**; Desktop-first hand-off banner verbatim.
+    - [x] 8c-3. **Deterministic RAG check** _(done)_ — `cd "$HOME/sbg-qa/qa-3-1-0" && node scripts/verify-rag.mjs` → **exit 0**
+      = RAG operational, **no ABI error on `new Database()`** (binary moulded for the runtime Node by A).
+    - [x] 8c-4. **Import a fake old brain (the import lot)** _(done)_ — throwaway vault `$HOME/sbg-qa/fake-old-brain` with a
+      sub-folder note carrying canary **`Quibrillon-7742`**, a 36-byte attachment, a demo note, an `.obsidian/`.
+      `import-brain.mjs <vault>` → plan **2 to import / 1 example skipped / 0 collision**; `--apply` → copied, **attachment
+      bytes identical (`cmp` OK)**, demo note + `.obsidian/` **excluded**, no overwrite. ⚠️ **Gotcha (NOT a bug):** the demo-skip
+      tag is **`exemple`** (FR product locale), **not** `example` — a first fake note tagged `[example]` was (correctly) NOT
+      skipped; fixed to `[exemple]` → skipped. Reindex (force) → **8 docs** (+1 = the imported note). **`search_vault` for the
+      codename → canary `Quibrillon-7742` FOUND from the imported note.** (NB: the single *import commit* fires via the brain-side
+      auto-commit hook inside a rooted conversation — raw CLI leaves the files untracked, which is expected.)
+    - [x] 8c-5. **Self-heal (the ABI lot)** _(done — baseline)_ — mono-Node machine (ABI 141 everywhere) → **no skew**, as
+      expected; brain starts & answers (no "native module broken") — proven by verify-rag **and** the `search_vault` probe
+      (both open `new Database()` cleanly). Real 2-Node skew firing already proven empirically at **ÉTAPE 6** (node22↔node25).
+    - [ ] 8c-6. **Cleanup** the QA brain + fake vault (`rm -rf "$HOME/sbg-qa"`). A green QA unblocks 8d. _(pending Thomas's go.)_
   - [ ] 8d. **Merge PR #11 + annotated tag `v3.1.0`** with the codename + the release note (✨ import / 🐛 Node compat /
     🐛 SQLite self-heal). Reminder: fresh installs consume `main` HEAD → **merge only QA-validated** ; the fleet ≥3.0.0
     advances only at the semver tag. **push/merge/tag = outbound → only on Thomas's explicit green light.**
