@@ -2,7 +2,8 @@
 // is connected to the root page, so Notion's `search` returns only the accessible sub-tree
 // (PRD §11) — paging through completely (PRD §12), and converts each page's body via
 // notion-to-md (PRD §6). The actual Notion SDK lives behind the injected NotionGateway, so
-// the adapter is unit-testable without a live token. Robustness (429/401/truncation) = Step 5.
+// the adapter is unit-testable without a live token. Truncated pagination throws (§12, below)
+// so the §7 guardrail can freeze the source; 429 backoff/jitter is layered on the real gateway.
 
 import type { ISourceConnector, SourceItem } from '../domain/ports.js';
 
@@ -45,7 +46,13 @@ export class NotionConnector implements ISourceConnector {
       for (const result of page.results) {
         if (result.object === 'page') items.push(toSourceItem(result));
       }
-      cursor = page.has_more && page.next_cursor ? page.next_cursor : undefined;
+      // §12: Notion promises a `next_cursor` whenever `has_more` is true. If it claims more but
+      // gives no cursor, we cannot complete the enumeration — surfacing a truncated perimeter
+      // would read as deletions (PRD §7). Fail loudly so the §7 guardrail freezes the source.
+      if (page.has_more && !page.next_cursor) {
+        throw new Error('Notion pagination truncated: has_more is set but no next_cursor was returned.');
+      }
+      cursor = page.has_more ? page.next_cursor ?? undefined : undefined;
     } while (cursor);
     return items;
   }

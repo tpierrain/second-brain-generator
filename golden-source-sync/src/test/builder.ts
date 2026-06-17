@@ -22,7 +22,9 @@ export function aGoldenSourceSync(): GoldenSourceSyncBuilder {
 
 class GoldenSourceSyncBuilder {
   private readonly declared: GoldenSourceConfig[] = [];
-  private readonly pages: StubPage[] = [];
+  private pages: StubPage[] = [];
+  /** When set, the connector fails to enumerate the perimeter (PRD §7/§12 guardrail). */
+  private enumerationError: string | undefined;
   /** Stable reference so tests can inspect the vault after build()/sync(). */
   private readonly vault = new RecordingVaultWriter();
 
@@ -38,6 +40,39 @@ class GoldenSourceSyncBuilder {
    */
   withNotionPages(...pages: StubPage[]): this {
     this.pages.push(...pages);
+    return this;
+  }
+
+  /**
+   * Drop a page from the live perimeter between two syncs — simulates a Notion page
+   * deleted or moved out of scope. The connector enumerates the remaining pages.
+   */
+  withoutPage(id: string): this {
+    this.pages = this.pages.filter((p) => p.id !== id);
+    return this;
+  }
+
+  /**
+   * Replace a page (same id) between two syncs — simulates a Notion rename or edit. The
+   * `.md` is keyed by the stable id, so this must rewrite the SAME file, never orphan one.
+   */
+  withRevisedPage(page: StubPage): this {
+    this.pages = this.pages.map((p) => (p.id === page.id ? page : p));
+    return this;
+  }
+
+  /**
+   * Make the next enumeration fail (token lost, network, truncated pagination): the
+   * connector's `listItems` throws. The §7/§12 guardrail must then delete nothing.
+   */
+  withFailingEnumeration(error = 'notion: 401 unauthorized'): this {
+    this.enumerationError = error;
+    return this;
+  }
+
+  /** Clear a previously-armed enumeration failure (the source recovers). */
+  withRecoveredEnumeration(): this {
+    this.enumerationError = undefined;
     return this;
   }
 
@@ -58,7 +93,7 @@ class GoldenSourceSyncBuilder {
       stateStore: new InMemoryStateStore(),
       vaultWriter: this.vault,
       clock: new FixedClock(new Date('2026-06-17T00:00:00.000Z')),
-      connectorFor: () => new StubConnector(this.pages),
+      connectorFor: () => new StubConnector(() => this.pages, () => this.enumerationError),
     });
   }
 }
@@ -147,12 +182,17 @@ class RecordingVaultWriter implements IVaultWriter {
 }
 
 class StubConnector implements ISourceConnector {
-  constructor(private readonly pages: StubPage[]) {}
+  constructor(
+    private readonly getPages: () => StubPage[],
+    private readonly getEnumerationError: () => string | undefined,
+  ) {}
   async listItems(): Promise<SourceItem[]> {
-    return this.pages.map(({ content: _content, ...item }) => item);
+    const error = this.getEnumerationError();
+    if (error) throw new Error(error);
+    return this.getPages().map(({ content: _content, ...item }) => item);
   }
   async fetchContent(item: SourceItem): Promise<string> {
-    const page = this.pages.find((p) => p.id === item.id);
+    const page = this.getPages().find((p) => p.id === item.id);
     if (page?.fetchError) throw new Error(page.fetchError);
     return page?.content ?? '';
   }

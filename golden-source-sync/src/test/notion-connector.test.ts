@@ -9,8 +9,9 @@ import type {
 
 // Unit tests for the Notion SPI adapter, driven against a STUBBED Notion gateway (no live
 // token, no network). The adapter enumerates the scoped perimeter through full pagination,
-// maps each page to a SourceItem, and delegates content to notion-to-md. The robustness
-// paths (429 backoff, 401 vs 0-pages, truncated pagination) land in Step 5/§12.
+// maps each page to a SourceItem, and delegates content to notion-to-md. Truncated pagination
+// throws here (§12) so the §7 deletion guardrail freezes the source; 401-vs-0-pages and the
+// "empty perimeter over a non-empty corpus" guard live at the domain level (reconcile tests).
 
 function aSearchPage(overrides: Partial<NotionSearchPage> = {}): NotionSearchPage {
   return {
@@ -89,6 +90,18 @@ test('listItems skips non-page results (a database container is not a note)', as
   const items = await connector.listItems();
 
   assert.deepEqual(items.map((i) => i.id), ['page-1']);
+});
+
+// §12 guardrail: a truncated enumeration must NEVER pass for a complete perimeter, or the
+// missing pages read as deletions and the corpus gets wiped. If Notion claims `has_more` but
+// gives no cursor to continue, we cannot finish paging → throw rather than return a partial list.
+test('listItems throws on a truncated response (has_more but no cursor) rather than under-reporting', async () => {
+  const { gateway } = aGatewayServing(
+    { results: [aSearchPage({ id: 'page-1' })], has_more: true, next_cursor: null },
+  );
+  const connector = new NotionConnector(gateway);
+
+  await assert.rejects(() => connector.listItems(), /pagination/i);
 });
 
 test('fetchContent delegates to notion-to-md for that page', async () => {
