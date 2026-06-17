@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🛠️ CODE DONE on branch `node-compat` (local, unpushed) — folds into v3.1.0. -->
+<!-- STATUS: ✅ SHIPPED in v3.1.0 (merge 08b388c · tag v3.1.0 · 2026-06-17). Archived. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — Node-version compatibility for native deps (unblock install on Node 24/25/26) → **folds into v3.1.0**

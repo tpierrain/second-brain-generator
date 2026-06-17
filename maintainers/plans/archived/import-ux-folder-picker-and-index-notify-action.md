@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🗺️ ACTION PLAN (created 2026-06-17) — to execute, step-by-step, in TDD. -->
+<!-- STATUS: ✅ SHIPPED in v3.1.0 (merge 08b388c · tag v3.1.0 · 2026-06-17). Archived. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — Import UX: native folder picker (no copy-paste) + index-done notification

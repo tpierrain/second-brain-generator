@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🗺️ ACTION PLAN (created 2026-06-17) — to execute, step-by-step, in TDD. -->
+<!-- STATUS: ✅ SHIPPED in v3.1.0 (merge 08b388c · tag v3.1.0 · 2026-06-17). Archived. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — Native-dep ABI skew: align the install-time Node with the runtime Node (A) + self-heal rebuild on mismatch (B)
@@ -136,13 +136,15 @@ native dep with a pure-JS store — oversized for a risk we can heal).
     - [x] 8c-5. **Self-heal (the ABI lot)** _(done — baseline)_ — mono-Node machine (ABI 141 everywhere) → **no skew**, as
       expected; brain starts & answers (no "native module broken") — proven by verify-rag **and** the `search_vault` probe
       (both open `new Database()` cleanly). Real 2-Node skew firing already proven empirically at **ÉTAPE 6** (node22↔node25).
-    - [ ] 8c-6. **Cleanup** the QA brain + fake vault (`rm -rf "$HOME/sbg-qa"`). A green QA unblocks 8d. _(pending Thomas's go.)_
-  - [ ] 8d. **Merge PR #11 + annotated tag `v3.1.0`** with the codename + the release note (✨ import / 🐛 Node compat /
-    🐛 SQLite self-heal). Reminder: fresh installs consume `main` HEAD → **merge only QA-validated** ; the fleet ≥3.0.0
-    advances only at the semver tag. **push/merge/tag = outbound → only on Thomas's explicit green light.**
-  - [ ] 8e. **Archive the 3 plans** ([[plan-done-equals-archived]]): `git mv` → `maintainers/plans/archived/` + STATUS ✅
-    with the merge commit/tag, for `node-abi-skew-install-runtime-action.md`, `import-second-brain-action.md`,
-    `node-compat-native-deps-action.md`. Update any plan index/README.
+    - [x] 8c-6. **Cleanup** the QA brain + fake vault _(done — `$HOME/sbg-qa` removed; the import-UX QA brain `~/brain-qa-de-ouf` removed too)_.
+  - [x] 8d. **Merge PR #11 + annotated tag `v3.1.0`** _(done 2026-06-17)_ — PR #11 merged into `main` (merge commit
+    **`08b388c`**), annotated tag **`v3.1.0`** pushed, **GitHub release published** with the codename + release note
+    (✨ Kenjaku-style import incl. native picker + index-done toast / 🐛 Node compat ADR 0020 / 🐛 SQLite ABI self-heal
+    ADR 0021), and **the plain-language phrases that trigger the import**. → https://github.com/tpierrain/second-brain-generator/releases/tag/v3.1.0
+  - [x] 8e. **Archive the done plans** ([[plan-done-equals-archived]]) _(done 2026-06-17)_: `git mv` → `archived/` + STATUS ✅
+    (merge `08b388c` / tag `v3.1.0`) for `node-abi-skew-install-runtime-action.md`, `import-second-brain-action.md`,
+    `node-compat-native-deps-action.md`, **and `import-ux-folder-picker-and-index-notify-action.md`**. The
+    `post-v3.1.0-ux-backlog.md` stays active (backlog, not done).
 
 > Cocher `- [x]` _(date · commit)_ à chaque étape terminée — mémoire qui survit aux `/clear`.
 
