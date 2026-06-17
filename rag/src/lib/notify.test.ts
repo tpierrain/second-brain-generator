@@ -1,7 +1,25 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { buildNotifyCommand, shouldNotify, notifyDone } from "./notify.js";
+import { buildNotifyCommand, shouldNotify, notifyDone, isNotifyWorthy } from "./notify.js";
+
+test("isNotifyWorthy: nothing indexed → never notify", () => {
+  assert.equal(isNotifyWorthy(0), false);
+});
+
+test("isNotifyWorthy: default min=1 → any indexed note is worth a toast (explicit/startup paths)", () => {
+  assert.equal(isNotifyWorthy(1), true);
+});
+
+test("isNotifyWorthy: live-watcher bulk threshold — a single edit (1) under min=5 stays silent", () => {
+  assert.equal(isNotifyWorthy(1, 5), false);
+  assert.equal(isNotifyWorthy(4, 5), false);
+});
+
+test("isNotifyWorthy: live-watcher bulk threshold — an import-sized batch (>=5) notifies", () => {
+  assert.equal(isNotifyWorthy(5, 5), true);
+  assert.equal(isNotifyWorthy(304, 5), true);
+});
 
 test("buildNotifyCommand: darwin → osascript display notification", () => {
   assert.deepEqual(buildNotifyCommand("darwin", { title: "Second brain", body: "Indexing done" }), {

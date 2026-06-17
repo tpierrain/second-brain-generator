@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { reindex, type IndexResult } from "./lib/index-manager.js";
+import { notifyDone, isNotifyWorthy } from "./lib/notify.js";
 import { createEmbedder } from "./lib/embedder.js";
 import {
   searchSimilar,
@@ -40,7 +41,6 @@ import { FileProgressStorage } from "./lib/reindex-reporter.js";
 import { formatLastRunMarkdown } from "./lib/progress-report.js";
 import { writeFileSync, appendFileSync } from "fs";
 import { spawn } from "child_process";
-import { notifyDone } from "./lib/notify.js";
 import { capExceededSearchMessage } from "./lib/search-degradation.js";
 import { readFile } from "fs/promises";
 import { resolve, relative } from "path";
@@ -264,12 +264,19 @@ function writeLastRunMarkdown(): void {
   }
 }
 
-// Pops an OS notification ONLY when a reindex actually picked up new/changed
-// notes (result.indexed > 0) — never on an all-unchanged pass, so a plain MCP
-// server start (everything cached) stays silent. Best-effort, never throws; the
+// The LIVE watcher fires a catch-up reindex on EVERY vault write — including the
+// single note Claude just saved. We only want a toast for a BULK pickup (an
+// import of hundreds of notes, a sources sync), never for routine edits, so the
+// watcher passes this higher threshold to notifyIfIndexed.
+const LIVE_WATCHER_NOTIFY_MIN = 5;
+
+// Pops an OS notification when a reindex picked up at least `min` notes — never
+// on an all-unchanged pass, so a plain MCP server start (everything cached) stays
+// silent. `min` defaults to 1 (explicit/startup paths: any new note matters); the
+// live watcher passes a higher value. Best-effort, never throws; the
 // SBG_NO_NOTIFY / CI / headless guards live in the notify seam.
-function notifyIfIndexed(result: IndexResult): void {
-  if (result.indexed <= 0) return;
+function notifyIfIndexed(result: IndexResult, min = 1): void {
+  if (!isNotifyWorthy(result.indexed, min)) return;
   notifyDone({
     platform: process.platform,
     env: process.env,
@@ -374,6 +381,10 @@ function startFileWatcher(): void {
             (result.skippedLocked ? " (skipped: reindex already in progress)" : "") +
             (result.errors.length > 0 ? `, ${result.errors.length} errors` : "")
         );
+        // The live path that completes an import done WHILE the server runs: the
+        // CLI reindex is locked out by this watcher, so THIS is where a bulk
+        // pickup finishes → notify (bulk threshold; single edits stay silent).
+        notifyIfIndexed(result, LIVE_WATCHER_NOTIFY_MIN);
       },
     });
     startVaultWatcher({

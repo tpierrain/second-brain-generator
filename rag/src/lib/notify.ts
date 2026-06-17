@@ -64,6 +64,14 @@ export function shouldNotify(
 
 // Matches Node's child_process.spawn(command, args, options) overload, so the
 // real `spawn` is assignable here while tests can inject a fake (cast as any).
+// Is a reindex pass worth a toast? It must have indexed at least `min` notes.
+// min=1 for explicit/startup paths (any new note matters). The LIVE watcher uses
+// a higher `min` so routine single-note saves stay silent, while a bulk pickup
+// (an import of hundreds of notes, a sources sync) still notifies.
+export function isNotifyWorthy(indexed: number, min = 1): boolean {
+  return indexed >= min;
+}
+
 type SpawnFn = (
   command: string,
   args: readonly string[],
