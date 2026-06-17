@@ -66,6 +66,8 @@ class GoldenSourceSyncBuilder {
 /** A source item plus its produced Markdown body — what a stubbed connector serves. */
 export interface StubPage extends SourceItem {
   content: string;
+  /** When set, the connector fails to fetch this page's content (a Notion error). */
+  fetchError?: string;
 }
 
 /** A Notion page with sensible defaults (override per test). */
@@ -77,7 +79,13 @@ export function aNotionPage(overrides: Partial<StubPage> = {}): StubPage {
     url: overrides.url ?? `https://www.notion.so/inqom/${id}`,
     lastEditedTime: overrides.lastEditedTime ?? '2026-06-12T14:21:00.000Z',
     content: overrides.content ?? '# Chaintrust error catalog\n\nWhen the API returns 402…\n',
+    fetchError: overrides.fetchError,
   };
+}
+
+/** A Notion page whose content the connector fails to fetch (e.g. a transient API error). */
+export function anUnreadableNotionPage(overrides: Partial<StubPage> = {}): StubPage {
+  return aNotionPage({ ...overrides, fetchError: overrides.fetchError ?? 'notion: 503' });
 }
 
 /** A declared Notion golden source with sensible defaults (override per test). */
@@ -144,7 +152,9 @@ class StubConnector implements ISourceConnector {
     return this.pages.map(({ content: _content, ...item }) => item);
   }
   async fetchContent(item: SourceItem): Promise<string> {
-    return this.pages.find((p) => p.id === item.id)?.content ?? '';
+    const page = this.pages.find((p) => p.id === item.id);
+    if (page?.fetchError) throw new Error(page.fetchError);
+    return page?.content ?? '';
   }
 }
 
