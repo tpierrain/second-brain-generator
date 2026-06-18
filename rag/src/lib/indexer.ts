@@ -39,7 +39,13 @@ export async function indexPreparedDocs(
   const errors: string[] = [];
 
   for (const doc of docs) {
-    if (doc.chunks.length === 0) continue;
+    if (doc.chunks.length === 0) {
+      // Should not happen now that chunking always seeds a title chunk. If it ever
+      // does, surface it loudly instead of dropping the doc silently (that silent
+      // drop was the F8 root cause): keep it out of the index but account for it.
+      errors.push(`No chunk produced at ${doc.relativePath} (doc skipped)`);
+      continue;
+    }
 
     let embeddings: number[][];
     try {

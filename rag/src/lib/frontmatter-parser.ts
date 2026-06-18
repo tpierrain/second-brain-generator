@@ -34,7 +34,14 @@ function detectType(relativePath: string, fm: Record<string, unknown>): string {
   return "other";
 }
 
-function extractTitle(content: string, relativePath: string): string {
+function extractTitle(
+  content: string,
+  relativePath: string,
+  fm: Record<string, unknown>
+): string {
+  // An explicit frontmatter title wins: golden-source pages carry their real title
+  // here only (the file is named by Notion pageId, the body has no '# Heading').
+  if (typeof fm.title === "string" && fm.title.trim()) return fm.title.trim();
   const match = content.match(/^#\s+(.+)$/m);
   if (match) return match[1].trim();
   const filename = relativePath.split("/").pop() ?? relativePath;
@@ -47,6 +54,6 @@ export function parseDocument(raw: string, relativePath: string): ParsedDocument
   const tags = Array.isArray(frontmatter.tags)
     ? frontmatter.tags.map(String)
     : [];
-  const title = extractTitle(content, relativePath);
+  const title = extractTitle(content, relativePath, frontmatter);
   return { frontmatter, content, type, tags, title };
 }
