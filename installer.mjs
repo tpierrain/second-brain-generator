@@ -42,6 +42,9 @@ import {
   nodeHookCommand,
   minimalPathEnv,
   buildRagInstallInvocation,
+  buildLocalMirrorShLauncher,
+  buildLocalMirrorCmdLauncher,
+  applyLocalMirrorLauncher,
 } from "./scripts/lib/rag-launcher.mjs";
 import { DEMO_BY_LOCALE, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
 import {
@@ -456,11 +459,15 @@ gen(join(TARGET, ".claude", "settings.json.template"), join(TARGET, ".claude", "
 // to the launcher suited to the current OS.
 writeFileSync(join(TARGET, "rag", "launch.sh"), buildShLauncher());
 writeFileSync(join(TARGET, "rag", "launch.cmd"), buildCmdLauncher());
+// Same self-heal for the local-mirror server (pure JS → no rebuild, just PATH).
+writeFileSync(join(TARGET, "local-mirror", "launch.sh"), buildLocalMirrorShLauncher());
+writeFileSync(join(TARGET, "local-mirror", "launch.cmd"), buildLocalMirrorCmdLauncher());
 {
   const mcpPath = join(TARGET, ".mcp.json");
-  const mcp = applyRagLauncher(JSON.parse(readFileSync(mcpPath, "utf8")), process.platform);
+  let mcp = applyRagLauncher(JSON.parse(readFileSync(mcpPath, "utf8")), process.platform);
+  mcp = applyLocalMirrorLauncher(mcp, process.platform);
   writeFileSync(mcpPath, JSON.stringify(mcp, null, 2) + "\n");
-  ok("self-heal RAG launchers generated (launch.sh + launch.cmd), .mcp.json adapted to the OS");
+  ok("self-heal launchers generated (rag + local-mirror, .sh + .cmd), .mcp.json adapted to the OS");
 }
 
 // Self-heal node launchers FOR THE HOOKS (same root cause as the RAG: minimal
@@ -653,6 +660,17 @@ const install = run(ragInstall.command, ragInstall.args, { cwd: rag, stdio: "inh
 if (install.ok) ok("RAG dependencies installed");
 else {
   err("npm install failed in rag/ — re-run: cd rag && npm install");
+  process.exit(1);
+}
+
+// local-mirror deps (pure JS — no native binding, so no ABI-skew concern and
+// a plain npm install is enough; cf. ADR 0021 N/A). The server is wired in .mcp.json
+// above, so its deps must be present for it to boot.
+const gss = join(TARGET, "local-mirror");
+const gssInstall = run(NPM, ["install", "--silent"], { cwd: gss, stdio: "inherit" });
+if (gssInstall.ok) ok("local-mirror dependencies installed");
+else {
+  err("npm install failed in local-mirror/ — re-run: cd local-mirror && npm install");
   process.exit(1);
 }
 

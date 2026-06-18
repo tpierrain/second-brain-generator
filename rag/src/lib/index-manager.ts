@@ -124,7 +124,7 @@ async function runReindex(
       }
 
       const parsed = parseDocument(raw, file.relativePath);
-      const chunks = chunkMarkdown(parsed.content);
+      const chunks = chunkMarkdown(parsed.content, parsed.title);
       toIndex.push({
         relativePath: file.relativePath,
         title: parsed.title,

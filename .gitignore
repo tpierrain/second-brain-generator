@@ -52,6 +52,7 @@ CLAUDE.local.md
 node_modules/
 rag/.cache/
 rag/dist/
+local-mirror/dist/
 
 # ── Misc ────────────────────────────────────────────────────────────
 *.log

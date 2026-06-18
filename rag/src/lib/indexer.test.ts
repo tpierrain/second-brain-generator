@@ -98,7 +98,11 @@ test("calls onProgress after each persisted doc, with its chunk count", async ()
   assert.deepEqual(progress, [2, 3]);
 });
 
-test("ignores docs with no chunks (neither persisted nor counted)", async () => {
+test("a doc with no chunks is surfaced as an error, never silently dropped", async () => {
+  // F8 root cause: a 0-chunk doc used to be `continue`-d — neither indexed nor
+  // counted, breaking the scanned == indexed + skipped + errors invariant and
+  // making the file vanish from the index without a trace. With title-aware
+  // chunking this should not happen for real docs; if it ever does, fail loud.
   const { persisted, persist } = recordingPersist();
   const result = await indexPreparedDocs(
     [doc("empty.md", 0), doc("full.md", 2)],
@@ -107,4 +111,8 @@ test("ignores docs with no chunks (neither persisted nor counted)", async () => 
 
   assert.equal(result.indexed, 1);
   assert.deepEqual(persisted, ["full.md"]);
+  assert.equal(result.errors.length, 1, "the 0-chunk doc must be accounted for");
+  assert.match(result.errors[0], /empty\.md/);
+  // Invariant: every doc given is accounted for (indexed or errored).
+  assert.equal(result.indexed + result.errors.length, 2);
 });

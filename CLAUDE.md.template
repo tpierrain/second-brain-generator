@@ -174,6 +174,28 @@ The RAG (`rag/`) splits each Markdown file into **chunks** (one per `#`/`##`/`##
 
 **⚠️ Fail-loud — never a disguised out-of-vault answer.** If the `mcp__vault-rag__*` tools are **unavailable, missing, or return an error** (MCP server not loaded, missing Gemini key, empty index…), you must **SAY IT LOUDLY** — "⚠️ RAG unavailable: I can't query the vault" — and **REFUSE to fabricate an answer** from the Internet or your general knowledge. A second brain that answers beside the vault *while appearing to work* is worse than a brain that frankly says it's down. This applies **in particular to the demo question** (the user's first contact): no plausible but out-of-vault answer. Instead, indicate how to fix it (key in `.env`, restart Claude Code, `/mcp`).
 
+### Local mirrors — live internal zones mirrored into the vault (optional)
+
+A **local mirror** is a zone of an internal tool (Notion today) you declared once; the
+`local-mirror` MCP server mirrors its pages into `vault/mirrors/<name>/` as Markdown,
+which the RAG then indexes and cites like any other note. Set one up — or sync / inspect / remove one —
+with the **`/local-mirror` skill** (the thin driver; the work runs in the MCP server).
+
+| Operation | Tool |
+|---|---|
+| **Declare / onboard a source** (URL + token env) | `mcp__local-mirror__setup_source` |
+| **Sync the delta + reconcile deletions** (one source or `"all"`) | `mcp__local-mirror__sync` |
+| **Is it behind?** (light, watermark-only) | `mcp__local-mirror__check_freshness` |
+| **State** (last sync, item count, lateness) | `mcp__local-mirror__status` |
+| **List declared sources** | `mcp__local-mirror__list_sources` |
+| **Remove a source** (opt-in `cleanup` deletes its files) | `mcp__local-mirror__remove_source` |
+
+**Routing rule:** when a question is clearly **about a declared source's topic** (the `description`
+captured at setup), **`sync` that one source first** so the answer is fresh, then `search_vault`. Sync
+only the relevant source — never `"all"` on a whim. The token lives **only in `.env`** (`token_env`),
+never in the chat. If a sync returns `partial` (enumeration error), say so — no deletion happened and
+the watermark didn't advance.
+
 ### External sources (optional — to enable depending on your tools)
 
 > 🔧 **To adapt**: this generator only ships the RAG engine. If you want to wire up Slack,

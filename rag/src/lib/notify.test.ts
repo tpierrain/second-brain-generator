@@ -1,7 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { buildNotifyCommand, shouldNotify, notifyDone, isNotifyWorthy } from "./notify.js";
+import {
+  buildNotifyCommand,
+  shouldNotify,
+  notifyDone,
+  isNotifyWorthy,
+  IndexingBurst,
+} from "./notify.js";
 
 test("isNotifyWorthy: nothing indexed → never notify", () => {
   assert.equal(isNotifyWorthy(0), false);
@@ -121,4 +127,44 @@ test("notifyDone: throwing spawn is swallowed → {notified:false}", () => {
   const spawn = () => { throw new Error("ENOENT"); };
   const res = notifyDone({ platform: "darwin", env: {}, title: "t", body: "b", spawn });
   assert.deepEqual(res, { notified: false });
+});
+
+// ── IndexingBurst (Obs 3 / F5): one truthful toast per settled burst ──────────
+// A big sync/import lands in waves; the watcher reindexes each debounced batch.
+// Firing a "done — 8 notes" per batch lies twice (premature "done" + partial
+// count). The burst accumulates the per-pass `indexed` and only fires ONCE the
+// watcher is quiescent (no pending/scheduled work), with the settled TOTAL.
+
+test("IndexingBurst: a pass while more is coming → never fires, just accumulates", () => {
+  const burst = new IndexingBurst();
+  assert.deepEqual(burst.record(8, true, 5), { notify: false, total: 8 });
+  assert.deepEqual(burst.record(10, true, 5), { notify: false, total: 18 });
+});
+
+test("IndexingBurst: settle (no more coming) → ONE final toast with the accumulated total", () => {
+  const burst = new IndexingBurst();
+  burst.record(8, true, 5);
+  burst.record(10, true, 5);
+  assert.deepEqual(burst.record(9, false, 5), { notify: true, total: 27 });
+});
+
+test("IndexingBurst: settled total under the bulk threshold → stays silent", () => {
+  const burst = new IndexingBurst();
+  assert.deepEqual(burst.record(2, false, 5), { notify: false, total: 2 });
+});
+
+test("IndexingBurst: a single settled bulk pass behaves like the old one-shot toast", () => {
+  const burst = new IndexingBurst();
+  assert.deepEqual(burst.record(8, false, 5), { notify: true, total: 8 });
+});
+
+test("IndexingBurst: after settling, the next burst counts from zero (no carry-over)", () => {
+  const burst = new IndexingBurst();
+  assert.deepEqual(burst.record(27, false, 1), { notify: true, total: 27 });
+  assert.deepEqual(burst.record(3, false, 1), { notify: true, total: 3 });
+});
+
+test("IndexingBurst: a quiescent pass that indexed nothing → silent, total 0", () => {
+  const burst = new IndexingBurst();
+  assert.deepEqual(burst.record(0, false, 5), { notify: false, total: 0 });
 });

@@ -43,6 +43,37 @@ artwork instead, for brand polish.
 - [ ] If ever pursued: prefer B behind the existing `shouldNotify`/seam guards, ship the Kenjaku PNG in
   the repo, and degrade to plain `osascript` when `terminal-notifier` is absent.
 
+## 💡 Idea — coalesce the index-done toast across a slow multi-batch burst (ex-R2-4)
+
+During a **slow, multi-batch sync** (e.g. a golden source whose pages come in over the Notion API in
+spurts), the user can see the "Indexing complete — N notes" toast fire **two or three times** instead
+of once. Each count is **truthful** (never a wrong number, never a broken index, never a lost note) —
+it's purely **cosmetic**: several toasts where one would be nicer. Surfaced in golden-source QA round 2
+(observation Obs3 / F5 / "R2-4"); **deliberately dropped** from the golden-source ship — it is an
+**auto-indexation concern, not a golden-source one** (the two are decoupled by design: the MCP only
+writes files, the watcher only watches them; no code link, and we keep it that way).
+
+- [ ] **Root cause:** `IndexingBurst` (`rag/src/lib/notify.ts`) only coalesces waves that overlap
+  within the **5 s debounce** (`reindex-scheduler.ts`). When a writer pauses **longer than the
+  debounce** (network round-trips, rate-limit backoff), each spurt looks like a fully-settled burst →
+  its own "complete" toast.
+- [ ] **The trap (why "perfect" is off the table):** a single toast with the grand total would need the
+  indexer to know "the writer isn't done". The only ways to know are **(a)** the writer signals it →
+  **couples golden-source to the indexer, explicitly refused** (keep them decoupled); or **(b)** a
+  longer trailing **quiet period** before toasting — purely indexer-side, **no coupling**.
+- [ ] **Option, if ever pursued (decoupled):** add a **grace window** in the notify path — after a burst
+  settles, wait ~10–15 s of total silence before toasting; any new write resets it and keeps
+  accumulating; confirmed silence → one toast with the cumulative total. It's a **heuristic timer**
+  (pick the duration, env-tunable), in mild tension with ADR 0009 "prefer deterministic" — **justified
+  only** because no deterministic signal exists without re-introducing the forbidden coupling.
+  Injectable like the scheduler's `setTimer`/`clearTimer`, so testable without real time.
+- [ ] **Estimate:** ~30 min code+test+green, + a manual re-verify on a throwaway brain (the bug only
+  shows under real multi-batch conditions). **Do NOT** scope it back into golden-source if picked up —
+  it lives in `rag/` (auto-indexation), generic across import / sources-sync / golden-source / manual saves.
+
+> Links: [[prefer-deterministic-adr-0009]]. Keep golden-source-sync and auto-indexation **decoupled**
+> (filesystem-only boundary) — this idea must never re-introduce a code link between them.
+
 ## 💡 Idea — a `doctor` / "am I OK?" check-up skill
 
 A brain-side, **read-only**, opt-in self-diagnosis the user can trigger in plain language

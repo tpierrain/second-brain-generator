@@ -17,7 +17,7 @@
 // Everything outside the plan is untouchable BY CONSTRUCTION (the plan is an
 // allowlist) — the Gate asserts byte-identity of the user's sacred files.
 // ─────────────────────────────────────────────────────────────────────────────
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,6 +37,8 @@ import {
   buildCmdLauncher,
   buildNodeRunnerSh,
   buildNodeRunnerCmd,
+  buildLocalMirrorShLauncher,
+  buildLocalMirrorCmdLauncher,
 } from "./lib/rag-launcher.mjs";
 
 function copyInto(srcDir, destDir, rel) {
@@ -49,8 +51,14 @@ function copyInto(srcDir, destDir, rel) {
 const npmExe = (platform) => (platform === "win32" ? "npm.cmd" : "npm");
 
 // ─── Default seams (the real CLI wiring; the Gate injects stubs instead) ──────
-async function defaultRunInstall({ ragDir, platform }) {
+async function defaultRunInstall({ ragDir, brainDir, platform }) {
   execFileSync(npmExe(platform), ["install"], { cwd: ragDir, stdio: "inherit" });
+  // local-mirror deps too, when the brain carries that package (pure JS →
+  // no native build, plain install; absent on pre-local-mirror brains → skip).
+  const gssDir = join(brainDir, "local-mirror");
+  if (existsSync(join(gssDir, "package.json"))) {
+    execFileSync(npmExe(platform), ["install"], { cwd: gssDir, stdio: "inherit" });
+  }
 }
 
 async function defaultRunReindex({ brainDir, platform }) {
@@ -63,6 +71,8 @@ async function defaultRunReindex({ brainDir, platform }) {
 async function defaultRegenerateLaunchers({ brainDir }) {
   writeFileSync(join(brainDir, "rag", "launch.sh"), buildShLauncher());
   writeFileSync(join(brainDir, "rag", "launch.cmd"), buildCmdLauncher());
+  writeFileSync(join(brainDir, "local-mirror", "launch.sh"), buildLocalMirrorShLauncher());
+  writeFileSync(join(brainDir, "local-mirror", "launch.cmd"), buildLocalMirrorCmdLauncher());
   writeFileSync(join(brainDir, "scripts", "run-node.sh"), buildNodeRunnerSh());
   writeFileSync(join(brainDir, "scripts", "run-node.cmd"), buildNodeRunnerCmd());
 }
@@ -129,8 +139,8 @@ export async function updateEngine({
   const regenerated = plan.regenerate.length > 0;
   if (regenerated) await regenerateLaunchers({ brainDir, platform });
 
-  // 5. npm install in the brain's rag/.
-  await runInstall({ ragDir: join(brainDir, "rag"), platform });
+  // 5. npm install in the brain's rag/ (+ local-mirror/ when present).
+  await runInstall({ ragDir: join(brainDir, "rag"), brainDir, platform });
 
   // 6. Reindex IFF the index schema moved (else the existing index stays valid).
   //    The decision is the deterministic `needsReindex` (Step 5, ADR 0009).

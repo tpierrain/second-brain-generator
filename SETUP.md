@@ -289,6 +289,18 @@ side. These **are not wired up in `.mcp.json`**: enable them from the *Connector
 account (Settings → Connectors). The wizard (a) reminds you of this for these sources and writes nothing
 for them.
 
+### (d) Local mirrors — *mirror* a Notion zone into your vault
+
+Distinct from the search connectors above: a **local mirror** keeps a chosen **Notion** zone mirrored
+into `vault/mirrors/<name>/` as Markdown, so the RAG indexes and **cites** it like any other
+note (see the **Local mirrors** section of [CONNECTORS.md](CONNECTORS.md)).
+The **`local-mirror`** MCP server ships with every brain; drive it with the **`/local-mirror`
+skill** (*"set up a local mirror of a Notion zone"*). Create a Notion integration
+(<https://www.notion.so/my-integrations>), **share it on the root page** of the zone, put its token in
+`.env` under a name of your choice (e.g. `NOTION_TOKEN_PASC=secret_…`), and pass **that env-var name**
+to the skill — **the token never travels through the chat**. The skill tests the scope, does the first
+sync, and explains each step.
+
 ## 7. Backup & multi-machine portability (remote repo)
 
 Set up a private git remote, **then enable push** (without it, auto-commit stays local — it's

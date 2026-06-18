@@ -36,6 +36,94 @@ This file is an **idea menu** to help you choose *what* to wire up based on *you
 
 ---
 
+## 🪞 Local mirrors — *mirror* a live source into your vault (≠ a search connector)
+
+A **connector** lets the brain **reach out and search** an external source on the fly. A **local
+mirror** (a *copie miroir* / *réplica locale*) does the opposite: it **mirrors** a chosen zone of an
+internal tool **into your vault** as Markdown, so the source's content becomes **first-class, indexed,
+citable notes** — *the central RAG you don't have yet, but local and right now.*
+
+- **Today: Notion.** You declare the **root page** of a zone (its whole sub-tree is in scope) and the
+  brain keeps `vault/mirrors/<name>/` in sync with it — new/edited pages rewritten, deleted /
+  out-of-scope pages removed, delta-only (no noise).
+- **How:** the **`/local-mirror` skill** drives it (onboard, sync, check freshness, status, remove);
+  the work runs in the built-in **`local-mirror`** MCP server. The Notion integration **token
+  lives only in `.env`**, never in the chat.
+- **When to prefer it over a Notion search connector:** when a body of reference docs is **a reliable
+  reference** for recurring questions and you want it **always fresh, framed and cited** inside the
+  brain — not searched ad hoc, side by side.
+
+> Setup walk-through: ask your brain *"set up a local mirror of a Notion zone"* (or run `/local-mirror`).
+> The skill explains each step and tests the scope before the first sync.
+
+> 🔑 **Need a Notion token?** Follow the click-by-click, screenshot guide:
+> **[Create a Notion token — step by step](docs/notion-token-setup.md)** (~3 min, no coding).
+
+**What gets mirrored — and what doesn't.** Only the **declared root page and its sub-tree** is pulled
+in: every page's **Notion text** becomes a searchable, citable note. Two limits to know up front:
+
+- **Links to other Notion spaces are not copied** — a page merely *linked* from the zone but living in
+  another tree stays a link, not a local note.
+- **Attached PDFs and Google Slides are not extracted** — only the page's Notion text is mirrored, not
+  the contents of embedded files. (Your brain flags this at use-time when a question would need them.)
+  If you need a PDF/Slides' key facts indexed, paste them into the Notion page as text.
+
+### 🤔 Why a local mirror — and when it's (not) worth it
+
+In an **ideal** world there would be a **central search platform**: one hosted index, plugged in real
+time onto every internal tool, available to everyone — including people without a second brain. That's
+the **target**. It usually **doesn't exist yet** in your company.
+
+A local mirror is the **local-first** answer in the meantime: instead of waiting for that central
+infrastructure, **your own brain mirrors** the live zone that concerns you and indexes it locally. Zero
+infra to operate, works today, and the day a central platform arrives you switch over **without
+rewriting anything** — same concept, same vault, same content.
+
+**Reach for a local mirror when:**
+
+- there is **no central search platform** for your team, but a body of reference docs lives in Notion;
+- you want that zone **always fresh, framed and cited** inside the brain — not searched ad hoc,
+  side by side, every time;
+- you value **offline / local-first**: the content is real notes in your vault, searchable and
+  citable even with no network.
+
+**Don't bother (use something else) when:**
+
+- a **real central MCP / search platform** already exists → just query that instead;
+- it's **one-off** content → paste it into a plain note, no mirroring machinery needed;
+- the source **isn't Notion** → not supported yet (Drive / Slack / … are on the trajectory, not here
+  today).
+
+```mermaid
+flowchart LR
+  subgraph Target["🎯 Target — when a central platform EXISTS"]
+    direction LR
+    B1[Second brain A] --> CMCP[(Central MCP /<br/>hosted search platform)]
+    B2[Second brain B] --> CMCP
+    CMCP --> N1[Notion]
+    CMCP --> S1[Slack]
+    CMCP --> D1[Drive]
+  end
+
+  subgraph Local["🦾 Local-first — local-mirror (today)"]
+    direction LR
+    GB[Your second brain] --> GS[Local mirror]
+    GS -- mirror sub-tree --> V[(vault/mirrors/&lt;name&gt;)]
+    V --> RAG[Local RAG: search + cite]
+    GS -. read-only .-> NX[Notion zone]
+  end
+```
+
+> **With** central infrastructure, brains query one hosted platform. **Without** it, a local mirror
+> replicates a live zone into your **own** vault — searchable, citable, yours, right now. Same
+> vault contract; the day a central platform exists, you switch over without rewriting the engine.
+
+> 🛠️ *Maintainers:* the full rationale lives in the PRD —
+> [positioning (§1)](maintainers/plans/prd-golden-source-sync.md#1-problem--positioning) and
+> [trajectory (§19)](maintainers/plans/prd-golden-source-sync.md#19-trajectory-out-of-mvp).
+
+---
+
 ## 🎙️ Meeting transcripts — a use case, not a connector
 
 This is the classic trap: people go looking for "the transcripts connector." **You don't need

@@ -6,6 +6,13 @@
       "args": ["tsx", "rag/src/index.ts"],
       "cwd": "{{PROJECT_ROOT}}",
       "env": {}
+    },
+    "local-mirror": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["tsx", "local-mirror/src/server.ts"],
+      "cwd": "{{PROJECT_ROOT}}",
+      "env": {}
     }
   }
 }

@@ -122,6 +122,22 @@
     brain exceeds a 350k effective context out of the box** ("levier 2"). Absolute `…WINDOW` var (reliable, self-
     clamps ≤ model limit → inert/harmless on 200k plans) over the buggy percentage override. **Scope: Second
     brain (runtime) + Installer.**
+  - [`0019-import-previous-brain-is-a-keyword-skill.md`](decisions/0019-import-previous-brain-is-a-keyword-skill.md) —
+    importing a previous brain's notes is a **keyword-driven `import` skill** over a deterministic core
+    (not a `vault-rag` tool, not an installer flag); Kenjaku is flavour only. **Scope: Second brain
+    (runtime) + Installer.**
+  - [`0020-node-compatibility-policy-for-native-deps.md`](decisions/0020-node-compatibility-policy-for-native-deps.md) —
+    the **Node-compatibility policy** for the native dep (`better-sqlite3`): supported Node range +
+    how the launcher behaves across versions. **Scope: Second brain (runtime) + Installer.**
+  - [`0021-align-install-node-with-runtime-node-and-self-heal-abi.md`](decisions/0021-align-install-node-with-runtime-node-and-self-heal-abi.md) —
+    **ABI skew fix**: align the install Node with the runtime Node (launcher PATH self-heal) **and**
+    auto-rebuild on an ABI error at runtime. **Scope: Second brain (runtime) + Installer.**
+  - [`0022-golden-source-sync-separate-file-writing-mcp.md`](decisions/0022-golden-source-sync-separate-file-writing-mcp.md) —
+    the **`local-mirror`** MCP (named `golden-source-sync` at the time of this ADR) **is a separate,
+    file-writing local MCP**, decoupled from the RAG by the filesystem (not a `vault-rag` tool): it
+    declares first-class **local mirrors** and synchronizes their content into the vault as Markdown;
+    the FileWatcher + hook do indexing/commit. Hexagonal ports & adapters (MVP Notion-only).
+    **Scope: Second brain (runtime) + Installer.**
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
@@ -129,7 +145,13 @@
 - **`plans/`** — implementation plans, each with a `STATUS` line at the **top**
   (🗺️ ACTION PLAN / 🔬 STUDY / 🔭 PROSPECTIVE / 💡 BACKLOG / ⏳ PENDING / IN PROGRESS / ✅ SHIPPED / ABANDONED).
   Three buckets along a **past · present · future** axis:
-  - **root of `plans/` = present** — action plans **mid-flight** (currently none: everything shipped).
+  - **root of `plans/` = present** — action plans **mid-flight**:
+    - [`golden-source-sync-action.md`](plans/golden-source-sync-action.md) — **🗺️ action plan** for
+      the **`local-mirror`** MCP (named `golden-source-sync` when this plan was written — a new local MCP
+      that synchronizes declared **local mirrors** into the vault; ADR 0022,
+      PRD [`prd-golden-source-sync.md`](plans/prd-golden-source-sync.md)). Self-contained
+      steps with a Tracking table to drive it session by session (a `/clear` between each). **STATUS:
+      🚧 ACTIVE — not started.**
   - [**`plans/prospective/`**](plans/prospective/) **= future** — not closed, forward-looking: living
     studies/watch, backlogs, and **conditional/parked** tails of otherwise-shipped plans.
   - [**`plans/archived/`**](plans/archived/) **= past** — shipped or closed plans (kept for the step detail).

@@ -23,7 +23,7 @@ function splitAtParagraphs(text: string, maxChars: number): string[] {
   return pieces;
 }
 
-export function chunkMarkdown(content: string): Chunk[] {
+export function chunkMarkdown(content: string, title?: string): Chunk[] {
   const lines = content.split("\n");
   const sections: { heading: string; body: string }[] = [];
   let currentHeading = "(intro)";
@@ -47,6 +47,15 @@ export function chunkMarkdown(content: string): Chunk[] {
 
   const chunks: Chunk[] = [];
   let index = 0;
+
+  // Seed a dedicated title chunk so that (a) a title-only / empty-body page never
+  // collapses to 0 chunks (and gets silently dropped at indexing time), and (b) the
+  // title is always a first-class search signal — even for pages whose body never
+  // repeats it (F8 + F11).
+  const titleTrimmed = title?.trim();
+  if (titleTrimmed) {
+    chunks.push({ section: "(title)", content: titleTrimmed, index: index++ });
+  }
 
   for (const section of sections) {
     const bodyTrimmed = section.body.trim();
