@@ -63,8 +63,11 @@ Thomas must ship tonight so Inqom colleagues can start using it. Reprioritized:
 - [ ] **Step 6 — Ship (up to merge)**
   - [ ] 6a — Push branch `golden-source-sync`
   - [ ] 6b — Open PR (codename « The One With… », EN body) — describe the QA round + the 3 fixes + doc
-  - [ ] 6c — Run `/code-review` on the full branch diff (first time on this branch) — triage findings
-  - [ ] 6d — Fix accepted findings (TDD, green) — defer the rest to a backlog note
+  - [~] 6c — Run `/code-review` on the full branch diff (first time on this branch) — triage findings
+        _(2026-06-18 · run early/autonomously while Step 5 pends; 7 finder angles. Net: 1 real fix, rest
+        refuted or low-priority backlog — see below.)_
+  - [x] 6d — Fix accepted findings (TDD, green) — defer the rest to a backlog note _(2026-06-18 · c903dbc:
+        deletion-loop try/catch guard; deferred findings → backlog)_
   - [ ] 6e — Final manual QA pass green
   - [ ] 6f — Merge to `main` + tag (semver + codename)
   - [ ] 6g — Archive delivered plans (`git mv` → `plans/archived/`, STATUS ✅ + proof), update plans README
@@ -215,3 +218,20 @@ flowchart LR
 - [ ] True async "answer now, correction arrives later" (turn-relaunch) — F10 background freshness.
 - [ ] Retrieval dedup across overlapping sources (O1 from Block B).
 - [ ] Bloc B deferred items F2/F10 and any non-blocker polish.
+
+### Code-review findings deferred (2026-06-18, not blocking the ship)
+
+- [ ] **Concurrent `sync()` of the SAME source has no lock** — two interleaved syncs race on the
+      state read-modify-write (last-write-wins). Low for the single-process MCP / serial UX of the
+      MVP; revisit if multi-window concurrency lands. (`golden-source-sync.ts:sync`)
+- [ ] **`checkFreshness()` throws on an enumeration error** (401/429/network) instead of returning a
+      degraded report. Loud failure is acceptable (the tool relays it), but a `{ behind: false,
+      error }` shape would be friendlier for the local-first background check. (`golden-source-sync.ts:checkFreshness`)
+- [ ] **Source `name` has no path-safety validation** (bare `z.string()`). `path.join` currently
+      normalizes safely, so it's latent, not exploitable today; add an allowlist (`^[a-z0-9-]+$`) when
+      convenient. (`golden-source-sync/src/index.ts` setup schema)
+- [ ] **`contentHash` / `resolvePath` duplicated** between `rag/` and `golden-source-sync/` — by
+      design (package isolation, no cross-import), noted so a future shared-utils pass can reconsider.
+- [x] **REFUTED (no action):** `extractPageId` 32-hex anchor (correct — takes the final 32 hex);
+      markdown-link parens regex (non-Notion targets returned verbatim → no corruption; Notion canonical
+      URLs carry no parens). F6 citations stand. _(2026-06-18)_
