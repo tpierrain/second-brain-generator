@@ -77,12 +77,17 @@ one-off/live/now → native connector. Only ask when genuinely ambiguous.
 - [x] **Lot 3 — archives: DO NOT rewrite** (ADRs 0023/0024, plans `golden-source-*`,
       `prd-golden-source-sync.md` = history, Thomas's no-rewrite rule). Added the *optional* forward-note
       line in **ADR 0022** (renamed `golden-source-sync` → `local-mirror`); ADR body kept verbatim.
-- [ ] **Ship** (on Thomas's green light)
+- [ ] **Ship** (on Thomas's green light) — **order inverted: shipped first, QA the official version next** *(Thomas, 2026-06-19)*
   - [x] update **PR #12** title/body with the release codename (EN; pre-flight EN check) *(2026-06-18)*
-  - [ ] `/code-review` → fix findings TDD, commit-only-green
-  - [ ] manual QA on a fresh disposable brain installed from the branch
-  - [ ] merge → tag **v3.2.0** → archive this plan (`git mv` to `archived/` + STATUS ✅ with proof) →
-        purge test brains
+  - [x] `/code-review` → fix findings TDD, commit-only-green *(2026-06-19 · `f84baac`)* — manifest
+        skill path `golden-source` → `local-mirror` + a structural guard test
+        (`engine-manifest-integrity.test.mjs`) + residual wording purge; harness 296/296,
+        local-mirror 84/84, rag 178/178, tsc clean
+  - [x] merge → tag **v3.2.0** *(2026-06-19 · merge `8c93745`, tag `v3.2.0`)*
+  - [ ] **post-release** manual QA on the official version (main/`v3.2.0`) *(Thomas, tomorrow)* — a
+        bug here means a `v3.2.1` follow-up, not a re-tag
+  - [ ] archive this plan (`git mv` to `archived/` + STATUS ✅ with proof) → purge test brains
+        (`~/gss-qa-fresh`, `~/gss-qa-brain`) — **after** the post-release QA passes
 
 ## Open decisions — RESOLVED
 
@@ -92,7 +97,8 @@ one-off/live/now → native connector. Only ask when genuinely ambiguous.
 
 ## Context for a fresh session (after `/clear`)
 
-- Branch `golden-source-sync`, **not pushed since Lot 1** (`1857af5` is local). PR #12 open.
+- **SHIPPED**: PR #12 merged into `main` (`8c93745`), tag **`v3.2.0`** pushed *(2026-06-19)*. Only
+  post-release QA + plan archival + test-brain purge remain (see Ship section).
 - Test commands: MCP suite `cd local-mirror && npm test` (+ `npm run typecheck`); harness
   `node --test $(find . -name '*.test.mjs' -not -path '*/node_modules/*')`.
 - macOS has no `timeout`; boot smoke = self-terminating node spawn (see this session's history).
