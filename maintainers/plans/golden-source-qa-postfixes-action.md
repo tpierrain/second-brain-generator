@@ -57,8 +57,8 @@ Thomas must ship tonight so Inqom colleagues can start using it. Reprioritized:
   - [x] 4c — Cross-link the maintainers PRD (§1 positioning, §19 trajectory) so the two stay in sync _(97310a4 · both-way links, anchors verified)_
   - [x] 4d — Commit (docs) _(97310a4)_
 - [ ] **Step 5 — Fresh end-to-end validation** (new throwaway brain)
-  - [ ] 5a — Install a brand-new throwaway brain from the branch
-  - [ ] 5b — Re-run the in-perimeter flow: local-first latency OK, toast correct, disclaimer shown, citations `www.notion.so`
+  - [x] 5a — Install a brand-new throwaway brain from the branch _(2026-06-18 · `~/gss-qa-ship`, in-process, post-flight canary OK; golden-source skill + MCP 6 tools smoke-tested green)_
+  - [ ] 5b — Re-run the in-perimeter flow: local-first latency OK, toast correct, disclaimer shown, citations `www.notion.so` _(Thomas — manual QA, new conversation rooted in `~/gss-qa-ship`)_
   - [ ] 5c — Record result; fix any regression (back to the relevant step) before shipping
 - [ ] **Step 6 — Ship (up to merge)**
   - [ ] 6a — Push branch `golden-source-sync`
