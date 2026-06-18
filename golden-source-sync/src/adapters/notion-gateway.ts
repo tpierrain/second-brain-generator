@@ -11,7 +11,44 @@ import type { GoldenSourceConfig } from '../domain/types.js';
 import { NotionConnector } from './notion-connector.js';
 import type { NotionGateway, NotionSearchResponse } from './notion-connector.js';
 import { readEnvVarFresh } from '../lib/fresh-env.js';
-import { childPageToMarkdown, linkToPageToMarkdown } from '../lib/notion-transformers.js';
+import {
+  childPageToMarkdown,
+  linkToPageToMarkdown,
+  makeChildDatabaseTransformer,
+} from '../lib/notion-transformers.js';
+
+/** A row as the child-database transformer consumes it (raw Notion page slice). */
+interface NotionDatabaseRow {
+  id: string;
+  properties: Record<string, { type: string }>;
+}
+
+// B2 (R2-7a): resolve a `child_database` block id to its rows. Notion API 2025-09-03 split a
+// database into data sources (the v5 SDK dropped `databases.query`): retrieve the database, then
+// page through each data source. Falls back to querying the block id directly as a data source if
+// the retrieve response carries no `data_sources` (older shapes). Errors bubble to the transformer,
+// which degrades to a link rather than failing the page.
+async function queryNotionDatabaseRows(client: Client, databaseId: string): Promise<NotionDatabaseRow[]> {
+  const db = (await client.databases.retrieve({ database_id: databaseId })) as unknown as {
+    data_sources?: { id: string }[];
+  };
+  const dataSourceIds = (db.data_sources ?? []).map((ds) => ds.id);
+  const ids = dataSourceIds.length ? dataSourceIds : [databaseId];
+  const rows: NotionDatabaseRow[] = [];
+  for (const dataSourceId of ids) {
+    let cursor: string | undefined;
+    do {
+      const res = (await client.dataSources.query({
+        data_source_id: dataSourceId,
+        start_cursor: cursor,
+        page_size: 100,
+      })) as unknown as { results: NotionDatabaseRow[]; has_more: boolean; next_cursor: string | null };
+      rows.push(...res.results);
+      cursor = res.has_more ? res.next_cursor ?? undefined : undefined;
+    } while (cursor);
+  }
+  return rows;
+}
 
 class NotionSdkGateway implements NotionGateway {
   private readonly n2m: NotionToMarkdown;
@@ -28,6 +65,14 @@ class NotionSdkGateway implements NotionGateway {
     );
     this.n2m.setCustomTransformer('link_to_page', (block) =>
       linkToPageToMarkdown(block as unknown as Parameters<typeof linkToPageToMarkdown>[0]),
+    );
+    // B2 (R2-7a): notion-to-md renders only a database's title — its rows (the real content) were
+    // lost, mirroring the page as an empty container. Query the database and render its rows.
+    const childDatabase = makeChildDatabaseTransformer((databaseId) =>
+      queryNotionDatabaseRows(client, databaseId),
+    );
+    this.n2m.setCustomTransformer('child_database', (block) =>
+      childDatabase(block as unknown as Parameters<typeof childDatabase>[0]),
     );
   }
 
