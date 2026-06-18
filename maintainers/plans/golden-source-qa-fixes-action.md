@@ -24,12 +24,12 @@
   - [x] 1d. Invariant test (indexer level): a 0-chunk doc is surfaced as an error, never silently dropped
   - [ ] 1e. Field re-validation on `~/gss-qa-brain` (`--force` reindex → Naxos indexed, ≥1 chunk) — **needs Thomas (disposable brain)**
   - [x] 1f. Commit (fix) + docs/ADR note (ADR 0024)
-- [ ] **Step 2 — F6: canonicalize Notion URLs (MCP side)**
-  - [ ] 2a. Failing test: `app.notion.com/p/<uuid>` → `https://www.notion.so/<id32>`
-  - [ ] 2b. Failing test: inline body links normalized; stable `www.notion.so` links preserved
-  - [ ] 2c. Implement canonicalizer in `notion-url.ts`; wire into `source_url` + body
-  - [ ] 2d. Non-regression: **no `app.notion.com/p/` ever emitted** (frontmatter + inline)
-  - [ ] 2e. Commit (fix) + docs
+- [x] **Step 2 — F6: canonicalize Notion URLs (MCP side)** _(2026-06-18)_
+  - [x] 2a. Failing test: `app.notion.com/p/<uuid>` → `https://www.notion.so/<id32>`
+  - [x] 2b. Failing test: inline body links normalized; stable `www.notion.so` links preserved
+  - [x] 2c. Implement canonicalizer in `notion-url.ts`; wire into `source_url` + body
+  - [x] 2d. Non-regression: **no `app.notion.com/p/` ever emitted** (frontmatter + inline)
+  - [x] 2e. Commit (fix) + docs
 - [ ] **Step 3 — F3: read the token at call-time, not at boot (MCP side)**
   - [ ] 3a. Failing test: token absent at boot, added to `.env` later → `setup_source` reads it, no restart
   - [ ] 3b. Implement: fresh `.env` read seam at token resolution time
