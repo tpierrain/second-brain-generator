@@ -34,19 +34,19 @@
   - [x] 3a. Failing test: token absent at boot, added to `.env` later → `buildNotionConnector` reads it, no restart
   - [x] 3b. Implement: fresh `.env` read seam (`fresh-env.ts`) at token resolution time
   - [x] 3c. Commit (fix) + docs
-- [ ] **Step 4 — F4 + F1: skill wording (no prod code)**
-  - [ ] 4a. F1: FR user-facing term "source de vérité" (never "source d'or") + terminology directive
-  - [ ] 4b. F4: restart instruction = "quit & relaunch Claude Desktop, reopen the **same** conversation"
+- [x] **Step 4 — F4 + F1: skill wording (no prod code)** _(2026-06-18)_
+  - [x] 4a. F1: FR user-facing term "source de vérité" (never "source d'or") + terminology directive
+  - [x] 4b. F4: restart instruction = "quit & relaunch Claude Desktop, reopen the **same** conversation"
         (NOT "new conversation"); do **not** suggest `/mcp` in Desktop (it opens the Directory; CLI-only)
-  - [ ] 4c. Commit (docs)
-- [ ] **Step 5 — F9: exploit what the sync just wrote (skill)**
-  - [ ] 5a. After a sync, announce the titles of written/updated pages
-  - [ ] 5b. Before concluding "nothing in the vault", list the perimeter titles (cheap) + temper confidence
+  - [x] 4c. Commit (docs)
+- [x] **Step 5 — F9: exploit what the sync just wrote (skill)** _(2026-06-18)_
+  - [x] 5a. After a sync, announce the titles of written/updated pages
+  - [x] 5b. Before concluding "nothing in the vault", list the perimeter titles (cheap) + temper confidence
         when the index may lag the disk
-  - [ ] 5c. Commit (docs)
-- [ ] **Step 6 — F7: narrate the long, silent calls (skill)**
-  - [ ] 6a. Narrate before `setup_source` / first sync (steps + rough duration)
-  - [ ] 6b. Commit (docs)
+  - [x] 5c. Commit (docs)
+- [x] **Step 6 — F7: narrate the long, silent calls (skill)** _(2026-06-18)_
+  - [x] 6a. Narrate before `setup_source` / first sync (steps + rough duration)
+  - [x] 6b. Commit (docs)
 - [ ] **Step 7 — Fresh end-to-end validation + publish**
   - [ ] 7a. Fresh disposable-brain install from the branch; point a golden source at the **client zone**
         (title-heavy Notion = exactly the F8 case) → setup, sync, ask → cited + found

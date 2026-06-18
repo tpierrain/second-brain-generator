@@ -1,6 +1,6 @@
 ---
 name: golden-source
-description: "Declare and synchronize a GOLDEN SOURCE — a live zone of an internal tool (Notion today) whose content is mirrored into this brain's vault as Markdown, so the RAG can search and cite it. Use when the user wants to connect / declare / set up a golden source, sync / refresh / update one (e.g. 'sync the PA-SC golden source from Notion', 'refresh my product golden source', 'connecte la source d'or Notion'), check whether one is behind, list them, or remove one. The actual work runs in the golden-source-sync MCP server; this skill is the thin conversational driver."
+description: "Declare and synchronize a GOLDEN SOURCE — a live zone of an internal tool (Notion today) whose content is mirrored into this brain's vault as Markdown, so the RAG can search and cite it. Use when the user wants to connect / declare / set up a golden source, sync / refresh / update one (e.g. 'sync the PA-SC golden source from Notion', 'refresh my product golden source', 'connecte la source de vérité Notion'), check whether one is behind, list them, or remove one. The actual work runs in the golden-source-sync MCP server; this skill is the thin conversational driver."
 version: 1.0.0
 ---
 
@@ -29,6 +29,14 @@ Load this whenever the user wants to work with a golden source, in any language:
 > source's topic** (the `description` you captured at setup), it is good practice to **`sync` that one
 > source first** so the answer is fresh, then search. Sync only the relevant source, never all of them.
 
+## Terminology — what to call it when speaking to the user
+
+In **English**, "golden source" is fine. In **French**, the user-facing term is **« source de vérité »**
+— **never** "source d'or" (a literal calque that sounds wrong). Mirror the user's own wording when they
+have one. The **identifiers stay English everywhere** regardless of the spoken language: the skill name
+`golden-source`, the frontmatter key `golden_source`, the folder `vault/golden-sources/<name>/`, the MCP
+tools — never translate those.
+
 ## Golden rule — the token NEVER travels through the chat
 
 The Notion integration token is a secret. It goes **only into `.env`**, referenced by name
@@ -50,9 +58,14 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
    line `^<token_env>=<their integration token>` (e.g. `NOTION_TOKEN_PASC=secret_…`), save, and that
    the Notion integration must be **shared on the root page** (Notion → page → ••• → Connections) so
    the scoped read works. Free integration: <https://www.notion.so/my-integrations>.
-3. **Call `setup_source`** with the five fields. It **tests the scope** (a scoped search that returns
-   only the zone), does the **first sync**, writes the config (`golden-source-sync.config.json`, the
-   versioned source of truth) and the sidecar state, and returns a step-by-step `message`.
+3. **Narrate, then call `setup_source`.** `setup_source` and the first sync are a **single, silent,
+   possibly long call** (no live progress): it explores the whole perimeter, then downloads & converts
+   every page. **Before** calling it, tell the user what's about to happen and roughly how long — e.g.
+   *"I'll connect, explore the zone (a few seconds to ~1 min on a large one), then download & convert each
+   page — this can take a minute or two; I'll report what came in."* — so the wait doesn't read as a
+   freeze. Then call it with the five fields. It **tests the scope** (a scoped search that returns only
+   the zone), does the **first sync**, writes the config (`golden-source-sync.config.json`, the versioned
+   source of truth) and the sidecar state, and returns a step-by-step `message`.
 4. **Report** what came back. A **0-pages** result means "the integration is not connected to the root
    page yet" → have the user share it, then re-run. An **enumeration/401 error** is distinct from
    "0 pages" — relay it as-is, do not pretend it synced.
@@ -63,8 +76,10 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
 
 ## Already-installed brain that predates this feature
 
-If `/mcp` does not list a `golden-source-sync` server (a brain installed before this engine version),
-it just needs the same one-time wiring every other server got at install:
+If the `golden-source-sync` tools are not available (a brain installed before this engine version),
+it just needs the same one-time wiring every other server got at install. *(On the CLI you can confirm
+with `/mcp`; in the Desktop app `/mcp` opens the connectors **Directory**, not the local server list, so
+don't rely on it there — just check whether the tools respond.)*
 
 1. Add the server block to `.mcp.json` (idempotent — skip if already present):
    ```json
@@ -75,7 +90,14 @@ it just needs the same one-time wiring every other server got at install:
    args: ["golden-source-sync/launch.sh"]` on macOS/Linux, the `.cmd` on Windows — exactly like
    `vault-rag`.)
 2. Install its deps once: `cd golden-source-sync && npm install`.
-3. **Restart the conversation** (the MCP list is frozen at session start), then run `setup_source`.
+3. **Pick up the new server** (the MCP list is frozen at session start). In the **Desktop app**, the
+   reliable way is to **quit & relaunch Claude Desktop, then reopen the _same_ conversation** — do **not**
+   tell the user to "open a new conversation" (it spawns a duplicate of a pinned/named conversation and
+   can leave two windows on one vault). On the **CLI**, relaunch `claude` in the brain folder. Then run
+   `setup_source`.
+
+> Note: the per-source **token** no longer requires any restart — it is read fresh from `.env` at
+> call-time (F3). A restart is only ever needed to make Claude pick up a **new `.mcp.json` entry**.
 
 > Running `/update-engine` delivers the server's code and launchers to such a brain automatically;
 > this manual wiring only covers the `.mcp.json` entry, which is per-machine and never overwritten.
@@ -92,6 +114,24 @@ it just needs the same one-time wiring every other server got at install:
 - **`list_sources`** — all declared sources and their state.
 - **`remove_source <name>`** — de-registers it from the config. Pass `cleanup: true` to also delete the
   synced `.md` files and the sidecar state (the notes leave the vault → the RAG de-indexes them).
+
+## Exploit the sync, and never give a confident false negative (important)
+
+The sync result tells you exactly what just landed — **use it**, don't sync then search blind:
+
+- **After a sync, name what changed.** Report the **titles** of the pages written/updated (and removed),
+  not just counts — e.g. *"I pulled in 2 updated pages: **Naxos**, **Onboarding checklist**."* The user
+  recognizes their content and trusts the mirror.
+- **Before concluding "there's nothing on this in your vault", stop.** A golden source you just synced
+  may not be searchable **yet**: the FileWatcher reindexes the new files a moment after they hit disk, so
+  the index can briefly **lag the disk**. So:
+  - **List the perimeter titles** (cheap — `status` / the just-synced report, or a quick look at
+    `vault/golden-sources/<name>/`) before declaring absence. The page may be right there, freshly
+    written, just not embedded yet.
+  - **Search by the actual title/keywords**, not only by theme — a page titled "Naxos" won't surface
+    under "Greek islands" if only its body is matched (and titles are now indexed precisely for this).
+  - **Temper confidence**: say *"I just synced it; the index may need a moment — the page **Naxos** is in
+    the perimeter"* rather than a flat *"nothing found"*. A confident false negative is the worst outcome.
 
 ## What it touches vs NEVER touches
 
