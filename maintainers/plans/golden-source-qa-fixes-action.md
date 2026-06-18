@@ -30,10 +30,10 @@
   - [x] 2c. Implement canonicalizer in `notion-url.ts`; wire into `source_url` + body
   - [x] 2d. Non-regression: **no `app.notion.com/p/` ever emitted** (frontmatter + inline)
   - [x] 2e. Commit (fix) + docs
-- [ ] **Step 3 — F3: read the token at call-time, not at boot (MCP side)**
-  - [ ] 3a. Failing test: token absent at boot, added to `.env` later → `setup_source` reads it, no restart
-  - [ ] 3b. Implement: fresh `.env` read seam at token resolution time
-  - [ ] 3c. Commit (fix) + docs
+- [x] **Step 3 — F3: read the token at call-time, not at boot (MCP side)** _(2026-06-18)_
+  - [x] 3a. Failing test: token absent at boot, added to `.env` later → `buildNotionConnector` reads it, no restart
+  - [x] 3b. Implement: fresh `.env` read seam (`fresh-env.ts`) at token resolution time
+  - [x] 3c. Commit (fix) + docs
 - [ ] **Step 4 — F4 + F1: skill wording (no prod code)**
   - [ ] 4a. F1: FR user-facing term "source de vérité" (never "source d'or") + terminology directive
   - [ ] 4b. F4: restart instruction = "quit & relaunch Claude Desktop, reopen the **same** conversation"
