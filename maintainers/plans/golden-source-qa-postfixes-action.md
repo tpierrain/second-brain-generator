@@ -41,11 +41,11 @@ Thomas must ship tonight so Inqom colleagues can start using it. Reprioritized:
   - [x] 1c — Add "already synced this session → don't re-sync" guard wording _(8aece94)_
   - [x] 1d — Cap default RAG passes (1 targeted search; widen only if first pass is poor) _(8aece94)_
   - [ ] 1e — Client checkpoint (Thomas) on the new in-perimeter behavior → folded into Step 5 fresh validation
-- [ ] **Step 2 — Obs 3 (= F5): indexing-toast wording** (RAG `notify`)
-  - [ ] 2a — Locate FileWatcher debounce + notifier; reproduce mid-index "done/partial" with a RED test
-  - [ ] 2b — Distinguish in-progress (no "done", non-final/uncounted) from final (settled, correct count)
-  - [ ] 2c — Green; full rag suite + tsc
-  - [ ] 2d — Client checkpoint (toast wording during a real sync) → green commit
+- [x] **Step 2 — Obs 3 (= F5): indexing-toast wording** (RAG `notify`) _(2026-06-18 · ee770f2)_
+  - [x] 2a — Locate FileWatcher debounce + notifier; reproduce mid-index "done/partial" with a RED test _(ee770f2 · IndexingBurst RED→GREEN)_
+  - [x] 2b — Distinguish in-progress (no "done", non-final/uncounted) from final (settled, correct count) _(ee770f2 · accumulate + settle, "complete" wording)_
+  - [x] 2c — Green; full rag suite + tsc _(ee770f2 · rag 178/178, tsc clean)_
+  - [ ] 2d — Client checkpoint (toast wording during a real sync) → folded into Step 5 fresh validation
 - [x] **Step 3 — Obs 5: scope disclaimer** (skill wording) _(2026-06-18 · 8aece94)_
   - [x] 3a — Onboarding disclaimer: only the root page's sub-tree is mirrored; links to other Notion spaces are not _(8aece94)_
   - [x] 3b — Repeat the limit in the post-sync recap _(8aece94)_
