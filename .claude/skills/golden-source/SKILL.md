@@ -104,13 +104,13 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
 
    **How to get that Notion token** (walk a non-dev through it; the full screenshot guide is
    [`docs/notion-token-setup.md`](../../../docs/notion-token-setup.md) — point them there if they want pictures):
-   1. Open <https://www.notion.so/my-integrations> → **New integration** → type **Internal** → give it
-      a name (e.g. "second brain — PA/SC") → **Save**.
-   2. Copy the **Internal Integration Secret** (it starts with `secret_` or `ntn_`) — that's the value
-      to paste into `.env`.
-   3. **Share the integration on the root page** so the scoped read works: open the root Notion page →
-      **•••** (top-right) → **Connections** → add your integration. Without this share, the first sync
-      returns **0 pages**.
+   1. Open <https://app.notion.com/developers/connections> → **+ New connection** → give it a name (e.g.
+      "second-brain-mirroring"), authentication method **Access token**, pick the workspace → **Create
+      connection**. (On the Configuration tab, keep capabilities read-only — **Read content** only.)
+   2. **Grant page access** so the scoped read works: **Content access** tab → **Edit access** → search/tick
+      the **root page** of the zone → **Save**. Without this, the first sync returns **0 pages**.
+   3. Back on **Configuration**, **copy the Access token** (starts with `ntn_`) — that's the value to paste
+      into `.env`.
 3. **Narrate, then call `setup_source`.** `setup_source` and the first sync are a **single, silent,
    possibly long call** (no live progress): it explores the whole perimeter, then downloads & converts
    every page. **Before** calling it, tell the user what's about to happen and roughly how long — e.g.
