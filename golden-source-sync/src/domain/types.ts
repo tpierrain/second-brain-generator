@@ -68,6 +68,8 @@ export interface SyncReport {
   written: number;
   deleted: number;
   unchanged: number;
+  /** Present only on the `sync("all")` aggregate: the per-source breakdown. */
+  sources?: SyncReport[];
 }
 
 /** Light watermark-only freshness check, no content pulled (PRD §9). */

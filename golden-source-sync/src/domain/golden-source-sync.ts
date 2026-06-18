@@ -7,6 +7,7 @@ import type {
   SourceState,
   SourceStatus,
   SyncReport,
+  SyncStatus,
 } from './types.js';
 import type {
   ConnectorFactory,
@@ -123,6 +124,7 @@ export class GoldenSourceSync implements IGoldenSourceSync {
    * the source as `partial` so a remote glitch can never wipe the golden source.
    */
   async sync(name: string): Promise<SyncReport> {
+    if (name === 'all') return this.syncAll();
     const configs = await this.deps.configStore.loadAll();
     const config = configs.find((c) => c.name === name);
     if (!config) {
@@ -214,6 +216,24 @@ export class GoldenSourceSync implements IGoldenSourceSync {
   }
 
   /**
+   * Fan-out: refresh EVERY declared source in one call (PRD §9, `sync("all")`). The sources are
+   * isolated by construction (own connector/token, own vault subfolder, own sidecar — nothing
+   * mutable is shared), so they run CONCURRENTLY: a slow source never head-of-line-blocks the
+   * rest. `allSettled` makes the fan-out CONTAINED — one source throwing is reported as a failed
+   * entry, it never aborts the others. The aggregate sums the counts and reports the per-source
+   * breakdown; its status is `ok` only if every source is `ok`, `failed` only if every source
+   * failed, else `partial`.
+   */
+  private async syncAll(): Promise<SyncReport> {
+    const configs = await this.deps.configStore.loadAll();
+    const settled = await Promise.allSettled(configs.map((c) => this.sync(c.name)));
+    const sources = settled.map((outcome, i) =>
+      outcome.status === 'fulfilled' ? outcome.value : failedReport(configs[i].name),
+    );
+    return aggregateReports(sources);
+  }
+
+  /**
    * The §7/§12 guardrail outcome: a doubtful perimeter (enumeration failure, or a wholesale
    * disappearance) must change nothing on disk. We persist a `partial` marker with the watermark
    * frozen and every tracked item kept, so the next run re-pulls and reconciles from solid ground.
@@ -285,6 +305,32 @@ export class GoldenSourceSync implements IGoldenSourceSync {
     await this.deps.configStore.remove(name);
     return { name, removed: true, cleanedUp: cleanup };
   }
+}
+
+/** A source that threw during the fan-out — reported failed, never aborting the batch. */
+function failedReport(name: string): SyncReport {
+  return { name, status: 'failed', written: 0, deleted: 0, unchanged: 0 };
+}
+
+/** Aggregate the per-source reports into the `sync("all")` summary (sums + worst-of status). */
+function aggregateReports(sources: SyncReport[]): SyncReport {
+  const sum = (pick: (r: SyncReport) => number) => sources.reduce((acc, r) => acc + pick(r), 0);
+  return {
+    name: 'all',
+    status: aggregateStatus(sources),
+    written: sum((r) => r.written),
+    deleted: sum((r) => r.deleted),
+    unchanged: sum((r) => r.unchanged),
+    sources,
+  };
+}
+
+/** `ok` iff every source is ok; `failed` iff every source failed; otherwise `partial`. */
+function aggregateStatus(sources: SyncReport[]): SyncStatus {
+  if (sources.length === 0) return 'ok';
+  if (sources.every((r) => r.status === 'ok')) return 'ok';
+  if (sources.every((r) => r.status === 'failed')) return 'failed';
+  return 'partial';
 }
 
 /** The max `last_edited_time` over a perimeter (the watermark), or null if it is empty (PRD §16). */
