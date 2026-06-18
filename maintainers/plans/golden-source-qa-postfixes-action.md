@@ -72,13 +72,18 @@ Thomas must ship tonight so Inqom colleagues can start using it. Reprioritized:
     - [x] B2 — **R2-7a**: extract `child_database` content (row titles + key properties; each row links to its Notion page) so a database-backed page isn't mirrored empty _(2ff4b63 · `makeChildDatabaseTransformer` factory; real query resolves the 2025-09-03 data sources + pages rows; empty DB → title only; unreadable DB → link, no throw)_
     - [x] B3 — Green: full `golden-source-sync` suite + `tsc` _(2026-06-18 · gss 84/84, tsc clean)_
     - [~] B4 — Commit(s) done green (`feat(golden-source-sync): link internal Notion pages` 51a1644 / `…: extract child databases` 2ff4b63); **client checkpoint folded into Step 5.5-E fresh re-validation** (Thomas verifies clickable internal links + non-empty database pages on a fresh brain)
-  - [ ] **5.5-C — RAG notify check** (`rag/notify`)
-    - [ ] C1 — **R2-4**: verify whether Step 2's "complete" toast fires at **true debounce quiescence** (count is already correct = 27 on `gss-qa-ship`). If "complete" can still appear mid-index, tighten the settle; else mark Obs3/F5 fully closed. RED test only if a premature-complete path is reproducible
-    - [ ] C2 — Green (`rag/` + tsc) if any change; commit `fix(rag): …`
-  - [ ] **5.5-D — Doc (no code)**
-    - [ ] D1 — **R2-7b**: document the known limitation — attached **PDFs / Google Slides** are not extracted (only Notion text is mirrored); state it in the skill disclaimer + the user-facing connectors doc; the brain already flags it at use-time (keep that)
-  - [ ] **5.5-E — Fresh re-validation** on a new throwaway brain (round-3 quick pass): the connect flow has no "sync delta" option, `.env` opens, internal Notion links are clickable, database pages non-empty, toast truthful
-- [ ] **Step 6 — Ship (up to merge)**
+  - [~] **5.5-C — RAG notify check** (`rag/notify`) — **DROPPED from this ship → parked** _(2026-06-18)_
+    - [~] C1 — **R2-4** was the multi-batch "complete" toast firing 2–3× on a slow sync. **Decoupling confirmed**: the golden-source MCP and the auto-indexer share **no code link** (filesystem-only boundary), so this is an **auto-indexation concern, not a golden-source one**. The double-toast is **cosmetic** (every count truthful, no data loss). **Deliberately parked** (Thomas, 2026-06-18) → `prospective/post-v3.1.0-ux-backlog.md` ("coalesce the index-done toast across a slow multi-batch burst"). Not a blocker; must NOT re-couple the two if ever picked up.
+  - [x] **5.5-D — Doc (no code)** _(2026-06-18)_
+    - [x] D1 — **R2-7b**: documented the limitation — attached **PDFs / Google Slides** are not extracted (only Notion text is mirrored) — in the skill perimeter disclaimer (`SKILL.md`) **and** the user-facing `CONNECTORS.md` ("What gets mirrored — and what doesn't"); use-time flagging kept _(2026-06-18)_
+    - [x] D2 — **Notion-token how-to** delivered: `docs/notion-token-setup.md` — step-by-step **English** guide (6 steps, exact URLs, troubleshooting table incl. the PDF/Slides limit), cross-linked from `CONNECTORS.md` (🔑 callout) + `SKILL.md` token walkthrough. Image **placeholders** `docs/img/notion-token-01..06.png` documented in `docs/img/README.md` for Thomas to fill (I cannot capture the live Notion UI) _(2026-06-18)_
+  - [~] **5.5-E — Fresh re-validation (from branch)** — **DROPPED / replaced by Step 7** _(Thomas, 2026-06-18)_: instead of a throwaway brain installed *from the branch*, we validate via the **real upgrade path** (a prod `v3.1.0` brain → `update-engine` → the shipped version). Closer to what existing users will do. See Step 7.
+- [ ] **Step 6 — Ship (merge first, QA via upgrade after — mini-risk assumed)**
+  > **Pivot (Thomas, 2026-06-18):** we **ship before the final manual QA**, then QA via the upgrade path
+  > on `~/legacy-brain` (Step 7). Rationale: the install base is tiny right now, so the mini-risk is
+  > acceptable, and the upgrade path is the most realistic test. Any QA finding → **fast-follow patch**
+  > (TDD, green) + a patch tag. **`6f` MUST push a NEW semver tag** — `update-engine` resolves the
+  > *latest tag on the remote*; without a new tag the legacy brain sees no update.
   - [ ] 6a — Push branch `golden-source-sync`
   - [ ] 6b — Open PR (codename « The One With… », EN body) — describe the QA round + the 3 fixes + doc
   - [~] 6c — Run `/code-review` on the full branch diff (first time on this branch) — triage findings
@@ -86,10 +91,16 @@ Thomas must ship tonight so Inqom colleagues can start using it. Reprioritized:
         refuted or low-priority backlog — see below.)_
   - [x] 6d — Fix accepted findings (TDD, green) — defer the rest to a backlog note _(2026-06-18 · c903dbc:
         deletion-loop try/catch guard; deferred findings → backlog)_
-  - [ ] 6e — Final manual QA pass green
-  - [ ] 6f — Merge to `main` + tag (semver + codename)
+  - [~] 6e — ~~Final manual QA pass green~~ **moved to Step 7** (post-ship, via the upgrade path)
+  - [ ] 6f — Merge to `main` + **push a NEW semver tag** (`v3.2.0`?) + codename — **the tag is what enables Step 7's `update-engine`**
   - [ ] 6g — Archive delivered plans (`git mv` → `plans/archived/`, STATUS ✅ + proof), update plans README
-  - [ ] 6h — Purge confidential throwaway brains + `/tmp/gss-qa`
+  - [ ] 6h — Purge confidential throwaway brains + `/tmp/gss-qa` — **KEEP `~/legacy-brain` until Step 7 is done**
+- [ ] **Step 7 — Post-ship upgrade QA** (the real test: a prod brain upgraded to the shipped version)
+  - [x] 7a — Install `~/legacy-brain` from **prod `v3.1.0`** (GitHub `main`, `--embedder in-process`); confirm `source.repo`=GitHub, `source.ref`=`v3.1.0`, `golden-source-sync/` **absent** _(2026-06-18 · post-flight canary OK; manifest verified)_
+  - [ ] 7b — From `~/legacy-brain` (a NEW rooted conversation), run **`update-engine`** → it must advance to the new tag, pull `golden-source-sync/`, `npm install` it, reindex if the index format changed; suites/`tsc` green where checkable
+  - [ ] 7c — End-to-end **connect a golden source** on the upgraded brain → re-check the round-2 fixes live: no "sync delta" option, `.env` opens + Notion-token guide reachable, internal Notion links clickable, database pages non-empty, toast truthful, local-first answering
+  - [ ] 7d — Triage findings → **fast-follow patch** (TDD, commit-only-green) + a patch tag if needed (mini-risk assumed; low install base)
+  - [ ] 7e — Final purge: `~/legacy-brain` + any remaining throwaway/confidential brains + `/tmp` launcher clones
 
 ---
 
@@ -233,24 +244,42 @@ flowchart LR
       page-mentions emit `www.notion.so/<id>` links (R2-5, **decision A**); B2 extract `child_database`
       so database pages aren't mirrored empty (R2-7a). Both in `golden-source-sync` (gateway/connector),
       tied by tests. Cousins (Notion→MD fidelity).
-- [ ] **5.5-C RAG check** — C1 confirm the "complete" toast only at true debounce quiescence (count
-      already correct on `gss-qa-ship`); tighten only if a premature path reproduces, else close Obs3/F5.
-- [ ] **5.5-D Doc** — D1 document the PDF/Slides non-extraction limit (R2-7b); keep the use-time flagging.
-- [ ] **5.5-E Re-validate** on a fresh throwaway brain (round-3 quick pass), then proceed to Step 6.
+- [~] **5.5-C RAG check** — **DROPPED → parked** _(2026-06-18)_. R2-4 (multi-batch "complete" toast
+      firing 2–3× on a slow sync) is **cosmetic** and an **auto-indexation** concern, not golden-source
+      (the two are **decoupled**, filesystem-only — keep them so). Moved to
+      `prospective/post-v3.1.0-ux-backlog.md`. Not a ship blocker.
+- [x] **5.5-D Doc** _(2026-06-18)_ — D1 PDF/Slides non-extraction limit documented (`SKILL.md` disclaimer +
+      `CONNECTORS.md`), use-time flagging kept; **D2** `docs/notion-token-setup.md` (EN step-by-step + URLs +
+      troubleshooting), cross-linked from connectors doc + skill onboarding; image placeholders in `docs/img/`
+      for Thomas to fill.
+- [~] **5.5-E Re-validate (from branch)** — **DROPPED → replaced by Step 7** (upgrade-path QA on `~/legacy-brain`).
 
-### Step 6 — Ship (up to merge)
+### Step 6 — Ship (merge first; QA via upgrade after — mini-risk assumed)
+
+> Pivot (Thomas, 2026-06-18): ship before the final manual QA, then QA the **upgrade path** (Step 7). The
+> install base is tiny → acceptable mini-risk, and the upgrade is the most realistic test. `6f` **must push
+> a NEW semver tag** (update-engine resolves the latest remote tag).
 
 - [ ] **6a — Push** `golden-source-sync`.
 - [ ] **6b — PR** (codename « The One With… », **English** title + body): the post-fixes QA round, the 3
       fixes (Obs 4/3/5), the verified-green carry-overs (F1/F3/F6/F8/F11), and the doc/diagram.
-- [ ] **6c — `/code-review`** on the full branch diff (first run on this branch). Triage findings.
-- [ ] **6d — Fix** accepted findings (TDD, green); **defer** the rest to a backlog note (don't scope-creep
-      the release).
-- [ ] **6e — Final manual QA** pass green.
-- [ ] **6f — Merge** to `main` + **tag** (semver bump from the last golden tag + codename).
+- [x] **6c — `/code-review`** done (1 real fix `c903dbc`, rest deferred). _(2026-06-18)_
+- [x] **6d — Fix** accepted findings (TDD, green); rest deferred. _(2026-06-18 · c903dbc)_
+- [~] **6e — Final manual QA** — **moved to Step 7** (post-ship, via upgrade).
+- [ ] **6f — Merge** to `main` + **push a NEW semver tag** (`v3.2.0`?) + codename — the tag enables Step 7.
 - [ ] **6g — Archive** delivered plans (`golden-source-qa-postfixes-action.md`, and any sibling now done)
       → `plans/archived/` with STATUS ✅ + proof; update the plans README.
-- [ ] **6h — Purge** `~/gss-qa-fresh`, `~/gss-qa-brain`, `/tmp/gss-qa`.
+- [ ] **6h — Purge** `~/gss-qa-fresh`, `~/gss-qa-brain`, `/tmp/gss-qa` — **keep `~/legacy-brain` for Step 7**.
+
+### Step 7 — Post-ship upgrade QA (the real test)
+
+- [x] **7a — Install `~/legacy-brain`** from prod `v3.1.0` (GitHub `main`, in-process); manifest verified
+      (`source`=GitHub/`v3.1.0`, no `golden-source-sync/`). _(2026-06-18)_
+- [ ] **7b — `update-engine`** from the legacy brain → must advance to the new tag, pull + `npm install`
+      `golden-source-sync/`, reindex if the index format changed.
+- [ ] **7c — Connect a golden source** end-to-end on the upgraded brain → re-check the round-2 fixes live.
+- [ ] **7d — Fast-follow** any finding (TDD, green) + patch tag if needed (mini-risk assumed).
+- [ ] **7e — Final purge** of `~/legacy-brain` + remaining throwaway brains + `/tmp` launcher clones.
 
 ---
 
