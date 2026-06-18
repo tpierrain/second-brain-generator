@@ -174,12 +174,12 @@ The RAG (`rag/`) splits each Markdown file into **chunks** (one per `#`/`##`/`##
 
 **⚠️ Fail-loud — never a disguised out-of-vault answer.** If the `mcp__vault-rag__*` tools are **unavailable, missing, or return an error** (MCP server not loaded, missing Gemini key, empty index…), you must **SAY IT LOUDLY** — "⚠️ RAG unavailable: I can't query the vault" — and **REFUSE to fabricate an answer** from the Internet or your general knowledge. A second brain that answers beside the vault *while appearing to work* is worse than a brain that frankly says it's down. This applies **in particular to the demo question** (the user's first contact): no plausible but out-of-vault answer. Instead, indicate how to fix it (key in `.env`, restart Claude Code, `/mcp`).
 
-### Golden sources — live internal zones mirrored into the vault (optional)
+### Local mirrors — live internal zones mirrored into the vault (optional)
 
-A **golden source** is a zone of an internal tool (Notion today) you declared once; the
-`local-mirror` MCP server mirrors its pages into `vault/golden-sources/<name>/` as Markdown,
+A **local mirror** is a zone of an internal tool (Notion today) you declared once; the
+`local-mirror` MCP server mirrors its pages into `vault/mirrors/<name>/` as Markdown,
 which the RAG then indexes and cites like any other note. Set one up — or sync / inspect / remove one —
-with the **`/golden-source` skill** (the thin driver; the work runs in the MCP server).
+with the **`/local-mirror` skill** (the thin driver; the work runs in the MCP server).
 
 | Operation | Tool |
 |---|---|

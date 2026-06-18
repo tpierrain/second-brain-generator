@@ -1,6 +1,6 @@
-# Create a Notion token — step by step (for your golden source)
+# Create a Notion token — step by step (for your local mirror)
 
-To mirror a Notion zone into your second brain (a **[golden source](../CONNECTORS.md#-golden-sources--mirror-a-live-source-into-your-vault--a-search-connector)** —
+To mirror a Notion zone into your second brain (a **[local mirror](../CONNECTORS.md#-local-mirrors--mirror-a-live-source-into-your-vault--a-search-connector)** —
 see the connectors doc),
 the brain needs a **Notion connection token**: a secret key that lets it **read** the pages you
 explicitly share with it — nothing else. (Notion's developer portal calls these **connections**; you may
@@ -46,7 +46,7 @@ Then click **Create connection**.
 
 ![New connection dialog — Access token](img/notion-token-02.png)
 
-> 💡 **Read-only is all your brain needs.** The connection only ever *reads* Notion — the golden source
+> 💡 **Read-only is all your brain needs.** The connection only ever *reads* Notion — the local mirror
 > mirrors pages **in**, it never writes back. If Notion asks about capabilities, **“Read content”** is enough.
 
 ---
@@ -55,7 +55,7 @@ Then click **Create connection**.
 
 Creating the connection drops you on its **Configuration** tab. Under **Capabilities → Content
 capabilities**, only **“Read content”** is ticked — leave **“Update content”** and **“Insert content”**
-**off**. That's all your brain needs: the golden source only ever *reads* Notion. (You can also see the
+**off**. That's all your brain needs: the local mirror only ever *reads* Notion. (You can also see the
 masked **Access token** here — you'll copy it at the end, in Step 6.)
 
 ![Configuration tab — Read content only, Access token](img/notion-token-03.png)
@@ -103,7 +103,7 @@ confirms with **“Copied”**. The token starts with **`ntn_`**.
 
 ## Step 7 — Paste the token into your brain's `.env`
 
-When you ask your brain to *“set up a golden source from Notion”*, it **opens your `.env` file** on the
+When you ask your brain to *“set up a local mirror of a Notion zone”*, it **opens your `.env` file** on the
 right line for you. Paste the token right after the `=`, then **save** (⌘S on macOS, Ctrl+S on
 Windows/Linux):
 

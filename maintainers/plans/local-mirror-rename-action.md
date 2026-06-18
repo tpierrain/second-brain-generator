@@ -59,21 +59,24 @@ one-off/live/now → native connector. Only ask when genuinely ambiguous.
         (no RAG coupling), sidecar `.local-mirror/`, config `local-mirror.config.json`
   - [x] **2c. Launcher fns** `*GoldenSource*` → `*LocalMirror*` + call sites + test
   - [x] **Green**: local-mirror 84/84, harness 295/295, rag 178/178, all tsc 0, boot smoke OK
-- [ ] **Lot 2d–e — docs + skill rewrite** (commit 3, the judgment part — left to do)
-  - [ ] **2d. Skill rename + rewrite**
-    - [ ] `git mv .claude/skills/golden-source/ → .claude/skills/local-mirror/`
-    - [ ] `SKILL.md` `name:` + **`description:` trigger** — catch « réplica locale / réplication /
-          copie locale / source synchronisée / "que mon cerveau puisse chercher dans ce Notion" »,
-          KEEP the native-connector disambiguation, drop "golden source" / "source de référence"
-    - [ ] add/Update the **"Disambiguate first"** section (balanced 2-option question above)
-    - [ ] body wording + the bootstrap `.mcp.json` snippet (server key `local-mirror`)
-    - [ ] `/golden-source` skill references in `SETUP.md` → `/local-mirror`
-  - [ ] **2e. Docs**: `CONNECTORS.md`, `SETUP.md`, `maintainers/README.md`, `CLAUDE.md.template`
-        prose → "local mirror / copie miroir"; drop "golden source"
-  - [ ] **2f. Green** (suites unaffected — markdown only) → commit 3
-- [ ] **Lot 3 — archives: DO NOT rewrite** (ADRs 0022/0023/0024, plans `golden-source-*`,
-      `prd-golden-source-sync.md` = history, Thomas's no-rewrite rule). *Optional*: one forward-note
-      line in ADR 0022 ("component since renamed `local-mirror`").
+- [x] **Lot 2d–e — docs + skill rewrite** (commit 3, the judgment part) *(2026-06-18)*
+  - [x] **2d. Skill rename + rewrite**
+    - [x] `git mv .claude/skills/golden-source/ → .claude/skills/local-mirror/`
+    - [x] `SKILL.md` `name:` + **`description:` trigger** — catches « réplica locale / copie locale /
+          source synchronisée / miroir local / synchronisation miroir / "que mon cerveau puisse chercher
+          dans ce Notion" », KEEPs the native-connector disambiguation, drops "golden source" / "source
+          de référence"
+    - [x] added the **"Disambiguate first"** section (balanced 2-option question)
+    - [x] body wording + persisted paths (`vault/mirrors/`, `local-mirror.config.json`, `.local-mirror/`)
+          + the bootstrap `.mcp.json` snippet (server key `local-mirror`, `launch.sh`)
+    - [x] `/golden-source` skill references in `SETUP.md` → `/local-mirror`
+  - [x] **2e. Docs**: `CONNECTORS.md` (heading 🪞 + mermaid + anchor), `SETUP.md`, `README.md`,
+        `maintainers/README.md`, `CLAUDE.md.template`, `docs/notion-token-setup.md` (anchor re-pointed)
+        prose → "local mirror / copie miroir"; dropped "golden source"
+  - [x] **2f. Green**: local-mirror 84/84, tsc 0 (markdown-only — harness/rag unaffected) → commit 3
+- [x] **Lot 3 — archives: DO NOT rewrite** (ADRs 0023/0024, plans `golden-source-*`,
+      `prd-golden-source-sync.md` = history, Thomas's no-rewrite rule). Added the *optional* forward-note
+      line in **ADR 0022** (renamed `golden-source-sync` → `local-mirror`); ADR body kept verbatim.
 - [ ] **Ship** (on Thomas's green light)
   - [ ] update **PR #12** title/body with the release codename (EN; pre-flight EN check)
   - [ ] `/code-review` → fix findings TDD, commit-only-green

@@ -36,24 +36,24 @@ This file is an **idea menu** to help you choose *what* to wire up based on *you
 
 ---
 
-## 🥇 Golden sources — *mirror* a live source into your vault (≠ a search connector)
+## 🪞 Local mirrors — *mirror* a live source into your vault (≠ a search connector)
 
-A **connector** lets the brain **reach out and search** an external source on the fly. A **golden
-source** does the opposite: it **mirrors** a chosen zone of an internal tool **into your vault** as
-Markdown, so the source's content becomes **first-class, indexed, citable notes** — *the central RAG
-you don't have yet, but local and right now.*
+A **connector** lets the brain **reach out and search** an external source on the fly. A **local
+mirror** (a *copie miroir* / *réplica locale*) does the opposite: it **mirrors** a chosen zone of an
+internal tool **into your vault** as Markdown, so the source's content becomes **first-class, indexed,
+citable notes** — *the central RAG you don't have yet, but local and right now.*
 
 - **Today: Notion.** You declare the **root page** of a zone (its whole sub-tree is in scope) and the
-  brain keeps `vault/golden-sources/<name>/` in sync with it — new/edited pages rewritten, deleted /
+  brain keeps `vault/mirrors/<name>/` in sync with it — new/edited pages rewritten, deleted /
   out-of-scope pages removed, delta-only (no noise).
-- **How:** the **`/golden-source` skill** drives it (onboard, sync, check freshness, status, remove);
-  the work runs in the built-in **`golden-source-sync`** MCP server. The Notion integration **token
+- **How:** the **`/local-mirror` skill** drives it (onboard, sync, check freshness, status, remove);
+  the work runs in the built-in **`local-mirror`** MCP server. The Notion integration **token
   lives only in `.env`**, never in the chat.
-- **When to prefer it over a Notion search connector:** when a body of reference docs is **the
-  authoritative answer** to recurring questions and you want it **always fresh, framed and cited**
-  inside the brain — not searched ad hoc, side by side.
+- **When to prefer it over a Notion search connector:** when a body of reference docs is **a reliable
+  reference** for recurring questions and you want it **always fresh, framed and cited** inside the
+  brain — not searched ad hoc, side by side.
 
-> Setup walk-through: ask your brain *"set up a golden source from Notion"* (or run `/golden-source`).
+> Setup walk-through: ask your brain *"set up a local mirror of a Notion zone"* (or run `/local-mirror`).
 > The skill explains each step and tests the scope before the first sync.
 
 > 🔑 **Need a Notion token?** Follow the click-by-click, screenshot guide:
@@ -68,18 +68,18 @@ in: every page's **Notion text** becomes a searchable, citable note. Two limits 
   the contents of embedded files. (Your brain flags this at use-time when a question would need them.)
   If you need a PDF/Slides' key facts indexed, paste them into the Notion page as text.
 
-### 🤔 Why a golden source — and when it's (not) worth it
+### 🤔 Why a local mirror — and when it's (not) worth it
 
 In an **ideal** world there would be a **central search platform**: one hosted index, plugged in real
 time onto every internal tool, available to everyone — including people without a second brain. That's
 the **target**. It usually **doesn't exist yet** in your company.
 
-A golden source is the **local-first** answer in the meantime: instead of waiting for that central
+A local mirror is the **local-first** answer in the meantime: instead of waiting for that central
 infrastructure, **your own brain mirrors** the live zone that concerns you and indexes it locally. Zero
 infra to operate, works today, and the day a central platform arrives you switch over **without
 rewriting anything** — same concept, same vault, same content.
 
-**Reach for a golden source when:**
+**Reach for a local mirror when:**
 
 - there is **no central search platform** for your team, but a body of reference docs lives in Notion;
 - you want that zone **always fresh, framed and cited** inside the brain — not searched ad hoc,
@@ -105,17 +105,17 @@ flowchart LR
     CMCP --> D1[Drive]
   end
 
-  subgraph Local["🦾 Local-first — golden-source-sync (today)"]
+  subgraph Local["🦾 Local-first — local-mirror (today)"]
     direction LR
-    GB[Your second brain] --> GS[Golden Source connector]
-    GS -- mirror sub-tree --> V[(vault/golden-sources/&lt;name&gt;)]
+    GB[Your second brain] --> GS[Local mirror]
+    GS -- mirror sub-tree --> V[(vault/mirrors/&lt;name&gt;)]
     V --> RAG[Local RAG: search + cite]
     GS -. read-only .-> NX[Notion zone]
   end
 ```
 
-> **With** central infrastructure, brains query one hosted platform. **Without** it, the Golden Source
-> connector mirrors a live zone into your **own** vault — searchable, citable, yours, right now. Same
+> **With** central infrastructure, brains query one hosted platform. **Without** it, a local mirror
+> replicates a live zone into your **own** vault — searchable, citable, yours, right now. Same
 > vault contract; the day a central platform exists, you switch over without rewriting the engine.
 
 > 🛠️ *Maintainers:* the full rationale lives in the PRD —

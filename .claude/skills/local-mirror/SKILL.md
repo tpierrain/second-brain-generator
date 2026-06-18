@@ -1,21 +1,22 @@
 ---
-name: golden-source
-description: "Declare and synchronize a GOLDEN SOURCE — a live zone of an internal tool (Notion today) whose content is MIRRORED into this brain's vault as Markdown, so the LOCAL RAG can search and cite it offline. Use when the user wants to connect / declare / set up a golden source, sync / refresh / update one (e.g. 'sync the PA-SC golden source from Notion', 'refresh my product golden source', 'connecte la source de vérité Notion'), check whether one is behind, list them, or remove one. DO NOT use this skill when the user simply wants to read, write, create, edit, fetch or SEARCH Notion content live and ad hoc — that is the job of the NATIVE Notion connector (a different tool); this skill is ONLY for mirroring a Notion zone locally for the RAG. The actual work runs in the golden-source-sync MCP server; this skill is the thin conversational driver."
+name: local-mirror
+description: "Declare and refresh a LOCAL MIRROR — a one-way local copy of a chosen zone of an internal tool (Notion today) replicated into this brain's vault as Markdown, so the LOCAL RAG can search and cite it OFFLINE. A mirror is a 'synchronized source' kept locally: copied once, then refreshed on demand. Use when the user wants to mirror / replicate / copy a Notion zone locally, declare / set up / connect a local mirror, refresh / sync / update one (e.g. 'mirror the PA-SC zone from Notion', 'refresh my product mirror', 'réplique cette zone Notion en local', 'mets en place un miroir local pour ce Notion', 'mets en place une synchronisation miroir avec ce Notion', 'fais que mon cerveau puisse chercher dans ce Notion'), check whether one is behind, list them, or remove one. DO NOT use this skill when the user simply wants to read, write, create, edit, fetch or SEARCH Notion content live and ad hoc — that is the job of the NATIVE Notion connector (a different tool); this skill is ONLY for mirroring a Notion zone locally for the RAG. When the intent is genuinely ambiguous (durable / offline / 'puisse chercher' → mirror; one-off / live / now → native connector), ask the balanced 2-option question first. The actual work runs in the local-mirror MCP server; this skill is the thin conversational driver."
 version: 1.0.0
 ---
 
-# /golden-source — Mirror a live internal source into your vault (opt-in, safe)
+# /local-mirror — Mirror a live internal source into your vault (opt-in, safe)
 
-> Brain-side skill. A **golden source** is a zone of an internal tool (Notion for the MVP)
-> that you declare once; the brain then **mirrors its pages into `vault/golden-sources/<name>/`
-> as plain Markdown**. From there the existing RAG indexes and cites them like any other note —
-> *the central RAG you don't have yet, but local and right now, plugged onto your live sources.*
+> Brain-side skill. A **local mirror** (a *copie miroir* / *réplica locale*) is a zone of an
+> internal tool (Notion for the MVP) that you declare once; the brain then **mirrors its pages
+> into `vault/mirrors/<name>/` as plain Markdown**. From there the existing RAG indexes and cites
+> them like any other note — *the central RAG you don't have yet, but local and right now, plugged
+> onto your live sources.*
 >
-> ⚠️ **This skill holds no logic.** All the real, testable work lives in the **`golden-source-sync`
+> ⚠️ **This skill holds no logic.** All the real, testable work lives in the **`local-mirror`
 > MCP server** (its own package, Outside-in TDD). This skill only **recognizes intent, gathers the
 > declaration, guides the token into `.env`, calls the right MCP tool, and reports.**
 
-## First — a golden source, or the native Notion connector? (don't mix them up)
+## First — a local mirror, or the native Notion connector? (don't mix them up)
 
 A brain can touch Notion **two completely different ways**. Put yourself in the user's shoes and route
 to the right one **before** doing anything:
@@ -23,53 +24,73 @@ to the right one **before** doing anything:
 - **They just want to read, write, create, edit, fetch or search something in Notion — live, ad hoc?**
   → that's the **native Notion connector** (the brain's general, real-time Notion access:
   `notion-fetch`, `notion-search`, `notion-create-pages`, …). **NOT this skill.** Let that connector
-  handle it; do **not** onboard a golden source for it.
-- **They want a sub-zone of Notion mirrored locally** so the **local RAG** can search & cite it —
-  offline, framed, always fresh, without re-querying Notion every time? → **that's a golden source.
-  This skill.** (Mirror = read-only copy into the vault; this skill never writes back to Notion.)
+  handle it; do **not** onboard a local mirror for it.
+- **They want a sub-zone of Notion replicated locally** so the **local RAG** can search & cite it —
+  offline, framed, refreshed on demand, without re-querying Notion every time? → **that's a local
+  mirror. This skill.** (Mirror = one-way read-only copy into the vault; this skill never writes back
+  to Notion.)
 
 > 🧭 **One-line litmus:** *live read/write in the ocean → native Notion connector; a local **mirror** of
-> a slice of the ocean for the RAG → golden source (sync).*
+> a slice of the ocean for the RAG → local mirror (this skill).*
 
-If the user only says "Notion" and the intent is ambiguous, ask **one** orienting question before
-assuming: *"Do you want to **read or write in Notion live** (I'll use the Notion connector), or
-**mirror a zone of it into your vault** so your brain can search it locally and offline (a golden
-source)?"* — then route accordingly. Don't default to the golden-source onboarding just because Notion
-was mentioned.
+### Disambiguate first — the balanced 2-option question (don't guess)
+
+The exact fault line is a phrasing like *"je veux que mon cerveau puisse chercher dans ce Notion"*. It
+can mean either tool. When the intent is **genuinely ambiguous**, don't assume — **ask one honest,
+balanced question** (not a sales funnel that pushes the mirror):
+
+> *Two ways, depending on your need:*
+> *— **one-off, live** (native connector): I read Notion directly, right now. Always up to date, but
+>   online, basic search, and it doesn't stay in your brain's memory;*
+> *— **durable (local mirror)**: I copy this zone once, then your brain searches it **semantically
+>   (RAG)**, **offline**, **cites** it, and crosses it with the rest of your notes — in exchange you
+>   ask me to **refresh** it when the source changes.*
+> *Given your phrasing I'd lean toward the **local mirror** — shall I set it up?*
+
+**Discriminators** — only ask when it's actually unclear:
+- **durable / recurring** ("puisse", "à chaque fois", "qu'il garde", "hors-ligne") + **citable** →
+  **local mirror** (this skill).
+- **one-off / live / now** ("lis", "va voir", "cherche maintenant") → **native connector**, not this skill.
+
+If the discriminators clearly point one way (e.g. *"mets en place un miroir local pour ce Notion"* →
+obviously a mirror; *"va me lire cette page Notion"* → obviously the connector), **don't** ask — just
+route. The question is for the genuine grey zone, not a reflex.
 
 ## When to use it
 
-Load this whenever the user wants to work with a golden source, in any language:
+Load this whenever the user wants to work with a local mirror, in any language:
 
-- *"connect / declare / set up a golden source from Notion"* — onboarding → `setup_source`
-- *"sync / refresh / update the `<name>` golden source"* — delta + deletions → `sync`
+- *"mirror / replicate / set up a local mirror of a Notion zone"* — onboarding → `setup_source`
+- *"refresh / sync / update the `<name>` mirror"* — delta + deletions → `sync`
 - *"is `<name>` up to date? / what's its status?"* — → `check_freshness` / `status`
-- *"list my golden sources"* — → `list_sources`
-- *"remove / disconnect the `<name>` golden source"* — → `remove_source`
+- *"list my local mirrors"* — → `list_sources`
+- *"remove / disconnect the `<name>` mirror"* — → `remove_source`
 
-> **Scope — golden sources only; do NOT invent other "source types".** This skill mirrors a Notion
+> **Scope — local mirrors only; do NOT invent other "source types".** This skill mirrors a Notion
 > zone into the vault, full stop. When the user asks the **generic** *"I'd like to connect a source"*,
 > do **not** improvise a multiple-choice "what type of source?" menu — and **never** offer a "live
 > connector / sync delta" option (background Slack/Drive/Calendar live querying is the **separate**
-> `sync-sources` mechanism, not this skill; "sync delta" already means a golden source's incremental
-> delta — keep the term unambiguous). If you must disambiguate, ask **one neutral line**: *"Do you want
-> to **mirror a Notion zone into your vault** as a searchable golden source? (That's what I set up
-> here.)"* — then proceed with the onboarding flow below. No invented option list.
+> `sync-sources` mechanism, not this skill; "sync delta" already means a mirror's incremental delta —
+> keep the term unambiguous). If you must disambiguate, ask **one neutral line**: *"Do you want to
+> **mirror a Notion zone into your vault** as a locally-searchable copy? (That's what I set up here.)"*
+> — then proceed with the onboarding flow below. No invented option list.
 
 > Routing (the harness's job, not the MCP's — PRD §8): when a question is clearly **about a declared
-> source's topic** (the `description` you captured at setup), stay **local-first** — exactly like the
+> mirror's topic** (the `description` you captured at setup), stay **local-first** — exactly like the
 > rest of the brain (Slack/Drive/Calendar): **answer NOW from the local RAG**, and verify freshness
 > **in the background**, never block the answer on a network sync. See "Local-first routing" below for
-> the exact pattern and wording. Sync only the relevant source, never all of them — and only when a
+> the exact pattern and wording. Sync only the relevant mirror, never all of them — and only when a
 > background freshness check actually reports `behind`.
 
 ## Terminology — what to call it when speaking to the user
 
-In **English**, "golden source" is fine. In **French**, the user-facing term is **« source de vérité »**
-— **never** "source d'or" (a literal calque that sounds wrong). Mirror the user's own wording when they
-have one. The **identifiers stay English everywhere** regardless of the spoken language: the skill name
-`golden-source`, the frontmatter key `golden_source`, the folder `vault/golden-sources/<name>/`, the MCP
-tools — never translate those.
+In **English**, say **"local mirror"** (or just "mirror"). In **French**, lead with **« copie miroir »**
+or **« réplica locale »**; **« source synchronisée »** is fine *as a property*, but **always framed
+local / chez toi / hors-ligne** so it never drifts back into the ambiguous native-connector "sync".
+**Never** use "golden source" / "source de vérité" anymore — they over-claim and confuse. Mirror the
+user's own wording when they have one. The **identifiers stay English everywhere** regardless of the
+spoken language: the skill name `local-mirror`, the frontmatter key `mirror`, the folder
+`vault/mirrors/<name>/`, the MCP tools — never translate those.
 
 ## Golden rule — the token NEVER travels through the chat
 
@@ -82,12 +103,12 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
 1. **Gather the declaration** (ask in chat, conversationally):
    - `name` — short technical id = the vault subfolder (e.g. `pa-sc`). Lowercase, no spaces.
    - `title` — human label (e.g. "PA / SC zone").
-   - `description` — the **topics** this source covers, in natural language. This is the **routing
-     key**: it's how you'll later know which question should refresh which source.
+   - `description` — the **topics** this mirror covers, in natural language. This is the **routing
+     key**: it's how you'll later know which question should refresh which mirror.
    - `root_page_url` — the URL of the **root Notion page** of the zone to mirror (its whole sub-tree
      is in scope; pages outside it are not — see the perimeter disclaimer below).
    - `token_env` — the **name** of the env var that will hold the integration token (e.g.
-     `NOTION_TOKEN_PASC`). One token/scope per source.
+     `NOTION_TOKEN_PASC`). One token/scope per mirror.
 2. **Guide the token into `.env` — ONE path, no chat paste-block** (only if it isn't set yet).
    `.env` is a *hidden* file a non-dev can't locate, so **don't** ask them to find it, and **don't**
    print a `<token_env>=…` block to copy into the chat (that duplicates what then has to be cleaned up,
@@ -117,7 +138,7 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
    *"I'll connect, explore the zone (a few seconds to ~1 min on a large one), then download & convert each
    page — this can take a minute or two; I'll report what came in."* — so the wait doesn't read as a
    freeze. Then call it with the five fields. It **tests the scope** (a scoped search that returns only
-   the zone), does the **first sync**, writes the config (`golden-source-sync.config.json`, the versioned
+   the zone), does the **first sync**, writes the config (`local-mirror.config.json`, the versioned
    source of truth) and the sidecar state, and returns a step-by-step `message`.
 4. **Report** what came back. A **0-pages** result means "the integration is not connected to the root
    page yet" → have the user share it, then re-run. An **enumeration/401 error** is distinct from
@@ -130,40 +151,40 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
 > merely *linked* from inside the zone but living in another Notion space / another tree are NOT pulled
 > in** — a link is just a link, not a local copy. So the user knows up front what their brain does and
 > does **not** hold. Don't let them assume "the whole HUB" includes everything it links to. (Multi-root
-> sources / following outbound links is a future option, not the MVP.)
+> mirrors / following outbound links is a future option, not the MVP.)
 >
 > ⚠️ **Attached files aren't extracted.** Only the page's **Notion text** is mirrored — **embedded PDFs
 > and Google Slides are NOT extracted** into the vault. Say so at connection time, and flag it again at
 > use-time when a question would need a file's contents (the brain can't cite what it never indexed). If
 > the user needs those facts searchable, have them paste the key points into the Notion page as text.
 
-> The produced `.md` files land in `vault/golden-sources/<name>/`. The **existing FileWatcher** indexes
-> them and the **auto-commit hook** commits them — `golden-source-sync` is unaware of the RAG (PRD §7).
+> The produced `.md` files land in `vault/mirrors/<name>/`. The **existing FileWatcher** indexes
+> them and the **auto-commit hook** commits them — `local-mirror` is unaware of the RAG (PRD §7).
 > Nothing else to wire on a freshly-installed brain: the server is already declared in `.mcp.json`.
 
 ## Already-installed brain that predates this feature
 
-If the `golden-source-sync` tools are not available (a brain installed before this engine version),
+If the `local-mirror` tools are not available (a brain installed before this engine version),
 it just needs the same one-time wiring every other server got at install. *(On the CLI you can confirm
 with `/mcp`; in the Desktop app `/mcp` opens the connectors **Directory**, not the local server list, so
 don't rely on it there — just check whether the tools respond.)*
 
 1. Add the server block to `.mcp.json` (idempotent — skip if already present):
    ```json
-   "golden-source-sync": { "type": "stdio", "command": "npx",
-     "args": ["tsx", "golden-source-sync/src/server.ts"], "cwd": "<brain-root>", "env": {} }
+   "local-mirror": { "type": "stdio", "command": "npx",
+     "args": ["tsx", "local-mirror/src/server.ts"], "cwd": "<brain-root>", "env": {} }
    ```
    (On a bare-PATH desktop app, point it at the self-heal launcher instead — `command: "/bin/sh",
-   args: ["golden-source-sync/launch.sh"]` on macOS/Linux, the `.cmd` on Windows — exactly like
+   args: ["local-mirror/launch.sh"]` on macOS/Linux, the `.cmd` on Windows — exactly like
    `vault-rag`.)
-2. Install its deps once: `cd golden-source-sync && npm install`.
+2. Install its deps once: `cd local-mirror && npm install`.
 3. **Pick up the new server** (the MCP list is frozen at session start). In the **Desktop app**, the
    reliable way is to **quit & relaunch Claude Desktop, then reopen the _same_ conversation** — do **not**
    tell the user to "open a new conversation" (it spawns a duplicate of a pinned/named conversation and
    can leave two windows on one vault). On the **CLI**, relaunch `claude` in the brain folder. Then run
    `setup_source`.
 
-> Note: the per-source **token** no longer requires any restart — it is read fresh from `.env` at
+> Note: the per-mirror **token** no longer requires any restart — it is read fresh from `.env` at
 > call-time (F3). A restart is only ever needed to make Claude pick up a **new `.mcp.json` entry**.
 
 > Running `/update-engine` delivers the server's code and launchers to such a brain automatically;
@@ -171,20 +192,20 @@ don't rely on it there — just check whether the tools respond.)*
 
 ## Maintenance tools
 
-- **`sync <name>`** (or `"all"`) — pulls the delta and reconciles deletions for one source. A page
+- **`sync <name>`** (or `"all"`) — pulls the delta and reconciles deletions for one mirror. A page
   renamed → same file rewritten; a page deleted or moved out of scope → its `.md` removed. **Guardrail:**
   if the perimeter enumeration fails (network/401/429), **zero deletions** happen, the run is `partial`,
   and the watermark does not advance — an API hiccup never reads as "the zone is empty".
-- **`check_freshness <name>`** — light, watermark-only: is the source behind, and by how much? Pulls no
+- **`check_freshness <name>`** — light, watermark-only: is the mirror behind, and by how much? Pulls no
   content.
 - **`status <name>`** — last sync, watermark, item count, lateness.
-- **`list_sources`** — all declared sources and their state.
+- **`list_sources`** — all declared mirrors and their state.
 - **`remove_source <name>`** — de-registers it from the config. Pass `cleanup: true` to also delete the
   synced `.md` files and the sidecar state (the notes leave the vault → the RAG de-indexes them).
 
 ## Local-first routing — answer NOW, verify freshness in the background (important)
 
-A golden source is **local-first like every other source in the brain**. On an in-perimeter question,
+A local mirror is **local-first like every other source in the brain**. On an in-perimeter question,
 **never** run a blocking `sync` before answering — that reintroduces exactly the latency the brain's
 whole design avoids (Phase 2 doctrine: *answer from local immediately, sync sources in the background*).
 The pattern, in order:
@@ -193,16 +214,16 @@ The pattern, in order:
    en parallèle."*
 2. **Fire `check_freshness <name>` in the background — NOT `sync`.** It is watermark-only (cheap, pulls
    no content), so the answer stays near-instant. Narrate it with the validated 🔄 wording:
-   *"🔄 Je lance en tâche de fond un check de fraîcheur sur \<source> (delta Notion) — je complète si ça
+   *"🔄 Je lance en tâche de fond un check de fraîcheur sur \<mirror> (delta Notion) — je complète si ça
    change quelque chose."*
 3. **Answer right away from the local RAG.** Don't wait on the network.
 4. **Close with a freshness line.** If `check_freshness` reports the delta is empty:
-   *"🔄 Mise à jour fraîcheur : \<source> n'a pas bougé, ces infos sont à jour côté source."* Only **if it
+   *"🔄 Mise à jour fraîcheur : \<mirror> n'a pas bougé, ces infos sont à jour côté source."* Only **if it
    reports `behind`** do you then run `sync <name>` and **amend** the answer with what changed
    (*"🔄 Mise à jour : j'ai trouvé du neuf — …"*).
 
 > Blocking is reserved for the **explicit** case where the user asks for freshness itself ("is it up to
-> date?", "resync first"). It is **never** the default. And **don't re-sync a source you connected or
+> date?", "resync first"). It is **never** the default. And **don't re-sync a mirror you connected or
 > synced earlier in this same session** — if it was just `setup_source`'d or synced, treat it as fresh
 > and skip even the background check unless the user signals otherwise.
 
@@ -218,12 +239,12 @@ exactly what landed — **use it**:
 - **Name what changed.** Report the **titles** of the pages written/updated (and removed), not just
   counts — e.g. *"I pulled in 2 updated pages: **Naxos**, **Onboarding checklist**."* The user recognizes
   their content and trusts the mirror.
-- **Before concluding "there's nothing on this in your vault", stop.** A golden source just synced may
+- **Before concluding "there's nothing on this in your vault", stop.** A mirror just synced may
   not be searchable **yet**: the FileWatcher reindexes a moment after files hit disk, so the index can
   briefly **lag the disk**. This safeguard is **cheap and local** — keep it, but decoupled from any
   blocking sync:
   - **List the perimeter titles** (cheap — `status` / the just-synced report, or a quick look at
-    `vault/golden-sources/<name>/`) before declaring absence. The page may be right there, freshly
+    `vault/mirrors/<name>/`) before declaring absence. The page may be right there, freshly
     written, just not embedded yet.
   - **Search by the actual title/keywords**, not only by theme — a page titled "Naxos" won't surface
     under "Greek islands" if only its body is matched (and titles are now indexed precisely for this).
@@ -236,8 +257,8 @@ exactly what landed — **use it**:
 
 ## What it touches vs NEVER touches
 
-| Touched (golden-source content) | **NEVER touched** |
+| Touched (local-mirror content) | **NEVER touched** |
 | --- | --- |
-| `vault/golden-sources/<name>/**` (produced Markdown) | your own notes, demo notes, attachments |
-| `.golden-source-sync/<name>.state.json` (sidecar, committed, NOT indexed) | `.env` (only read for the token), `CLAUDE.md`, settings |
-| `golden-source-sync.config.json` (declarations) | the RAG index/config (it just reacts to the files) |
+| `vault/mirrors/<name>/**` (produced Markdown) | your own notes, demo notes, attachments |
+| `.local-mirror/<name>.state.json` (sidecar, committed, NOT indexed) | `.env` (only read for the token), `CLAUDE.md`, settings |
+| `local-mirror.config.json` (declarations) | the RAG index/config (it just reacts to the files) |

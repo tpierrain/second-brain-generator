@@ -1,5 +1,9 @@
 # ADR 0022 — `golden-source-sync` is a separate file-writing MCP, decoupled from the RAG by the filesystem
 
+> ℹ️ **Forward note (2026-06-18):** the component described here has since been **renamed
+> `golden-source-sync` → `local-mirror`** (component + concept; see `plans/local-mirror-rename-action.md`).
+> This ADR is kept verbatim as the historical record; read "golden source" as "local mirror" throughout.
+
 - **STATUS:** ACCEPTED (2026-06-17).
 - **Scope:** Second brain (runtime) + Installer — a **new MCP server** installed into the brain and run
   brain-side; it reaches ≥3.0.0 brains via `update-engine` (manifest entry) and ships in fresh installs.

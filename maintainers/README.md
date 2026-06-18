@@ -133,10 +133,11 @@
     **ABI skew fix**: align the install Node with the runtime Node (launcher PATH self-heal) **and**
     auto-rebuild on an ABI error at runtime. **Scope: Second brain (runtime) + Installer.**
   - [`0022-golden-source-sync-separate-file-writing-mcp.md`](decisions/0022-golden-source-sync-separate-file-writing-mcp.md) —
-    **`golden-source-sync` is a separate, file-writing local MCP**, decoupled from the RAG by the
-    filesystem (not a `vault-rag` tool): it declares first-class **Golden Sources** and synchronizes
-    their content into the vault as Markdown; the FileWatcher + hook do indexing/commit. Hexagonal
-    ports & adapters (MVP Notion-only). **Scope: Second brain (runtime) + Installer.**
+    the **`local-mirror`** MCP (named `golden-source-sync` at the time of this ADR) **is a separate,
+    file-writing local MCP**, decoupled from the RAG by the filesystem (not a `vault-rag` tool): it
+    declares first-class **local mirrors** and synchronizes their content into the vault as Markdown;
+    the FileWatcher + hook do indexing/commit. Hexagonal ports & adapters (MVP Notion-only).
+    **Scope: Second brain (runtime) + Installer.**
 - **[`eval-set.md`](eval-set.md)** — 🧪 **dev tool**: the RAG eval-set (Step 2 of the embedder plan).
   Measures the retrieval quality of the current embedder as a **reproducible score** (judge =
   Claude via `claude -p`), on the Flemmr vault → **Gemini baseline** to replay on the local
@@ -146,8 +147,9 @@
   Three buckets along a **past · present · future** axis:
   - **root of `plans/` = present** — action plans **mid-flight**:
     - [`golden-source-sync-action.md`](plans/golden-source-sync-action.md) — **🗺️ action plan** for
-      `golden-source-sync` (a new local MCP that synchronizes declared **Golden Sources** into the
-      vault; ADR 0022, PRD [`prd-golden-source-sync.md`](plans/prd-golden-source-sync.md)). Self-contained
+      the **`local-mirror`** MCP (named `golden-source-sync` when this plan was written — a new local MCP
+      that synchronizes declared **local mirrors** into the vault; ADR 0022,
+      PRD [`prd-golden-source-sync.md`](plans/prd-golden-source-sync.md)). Self-contained
       steps with a Tracking table to drive it session by session (a `/clear` between each). **STATUS:
       🚧 ACTIVE — not started.**
   - [**`plans/prospective/`**](plans/prospective/) **= future** — not closed, forward-looking: living
