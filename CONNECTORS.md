@@ -56,6 +56,60 @@ you don't have yet, but local and right now.*
 > Setup walk-through: ask your brain *"set up a golden source from Notion"* (or run `/golden-source`).
 > The skill explains each step and tests the scope before the first sync.
 
+### 🤔 Why a golden source — and when it's (not) worth it
+
+In an **ideal** world there would be a **central search platform**: one hosted index, plugged in real
+time onto every internal tool, available to everyone — including people without a second brain. That's
+the **target**. It usually **doesn't exist yet** in your company.
+
+A golden source is the **local-first** answer in the meantime: instead of waiting for that central
+infrastructure, **your own brain mirrors** the live zone that concerns you and indexes it locally. Zero
+infra to operate, works today, and the day a central platform arrives you switch over **without
+rewriting anything** — same concept, same vault, same content.
+
+**Reach for a golden source when:**
+
+- there is **no central search platform** for your team, but a body of reference docs lives in Notion;
+- you want that zone **always fresh, framed and cited** inside the brain — not searched ad hoc,
+  side by side, every time;
+- you value **offline / local-first**: the content is real notes in your vault, searchable and
+  citable even with no network.
+
+**Don't bother (use something else) when:**
+
+- a **real central MCP / search platform** already exists → just query that instead;
+- it's **one-off** content → paste it into a plain note, no mirroring machinery needed;
+- the source **isn't Notion** → not supported yet (Drive / Slack / … are on the trajectory, not here
+  today).
+
+```mermaid
+flowchart LR
+  subgraph Target["🎯 Target — when a central platform EXISTS"]
+    direction LR
+    B1[Second brain A] --> CMCP[(Central MCP /<br/>hosted search platform)]
+    B2[Second brain B] --> CMCP
+    CMCP --> N1[Notion]
+    CMCP --> S1[Slack]
+    CMCP --> D1[Drive]
+  end
+
+  subgraph Local["🦾 Local-first — golden-source-sync (today)"]
+    direction LR
+    GB[Your second brain] --> GS[Golden Source connector]
+    GS -- mirror sub-tree --> V[(vault/golden-sources/&lt;name&gt;)]
+    V --> RAG[Local RAG: search + cite]
+    GS -. read-only .-> NX[Notion zone]
+  end
+```
+
+> **With** central infrastructure, brains query one hosted platform. **Without** it, the Golden Source
+> connector mirrors a live zone into your **own** vault — searchable, citable, yours, right now. Same
+> vault contract; the day a central platform exists, you switch over without rewriting the engine.
+
+> 🛠️ *Maintainers:* the full rationale lives in the PRD —
+> [positioning (§1)](maintainers/plans/prd-golden-source-sync.md#1-problem--positioning) and
+> [trajectory (§19)](maintainers/plans/prd-golden-source-sync.md#19-trajectory-out-of-mvp).
+
 ---
 
 ## 🎙️ Meeting transcripts — a use case, not a connector

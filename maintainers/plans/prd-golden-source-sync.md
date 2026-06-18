@@ -59,6 +59,10 @@ change** (cf. §19), not the code.
 into it **right now**, without waiting for a central platform. Pilot case: Thomas, golden source PA/SC
 (supplier accounting & electronic invoicing).
 
+> **User-facing counterpart:** the "why & when" of a golden source is surfaced for end users in
+> [CONNECTORS.md → "Why a golden source"](../../CONNECTORS.md#-why-a-golden-source--and-when-its-not-worth-it)
+> (with the target-vs-local diagram). Keep the two in sync when the positioning evolves.
+
 ## 2. Central concept: the Golden Source
 
 A **Golden Source** = a live reference documentary source, reflected in the second brain. It is
@@ -471,6 +475,10 @@ multi-sources, **not the `golden-source-sync` code** (cf. positioning §1):
 | Freshness | at the question (Phase 2, routed sync) | push webhooks (real time) |
 | Index | local, N copies | 1 single hosted index |
 | Infra | zero (local MCP) | central service to host/operate |
+
+> This MVP-vs-target contrast is mirrored for end users in
+> [CONNECTORS.md → "Why a golden source"](../../CONNECTORS.md#-why-a-golden-source--and-when-its-not-worth-it)
+> (target-central-MCP vs local Golden Source diagram). Update both together.
 
 ## 20. Decisions & residual points
 
