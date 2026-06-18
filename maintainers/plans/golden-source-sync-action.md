@@ -185,13 +185,23 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
     - [x] **Delete** the created page → `deleted:1`, the `.md` removed, count 11→10.
     - [x] **Semantic search** over the synced files (in-process embedder, scratch index): synced→indexed (11/11)→retrievable. _(Retrieval QUALITY on this noisy corpus is a vault-rag matter, ADR 0006 — out of scope here.)_
   - [x] **`sync("all")` fan-out finding (surfaced during QA) — FIXED (TDD, 2026-06-18, `224504a`):** the tool/JSDoc/PRD §9 advertised `"all"` but the domain returned `failed` for it. Implemented as a CONTAINED PARALLEL fan-out (`Promise.allSettled` → sources run concurrently, one failure never aborts the others), aggregate report with per-source breakdown (`SyncReport.sources`) + worst-of status; deterministic concurrency proof. 66/66 green.
-  - **STILL NEEDS THOMAS (cannot be done read-only / without an installed brain):**
-    - [ ] **Index purge on delete** — proven at the file level (`.md` removed); the FileWatcher de-indexing it needs an installed brain (Block B).
-    - [ ] **Multi-source live test (3 sources, 3 tokens)** — perimeter isolation + routing + real-world shapes:
-      - [ ] **Source B — nested/overlapping** (token B on a parent zone that CONTAINS source A's Agicap zone → **B ⊇ A**, same workspace). Verify: (a) **A stays at its 10 pages** (token A does NOT spill into B's larger zone = no-leak on the A side); (b) B's page count; (c) the overlapping Agicap pages exist in **both** `golden-sources/qa-a/` AND `golden-sources/qa-b/` with **distinct provenance** frontmatter (`golden_source: qa-a` vs `qa-b`), no collision (real nested-sources / dual-provenance case, by design). _(Thomas has created zone+token B.)_
-      - [ ] **Source C — disjoint + DEEP** (token C on a zone with NO overlap with A/B, with subpages nested several levels deep). Verify: (a) **strict no-leak** — C's pages never appear in A/B and vice-versa (textbook disjoint-perimeter isolation); (b) **access cascade at depth** — sharing the C root grants access all the way down, deep pages are mirrored; (c) **parent→child link rendering** across multiple levels. _(Note: Notion `search` returns the shared subtree FLAT regardless of depth → depth tests the cascade + rendering, NOT pagination; real cursor pagination + the §12 truncation guardrail would need VOLUME >100 pages — deferred, not part of C.)_
-      - [ ] **Routing**: a topic-X question refreshes source X only, not Y/Z (harness-level, §8).
-    - [ ] Installed-brain demo (Block B): **FileWatcher indexes** the golden files → brain answers **bounded + clickable citation** (§17)
+  - **STILL NEEDS THOMAS — Block B (installed brain, REAL registration UX):**
+    - [ ] **Block B environment (DECISION Thomas 2026-06-18):** the scratch-`.env` driver path proved the
+      MECHANICS (Block A); the **add-a-source use case** must be exercised through the **real product UX**,
+      not by hand-pasting tokens into the driver's `.env`. So run Block B on a **fresh THROWAWAY brain**
+      installed from the `golden-source-sync` branch (the `golden-source-sync` MCP is wired at install) —
+      **never `inqom-brain`** (real private brain). The MCP only lives in a session **rooted in the brain**
+      (the list is frozen at session start → the launcher session can't call `setup_source`), so open a
+      **NEW conversation ROOTED in the throwaway brain**. Purge the brain after QA. _(The driver's
+      `setup2`/`setup3`/`perimeters` remain only a deterministic fallback for the mechanics.)_
+      - [ ] Install the throwaway brain (`installer.mjs --non-interactive …`, in-process embedder, OUTSIDE the launcher) and confirm `/mcp` lists `golden-source-sync`.
+    - [ ] **Declare the sources through the REAL conversational onboarding** (the `golden-source` skill gathers the 5 fields → token only into the brain's `.env`, never the chat → `setup_source`), config built AT test time:
+      - [ ] **Source A first** — onboard from scratch (1st source, empty config) → proves the from-zero onboarding UX.
+      - [ ] **Add Source B — nested/overlapping**, declared WHILE A already exists → proves **append** (config grows, A untouched). Token B on a parent zone that CONTAINS source A's Agicap zone → **B ⊇ A**, same workspace. Verify: (a) **A stays at its 10 pages** (token A does NOT spill into B's larger zone = no-leak on the A side); (b) B's page count; (c) the overlapping Agicap pages exist in **both** `golden-sources/qa-a/` AND `golden-sources/qa-b/` with **distinct provenance** frontmatter (`golden_source: qa-a` vs `qa-b`), no collision (real nested-sources / dual-provenance case, by design). _(Thomas has created zone+token B.)_
+      - [ ] **Add Source C — disjoint + DEEP**, declared WHILE A+B already exist. Token C on a zone with NO overlap with A/B, subpages nested several levels deep. Verify: (a) **strict no-leak** — C's pages never appear in A/B and vice-versa (textbook disjoint-perimeter isolation); (b) **access cascade at depth** — sharing the C root grants access all the way down, deep pages are mirrored; (c) **parent→child link rendering** across multiple levels. _(Note: Notion `search` returns the shared subtree FLAT regardless of depth → depth tests the cascade + rendering, NOT pagination; real cursor pagination + the §12 truncation guardrail would need VOLUME >100 pages — deferred, not part of C.)_ _(Thomas has created the 3rd connector.)_
+    - [ ] **Index purge on delete** — proven at the file level (`.md` removed, Block A); the FileWatcher de-indexing it needs this installed brain.
+    - [ ] **Routing**: a topic-X question refreshes source X only, not Y/Z (harness-level, §8).
+    - [ ] **Installed-brain demo**: **FileWatcher indexes** the golden files → brain answers **bounded + clickable citation** (§17)
   - [ ] On green: PR, `/code-review`, fix findings TDD, merge, tag (codename "The One With…"), **archive this plan** (`git mv` → `plans/archived/`, STATUS ✅ + proof)
 
 ---
@@ -238,6 +248,37 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
           `reindex-scheduler`) and how it's tested deterministically (injected clock + fake connector).
   - **Decision principle:** prefer the **deterministic, in-process, fail-loud** option (ADR 0009) — start
     naïve (interval + check_freshness + contained catch-up), measure, only then consider more.
+- [ ] **Topic 3 — Signpost the MCP's value & position it vs the "central MCP" target (positioning + a visual).**
+  - **Why:** the value of mirroring a golden source **locally into your second brain** isn't self-evident on
+    its own — it only clicks when contrasted with the **end-state target**: a **central, shared MCP** that
+    every employee's assistant queries live (the 24/7 org-wide source of truth, PRD §19). We should make
+    explicit that **local golden-source aspiration is the pragmatic, intermediate step** for people/teams who
+    **don't yet have** such a central MCP in their company — same retrieval value, available **right now,
+    locally**, with no infra to stand up.
+  - **To produce (before merge):**
+    - [ ] **Document the MCP's interest & concrete usages** (README / SETUP / CONNECTORS) — what a golden
+          source is *for* (search + cite live internal knowledge from your brain), when to reach for it, and
+          its limits (refreshes while a window is open, per-user token/scope, not 24/7).
+    - [ ] **Reassure security-minded readers — the integration-point governance story.** Spell out, in plain
+          language, *why this is safe by construction*: a sync goes through a **Notion integration point** on
+          which **specific, least-privilege rights** are set (Read content only) and which is **scoped to a
+          precise Notion zone** (a single shared root sub-tree, nothing outside it). That scoping is the
+          mitigation. And crucially, **nothing can be aspirated without the Notion administrators' approval**:
+          the integration only ever sees what an admin has **explicitly shared** with it — no admin share = no
+          access, full stop. So data aspiration is **admin-gated and zone-bounded**, not a blanket export.
+    - [ ] **A visual diff of the two approaches**, side by side, so the trade-off is obvious at a glance:
+          - **(A) Local golden-source mirror (this MVP)** — each person's brain pulls a Notion zone into its
+            own vault; **decentralized, zero infra, opt-in, available today**; freshness bounded by session
+            lifetime; one token/scope per user.
+          - **(B) Central shared MCP (the target, §19)** — one always-on org service the assistants query
+            live; **centralized, 24/7, single source of truth, shared governance/cost**; needs the company to
+            build & operate it.
+          - [ ] Render it as a small **ASCII/diagram** in the docs (and/or a slide-ready figure) — N brains →
+                N local mirrors **vs** N brains → 1 central MCP — making clear (A) is the **on-ramp** to (B),
+                not a competitor to it.
+    - [ ] **Frame the migration story:** when an org later stands up a central MCP, the local golden source
+          is **superseded, not wasted** (same concept, same `description`/routing mental model) — say so, so
+          adopters aren't afraid of a dead end.
 
 ---
 
