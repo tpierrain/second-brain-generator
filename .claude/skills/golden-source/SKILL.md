@@ -1,6 +1,6 @@
 ---
 name: golden-source
-description: "Declare and synchronize a GOLDEN SOURCE — a live zone of an internal tool (Notion today) whose content is mirrored into this brain's vault as Markdown, so the RAG can search and cite it. Use when the user wants to connect / declare / set up a golden source, sync / refresh / update one (e.g. 'sync the PA-SC golden source from Notion', 'refresh my product golden source', 'connecte la source de vérité Notion'), check whether one is behind, list them, or remove one. The actual work runs in the golden-source-sync MCP server; this skill is the thin conversational driver."
+description: "Declare and synchronize a GOLDEN SOURCE — a live zone of an internal tool (Notion today) whose content is MIRRORED into this brain's vault as Markdown, so the LOCAL RAG can search and cite it offline. Use when the user wants to connect / declare / set up a golden source, sync / refresh / update one (e.g. 'sync the PA-SC golden source from Notion', 'refresh my product golden source', 'connecte la source de vérité Notion'), check whether one is behind, list them, or remove one. DO NOT use this skill when the user simply wants to read, write, create, edit, fetch or SEARCH Notion content live and ad hoc — that is the job of the NATIVE Notion connector (a different tool); this skill is ONLY for mirroring a Notion zone locally for the RAG. The actual work runs in the golden-source-sync MCP server; this skill is the thin conversational driver."
 version: 1.0.0
 ---
 
@@ -14,6 +14,28 @@ version: 1.0.0
 > ⚠️ **This skill holds no logic.** All the real, testable work lives in the **`golden-source-sync`
 > MCP server** (its own package, Outside-in TDD). This skill only **recognizes intent, gathers the
 > declaration, guides the token into `.env`, calls the right MCP tool, and reports.**
+
+## First — a golden source, or the native Notion connector? (don't mix them up)
+
+A brain can touch Notion **two completely different ways**. Put yourself in the user's shoes and route
+to the right one **before** doing anything:
+
+- **They just want to read, write, create, edit, fetch or search something in Notion — live, ad hoc?**
+  → that's the **native Notion connector** (the brain's general, real-time Notion access:
+  `notion-fetch`, `notion-search`, `notion-create-pages`, …). **NOT this skill.** Let that connector
+  handle it; do **not** onboard a golden source for it.
+- **They want a sub-zone of Notion mirrored locally** so the **local RAG** can search & cite it —
+  offline, framed, always fresh, without re-querying Notion every time? → **that's a golden source.
+  This skill.** (Mirror = read-only copy into the vault; this skill never writes back to Notion.)
+
+> 🧭 **One-line litmus:** *live read/write in the ocean → native Notion connector; a local **mirror** of
+> a slice of the ocean for the RAG → golden source (sync).*
+
+If the user only says "Notion" and the intent is ambiguous, ask **one** orienting question before
+assuming: *"Do you want to **read or write in Notion live** (I'll use the Notion connector), or
+**mirror a zone of it into your vault** so your brain can search it locally and offline (a golden
+source)?"* — then route accordingly. Don't default to the golden-source onboarding just because Notion
+was mentioned.
 
 ## When to use it
 
