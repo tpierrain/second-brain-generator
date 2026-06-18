@@ -58,8 +58,26 @@ Thomas must ship tonight so Inqom colleagues can start using it. Reprioritized:
   - [x] 4d — Commit (docs) _(97310a4)_
 - [ ] **Step 5 — Fresh end-to-end validation** (new throwaway brain)
   - [x] 5a — Install a brand-new throwaway brain from the branch _(2026-06-18 · `~/gss-qa-ship`, in-process, post-flight canary OK; golden-source skill + MCP 6 tools smoke-tested green)_
-  - [ ] 5b — Re-run the in-perimeter flow: local-first latency OK, toast correct, disclaimer shown, citations `www.notion.so` _(Thomas — manual QA, new conversation rooted in `~/gss-qa-ship`)_
-  - [ ] 5c — Record result; fix any regression (back to the relevant step) before shipping
+  - [x] 5b — Re-run the in-perimeter flow _(2026-06-18 · Thomas manual QA on `~/gss-qa-ship`)_ — **round-1 fixes held** (local-first confirmed on a real question, perimeter disclaimer shown, anti-false-negative validated « plus clair, merci », F1/F3/F6 green) **but surfaced 7 new findings R2-1…R2-7** → see `golden-source-qa-postfixes-feedback.md` "BILAN QA ROUND 2"
+  - [x] 5c — Record result; regressions/new findings routed to **Step 5.5** before shipping _(2026-06-18)_
+- [ ] **Step 5.5 — Round-2 QA fixes** (TDD, commit-only-green; from `gss-qa-ship` QA) — **GREEN-LIGHT PENDING validation of this plan**
+  - [x] **5.5-A — SKILL lot** (brain-side prose; cheap, high UX) _(2026-06-18 · fa1dc29 + f74e7bb)_
+    - [x] A1 — **R2-1**: remove the « Source externe (sync delta) » option from the connect-a-source flow; `golden-source` skill owns **only** golden sources; if a real "golden vs live connector" ambiguity must be lifted, a neutral deterministic sentence (no overloaded "sync delta" term) _(fa1dc29 · SKILL "Scope — golden sources only" block + neutral clarification line)_
+    - [x] A2 — **R2-2 / F2**: skill **opens `.env`** via the existing seam `scripts/lib/open-env.mjs` (best-effort exit 0, `SBG_NO_OPEN_ENV` guard) instead of prose-only "open your .env"; + **step-by-step Notion token** guidance (create an *Internal* integration → copy the *Internal Integration Secret* `secret_`/`ntn_` → share on root page via ••• → Connections) _(fa1dc29 · new CLI `scripts/open-env.mjs <VAR>` reuses the seam; onboarding step 2 calls it + Notion walkthrough)_
+    - [x] A3 — **R2-2 / F2 (launcher)**: aerate/reorder `.env.example` — "secrets to fill" block on top, advanced config (embedder/ONNX) below; clear sections _(f74e7bb · 🔑 SECRETS TO FILL IN / ⚙️ ADVANCED dividers)_
+    - [x] A4 — **R2-3**: ONE path for the token placeholder — drop the chat paste-block that duplicates the `.env` placeholder (prefer: open `.env` on the written line); make the placeholder write **idempotent** + deterministic dedup _(fa1dc29 · pure seam `scripts/lib/env-placeholder.mjs` `ensureEnvPlaceholder`, 8/8 — exactly one `<VAR>=` line, dedup keeps a filled value; setup_source itself never touches `.env`, so the dedup lives in the placeholder writer the skill calls)_
+    - [x] A5 — Client checkpoint (Thomas) + commit(s) _(2026-06-18 · Thomas: "committe maintenant", 2 commits — `feat(golden-source)` fa1dc29 + `docs(installer)` f74e7bb)_
+  - [ ] **5.5-B — MCP conversion lot** (`golden-source-sync`, Outside-in TDD)
+    - [ ] B1 — **R2-5 (decision A — link to the Notion page)**: register `notion-to-md` custom transformers for `child_page` / `link_to_page` / page-mention rich-text → emit clickable **`https://www.notion.so/<id>`** links (RED test on a page with a child-page/link-to-page → asserts a `www.notion.so` MD link in the body)
+    - [ ] B2 — **R2-7a**: extract `child_database` content (at least row titles + key properties; rows that are in-perimeter pages get their own `.md`) so a database-backed page isn't mirrored empty (RED test: a page whose body is a database → non-empty Markdown)
+    - [ ] B3 — Green: full `golden-source-sync` suite + `tsc`
+    - [ ] B4 — Client checkpoint + commit(s) `feat(golden-source-sync): link internal Notion pages` / `…: extract child databases`
+  - [ ] **5.5-C — RAG notify check** (`rag/notify`)
+    - [ ] C1 — **R2-4**: verify whether Step 2's "complete" toast fires at **true debounce quiescence** (count is already correct = 27 on `gss-qa-ship`). If "complete" can still appear mid-index, tighten the settle; else mark Obs3/F5 fully closed. RED test only if a premature-complete path is reproducible
+    - [ ] C2 — Green (`rag/` + tsc) if any change; commit `fix(rag): …`
+  - [ ] **5.5-D — Doc (no code)**
+    - [ ] D1 — **R2-7b**: document the known limitation — attached **PDFs / Google Slides** are not extracted (only Notion text is mirrored); state it in the skill disclaimer + the user-facing connectors doc; the brain already flags it at use-time (keep that)
+  - [ ] **5.5-E — Fresh re-validation** on a new throwaway brain (round-3 quick pass): the connect flow has no "sync delta" option, `.env` opens, internal Notion links are clickable, database pages non-empty, toast truthful
 - [ ] **Step 6 — Ship (up to merge)**
   - [ ] 6a — Push branch `golden-source-sync`
   - [ ] 6b — Open PR (codename « The One With… », EN body) — describe the QA round + the 3 fixes + doc
@@ -195,6 +213,30 @@ flowchart LR
 - [ ] **5b — Re-run** the in-perimeter flow and assert: fast first answer (no blocking sync), correct
       indexing toast, perimeter disclaimer shown, citations `www.notion.so`, no « source d'or ».
 - [ ] **5c — Record** the result; any regression → back to the relevant step before shipping.
+
+### Step 5.5 — Round-2 QA fixes (from `gss-qa-ship`)
+
+> **Source:** `golden-source-qa-postfixes-feedback.md` → "BILAN QA ROUND 2". Round-1 fixes (Obs 4/3/5)
+> held; this step turns the **7 new findings** into green TDD baby-steps before shipping. Decisions
+> captured with Thomas (2026-06-18): **Q1 = plan-then-go** (this plan, awaiting his validation before
+> code); **Q2 / R2-5 = option A** — internal Notion links point to the **Notion page** (`www.notion.so/<id>`),
+> simplest, matches the literal ask; hybrid (local `.md` for in-perimeter) is a future refinement.
+>
+> **Order = cheapest-highest-UX first:** SKILL lot (A) → MCP conversion (B) → RAG check (C) → doc (D) →
+> fresh re-validation (E). Each sub-step: RED→GREEN→refactor, commit only green, Thomas between lots.
+
+- [ ] **5.5-A SKILL** — A1 remove the second connect option (R2-1, decided); A2 open `.env` via
+      `open-env.mjs` + step-by-step Notion token (R2-2/F2); A3 aerate/reorder `.env.example` (R2-2/F2,
+      launcher); A4 single idempotent placeholder path, deterministic dedup (R2-3). Mostly prose + one
+      seam call; the `.env.example` reorder touches the launcher template.
+- [ ] **5.5-B MCP conversion** — B1 custom `notion-to-md` transformers so `child_page`/`link_to_page`/
+      page-mentions emit `www.notion.so/<id>` links (R2-5, **decision A**); B2 extract `child_database`
+      so database pages aren't mirrored empty (R2-7a). Both in `golden-source-sync` (gateway/connector),
+      tied by tests. Cousins (Notion→MD fidelity).
+- [ ] **5.5-C RAG check** — C1 confirm the "complete" toast only at true debounce quiescence (count
+      already correct on `gss-qa-ship`); tighten only if a premature path reproduces, else close Obs3/F5.
+- [ ] **5.5-D Doc** — D1 document the PDF/Slides non-extraction limit (R2-7b); keep the use-time flagging.
+- [ ] **5.5-E Re-validate** on a fresh throwaway brain (round-3 quick pass), then proceed to Step 6.
 
 ### Step 6 — Ship (up to merge)
 
