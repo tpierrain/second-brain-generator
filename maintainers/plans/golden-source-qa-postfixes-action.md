@@ -84,8 +84,8 @@ Thomas must ship tonight so Inqom colleagues can start using it. Reprioritized:
   > acceptable, and the upgrade path is the most realistic test. Any QA finding → **fast-follow patch**
   > (TDD, green) + a patch tag. **`6f` MUST push a NEW semver tag** — `update-engine` resolves the
   > *latest tag on the remote*; without a new tag the legacy brain sees no update.
-  - [ ] 6a — Push branch `golden-source-sync`
-  - [ ] 6b — Open PR (codename « The One With… », EN body) — describe the QA round + the 3 fixes + doc
+  - [x] 6a — Push branch `golden-source-sync` _(2026-06-18 · `ebfe152..74f49c6`, 31 commits)_
+  - [x] 6b — PR **#12** « The One With Golden Sources » — body rewritten to sell the delivered feature (6 tools, decoupled ADR 0022, 2 QA rounds, docs, known limits, before-merge checklist) _(2026-06-18 · https://github.com/tpierrain/second-brain-generator/pull/12)_
   - [~] 6c — Run `/code-review` on the full branch diff (first time on this branch) — triage findings
         _(2026-06-18 · run early/autonomously while Step 5 pends; 7 finder angles. Net: 1 real fix, rest
         refuted or low-priority backlog — see below.)_
