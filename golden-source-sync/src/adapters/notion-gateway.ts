@@ -11,12 +11,24 @@ import type { GoldenSourceConfig } from '../domain/types.js';
 import { NotionConnector } from './notion-connector.js';
 import type { NotionGateway, NotionSearchResponse } from './notion-connector.js';
 import { readEnvVarFresh } from '../lib/fresh-env.js';
+import { childPageToMarkdown, linkToPageToMarkdown } from '../lib/notion-transformers.js';
 
 class NotionSdkGateway implements NotionGateway {
   private readonly n2m: NotionToMarkdown;
 
   constructor(private readonly client: Client) {
-    this.n2m = new NotionToMarkdown({ notionClient: client });
+    // B1 (R2-5): `parseChildPages` must be on or notion-to-md drops `child_page` blocks before
+    // any custom transformer runs (it skips them in the outer loop). With it on, our transformer
+    // takes precedence and emits a clickable link instead of inlining the sub-page's content.
+    this.n2m = new NotionToMarkdown({ notionClient: client, config: { parseChildPages: true } });
+    // B1: internal Notion navigation blocks render empty / with a literal "link_to_page" label by
+    // default — emit clickable www.notion.so links so a mirrored hub keeps its sub-tree navigable.
+    this.n2m.setCustomTransformer('child_page', (block) =>
+      childPageToMarkdown(block as unknown as Parameters<typeof childPageToMarkdown>[0]),
+    );
+    this.n2m.setCustomTransformer('link_to_page', (block) =>
+      linkToPageToMarkdown(block as unknown as Parameters<typeof linkToPageToMarkdown>[0]),
+    );
   }
 
   async search(startCursor?: string): Promise<NotionSearchResponse> {

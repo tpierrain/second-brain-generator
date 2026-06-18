@@ -9,6 +9,11 @@
 // non-Notion URL — is left untouched, and an un-parseable Notion link is returned verbatim
 // rather than throwing (URL rewriting must never crash a sync).
 export function canonicalizeNotionUrl(url: string): string {
+  // A Notion page mention is rendered with a RELATIVE href `/<id32>` (optionally dashed) — dead
+  // outside Notion. Absolutize it to the stable clickable form. Match the whole target so a real
+  // root-relative site path (e.g. `/docs/page`) is left untouched.
+  const relative = url.match(/^\/([0-9a-fA-F]{32}|[0-9a-fA-F-]{36})$/);
+  if (relative) return `https://www.notion.so/${relative[1].replace(/-/g, '')}`;
   if (!/^https?:\/\/app\.notion\.com\//i.test(url)) return url;
   try {
     const id = extractPageId(url).replace(/-/g, '');
