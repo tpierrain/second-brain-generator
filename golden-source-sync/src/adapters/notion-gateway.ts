@@ -10,6 +10,7 @@ import type { ConnectorFactory, ISourceConnector } from '../domain/ports.js';
 import type { GoldenSourceConfig } from '../domain/types.js';
 import { NotionConnector } from './notion-connector.js';
 import type { NotionGateway, NotionSearchResponse } from './notion-connector.js';
+import { readEnvVarFresh } from '../lib/fresh-env.js';
 
 class NotionSdkGateway implements NotionGateway {
   private readonly n2m: NotionToMarkdown;
@@ -40,7 +41,10 @@ class NotionSdkGateway implements NotionGateway {
 /** Wires a NotionConnector from a declared source, reading its token from the env. */
 export function buildNotionConnector(config: GoldenSourceConfig): ISourceConnector {
   const tokenEnv = config.connector.config.token_env;
-  const token = process.env[tokenEnv];
+  // F3: prefer the FRESH `.env` value (a token pasted mid-session is invisible to the
+  // boot-frozen process.env), falling back to process.env for environments with no `.env`
+  // file (e.g. a real exported env var on the CLI).
+  const token = readEnvVarFresh(tokenEnv) ?? process.env[tokenEnv];
   if (!token) {
     // Name the variable to set, never echo a token value (PRD §11).
     throw new Error(`Notion token missing: set the ${tokenEnv} environment variable (never commit it).`);

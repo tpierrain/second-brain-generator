@@ -1,5 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { buildNotionConnector } from '../adapters/notion-gateway.js';
 import { aNotionGoldenSource } from './builder.js';
 
@@ -30,5 +33,29 @@ test('building a Notion connector succeeds when the token env var is set', () =>
     assert.equal(typeof connector.listItems, 'function');
   } finally {
     delete process.env.GOLDEN_TEST_TOKEN;
+  }
+});
+
+// F3: the token used to be read once at boot (dotenv → process.env, frozen). A token pasted
+// into `.env` mid-session was invisible → setup_source failed → forced restart. The factory
+// must re-read the `.env` FRESH at call-time, so a token added after boot resolves with no restart.
+test('reads a token added to .env AFTER boot, without a restart (F3)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'gss-env-'));
+  const envFile = join(dir, '.env');
+  const prevEnvPath = process.env.SBG_ENV_PATH;
+  delete process.env.GOLDEN_TEST_TOKEN; // absent from the boot-frozen process.env
+  process.env.SBG_ENV_PATH = envFile;
+  try {
+    // Simulate the user pasting the token into .env during the session.
+    writeFileSync(envFile, 'GOLDEN_TEST_TOKEN=ntn_pasted_live\n');
+
+    const connector = buildNotionConnector(sourceWithTokenEnv('GOLDEN_TEST_TOKEN'));
+
+    assert.ok(connector);
+    assert.equal(typeof connector.listItems, 'function');
+  } finally {
+    if (prevEnvPath === undefined) delete process.env.SBG_ENV_PATH;
+    else process.env.SBG_ENV_PATH = prevEnvPath;
+    rmSync(dir, { recursive: true, force: true });
   }
 });

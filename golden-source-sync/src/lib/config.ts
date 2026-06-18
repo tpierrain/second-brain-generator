@@ -20,7 +20,16 @@ export function resolvePath(envValue: string | undefined, fallback: string): str
   return envValue && envValue.trim() ? resolve(envValue) : fallback;
 }
 
-const envPath = resolvePath(process.env.SBG_ENV_PATH, resolve(projectRoot, '.env'));
+/**
+ * Resolves the `.env` path FRESH from the current environment (SBG_ENV_PATH or the repo-root
+ * default). Computed at call-time, not frozen at boot, so the fresh-token reader (F3) and the
+ * boot-time dotenv load agree on the same file.
+ */
+export function resolveEnvPath(): string {
+  return resolvePath(process.env.SBG_ENV_PATH, resolve(projectRoot, '.env'));
+}
+
+const envPath = resolveEnvPath();
 if (existsSync(envPath)) loadDotenv({ path: envPath });
 
 /** Vault root — same default as the RAG (`<root>/vault`), overridable via VAULT_DIR. */
