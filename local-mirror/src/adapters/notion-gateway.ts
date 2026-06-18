@@ -7,7 +7,7 @@
 import { Client } from '@notionhq/client';
 import { NotionToMarkdown } from 'notion-to-md';
 import type { ConnectorFactory, ISourceConnector } from '../domain/ports.js';
-import type { GoldenSourceConfig } from '../domain/types.js';
+import type { LocalMirrorConfig } from '../domain/types.js';
 import { NotionConnector } from './notion-connector.js';
 import type { NotionGateway, NotionSearchResponse } from './notion-connector.js';
 import { readEnvVarFresh } from '../lib/fresh-env.js';
@@ -96,7 +96,7 @@ class NotionSdkGateway implements NotionGateway {
 }
 
 /** Wires a NotionConnector from a declared source, reading its token from the env. */
-export function buildNotionConnector(config: GoldenSourceConfig): ISourceConnector {
+export function buildNotionConnector(config: LocalMirrorConfig): ISourceConnector {
   const tokenEnv = config.connector.config.token_env;
   // F3: prefer the FRESH `.env` value (a token pasted mid-session is invisible to the
   // boot-frozen process.env), falling back to process.env for environments with no `.env`

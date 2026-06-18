@@ -1,5 +1,5 @@
 // MCP server = the driving adapter (PRD §5). It is a 1:1 translation of the API port
-// IGoldenSourceSync: each tool validates its arguments (zod), calls the matching port
+// ILocalMirror: each tool validates its arguments (zod), calls the matching port
 // method, and serializes the result. NO business logic lives here — that is what makes
 // "where to deploy" (local / remote / plugin) a packaging variable (PRD §4).
 //
@@ -8,7 +8,7 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import type { IGoldenSourceSync } from './domain/golden-source-sync.js';
+import type { ILocalMirror } from './domain/local-mirror.js';
 
 const SERVER_NAME = 'local-mirror';
 
@@ -18,12 +18,12 @@ function asText(result: unknown) {
 }
 
 /** Declare the 6 tools (PRD §9), each a thin 1:1 wrapper over the API port. */
-export function createMcpServer(api: IGoldenSourceSync): McpServer {
+export function createMcpServer(api: ILocalMirror): McpServer {
   const server = new McpServer({ name: SERVER_NAME, version: '0.1.0' });
 
   server.tool(
     'setup_source',
-    'Interactive onboarding of a golden source: tests the connection/scope, does the first sync, explains each step. The token travels via an env var, never through this tool.',
+    'Interactive onboarding of a local mirror: tests the connection/scope, does the first sync, explains each step. The token travels via an env var, never through this tool.',
     {
       name: z.string().describe('Short technical id = vault subfolder name (e.g. pa-sc)'),
       title: z.string().describe('Human label'),
@@ -37,7 +37,7 @@ export function createMcpServer(api: IGoldenSourceSync): McpServer {
       ),
   );
 
-  server.tool('list_sources', 'Lists the declared golden sources and their state.', {}, async () =>
+  server.tool('list_sources', 'Lists the declared local mirrors and their state.', {}, async () =>
     asText(await api.listSources()),
   );
 

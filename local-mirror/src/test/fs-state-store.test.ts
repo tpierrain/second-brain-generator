@@ -7,7 +7,7 @@ import { FsStateStore } from '../adapters/fs-state-store.js';
 import type { PersistedState } from '../domain/ports.js';
 
 // IStateStore on the real filesystem — one JSON file per source in the sidecar dir
-// (`.golden-source-sync/<name>.state.json`, committed but OUTSIDE the indexed vault, PRD §10).
+// (`.local-mirror/<name>.state.json`, committed but OUTSIDE the indexed vault, PRD §10).
 // Writes are atomic (temp + rename) so a half-written state never gets committed.
 
 async function aTempSidecar(): Promise<string> {
@@ -26,7 +26,7 @@ function aState(overrides: Partial<PersistedState> = {}): PersistedState {
     items: {
       abc123: {
         title: 'Chaintrust error catalog',
-        vaultPath: 'golden-sources/pa-sc/abc123.md',
+        vaultPath: 'mirrors/pa-sc/abc123.md',
         lastEditedTime: '2026-06-12T14:21:00.000Z',
         contentHash: 'sha256:deadbeef',
         lastWrittenAt: '2026-06-12T14:30:00.000Z',

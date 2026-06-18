@@ -1,10 +1,10 @@
 // Test Builder — wires the Domain Service with in-memory SPI fakes and returns the
-// API port (IGoldenSourceSync). Acceptance tests drive the port through this, never
+// API port (ILocalMirror). Acceptance tests drive the port through this, never
 // the MCP transport (PRD §15). The public API speaks business intentions only — no
 // "stub" leaks into it.
 
-import { GoldenSourceSync } from '../domain/golden-source-sync.js';
-import type { IGoldenSourceSync } from '../domain/golden-source-sync.js';
+import { LocalMirror } from '../domain/local-mirror.js';
+import type { ILocalMirror } from '../domain/local-mirror.js';
 import type {
   IClock,
   IConfigStore,
@@ -14,14 +14,14 @@ import type {
   PersistedState,
   SourceItem,
 } from '../domain/ports.js';
-import type { GoldenSourceConfig } from '../domain/types.js';
+import type { LocalMirrorConfig } from '../domain/types.js';
 
-export function aGoldenSourceSync(): GoldenSourceSyncBuilder {
-  return new GoldenSourceSyncBuilder();
+export function aLocalMirror(): LocalMirrorBuilder {
+  return new LocalMirrorBuilder();
 }
 
-class GoldenSourceSyncBuilder {
-  private readonly declared: GoldenSourceConfig[] = [];
+class LocalMirrorBuilder {
+  private readonly declared: LocalMirrorConfig[] = [];
   private pages: StubPage[] = [];
   /** When false, serving pages no longer auto-declares the default source (setup_source case). */
   private autoDeclare = true;
@@ -32,8 +32,8 @@ class GoldenSourceSyncBuilder {
   /** Stable reference so tests can inspect what `setup_source` declared. */
   private readonly configs = new InMemoryConfigStore(this.declared);
 
-  /** Declare golden sources, as if already written to the config file. */
-  withDeclaredSources(...configs: GoldenSourceConfig[]): this {
+  /** Declare local mirrors, as if already written to the config file. */
+  withDeclaredSources(...configs: LocalMirrorConfig[]): this {
     this.declared.push(...configs);
     return this;
   }
@@ -106,15 +106,15 @@ class GoldenSourceSyncBuilder {
   }
 
   /** The sources currently declared (after a `setup_source`, the new one shows up here). */
-  async declaredSources(): Promise<GoldenSourceConfig[]> {
+  async declaredSources(): Promise<LocalMirrorConfig[]> {
     return this.configs.loadAll();
   }
 
-  build(): IGoldenSourceSync {
+  build(): ILocalMirror {
     if (this.declared.length === 0 && this.autoDeclare && this.pages.length > 0) {
-      this.declared.push(aNotionGoldenSource());
+      this.declared.push(aNotionLocalMirror());
     }
-    return new GoldenSourceSync({
+    return new LocalMirror({
       configStore: this.configs,
       stateStore: new InMemoryStateStore(),
       vaultWriter: this.vault,
@@ -149,10 +149,10 @@ export function anUnreadableNotionPage(overrides: Partial<StubPage> = {}): StubP
   return aNotionPage({ ...overrides, fetchError: overrides.fetchError ?? 'notion: 503' });
 }
 
-/** A declared Notion golden source with sensible defaults (override per test). */
-export function aNotionGoldenSource(
-  overrides: Partial<GoldenSourceConfig> = {},
-): GoldenSourceConfig {
+/** A declared Notion local mirror with sensible defaults (override per test). */
+export function aNotionLocalMirror(
+  overrides: Partial<LocalMirrorConfig> = {},
+): LocalMirrorConfig {
   const name = overrides.name ?? 'pa-sc';
   return {
     name,
@@ -165,16 +165,16 @@ export function aNotionGoldenSource(
         token_env: 'GOLDEN_PA_SC_NOTION_TOKEN',
       },
     },
-    target_dir: overrides.target_dir ?? `golden-sources/${name}`,
+    target_dir: overrides.target_dir ?? `mirrors/${name}`,
   };
 }
 
 class InMemoryConfigStore implements IConfigStore {
-  constructor(private readonly configs: GoldenSourceConfig[]) {}
-  async loadAll(): Promise<GoldenSourceConfig[]> {
+  constructor(private readonly configs: LocalMirrorConfig[]) {}
+  async loadAll(): Promise<LocalMirrorConfig[]> {
     return [...this.configs];
   }
-  async upsert(config: GoldenSourceConfig): Promise<void> {
+  async upsert(config: LocalMirrorConfig): Promise<void> {
     const i = this.configs.findIndex((c) => c.name === config.name);
     if (i >= 0) this.configs[i] = config;
     else this.configs.push(config);

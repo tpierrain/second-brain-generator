@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { GoldenSourceSync } from '../domain/golden-source-sync.js';
+import { LocalMirror } from '../domain/local-mirror.js';
 import type {
   ConnectorFactory,
   IClock,
@@ -10,7 +10,7 @@ import type {
   PersistedState,
   SourceItem,
 } from '../domain/ports.js';
-import type { GoldenSourceConfig } from '../domain/types.js';
+import type { LocalMirrorConfig } from '../domain/types.js';
 
 // Acceptance tests for `sync("all")` — the fan-out that refreshes EVERY declared source in one
 // call. Two non-negotiable properties on top of "it syncs them": the sources are isolated, so one
@@ -29,11 +29,11 @@ interface SourceSpec {
 }
 
 function buildSyncOver(specs: SourceSpec[]): {
-  api: GoldenSourceSync;
+  api: LocalMirror;
   written: Map<string, string>;
   deleted: string[];
 } {
-  const configs: GoldenSourceConfig[] = specs.map((s) => aConfig(s.name));
+  const configs: LocalMirrorConfig[] = specs.map((s) => aConfig(s.name));
   const written = new Map<string, string>();
   const deleted: string[] = [];
 
@@ -61,7 +61,7 @@ function buildSyncOver(specs: SourceSpec[]): {
   };
 
   return {
-    api: new GoldenSourceSync({ configStore, stateStore, vaultWriter, clock, connectorFor }),
+    api: new LocalMirror({ configStore, stateStore, vaultWriter, clock, connectorFor }),
     written,
     deleted,
   };
@@ -92,7 +92,7 @@ class InMemoryStateStore implements IStateStore {
   }
 }
 
-function aConfig(name: string): GoldenSourceConfig {
+function aConfig(name: string): LocalMirrorConfig {
   return {
     name,
     title: `Source ${name}`,
@@ -101,7 +101,7 @@ function aConfig(name: string): GoldenSourceConfig {
       type: 'notion',
       config: { root_page_url: `https://www.notion.so/${name}-304a2ca0b1c24d6e8f0a1b2c3d4e5f60`, token_env: `TOKEN_${name}` },
     },
-    target_dir: `golden-sources/${name}`,
+    target_dir: `mirrors/${name}`,
   };
 }
 
@@ -145,8 +145,8 @@ test('sync("all") fans out over every declared source and aggregates the report'
     [['alpha', 2], ['beta', 1]],
   );
   // Each source wrote into its OWN subfolder.
-  assert.ok(written.has('golden-sources/alpha/a1.md'));
-  assert.ok(written.has('golden-sources/beta/b1.md'));
+  assert.ok(written.has('mirrors/alpha/a1.md'));
+  assert.ok(written.has('mirrors/beta/b1.md'));
 });
 
 test('sync("all") is contained: one source failing never aborts the others', async () => {
@@ -159,7 +159,7 @@ test('sync("all") is contained: one source failing never aborts the others', asy
 
   // The batch did not blow up; beta synced fully despite alpha being down.
   assert.equal(report.status, 'partial');
-  assert.ok(written.has('golden-sources/beta/b1.md'));
+  assert.ok(written.has('mirrors/beta/b1.md'));
   const byName = Object.fromEntries((report.sources ?? []).map((r) => [r.name, r]));
   assert.equal(byName.alpha.status, 'partial'); // §7 guardrail: a doubtful perimeter freezes, writes nothing
   assert.equal(byName.alpha.written, 0);
@@ -180,6 +180,6 @@ test('sync("all") runs the sources concurrently — a slow one never blocks the 
   const report = await withTimeout(api.sync('all'), 2000, 'sync("all") did not run sources concurrently');
 
   assert.equal(report.status, 'ok');
-  assert.ok(written.has('golden-sources/alpha/a1.md'));
-  assert.ok(written.has('golden-sources/beta/b1.md'));
+  assert.ok(written.has('mirrors/alpha/a1.md'));
+  assert.ok(written.has('mirrors/beta/b1.md'));
 });

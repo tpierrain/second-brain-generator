@@ -1,4 +1,4 @@
-// Domain DTOs for golden-source-sync. The API port (IGoldenSourceSync) speaks these
+// Domain DTOs for local-mirror. The API port (ILocalMirror) speaks these
 // transport-independent shapes; the MCP server merely serializes them. Several of these
 // types are intentionally lean here and grow (with their own tests) in later steps.
 
@@ -7,7 +7,7 @@ export type ConnectorType = 'notion';
 export interface NotionConnectorConfig {
   type: 'notion';
   config: {
-    /** Root Notion page URL — golden-source-sync extracts the page id from it (PRD §2/§11). */
+    /** Root Notion page URL — local-mirror extracts the page id from it (PRD §2/§11). */
     root_page_url: string;
     /** Name of the env var holding the integration token — never the token itself (PRD §11). */
     token_env: string;
@@ -15,18 +15,18 @@ export interface NotionConnectorConfig {
 }
 
 /**
- * A declared golden source — the versioned source of truth lives in the config file
- * (`golden-source-sync.config.json`), written by `setup_source` (PRD §2, §20.2).
+ * A declared local mirror — the versioned source of truth lives in the config file
+ * (`local-mirror.config.json`), written by `setup_source` (PRD §2, §20.2).
  */
-export interface GoldenSourceConfig {
-  /** Short technical id = name of the subfolder under `golden-sources/` (e.g. `pa-sc`). */
+export interface LocalMirrorConfig {
+  /** Short technical id = name of the subfolder under `mirrors/` (e.g. `pa-sc`). */
   name: string;
   /** Human label. */
   title: string;
   /** Natural-language topics covered — the harness routing key (PRD §2). */
   description: string;
   connector: NotionConnectorConfig;
-  /** Dedicated vault subfolder (e.g. `golden-sources/pa-sc`). */
+  /** Dedicated vault subfolder (e.g. `mirrors/pa-sc`). */
   target_dir: string;
 }
 

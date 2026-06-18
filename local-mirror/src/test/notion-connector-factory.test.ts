@@ -4,14 +4,14 @@ import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildNotionConnector } from '../adapters/notion-gateway.js';
-import { aNotionGoldenSource } from './builder.js';
+import { aNotionLocalMirror } from './builder.js';
 
 // The factory reads the integration token from the configured env var — never from the
 // config file, never logged (PRD §11). Building does not hit the network, so this is a
 // pure unit test of the env/auth plumbing.
 
 function sourceWithTokenEnv(tokenEnv: string) {
-  return aNotionGoldenSource({
+  return aNotionLocalMirror({
     connector: {
       type: 'notion',
       config: { root_page_url: 'https://www.notion.so/inqom/HUB-304a2ca0b1c24d6e8f0a1b2c3d4e5f60', token_env: tokenEnv },

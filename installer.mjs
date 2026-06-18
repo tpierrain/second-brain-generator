@@ -42,9 +42,9 @@ import {
   nodeHookCommand,
   minimalPathEnv,
   buildRagInstallInvocation,
-  buildGoldenSourceShLauncher,
-  buildGoldenSourceCmdLauncher,
-  applyGoldenSourceLauncher,
+  buildLocalMirrorShLauncher,
+  buildLocalMirrorCmdLauncher,
+  applyLocalMirrorLauncher,
 } from "./scripts/lib/rag-launcher.mjs";
 import { DEMO_BY_LOCALE, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
 import {
@@ -460,12 +460,12 @@ gen(join(TARGET, ".claude", "settings.json.template"), join(TARGET, ".claude", "
 writeFileSync(join(TARGET, "rag", "launch.sh"), buildShLauncher());
 writeFileSync(join(TARGET, "rag", "launch.cmd"), buildCmdLauncher());
 // Same self-heal for the local-mirror server (pure JS → no rebuild, just PATH).
-writeFileSync(join(TARGET, "local-mirror", "launch.sh"), buildGoldenSourceShLauncher());
-writeFileSync(join(TARGET, "local-mirror", "launch.cmd"), buildGoldenSourceCmdLauncher());
+writeFileSync(join(TARGET, "local-mirror", "launch.sh"), buildLocalMirrorShLauncher());
+writeFileSync(join(TARGET, "local-mirror", "launch.cmd"), buildLocalMirrorCmdLauncher());
 {
   const mcpPath = join(TARGET, ".mcp.json");
   let mcp = applyRagLauncher(JSON.parse(readFileSync(mcpPath, "utf8")), process.platform);
-  mcp = applyGoldenSourceLauncher(mcp, process.platform);
+  mcp = applyLocalMirrorLauncher(mcp, process.platform);
   writeFileSync(mcpPath, JSON.stringify(mcp, null, 2) + "\n");
   ok("self-heal launchers generated (rag + local-mirror, .sh + .cmd), .mcp.json adapted to the OS");
 }

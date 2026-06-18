@@ -37,8 +37,8 @@ import {
   buildCmdLauncher,
   buildNodeRunnerSh,
   buildNodeRunnerCmd,
-  buildGoldenSourceShLauncher,
-  buildGoldenSourceCmdLauncher,
+  buildLocalMirrorShLauncher,
+  buildLocalMirrorCmdLauncher,
 } from "./lib/rag-launcher.mjs";
 
 function copyInto(srcDir, destDir, rel) {
@@ -54,7 +54,7 @@ const npmExe = (platform) => (platform === "win32" ? "npm.cmd" : "npm");
 async function defaultRunInstall({ ragDir, brainDir, platform }) {
   execFileSync(npmExe(platform), ["install"], { cwd: ragDir, stdio: "inherit" });
   // local-mirror deps too, when the brain carries that package (pure JS →
-  // no native build, plain install; absent on pre-golden-source brains → skip).
+  // no native build, plain install; absent on pre-local-mirror brains → skip).
   const gssDir = join(brainDir, "local-mirror");
   if (existsSync(join(gssDir, "package.json"))) {
     execFileSync(npmExe(platform), ["install"], { cwd: gssDir, stdio: "inherit" });
@@ -71,8 +71,8 @@ async function defaultRunReindex({ brainDir, platform }) {
 async function defaultRegenerateLaunchers({ brainDir }) {
   writeFileSync(join(brainDir, "rag", "launch.sh"), buildShLauncher());
   writeFileSync(join(brainDir, "rag", "launch.cmd"), buildCmdLauncher());
-  writeFileSync(join(brainDir, "local-mirror", "launch.sh"), buildGoldenSourceShLauncher());
-  writeFileSync(join(brainDir, "local-mirror", "launch.cmd"), buildGoldenSourceCmdLauncher());
+  writeFileSync(join(brainDir, "local-mirror", "launch.sh"), buildLocalMirrorShLauncher());
+  writeFileSync(join(brainDir, "local-mirror", "launch.cmd"), buildLocalMirrorCmdLauncher());
   writeFileSync(join(brainDir, "scripts", "run-node.sh"), buildNodeRunnerSh());
   writeFileSync(join(brainDir, "scripts", "run-node.cmd"), buildNodeRunnerCmd());
 }

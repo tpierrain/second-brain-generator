@@ -1,13 +1,13 @@
-// Markdown assembly — the thin contract golden-source-sync writes into the vault (PRD §6):
-// the produced body plus mandatory citation frontmatter. This is *what golden-source-sync
+// Markdown assembly — the thin contract local-mirror writes into the vault (PRD §6):
+// the produced body plus mandatory citation frontmatter. This is *what local-mirror
 // writes*, not a RAG requirement. Frontmatter via gray-matter (js-yaml under the hood).
 
 import matter from 'gray-matter';
 import type { SourceItem } from '../domain/ports.js';
 
 /** The frontmatter stamped on every produced note (PRD §6). */
-export interface GoldenSourceFrontmatter {
-  golden_source: string;
+export interface LocalMirrorFrontmatter {
+  mirror: string;
   source_id: string;
   title: string;
   /** Source URL — indispensable for the citation (without it, no clickable link). */
@@ -17,13 +17,13 @@ export interface GoldenSourceFrontmatter {
 }
 
 /** Assemble one note: produced body + mandatory citation frontmatter (PRD §6). */
-export function toGoldenSourceMarkdown(
-  goldenSource: string,
+export function toLocalMirrorMarkdown(
+  mirror: string,
   item: SourceItem,
   body: string,
 ): string {
-  const frontmatter: GoldenSourceFrontmatter = {
-    golden_source: goldenSource,
+  const frontmatter: LocalMirrorFrontmatter = {
+    mirror: mirror,
     source_id: item.id,
     title: item.title,
     source_url: item.url,

@@ -12,9 +12,9 @@ import {
   buildNodeRunnerCmd,
   nodeHookCommand,
   buildRagInstallInvocation,
-  buildGoldenSourceShLauncher,
-  buildGoldenSourceCmdLauncher,
-  applyGoldenSourceLauncher,
+  buildLocalMirrorShLauncher,
+  buildLocalMirrorCmdLauncher,
+  applyLocalMirrorLauncher,
 } from "./rag-launcher.mjs";
 
 // Reproduces installer.mjs's (gen) text substitution: .split().join() per key.
@@ -155,21 +155,21 @@ test("applyRagLauncher: rewrites the vault-rag command per OS, preserves cwd/env
   assert.deepEqual(win.mcpServers["vault-rag"].args, ["/c", "rag\\launch.cmd"]);
 });
 
-test("buildGoldenSourceShLauncher: sh shebang + self-heal + starts the server via npx tsx", () => {
-  const sh = buildGoldenSourceShLauncher();
+test("buildLocalMirrorShLauncher: sh shebang + self-heal + starts the server via npx tsx", () => {
+  const sh = buildLocalMirrorShLauncher();
   assert.match(sh, /^#!\/bin\/sh/);
   assert.match(sh, /\/opt\/homebrew\/bin/); // same PATH self-heal as the RAG launcher
   assert.match(sh, /exec npx tsx local-mirror\/src\/server\.ts/);
 });
 
-test("buildGoldenSourceCmdLauncher: @echo off + Windows self-heal + starts the server", () => {
-  const cmd = buildGoldenSourceCmdLauncher();
+test("buildLocalMirrorCmdLauncher: @echo off + Windows self-heal + starts the server", () => {
+  const cmd = buildLocalMirrorCmdLauncher();
   assert.match(cmd, /@echo off/);
   assert.match(cmd, /%ProgramFiles%\\nodejs/);
   assert.match(cmd, /npx tsx local-mirror\/src\/server\.ts/);
 });
 
-test("applyGoldenSourceLauncher: rewrites the local-mirror command per OS, preserves cwd/env", () => {
+test("applyLocalMirrorLauncher: rewrites the local-mirror command per OS, preserves cwd/env", () => {
   const base = {
     mcpServers: {
       "local-mirror": {
@@ -182,18 +182,18 @@ test("applyGoldenSourceLauncher: rewrites the local-mirror command per OS, prese
     },
   };
 
-  const mac = applyGoldenSourceLauncher(structuredClone(base), "darwin");
+  const mac = applyLocalMirrorLauncher(structuredClone(base), "darwin");
   assert.equal(mac.mcpServers["local-mirror"].command, "/bin/sh");
   assert.deepEqual(mac.mcpServers["local-mirror"].args, ["local-mirror/launch.sh"]);
   assert.equal(mac.mcpServers["local-mirror"].cwd, "/brain");
 
-  const win = applyGoldenSourceLauncher(structuredClone(base), "win32");
+  const win = applyLocalMirrorLauncher(structuredClone(base), "win32");
   assert.equal(win.mcpServers["local-mirror"].command, "cmd");
   assert.deepEqual(win.mcpServers["local-mirror"].args, ["/c", "local-mirror\\launch.cmd"]);
 });
 
-test("applyGoldenSourceLauncher: no local-mirror server → unchanged (no throw)", () => {
+test("applyLocalMirrorLauncher: no local-mirror server → unchanged (no throw)", () => {
   const base = { mcpServers: { "vault-rag": { command: "npx" } } };
-  const out = applyGoldenSourceLauncher(structuredClone(base), "darwin");
+  const out = applyLocalMirrorLauncher(structuredClone(base), "darwin");
   assert.equal(out.mcpServers["vault-rag"].command, "npx");
 });

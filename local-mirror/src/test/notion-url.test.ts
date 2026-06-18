@@ -6,7 +6,7 @@ import {
   canonicalizeNotionUrlsInMarkdown,
 } from '../lib/notion-url.js';
 
-// Leaf lib (classic TDD). The user pastes a Notion ROOT PAGE URL; golden-source-sync
+// Leaf lib (classic TDD). The user pastes a Notion ROOT PAGE URL; local-mirror
 // extracts the page id from it (PRD §11.4). Notion ids are 32 hex chars; the canonical
 // form is the dashed UUID (8-4-4-4-12) the API and notion-to-md accept.
 test('extracts the dashed page id from a slugged Notion URL', () => {

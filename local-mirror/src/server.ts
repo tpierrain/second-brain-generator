@@ -9,7 +9,7 @@
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createMcpServer } from './index.js';
-import { GoldenSourceSync } from './domain/golden-source-sync.js';
+import { LocalMirror } from './domain/local-mirror.js';
 import { FsConfigStore } from './adapters/fs-config-store.js';
 import { FsStateStore } from './adapters/fs-state-store.js';
 import { FsVaultWriter } from './adapters/fs-vault-writer.js';
@@ -17,8 +17,8 @@ import { SystemClock } from './adapters/system-clock.js';
 import { notionConnectorFactory } from './adapters/notion-gateway.js';
 import { VAULT_DIR, SIDECAR_DIR, CONFIG_PATH } from './lib/config.js';
 
-function buildApi(): GoldenSourceSync {
-  return new GoldenSourceSync({
+function buildApi(): LocalMirror {
+  return new LocalMirror({
     configStore: new FsConfigStore(CONFIG_PATH),
     stateStore: new FsStateStore(SIDECAR_DIR),
     vaultWriter: new FsVaultWriter(VAULT_DIR),

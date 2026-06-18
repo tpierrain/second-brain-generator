@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { aGoldenSourceSync, aNotionPage } from './builder.js';
+import { aLocalMirror, aNotionPage } from './builder.js';
 
-// Acceptance tests at the API port (IGoldenSourceSync), driven by the Builder with a
+// Acceptance tests at the API port (ILocalMirror), driven by the Builder with a
 // stubbed connector. `setup_source` (PRD §13) onboards a brand-new source: it tests the
 // scope (a scoped search must return the zone — 0 pages = root not connected), then
 // declares the source (config file) and runs a first sync, explaining each step.
@@ -17,7 +17,7 @@ const aSetupRequest = (overrides: Record<string, string> = {}) => ({
 });
 
 test('setting up a connectable source declares it and runs a first sync', async () => {
-  const harness = aGoldenSourceSync().withConnectablePages(aNotionPage({ id: 'page-1' }));
+  const harness = aLocalMirror().withConnectablePages(aNotionPage({ id: 'page-1' }));
   const gss = harness.build();
 
   const result = await gss.setupSource(aSetupRequest());
@@ -28,11 +28,11 @@ test('setting up a connectable source declares it and runs a first sync', async 
   assert.equal(declared[0].name, 'pa-sc');
   const sources = await gss.listSources();
   assert.equal(sources[0].itemCount, 1, 'the first sync must have synced the zone');
-  assert.ok(harness.vaultFiles().has('golden-sources/pa-sc/page-1.md'));
+  assert.ok(harness.vaultFiles().has('mirrors/pa-sc/page-1.md'));
 });
 
 test('setting up a zone whose root is not connected returns a clear message and declares nothing', async () => {
-  const harness = aGoldenSourceSync(); // no pages → scoped search returns 0
+  const harness = aLocalMirror(); // no pages → scoped search returns 0
   const gss = harness.build();
 
   const result = await gss.setupSource(aSetupRequest());
@@ -44,7 +44,7 @@ test('setting up a zone whose root is not connected returns a clear message and 
 });
 
 test('setting up a zone whose token is invalid distinguishes auth error from "0 pages"', async () => {
-  const harness = aGoldenSourceSync()
+  const harness = aLocalMirror()
     .withConnectablePages(aNotionPage())
     .withFailingEnumeration('notion: 401 unauthorized');
   const gss = harness.build();

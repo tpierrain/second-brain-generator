@@ -13,9 +13,9 @@ test('write creates the file and its parent directories under the vault', async 
   const vaultDir = await aTempVault();
   const writer = new FsVaultWriter(vaultDir);
 
-  await writer.write('golden-sources/pa-sc/abc.md', '# Note\n');
+  await writer.write('mirrors/pa-sc/abc.md', '# Note\n');
 
-  const written = await readFile(join(vaultDir, 'golden-sources/pa-sc/abc.md'), 'utf8');
+  const written = await readFile(join(vaultDir, 'mirrors/pa-sc/abc.md'), 'utf8');
   assert.equal(written, '# Note\n');
 });
 

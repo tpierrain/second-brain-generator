@@ -17,6 +17,6 @@ test('resolvePath: empty/whitespace/undefined falls back', () => {
 test('paths: defaults rooted at the repo, all absolute', () => {
   for (const p of [VAULT_DIR, SIDECAR_DIR, CONFIG_PATH]) assert.ok(isAbsolute(p));
   assert.ok(VAULT_DIR.endsWith('/vault'), VAULT_DIR);
-  assert.ok(SIDECAR_DIR.endsWith('/.golden-source-sync'), SIDECAR_DIR);
-  assert.ok(CONFIG_PATH.endsWith('/golden-source-sync.config.json'), CONFIG_PATH);
+  assert.ok(SIDECAR_DIR.endsWith('/.local-mirror'), SIDECAR_DIR);
+  assert.ok(CONFIG_PATH.endsWith('/local-mirror.config.json'), CONFIG_PATH);
 });

@@ -1,5 +1,5 @@
 // IStateStore on the real filesystem. One JSON file per source in the sidecar dir
-// (`.golden-source-sync/<name>.state.json`) — committed for cross-laptop continuity but
+// (`.local-mirror/<name>.state.json`) — committed for cross-laptop continuity but
 // OUTSIDE the indexed vault, so the FileWatcher never picks it up (PRD §7/§10). Writes are
 // atomic (temp file in the sidecar dir + rename) so a half-written state is never committed.
 
@@ -9,7 +9,7 @@ import { randomUUID } from 'node:crypto';
 import type { IStateStore, PersistedState } from '../domain/ports.js';
 
 export class FsStateStore implements IStateStore {
-  /** @param sidecarDir absolute path of `.golden-source-sync/` (repo root, committed). */
+  /** @param sidecarDir absolute path of `.local-mirror/` (repo root, committed). */
   constructor(private readonly sidecarDir: string) {}
 
   async load(name: string): Promise<PersistedState | null> {

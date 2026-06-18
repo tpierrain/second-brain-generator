@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { aGoldenSourceSync, aNotionPage } from './builder.js';
+import { aLocalMirror, aNotionPage } from './builder.js';
 
-// Acceptance tests at the API port (IGoldenSourceSync). `check_freshness` (PRD §8/§9) is a
+// Acceptance tests at the API port (ILocalMirror). `check_freshness` (PRD §8/§9) is a
 // LIGHT watermark-only check: it enumerates the perimeter (metadata, no content fetched) to get
 // the remote max last_edited_time and compares it to the local watermark. It pulls no content
 // and writes nothing — it just answers "behind? by how much?".
 
 test('a source with no upstream change is not behind', async () => {
-  const harness = aGoldenSourceSync().withNotionPages(
+  const harness = aLocalMirror().withNotionPages(
     aNotionPage({ id: 'p1', lastEditedTime: '2026-06-12T14:21:00.000Z' }),
   );
   const gss = harness.build();
@@ -22,7 +22,7 @@ test('a source with no upstream change is not behind', async () => {
 });
 
 test('a source whose upstream got a newer edit is behind', async () => {
-  const harness = aGoldenSourceSync().withNotionPages(
+  const harness = aLocalMirror().withNotionPages(
     aNotionPage({ id: 'p1', lastEditedTime: '2026-06-12T14:21:00.000Z' }),
   );
   const gss = harness.build();
@@ -37,7 +37,7 @@ test('a source whose upstream got a newer edit is behind', async () => {
 });
 
 test('a never-synced source is behind as soon as the perimeter has any page', async () => {
-  const gss = aGoldenSourceSync()
+  const gss = aLocalMirror()
     .withNotionPages(aNotionPage({ id: 'p1', lastEditedTime: '2026-06-12T14:21:00.000Z' }))
     .build();
 
@@ -49,7 +49,7 @@ test('a never-synced source is behind as soon as the perimeter has any page', as
 });
 
 test('check_freshness of an unknown source rejects with a clear message', async () => {
-  const gss = aGoldenSourceSync().build();
+  const gss = aLocalMirror().build();
 
   await assert.rejects(() => gss.checkFreshness('nope'), /unknown.*nope/i);
 });

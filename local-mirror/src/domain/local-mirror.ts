@@ -1,6 +1,6 @@
 import type {
   FreshnessReport,
-  GoldenSourceConfig,
+  LocalMirrorConfig,
   RemoveResult,
   SetupRequest,
   SetupResult,
@@ -18,7 +18,7 @@ import type {
   PersistedItem,
   PersistedState,
 } from './ports.js';
-import { toGoldenSourceMarkdown } from '../lib/markdown.js';
+import { toLocalMirrorMarkdown } from '../lib/markdown.js';
 import { contentHash } from '../lib/content-hash.js';
 import { extractPageId } from '../lib/notion-url.js';
 import { pagesToDelete } from './reconcile.js';
@@ -28,7 +28,7 @@ import { pagesToDelete } from './reconcile.js';
  * The MCP tools (§9) are a 1:1 translation of this port; one could drive it from a
  * CLI or HTTP without touching the domain.
  */
-export interface IGoldenSourceSync {
+export interface ILocalMirror {
   setupSource(req: SetupRequest): Promise<SetupResult>;
   listSources(): Promise<SourceState[]>;
   /** `name` is a source name or the literal `"all"` (PRD §9). */
@@ -39,7 +39,7 @@ export interface IGoldenSourceSync {
 }
 
 /** Driven dependencies of the Domain Service — all SPI, all stubbable (PRD §5). */
-export interface GoldenSourceSyncDeps {
+export interface LocalMirrorDeps {
   configStore: IConfigStore;
   stateStore: IStateStore;
   vaultWriter: IVaultWriter;
@@ -48,21 +48,21 @@ export interface GoldenSourceSyncDeps {
 }
 
 /** The Domain Service — the concrete API port. Pure orchestration, no transport. */
-export class GoldenSourceSync implements IGoldenSourceSync {
-  constructor(private readonly deps: GoldenSourceSyncDeps) {}
+export class LocalMirror implements ILocalMirror {
+  constructor(private readonly deps: LocalMirrorDeps) {}
 
   async listSources(): Promise<SourceState[]> {
     const configs = await this.deps.configStore.loadAll();
     return Promise.all(configs.map((config) => this.describe(config)));
   }
 
-  private async describe(config: GoldenSourceConfig): Promise<SourceState> {
+  private async describe(config: LocalMirrorConfig): Promise<SourceState> {
     const persisted = await this.deps.stateStore.load(config.name);
     return toSourceState(config, persisted);
   }
 
   /**
-   * Onboard a brand-new golden source (PRD §13). First it **tests the scope**: the connector's
+   * Onboard a brand-new local mirror (PRD §13). First it **tests the scope**: the connector's
    * scoped enumeration must return the zone — an enumeration error reads as "auth/connection
    * problem", and zero pages reads as "root not connected" (PRD §11.5/§12). Only once the scope
    * is proven do we **declare** the source (config file = versioned source of truth, §20.2) and
@@ -121,7 +121,7 @@ export class GoldenSourceSync implements IGoldenSourceSync {
    *
    * The §7/§12 guardrail is non-negotiable: a doubtful perimeter — `listItems()` rejecting, or a
    * wholesale disappearance against a non-empty corpus — NEVER triggers a deletion; it freezes
-   * the source as `partial` so a remote glitch can never wipe the golden source.
+   * the source as `partial` so a remote glitch can never wipe the local mirror.
    */
   async sync(name: string): Promise<SyncReport> {
     if (name === 'all') return this.syncAll();
@@ -147,7 +147,7 @@ export class GoldenSourceSync implements IGoldenSourceSync {
 
     // §7/§12 guardrail: a lost scope / disconnected root makes Notion's `search` return ZERO
     // pages WITHOUT an error. Reconciling that against a non-empty corpus would wipe the whole
-    // golden source. So a wholesale "everything vanished" is treated as suspicious, not real:
+    // local mirror. So a wholesale "everything vanished" is treated as suspicious, not real:
     // delete nothing, keep every tracked item, freeze the watermark, report `partial`.
     const previousCount = previous ? Object.keys(previous.items).length : 0;
     if (items.length === 0 && previousCount > 0) {
@@ -164,7 +164,7 @@ export class GoldenSourceSync implements IGoldenSourceSync {
       const vaultPath = `${config.target_dir}/${item.id}.md`;
       const tracked = previous?.items[item.id];
       try {
-        const markdown = toGoldenSourceMarkdown(config.name, item, await connector.fetchContent(item));
+        const markdown = toLocalMirrorMarkdown(config.name, item, await connector.fetchContent(item));
         const hash = contentHash(markdown);
         if (tracked && tracked.contentHash === hash) {
           nextItems[item.id] = tracked;
@@ -248,7 +248,7 @@ export class GoldenSourceSync implements IGoldenSourceSync {
    * frozen and every tracked item kept, so the next run re-pulls and reconciles from solid ground.
    */
   private async freezeAsPartial(
-    config: GoldenSourceConfig,
+    config: LocalMirrorConfig,
     previous: PersistedState | null,
     now: string,
   ): Promise<SyncReport> {
@@ -287,10 +287,10 @@ export class GoldenSourceSync implements IGoldenSourceSync {
   }
 
   /** Finds a declared source by name, or throws a clear error for the caller to surface. */
-  private async configOrThrow(name: string): Promise<GoldenSourceConfig> {
+  private async configOrThrow(name: string): Promise<LocalMirrorConfig> {
     const configs = await this.deps.configStore.loadAll();
     const config = configs.find((c) => c.name === name);
-    if (!config) throw new Error(`Unknown golden source "${name}"`);
+    if (!config) throw new Error(`Unknown local mirror "${name}"`);
     return config;
   }
 
@@ -353,7 +353,7 @@ function maxLastEditedTime(items: readonly { lastEditedTime: string }[]): string
 
 /** Maps a declared config + its persisted state into the API-facing SourceState. */
 export function toSourceState(
-  config: GoldenSourceConfig,
+  config: LocalMirrorConfig,
   persisted: PersistedState | null,
 ): SourceState {
   return {
@@ -368,12 +368,12 @@ export function toSourceState(
 }
 
 /** The source's stable Notion root page id — from prior state, else extracted from the URL. */
-function rootPageIdOf(config: GoldenSourceConfig, previous: PersistedState | null): string {
+function rootPageIdOf(config: LocalMirrorConfig, previous: PersistedState | null): string {
   return previous?.rootPageId ?? extractPageId(config.connector.config.root_page_url);
 }
 
 /** Assembles a declared config from the onboarding request — the token's env-var name only (§11). */
-function configFromRequest(req: SetupRequest): GoldenSourceConfig {
+function configFromRequest(req: SetupRequest): LocalMirrorConfig {
   return {
     name: req.name,
     title: req.title,
@@ -382,7 +382,7 @@ function configFromRequest(req: SetupRequest): GoldenSourceConfig {
       type: 'notion',
       config: { root_page_url: req.rootPageUrl, token_env: req.tokenEnv },
     },
-    target_dir: `golden-sources/${req.name}`,
+    target_dir: `mirrors/${req.name}`,
   };
 }
 

@@ -1,7 +1,7 @@
 // SPI ports (driven side) — everything external to the domain is stubbable (PRD §5).
 // Concrete adapters land in later steps; the Builder fakes these in tests.
 
-import type { GoldenSourceConfig } from './types.js';
+import type { LocalMirrorConfig } from './types.js';
 
 /** One item enumerated from a source (e.g. a Notion page). */
 export interface SourceItem {
@@ -38,7 +38,7 @@ export interface PersistedItem {
   lastWrittenAt: string;
 }
 
-/** A golden source's private state — sidecar `.golden-source-sync/<name>.state.json` (PRD §10). */
+/** A local mirror's private state — sidecar `.local-mirror/<name>.state.json` (PRD §10). */
 export interface PersistedState {
   schemaVersion: 1;
   name: string;
@@ -61,12 +61,12 @@ export interface IStateStore {
 }
 
 /**
- * Driven port for the declared golden sources — the config file is the versioned
+ * Driven port for the declared local mirrors — the config file is the versioned
  * source of truth, read at startup and written by `setup_source` (PRD §20.2).
  */
 export interface IConfigStore {
-  loadAll(): Promise<GoldenSourceConfig[]>;
-  upsert(config: GoldenSourceConfig): Promise<void>;
+  loadAll(): Promise<LocalMirrorConfig[]>;
+  upsert(config: LocalMirrorConfig): Promise<void>;
   remove(name: string): Promise<void>;
 }
 
@@ -76,4 +76,4 @@ export interface IClock {
 }
 
 /** Builds the right connector for a declared source (one token/scope per source). */
-export type ConnectorFactory = (config: GoldenSourceConfig) => ISourceConnector;
+export type ConnectorFactory = (config: LocalMirrorConfig) => ISourceConnector;
