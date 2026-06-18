@@ -72,6 +72,37 @@ export function isNotifyWorthy(indexed: number, min = 1): boolean {
   return indexed >= min;
 }
 
+export interface BurstDecision {
+  /** Emit a final toast NOW (the burst settled and the total clears the bar). */
+  notify: boolean;
+  /** Notes indexed across the whole burst so far (the settled total when `notify`). */
+  total: number;
+}
+
+// A big sync/import lands in waves; the live watcher reindexes each debounced
+// batch. Firing "Indexing done — 8 notes" per batch lies twice: a premature
+// "done" and a partial count (8 of 27). IndexingBurst accumulates the per-pass
+// `indexed` and signals a single, truthful toast ONLY once the watcher is
+// quiescent (no pending/scheduled work) — with the settled TOTAL. Deterministic
+// (ADR 0009): "settled" = a pass completed with nothing left queued, not a timer.
+export class IndexingBurst {
+  private acc = 0;
+
+  // Records one completed watcher reindex pass.
+  // - `indexed`    notes indexed in THIS pass.
+  // - `moreComing` true if the watcher still has queued/scheduled work → the
+  //                burst hasn't settled yet (accumulate, stay silent).
+  // - `min`        minimum accumulated total worth a toast (bulk threshold).
+  // On settle, returns the total and whether to notify, then resets for the next burst.
+  record(indexed: number, moreComing: boolean, min = 1): BurstDecision {
+    this.acc += indexed;
+    if (moreComing) return { notify: false, total: this.acc };
+    const total = this.acc;
+    this.acc = 0;
+    return { notify: total >= min, total };
+  }
+}
+
 type SpawnFn = (
   command: string,
   args: readonly string[],

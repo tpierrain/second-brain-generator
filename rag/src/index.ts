@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { reindex, type IndexResult } from "./lib/index-manager.js";
-import { notifyDone, isNotifyWorthy } from "./lib/notify.js";
+import { notifyDone, isNotifyWorthy, IndexingBurst } from "./lib/notify.js";
 import { createEmbedder } from "./lib/embedder.js";
 import {
   searchSimilar,
@@ -371,6 +371,11 @@ function traceWatcher(msg: string): void {
 
 function startFileWatcher(): void {
   try {
+    // One golden-source sync / import lands in waves → several debounced catch-up
+    // passes. Accumulate across them and emit a SINGLE truthful toast only once
+    // the watcher settles, with the burst TOTAL — never a premature "done — 8"
+    // mid-flight (Obs 3 / F5).
+    const burst = new IndexingBurst();
     const scheduler = new ReindexScheduler({
       run: async () => {
         traceWatcher("⚙️  catch-up triggered (debounce elapsed) — indexing in progress…");
@@ -383,8 +388,23 @@ function startFileWatcher(): void {
         );
         // The live path that completes an import done WHILE the server runs: the
         // CLI reindex is locked out by this watcher, so THIS is where a bulk
-        // pickup finishes → notify (bulk threshold; single edits stay silent).
-        notifyIfIndexed(result, LIVE_WATCHER_NOTIFY_MIN);
+        // pickup finishes. Only toast once the burst has SETTLED (nothing pending
+        // or scheduled) — with the accumulated total, and the word "complete".
+        const st = scheduler.state();
+        const decision = burst.record(
+          result.indexed,
+          st.pending || st.scheduled,
+          LIVE_WATCHER_NOTIFY_MIN,
+        );
+        if (decision.notify) {
+          notifyDone({
+            platform: process.platform,
+            env: process.env,
+            title: "Second brain",
+            body: `Indexing complete — ${decision.total} note${decision.total > 1 ? "s" : ""} ready to search.`,
+            spawn,
+          });
+        }
       },
     });
     startVaultWatcher({
