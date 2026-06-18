@@ -51,11 +51,11 @@ Thomas must ship tonight so Inqom colleagues can start using it. Reprioritized:
   - [x] 3b — Repeat the limit in the post-sync recap _(8aece94)_
   - [x] 3c — At use-time: flag when a followed link leaves the mirrored perimeter _(8aece94)_
   - [ ] 3d — Client checkpoint → folded into Step 5 fresh validation
-- [ ] **Step 4 — Doc & diagram: why/when a golden source** (user-facing)
-  - [ ] 4a — User-facing "Why a golden source — and when it is / isn't worth it" section
-  - [ ] 4b — Mermaid diagram: target vision (central MCP queried by brains) vs local Golden Source fallback
-  - [ ] 4c — Cross-link the maintainers PRD (§1 positioning, §19 trajectory) so the two stay in sync
-  - [ ] 4d — Commit (docs)
+- [x] **Step 4 — Doc & diagram: why/when a golden source** (user-facing) _(2026-06-18 · 97310a4)_
+  - [x] 4a — User-facing "Why a golden source — and when it is / isn't worth it" section _(97310a4 · CONNECTORS.md)_
+  - [x] 4b — Mermaid diagram: target vision (central MCP queried by brains) vs local Golden Source fallback _(97310a4)_
+  - [x] 4c — Cross-link the maintainers PRD (§1 positioning, §19 trajectory) so the two stay in sync _(97310a4 · both-way links, anchors verified)_
+  - [x] 4d — Commit (docs) _(97310a4)_
 - [ ] **Step 5 — Fresh end-to-end validation** (new throwaway brain)
   - [ ] 5a — Install a brand-new throwaway brain from the branch
   - [ ] 5b — Re-run the in-perimeter flow: local-first latency OK, toast correct, disclaimer shown, citations `www.notion.so`
@@ -147,7 +147,7 @@ Thomas must ship tonight so Inqom colleagues can start using it. Reprioritized:
       silent false negative.
 - [ ] **3d — Checkpoint + commit** `docs(golden-source): perimeter disclaimer (Obs 5)`.
 
-### Step 4 — Doc & diagram: why/when a golden source (user-facing)
+### Step 4 — Doc & diagram: why/when a golden source (user-facing) ✅ _(2026-06-18 · 97310a4)_
 
 > **Goal.** Make the "why" reachable by users (today it lives only in the maintainers PRD §1/§19). Add a
 > diagram contrasting the **target vision** (a central, hosted MCP search platform that brains query)
