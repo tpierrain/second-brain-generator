@@ -25,6 +25,15 @@ Load this whenever the user wants to work with a golden source, in any language:
 - *"list my golden sources"* — → `list_sources`
 - *"remove / disconnect the `<name>` golden source"* — → `remove_source`
 
+> **Scope — golden sources only; do NOT invent other "source types".** This skill mirrors a Notion
+> zone into the vault, full stop. When the user asks the **generic** *"I'd like to connect a source"*,
+> do **not** improvise a multiple-choice "what type of source?" menu — and **never** offer a "live
+> connector / sync delta" option (background Slack/Drive/Calendar live querying is the **separate**
+> `sync-sources` mechanism, not this skill; "sync delta" already means a golden source's incremental
+> delta — keep the term unambiguous). If you must disambiguate, ask **one neutral line**: *"Do you want
+> to **mirror a Notion zone into your vault** as a searchable golden source? (That's what I set up
+> here.)"* — then proceed with the onboarding flow below. No invented option list.
+
 > Routing (the harness's job, not the MCP's — PRD §8): when a question is clearly **about a declared
 > source's topic** (the `description` you captured at setup), stay **local-first** — exactly like the
 > rest of the brain (Slack/Drive/Calendar): **answer NOW from the local RAG**, and verify freshness
@@ -57,10 +66,28 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
      is in scope; pages outside it are not — see the perimeter disclaimer below).
    - `token_env` — the **name** of the env var that will hold the integration token (e.g.
      `NOTION_TOKEN_PASC`). One token/scope per source.
-2. **Guide the token into `.env`** (only if it isn't set yet): tell the user to open `.env` and add a
-   line `^<token_env>=<their integration token>` (e.g. `NOTION_TOKEN_PASC=secret_…`), save, and that
-   the Notion integration must be **shared on the root page** (Notion → page → ••• → Connections) so
-   the scoped read works. Free integration: <https://www.notion.so/my-integrations>.
+2. **Guide the token into `.env` — ONE path, no chat paste-block** (only if it isn't set yet).
+   `.env` is a *hidden* file a non-dev can't locate, so **don't** ask them to find it, and **don't**
+   print a `<token_env>=…` block to copy into the chat (that duplicates what then has to be cleaned up,
+   R2-3). Instead run the deterministic helper, **from the brain folder**, which writes a single
+   `<token_env>=` placeholder line into `.env` (idempotent — never a second line) and pops their editor
+   right on it:
+   ```bash
+   node scripts/open-env.mjs <token_env>      # e.g. node scripts/open-env.mjs NOTION_TOKEN_PASC
+   ```
+   Then tell them: *"Your `.env` just opened — paste your Notion token right after `<token_env>=`, save
+   (⌘S), and tell me when it's done."* The token stays **in `.env`**, never in the chat (golden rule).
+   *(If no editor pops — headless / `SBG_NO_OPEN_ENV` — the command still prints the `.env` path; relay
+   it so they can open it themselves.)*
+
+   **How to get that Notion token** (walk a non-dev through it):
+   1. Open <https://www.notion.so/my-integrations> → **New integration** → type **Internal** → give it
+      a name (e.g. "second brain — PA/SC") → **Save**.
+   2. Copy the **Internal Integration Secret** (it starts with `secret_` or `ntn_`) — that's the value
+      to paste into `.env`.
+   3. **Share the integration on the root page** so the scoped read works: open the root Notion page →
+      **•••** (top-right) → **Connections** → add your integration. Without this share, the first sync
+      returns **0 pages**.
 3. **Narrate, then call `setup_source`.** `setup_source` and the first sync are a **single, silent,
    possibly long call** (no live progress): it explores the whole perimeter, then downloads & converts
    every page. **Before** calling it, tell the user what's about to happen and roughly how long — e.g.

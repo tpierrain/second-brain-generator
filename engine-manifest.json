@@ -14,6 +14,7 @@
       "golden-source-sync/tsconfig.json",
       "scripts/update-engine.mjs",
       "scripts/import-brain.mjs",
+      "scripts/open-env.mjs",
       "scripts/lib/**"
     ],
     "regenerate": [
