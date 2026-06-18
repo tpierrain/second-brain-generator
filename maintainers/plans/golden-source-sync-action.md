@@ -177,11 +177,18 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
     in **frontmatter** (`golden_source: <name>`) + the **`golden-sources/<name>/` folder**, NOT as
     hashtags injected into the body (the body stays a faithful mirror). Open lever (RAG side, not sync):
     carry `golden_source` from frontmatter into chunk metadata so answers can label/filter by source.
+  - **PROVEN LIVE via the QA driver against the real Notion zone (2026-06-18):**
+    - [x] **B1 no-churn** — 3 consecutive no-change syncs all `0 written / 10 unchanged` (incl. the 2 image/file pages that used to churn).
+    - [x] **Create** a Notion page → new `.md` (new pageId) appears, count 10→11.
+    - [x] **Rename** a page → SAME file (UUID) rewritten, no duplicate/orphan (`written:2` = renamed child + its parent whose child-link title moved).
+    - [x] **Edit content** → page re-fetched + `.md` rewritten with the exact new words (grep-confirmed), idempotent afterwards.
+    - [x] **Delete** the created page → `deleted:1`, the `.md` removed, count 11→10.
+    - [x] **Semantic search** over the synced files (in-process embedder, scratch index): synced→indexed (11/11)→retrievable. _(Retrieval QUALITY on this noisy corpus is a vault-rag matter, ADR 0006 — out of scope here.)_
+  - [x] **`sync("all")` fan-out finding (surfaced during QA) — FIXED (TDD, 2026-06-18, `224504a`):** the tool/JSDoc/PRD §9 advertised `"all"` but the domain returned `failed` for it. Implemented as a CONTAINED PARALLEL fan-out (`Promise.allSettled` → sources run concurrently, one failure never aborts the others), aggregate report with per-source breakdown (`SyncReport.sources`) + worst-of status; deterministic concurrency proof. 66/66 green.
   - **STILL NEEDS THOMAS (cannot be done read-only / without an installed brain):**
-    - [ ] Real **rename** of a Notion page → same file rewritten (no duplicate/orphan) — needs Thomas to edit Notion
-    - [ ] Real **delete / move out of scope** → `.md` deleted AND purged from the index — needs Thomas to edit Notion
-    - [ ] **Two sources** (two connections/tokens) without perimeter leak; routing (a topic-X question refreshes source X, not Y)
-    - [ ] Installed-brain demo: **FileWatcher indexes** the golden files → brain answers **bounded + clickable citation** (§17)
+    - [ ] **Index purge on delete** — proven at the file level (`.md` removed); the FileWatcher de-indexing it needs an installed brain (Block B).
+    - [ ] **Two sources** (two connections/tokens) without perimeter leak; routing (a topic-X question refreshes source X, not Y). _(Cross-source isolation proven in unit tests via the fan-out; live two-token check still pending.)_
+    - [ ] Installed-brain demo (Block B): **FileWatcher indexes** the golden files → brain answers **bounded + clickable citation** (§17)
   - [ ] On green: PR, `/code-review`, fix findings TDD, merge, tag (codename "The One With…"), **archive this plan** (`git mv` → `plans/archived/`, STATUS ✅ + proof)
 
 ---
