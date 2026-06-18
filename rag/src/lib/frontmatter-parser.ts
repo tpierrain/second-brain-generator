@@ -39,7 +39,7 @@ function extractTitle(
   relativePath: string,
   fm: Record<string, unknown>
 ): string {
-  // An explicit frontmatter title wins: golden-source pages carry their real title
+  // An explicit frontmatter title wins: local-mirror pages carry their real title
   // here only (the file is named by Notion pageId, the body has no '# Heading').
   if (typeof fm.title === "string" && fm.title.trim()) return fm.title.trim();
   const match = content.match(/^#\s+(.+)$/m);

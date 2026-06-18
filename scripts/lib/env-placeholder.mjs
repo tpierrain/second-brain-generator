@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // env-placeholder.mjs — deterministic, idempotent `.env` placeholder writer.
 //
-// The golden-source onboarding needs ONE token line `<VAR>=` in `.env` for the
+// The local-mirror onboarding needs ONE token line `<VAR>=` in `.env` for the
 // user to fill in place — never a chat paste-block AND a file placeholder (the
 // duplicate the model then had to self-repair, R2-3). This pure function ensures
 // EXACTLY ONE `^<VAR>=` line: it appends the placeholder if absent, leaves a

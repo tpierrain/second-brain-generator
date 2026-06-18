@@ -36,7 +36,7 @@
       ".claude/skills/tdd-discipline/**",
       ".claude/skills/update-engine/**",
       ".claude/skills/import/**",
-      ".claude/skills/golden-source/**",
+      ".claude/skills/local-mirror/**",
       "scripts/auto-commit.mjs",
       "scripts/auto-push.mjs",
       "scripts/status-line.mjs",

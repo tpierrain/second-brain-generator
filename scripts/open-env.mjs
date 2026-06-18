@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// open-env.mjs — thin CLI the golden-source skill calls to give the user ONE path
+// open-env.mjs — thin CLI the local-mirror skill calls to give the user ONE path
 // to their token: ensure a single `<VAR>=` placeholder line in `.env` (idempotent,
 // deduped) then pop the editor on it. No chat paste-block, no model self-repair
 // (R2-2 / R2-3). Run FROM the brain folder:

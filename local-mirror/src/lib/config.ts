@@ -41,12 +41,12 @@ export const VAULT_DIR = resolvePath(process.env.VAULT_DIR, resolve(projectRoot,
  * `git add .` still commits it.
  */
 export const SIDECAR_DIR = resolvePath(
-  process.env.GOLDEN_SOURCE_SIDECAR_DIR,
+  process.env.LOCAL_MIRROR_SIDECAR_DIR,
   resolve(projectRoot, '.local-mirror'),
 );
 
 /** Versioned source of truth for declared sources, written by `setup_source` (PRD §20.2). */
 export const CONFIG_PATH = resolvePath(
-  process.env.GOLDEN_SOURCE_CONFIG,
+  process.env.LOCAL_MIRROR_CONFIG,
   resolve(projectRoot, 'local-mirror.config.json'),
 );

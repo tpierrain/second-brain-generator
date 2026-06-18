@@ -371,7 +371,7 @@ function traceWatcher(msg: string): void {
 
 function startFileWatcher(): void {
   try {
-    // One golden-source sync / import lands in waves → several debounced catch-up
+    // One local-mirror sync / import lands in waves → several debounced catch-up
     // passes. Accumulate across them and emit a SINGLE truthful toast only once
     // the watcher settles, with the burst TOTAL — never a premature "done — 8"
     // mid-flight (Obs 3 / F5).
