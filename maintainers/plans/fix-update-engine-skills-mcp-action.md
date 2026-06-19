@@ -15,7 +15,7 @@
 
 ## Tracking
 
-- [ ] **Lot 0 — Investigation & design decisions** (no code; resolve the open questions below)
+- [x] **Lot 0 — Investigation & design decisions** _(2026-06-19 · branch created; decisions below + ADR 0025)_
 - [ ] **Lot A — Install engine-declared skills on update** (TDD)
 - [ ] **Lot B — Reconcile `.mcp.json` from `engineMcpServers`** (TDD)
 - [ ] **Lot C — Self-heal path for already-broken v3.2.0 brains** (decided in Lot 0)
@@ -24,26 +24,39 @@
 
 ---
 
-## Lot 0 — Investigation & design decisions
+## Lot 0 — Investigation & design decisions — ✅ RESOLVED (2026-06-19)
 
-- [ ] **Q1 — Where does the apply run from?** Read the `update-engine` execution flow and confirm
-      whether the apply plan is computed/executed by the brain's **currently-installed** code or by
-      the **freshly-fetched** engine code. This decides whether a broken v3.2.0 brain self-heals on
-      the v3.2.1 update, or stays broken for one extra cycle (chicken-and-egg). → drives Lot C.
-- [ ] **Q2 — Engine-skill regime semantics.** Engine skills are listed under `merge` in the manifest
-      but are **engine-owned** (the user isn't expected to edit `local-mirror/SKILL.md`). Decide:
-      install/overwrite the manifest-declared skill paths wholesale (like `replace`, but scoped to
-      declared engine-skill paths), keeping true `merge` only for genuinely user-editable files
-      (CLAUDE.md, settings). Record the decision.
-- [ ] **Q3 — MCP server source of truth.** Confirm the engine server definitions come from the
-      fetched `.mcp.json.template` (so the update reads the new template, extracts the
-      `engineMcpServers` defs, substitutes `{{PROJECT_ROOT}}` → brain dir, merges only the missing
-      ones). Verify `.mcp.json.template` is reachable from the fetched engine.
-- [ ] **Q4 — Safety invariant, written down.** "Only skills/servers the manifest declares as
-      engine-owned are ever written; everything else under `.claude/skills/` and any user-added MCP
-      server is untouchable." This is the property every new test asserts.
-- [ ] **ADR** — capture the engine-owned-vs-user distinction in the sacred scrub (new ADR, Scope:
-      *Second brain (runtime) + Installer*).
+- [x] **Q1 — Where does the apply run from? → the brain's INSTALLED code.** `update-engine.mjs`
+      statically imports `computeApplyPlan` from the brain's own `scripts/lib/`; the in-flight comment
+      (`update-engine.mjs:127-130`) confirms self-replacement only takes effect on the *next* run (Node
+      module caching). The fetched launcher supplies **data** (manifest + files), not logic. ⟹ a logic
+      fix governs only brains already running it (v3.2.1 → future). The ≤v3.2.0 cohort **self-heals on
+      the subsequent update** (run 1 lays down the new engine code via the `replace` regime; run 2
+      executes the new logic). → drives Lot C.
+- [x] **Q2 — Engine-skill regime semantics → install-if-ABSENT (additive), never overwrite.**
+      `computeApplyPlan` carves the manifest-declared engine-skill paths (`merge` entries matching
+      `.claude/skills/<name>/**`) into a new **`installSkills`** bucket; at apply, each declared skill
+      dir is installed **only if absent**. An absent skill (e.g. `local-mirror` on an upgrader) has no
+      user state to clobber; an already-present engine skill (possibly user-customized, e.g.
+      `prepare-1-1`) is left **byte-identical**. Content-refresh of an already-installed engine skill =
+      **out of scope** (future Phase 2 3-way, like the other `merge` files).
+- [x] **Q3 — MCP server source of truth → the fetched `.mcp.json.template`.** Confirmed it exists at
+      launcher root, carries both `vault-rag` + `local-mirror` with the `{{PROJECT_ROOT}}` placeholder,
+      and is reachable from the fetched source (the installer already substitutes it,
+      `installer.mjs:453`). The update reads it, substitutes `{{PROJECT_ROOT}}` → brain dir, and **adds
+      only the missing `engineMcpServers`**. Reuse `connectors-merge.mjs:addServerToMcpJson` as the
+      idempotent primitive.
+- [x] **Q4 — Safety invariant (asserted by every new test):** _Only skills/servers the manifest
+      declares as engine-owned are ever written, and only when ABSENT; everything else under
+      `.claude/skills/` (any non-declared/custom skill), every user-added `.mcp.json` server, the vault,
+      `.env`, the constitution and settings are untouchable._ The destructive buckets
+      (`overwrite`/`regenerate`) stay sacred-scrubbed → only the additive `installSkills` path can ever
+      write a skill, and only when none exists.
+- [x] **Lot C decision → two-cycle self-heal, doc only** (no extra code; confirmed with Thomas, given a
+      tiny reachable cohort). Re-exec-from-fetched **rejected** (doesn't help the current cohort, real
+      complexity) — see ADR 0025 "Rejected alternatives".
+- [x] **ADR** — [`0025-update-engine-installs-missing-engine-skills-and-servers.md`](../decisions/0025-update-engine-installs-missing-engine-skills-and-servers.md)
+      (ACCEPTED 2026-06-19, Scope: *Second brain (runtime)*).
 
 ## Lot A — Install engine-declared skills on update
 
