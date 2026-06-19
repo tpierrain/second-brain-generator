@@ -1,5 +1,11 @@
 # Fix — `update-engine` must deliver engine skills + MCP servers (v3.2.1)
 
+> **✅ SHIPPED in v3.2.1 (2026-06-19) — PR #13 merged to `main` (`3e58c86`), tag + release
+> `v3.2.1` "The One Where Updating Finally Brings The Mirror Along".** All lots green
+> (harness 305 · rag 178 · local-mirror 84, tsc clean, 0 vulns); `/code-review` finding A folded
+> in (TDD); proven empirically on the v3.1.0 golden master (skill installed + `.mcp.json`
+> reconciled + sacred files byte-identical). QA findings #1 + #2 resolved.
+
 > **Origin:** QA finding #1 (`maintainers/qa/qa-v3.2.0.md`). Proven empirically on a v3.1.0→v3.2.0
 > upgraded brain: `update-engine` copies the `local-mirror/` **code** but installs neither the
 > **skill** (`.claude/skills/` is a blanket sacred tree) nor the **MCP server**
@@ -20,7 +26,7 @@
 - [x] **Lot B — Reconcile `.mcp.json` from `engineMcpServers`** (TDD) _(2026-06-19 · commit pending)_
 - [x] **Lot C — Self-heal path for already-broken ≤v3.2.0 brains** (doc only, decided in Lot 0) _(2026-06-19)_
 - [x] **Lot D — npm vulnerability remediation** (TDD where it touches behavior) _(2026-06-19 · commit pending)_
-- [~] **Lot Ship — verify green, `/code-review`, merge, tag v3.2.1, archive, re-run QA §3** _(in progress: suites green + code-review + golden-master QA done; merge/tag pending green light)_
+- [x] **Lot Ship — verify green, `/code-review`, merge, tag v3.2.1, archive** _(2026-06-19 · PR #13 merged `3e58c86`, tag/release v3.2.1)_
 
 ---
 
@@ -122,7 +128,8 @@
       source = `git archive` snapshot of the branch): `.claude/skills/local-mirror/` installed,
       `.mcp.json` gained `local-mirror` (cwd = brain dir) with `vault-rag` + all custom skills
       preserved byte-identical, manifest advanced to rag 1.1.1 / local-mirror 0.1.1 / ref v3.2.1. _(2026-06-19)_
-- [ ] Push, PR, merge to `main` on Thomas's explicit green light.
-- [ ] Tag **v3.2.1** + codename; update README `latest` expectation.
-- [ ] Archive this plan (`plans/archived/`, ✅ status + proof); tick QA finding #1 + #2 as resolved.
-- [ ] Purge / restore the golden master; confirm no confidential data leaked.
+- [x] Push, PR (#13), merge to `main` (`3e58c86`) on Thomas's explicit green light. _(2026-06-19)_
+- [x] Tag + release **v3.2.1** "The One Where Updating Finally Brings The Mirror Along". README has
+      no single `latest` field — its version mentions are historical feature markers, left as-is. _(2026-06-19)_
+- [x] Archive this plan (`plans/archived/`, ✅ status + proof); QA findings #1 + #2 ticked resolved. _(2026-06-19)_
+- [x] Purge / restore the golden master; no confidential data in the repo (only sanitized QA doc). _(2026-06-19)_
