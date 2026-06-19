@@ -67,6 +67,15 @@ async function defaultRunReindex({ brainDir, platform }) {
   execFileSync(npmExe(platform), ["run", "reindex"], { cwd: join(brainDir, "rag"), stdio: "inherit" });
 }
 
+// How many notes the brain holds, for the user-facing recap (F2). The lightest
+// deterministic path (ADR 0009): count the vault's Markdown files on disk — no
+// native deps, no ABI risk, accurate whatever the index state.
+async function defaultCountVaultNotes({ brainDir }) {
+  const vaultDir = join(brainDir, "vault");
+  if (!existsSync(vaultDir)) return 0;
+  return listFilesRelPosix(vaultDir).filter((f) => f.endsWith(".md")).length;
+}
+
 // Rebuild BOTH launcher halves from the (freshly-updated) rag-launcher.mjs builders.
 // Machine-independent output → no per-host divergence; both `.sh` and `.cmd` always
 // written (ADR 0015), whatever the host platform.
@@ -82,7 +91,7 @@ async function defaultRegenerateLaunchers({ brainDir }) {
 // Human summary the brain-side `update-engine` skill shows the user (Step 6, ADR
 // 0016). Pure so the wording is unit-tested; the CLI entry only wires the I/O.
 export function formatReport(report) {
-  const { ref, engineVersion, copied, regenerated, reindexed, installedSkills = [], mcpServersAdded = [] } = report;
+  const { ref, engineVersion, copied, regenerated, reindexed, vaultNoteCount, installedSkills = [], mcpServersAdded = [] } = report;
   const lines = [
     `✅ Engine updated to ${ref} (rag ${engineVersion?.rag}).`,
     `   • ${copied.length} engine file(s) swapped` + (regenerated ? " + launchers regenerated" : ""),
@@ -90,6 +99,14 @@ export function formatReport(report) {
       ? `   • reindexed — the index format changed (your notes were re-encoded, nothing lost)`
       : `   • index format unchanged — no reindex needed`,
   ];
+  // F2: the number the USER cares about — how many notes the brain holds. When a
+  // reindex is running, searchability catches up as indexing finishes.
+  if (typeof vaultNoteCount === "number") {
+    lines.push(
+      `   • your vault holds ${vaultNoteCount} note(s)` +
+        (reindexed ? " — searchable as the reindex finishes" : "")
+    );
+  }
   // Surface newly-delivered engine skills / MCP servers (ADR 0025) — the whole point
   // of an additive update: an upgrader must SEE they finally have the feature.
   if (installedSkills.length > 0) {
@@ -110,6 +127,7 @@ export async function updateEngine({
   regenerateLaunchers = defaultRegenerateLaunchers,
   runInstall = defaultRunInstall,
   runReindex = defaultRunReindex,
+  countVaultNotes = defaultCountVaultNotes,
 }) {
   const manifestPath = join(brainDir, "engine-manifest.json");
   const local = JSON.parse(readFileSync(manifestPath, "utf8"));
@@ -187,6 +205,10 @@ export async function updateEngine({
   const reindexed = needsReindex({ local, target });
   if (reindexed) await runReindex({ brainDir, platform });
 
+  // 6.bis Count the notes the brain holds, for the user-facing recap (F2). Read after
+  //    any reindex so it reflects the current vault. Deterministic, no native deps.
+  const vaultNoteCount = await countVaultNotes({ brainDir });
+
   // 7. Record the new engine version + the ref we pulled, and RE-SEED `provenance`
   //    (Step 5): refresh the 3-way base for the merge files the engine just
   //    re-delivered (the engine-owned scripts, read back from disk), while the user's
@@ -208,7 +230,7 @@ export async function updateEngine({
   };
   writeFileSync(manifestPath, JSON.stringify(updated, null, 2) + "\n");
 
-  return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, installedSkills, mcpServersAdded };
+  return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, vaultNoteCount, installedSkills, mcpServersAdded };
 }
 
 // ── CLI entry (the command the brain-side `update-engine` skill runs) ─────────

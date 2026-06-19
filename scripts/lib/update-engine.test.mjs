@@ -92,6 +92,33 @@ test("formatReport — names the engine skill(s) it installed and the MCP server
   assert.match(out, /server|mcp/i);
 });
 
+// F2: the recap must surface the number the USER cares about — how many notes their
+// brain holds — not just the maintainer-facing "N engine files swapped" count.
+test("formatReport — surfaces the vault note count", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    vaultNoteCount: 9,
+  });
+  assert.match(out, /9 note/);
+});
+
+test("formatReport — when reindexed, hints that searchability catches up as indexing finishes", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: true,
+    vaultNoteCount: 9,
+  });
+  assert.match(out, /9 note/);
+  assert.match(out, /indexing|searchable|catches up/i);
+});
+
 function sha256(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
@@ -231,12 +258,13 @@ function assertSacredUntouched(brainDir, before) {
 // Run the core with the network/npm/reindex SEAMS stubbed. fetchSource hands back the
 // prepared source dir (stands in for `git clone --depth 1 --branch <ref>`); the calls
 // object records the side effects we assert on.
-async function runUpdate({ brainDir, sourceDir, platform, resolveLatestTag }) {
+async function runUpdate({ brainDir, sourceDir, platform, resolveLatestTag, countVaultNotes }) {
   const updateEngine = await loadCore();
   const calls = { install: [], reindex: [], regenerate: [] };
   const report = await updateEngine({
     brainDir,
     platform,
+    countVaultNotes: countVaultNotes ?? (async () => 0),
     // The launcher's latest release tag on the remote (ADR 0017). Default = the
     // target's version; overridable to exercise the offline/no-tag fallback. The
     // committed launcher manifest has NO `source`, so this — not target.source —
@@ -657,4 +685,25 @@ test("gate — no tag resolvable (offline / no semver tag) → fall back to the 
   // …and the recorded ref stays the pinned one (we never invent a version).
   const m = JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8"));
   assert.equal(m.source.ref, "v1.0.0", "with no resolvable tag the ref is preserved, not blanked");
+});
+
+// F2 (2a): the core returns the vault note count (via an injectable seam, like
+// runReindex) so the recap can surface it. The seam is called and its value flows
+// onto the returned report.
+test("gate — returns the vault note count from the injected seam", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource({ indexSchemaVersion: 1 });
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+
+  const { report } = await runUpdate({
+    brainDir,
+    sourceDir,
+    platform: "posix",
+    countVaultNotes: async () => 42,
+  });
+
+  assert.equal(report.vaultNoteCount, 42);
 });

@@ -35,10 +35,10 @@ as their Obsidian vault). Obsidian is the brain's default viewer (memory `obsidi
   - [x] 1d. `SearchResult` + `searchSimilar` SQL: select & return `sourceUrl` _(via `searchSimilarIn` seam)_
   - [x] 1e. Citation renderer in `search_vault`: clickable 🧠 local (obsidian://) + 🔗 Notion (when present) _(`formatSearchCitations`; removed dead duplicate `tools/search-vault.ts`)_
   - [x] 1f. (new installs only) constitution template citation convention mentions the dual link _(`templates/fr/CLAUDE.md.template`)_
-- [ ] **Lot 2 — F2: update-engine recap shows vault note count (+ reindex state)**
-  - [ ] 2a. `updateEngine` returns `vaultNoteCount` (via an injectable seam, like `runReindex`)
-  - [ ] 2b. `formatReport` adds a user-facing "N notes in your vault" line (+ "reindex running" when reindexed)
-  - [ ] 2c. Unit tests on `formatReport` wording (pure function, already tested)
+- [x] **Lot 2 — F2: update-engine recap shows vault note count (+ reindex state)** _(2026-06-19)_
+  - [x] 2a. `updateEngine` returns `vaultNoteCount` (via injectable `countVaultNotes` seam, default = count vault `.md` files)
+  - [x] 2b. `formatReport` adds a user-facing "your vault holds N note(s)" line (+ "searchable as the reindex finishes")
+  - [x] 2c. Unit tests on `formatReport` wording (pure function)
 - [ ] **Lot 3 — P1: make the restart message coherent in the local-mirror skill**
 - [ ] **Lot 4 — onboarding polish (skill wording)**
   - [ ] 4a. P2 — gather/confirm `token_env` **before** writing any `.env` placeholder (no PERSO→FACTURE dance)
