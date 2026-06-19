@@ -1,8 +1,12 @@
 # Plan — Local-mirror QA round: clickable dual-link citations, update-engine note count, onboarding polish
 
-> Branch: `local-mirror` (not yet pushed). Codename in flight: v3.2.0 *"The One Where Notion Moves
-> Into Your Brain"*. TDD baby-steps, **commit-only-green**. Ship (PR / `/code-review` / merge / tag /
-> archive / purge) only on Thomas's explicit green light.
+> **STATUS: ✅ SHIPPED — v3.2.2** *"The One Where Citations Click Through"* (2026-06-19). Merged to
+> `main` via PR #14 (merge commit `63a1e3c`), tag `v3.2.2`. All 5 Lots delivered in TDD baby-steps,
+> commit-only-green; `/code-review` (high) run → one robustness finding fixed (`f2eedf8`: escape
+> `>`/`<`/whitespace in citation link destinations). Three suites green at ship: **RAG 188 · harness
+> 311 · local-mirror 84**, `tsc` clean. Golden QA self-run on a throwaway vault confirmed dual-link
+> citations, recap note count, and onboarding wording.
+> **Scope:** Second brain (runtime) + Installer (rag/ delivered by `/update-engine`).
 
 ## Context
 
@@ -44,7 +48,7 @@ as their Obsidian vault). Obsidian is the brain's default viewer (memory `obsidi
   - [x] 4a. P2 — gather/confirm `token_env` **before** writing any `.env` placeholder (no PERSO→FACTURE dance)
   - [x] 4b. P3 — verify post-sync via the `status` tool / structured `setup_source` result, **never** a compound shell command
   - [x] 4c. P4 — reconcile the two counts in the recap wording (pages mirrored vs notes indexed/"ready to search")
-- [ ] **Lot 5 — Ship (on explicit green light)** — 3 suites green + tsc, PR, `/code-review`, merge, tag, archive this plan, purge QA brains
+- [x] **Lot 5 — Ship** _(2026-06-19 · PR #14 merge `63a1e3c` · tag `v3.2.2`)_ — 3 suites green + tsc, PR, `/code-review` (1 finding fixed `f2eedf8`), merge, tag, plan archived, QA brains purged
 
 ---
 

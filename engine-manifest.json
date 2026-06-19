@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "engineVersion": { "rag": "1.1.1", "local-mirror": "0.1.1", "constitutionTemplate": "1.0.0", "scripts": "1.0.0" },
+  "engineVersion": { "rag": "1.1.2", "local-mirror": "0.1.1", "constitutionTemplate": "1.0.0", "scripts": "1.0.0" },
   "indexSchemaVersion": 1,
   "regimes": {
     "replace": [

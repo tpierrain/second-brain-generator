@@ -234,6 +234,14 @@
       EN/FR constitution & skill guidance; **Item 2** = stop the false "⚠️ Gemini key missing" status-line segment
       on **keyless** embedders (shared `geminiKeyWarning`). **STATUS: ✅ DONE 2026-06-14** (`311b009`, `2d5cbe3`,
       `acd032c`; harness 216/216, RAG 137/137, tsc clean). Not yet merged — maintainer QA + merge post-demos.
+    - [`local-mirror-qa-citations-recap-polish-action.md`](plans/archived/local-mirror-qa-citations-recap-polish-action.md) —
+      **local-mirror QA round**: (Lot 1) **clickable dual-link citations** in `search_vault` — 🧠 `obsidian://`
+      local copy on every result + 🔗 Notion source on mirror notes (engine-side, so `/update-engine` carries it
+      to every brain; nullable `source_url` column + out-of-band `ALTER`, no forced reindex); (Lot 2)
+      `/update-engine` recap surfaces the **vault note count** (deterministic on-disk count, ADR 0009); (Lots 3-4)
+      onboarding wording polish in the local-mirror skill (coherent restart, `token_env`-first, `status`-tool
+      verification, reconciled counts). **STATUS: ✅ SHIPPED v3.2.2 2026-06-19** (PR #14 merge `63a1e3c`, tag
+      `v3.2.2`; `/code-review` finding fixed `f2eedf8`; RAG 188 · harness 311 · local-mirror 84, tsc clean).
 - **`retrospectives/`** — 📝 **takeaway-oriented retros**: the **story** of a notable session
   (the starting question, the path investigation→measurement→fix, the transferable lessons). To be
   distinguished from ADRs (the *why* of a decision) and plans (the *what/how*): here it's the
