@@ -110,6 +110,10 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
    - `token_env` — the **name** of the env var that will hold the integration token (e.g.
      `NOTION_TOKEN_PASC`). One token/scope per mirror.
 2. **Guide the token into `.env` — ONE path, no chat paste-block** (only if it isn't set yet).
+   ⚠️ **Settle `token_env` FIRST.** Gather *and confirm the exact var name with the user* (step 1)
+   **before** writing anything — `open-env.mjs` writes that name as a placeholder line, so a name you
+   later change leaves a stale `NOTION_TOKEN_<wrong>=` line behind (the PERSO→FACTURE placeholder dance).
+   Only once the name is agreed, proceed.
    `.env` is a *hidden* file a non-dev can't locate, so **don't** ask them to find it, and **don't**
    print a `<token_env>=…` block to copy into the chat (that duplicates what then has to be cleaned up,
    R2-3). Instead run the deterministic helper, **from the brain folder**, which writes a single
@@ -140,11 +144,22 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
    freeze. Then call it with the five fields. It **tests the scope** (a scoped search that returns only
    the zone), does the **first sync**, writes the config (`local-mirror.config.json`, the versioned
    source of truth) and the sidecar state, and returns a step-by-step `message`.
-4. **Report** what came back. A **0-pages** result means "the integration is not connected to the root
-   page yet" → have the user share it, then re-run. An **enumeration/401 error** is distinct from
-   "0 pages" — relay it as-is, do not pretend it synced. **In the recap, restate the perimeter**: e.g.
-   *"27 pages mirrored — the whole sub-tree under \<root>. Pages linked out to other Notion spaces are
-   not included (see below)."*
+4. **Report** what came back — **from the structured `setup_source` result**, and if you want to
+   double-check where things landed, **from the `status <name>` tool** (it returns config, watermark,
+   item count and last-sync state). ⚠️ **Never verify the sync with a compound shell command**
+   (`cd … && cat … && ls … && find …`) — that triggers a needless permission prompt and the tools
+   already give you the answer deterministically. A **0-pages** result means "the integration is not
+   connected to the root page yet" → have the user share it, then re-run. An **enumeration/401 error**
+   is distinct from "0 pages" — relay it as-is, do not pretend it synced. **In the recap, restate the
+   perimeter**: e.g. *"27 pages mirrored — the whole sub-tree under \<root>. Pages linked out to other
+   Notion spaces are not included (see below)."*
+   - ⚠️ **Reconcile the two counts the user will see.** `setup_source` reports *"N pages mirrored"*
+     (written to disk); moments later an OS toast says *"N notes ready to search"* (the RAG watcher
+     finished indexing). These are the **same content at two stages** — "written to disk" → "indexed &
+     searchable" — **not** two conflicting totals. Frame it that way so the second number doesn't read
+     as a surprise, e.g. *"27 pages copied locally; you'll get a 'ready to search' notification once
+     they're indexed (a few seconds)."* (Small off-by-some differences are normal — empty pages produce
+     no searchable note.)
 
 > ⚠️ **Perimeter disclaimer — say this clearly at connection time (and again in the recap).** Only the
 > **declared root page and everything beneath it** (its sub-tree of sub-pages) is mirrored. **Pages
@@ -164,10 +179,17 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
 
 ## Already-installed brain that predates this feature
 
-If the `local-mirror` tools are not available (a brain installed before this engine version),
-it just needs the same one-time wiring every other server got at install. *(On the CLI you can confirm
-with `/mcp`; in the Desktop app `/mcp` opens the connectors **Directory**, not the local server list, so
-don't rely on it there — just check whether the tools respond.)*
+If the `local-mirror` tools aren't available as first-class `mcp__local-mirror__*` tools (a brain
+installed before this engine version), **you can still set up the mirror right now, without any
+restart** — drive the `local-mirror` module **directly** (run `setup_source` via the module code; its
+deps install on first use). **A restart is only needed _later_**, and only if the user wants the
+`mcp__local-mirror__*` tools available as first-class tools in the session (the MCP list is frozen at
+session start). So: **do the onboarding now**, and mention the restart only as an optional follow-up —
+never present it as a blocking prerequisite. *(On the CLI you can confirm the tools with `/mcp`; in the
+Desktop app `/mcp` opens the connectors **Directory**, not the local server list, so don't rely on it
+there — just check whether the tools respond.)*
+
+The one-time wiring (so a **future** session exposes the tools as first-class):
 
 1. Add the server block to `.mcp.json` (idempotent — skip if already present):
    ```json
@@ -178,14 +200,14 @@ don't rely on it there — just check whether the tools respond.)*
    args: ["local-mirror/launch.sh"]` on macOS/Linux, the `.cmd` on Windows — exactly like
    `vault-rag`.)
 2. Install its deps once: `cd local-mirror && npm install`.
-3. **Pick up the new server** (the MCP list is frozen at session start). In the **Desktop app**, the
+3. **To pick up the new server as first-class tools** (optional, later): in the **Desktop app**, the
    reliable way is to **quit & relaunch Claude Desktop, then reopen the _same_ conversation** — do **not**
    tell the user to "open a new conversation" (it spawns a duplicate of a pinned/named conversation and
-   can leave two windows on one vault). On the **CLI**, relaunch `claude` in the brain folder. Then run
-   `setup_source`.
+   can leave two windows on one vault). On the **CLI**, relaunch `claude` in the brain folder.
 
-> Note: the per-mirror **token** no longer requires any restart — it is read fresh from `.env` at
-> call-time (F3). A restart is only ever needed to make Claude pick up a **new `.mcp.json` entry**.
+> Note: neither the onboarding nor the per-mirror **token** requires a restart — the token is read fresh
+> from `.env` at call-time (F3), and you can drive the module directly today. A restart only ever serves
+> to expose the `mcp__local-mirror__*` tools as first-class tools in a session.
 
 > Running `/update-engine` delivers the server's code and launchers to such a brain automatically;
 > this manual wiring only covers the `.mcp.json` entry, which is per-machine and never overwritten.

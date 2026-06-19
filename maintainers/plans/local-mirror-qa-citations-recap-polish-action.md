@@ -39,11 +39,11 @@ as their Obsidian vault). Obsidian is the brain's default viewer (memory `obsidi
   - [x] 2a. `updateEngine` returns `vaultNoteCount` (via injectable `countVaultNotes` seam, default = count vault `.md` files)
   - [x] 2b. `formatReport` adds a user-facing "your vault holds N note(s)" line (+ "searchable as the reindex finishes")
   - [x] 2c. Unit tests on `formatReport` wording (pure function)
-- [ ] **Lot 3 — P1: make the restart message coherent in the local-mirror skill**
-- [ ] **Lot 4 — onboarding polish (skill wording)**
-  - [ ] 4a. P2 — gather/confirm `token_env` **before** writing any `.env` placeholder (no PERSO→FACTURE dance)
-  - [ ] 4b. P3 — verify post-sync via the `status` tool / structured `setup_source` result, **never** a compound shell command
-  - [ ] 4c. P4 — reconcile the two counts in the recap wording (pages mirrored vs notes indexed/"ready to search")
+- [x] **Lot 3 — P1: make the restart message coherent in the local-mirror skill** _(2026-06-19; leads with "set up now, no restart — restart only later for first-class tools")_
+- [x] **Lot 4 — onboarding polish (skill wording)** _(2026-06-19)_
+  - [x] 4a. P2 — gather/confirm `token_env` **before** writing any `.env` placeholder (no PERSO→FACTURE dance)
+  - [x] 4b. P3 — verify post-sync via the `status` tool / structured `setup_source` result, **never** a compound shell command
+  - [x] 4c. P4 — reconcile the two counts in the recap wording (pages mirrored vs notes indexed/"ready to search")
 - [ ] **Lot 5 — Ship (on explicit green light)** — 3 suites green + tsc, PR, `/code-review`, merge, tag, archive this plan, purge QA brains
 
 ---
