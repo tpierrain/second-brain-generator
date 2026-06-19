@@ -1,8 +1,10 @@
 # QA — post-v3.2.0 (throwaway brain, then purge)
 
-> **Status: HALTED at Finding #1 (blocker).** The upgrade path (v3.1.0 → v3.2.0) does not deliver
-> the flagship `local-mirror` feature → no point continuing §3 until the v3.2.1 fix lands. Resume
-> this campaign after the fix (see `maintainers/plans/fix-update-engine-skills-mcp-action.md`).
+> **Status: Finding #1 + #2 RESOLVED in v3.2.1** (PR #13, plan
+> `maintainers/plans/archived/fix-update-engine-skills-mcp-action.md`). The upgrade path now
+> delivers the flagship `local-mirror` skill + MCP server to upgraders and ships 0 npm vulns —
+> proven empirically on the golden master (skill installed, `.mcp.json` reconciled, sacred files
+> byte-identical). §3 local-mirror remains to be exercised live on a fresh post-fix brain.
 > Tested on a frozen golden master `~/legacy-brain` (v3.1.0), restored from `~/legacy-brain.tgz`.
 
 ## 0. Setup
@@ -60,7 +62,7 @@
 
 ## Findings
 
-- [ ] 🔴 **MAJOR — `update-engine` does not deliver the v3.2.0 feature to upgraders.**
+- [x] 🔴 **MAJOR — `update-engine` does not deliver the v3.2.0 feature to upgraders.** _(FIXED v3.2.1, PR #13)_
       Empirically proven on a v3.1.0→v3.2.0 upgraded brain: the `local-mirror/` **code** is copied
       (replace regime ✓) but (a) the **skill** `.claude/skills/local-mirror/` is **NOT installed**
       (`.claude/skills/` is a sacred tree → `update-engine` never touches it) and (b) the
@@ -70,7 +72,7 @@
       has it because the installer drops the skill + registers the MCP). Root cause = the deferred
       "update-skills" gap, now biting.
       **Fix:** see `maintainers/plans/fix-update-engine-skills-mcp-action.md`. Ship as v3.2.1.
-- [ ] 🟡 **npm — engine ships with 4 vulnerabilities** (3 moderate, 1 high): `hono` (high, unused
+- [x] 🟡 **npm — engine ships with 4 vulnerabilities** (3 moderate, 1 high): `hono` (high, unused
       attack surface here), `protobufjs` (moderate, transitive), `js-yaml` via `gray-matter`
       (moderate DoS on crafted YAML). Real-world risk **low** for a local stdio MCP over the user's
       own notes. Patch in the generator (hono+protobufjs non-breaking; gray-matter 2.x is breaking →
