@@ -16,7 +16,7 @@
 ## Tracking
 
 - [x] **Lot 0 — Investigation & design decisions** _(2026-06-19 · branch created; decisions below + ADR 0025)_
-- [ ] **Lot A — Install engine-declared skills on update** (TDD)
+- [x] **Lot A — Install engine-declared skills on update** (TDD) _(2026-06-19 · commit pending)_
 - [ ] **Lot B — Reconcile `.mcp.json` from `engineMcpServers`** (TDD)
 - [ ] **Lot C — Self-heal path for already-broken v3.2.0 brains** (decided in Lot 0)
 - [ ] **Lot D — npm vulnerability remediation** (TDD where it touches behavior)
@@ -60,14 +60,18 @@
 
 ## Lot A — Install engine-declared skills on update
 
-- [ ] RED: test — given a manifest declaring `.claude/skills/local-mirror/**` as engine-owned and a
-      brain without it, the apply plan **installs** the skill.
-- [ ] RED: test — a **user** skill (`.claude/skills/zzz-mine/**`, NOT in the manifest) is **never**
-      written/removed (sacred preserved).
-- [ ] GREEN: carve the manifest-declared engine-skill paths out of the blanket `SACRED_TREES` scrub
-      in `engine-apply-plan.mjs`; route them to the chosen regime (per Q2).
-- [ ] Refactor; full `scripts/lib` suite green.
-- [ ] Verify empirically on the golden master: after update, `.claude/skills/local-mirror/` exists.
+- [x] RED→GREEN: `computeApplyPlan` exposes an `installSkills` bucket = the manifest-declared
+      engine-skill paths (`merge` entries matching `.claude/skills/<name>/**`), carved out of the
+      blanket skills scrub (`engine-apply-plan.mjs`).
+- [x] SAFETY test: a skill mis-declared in `replace`/`regenerate` is still scrubbed — only the additive
+      `merge`→`installSkills` path can ever carry a skill; a custom/non-declared skill is never in it.
+- [x] RED→GREEN (apply): `updateEngine()` installs a **missing** engine-declared skill from the fetched
+      source (install-if-absent at the **skill-dir** level); the gate's SACRED set (incl. the custom
+      `zzz-mine` skill) stays byte-identical.
+- [x] Triangulation: an **already-present** (user-customized) engine skill is preserved byte-identical
+      (never clobbered).
+- [x] Refactor; full harness suite green (300/300).
+- [ ] Verify empirically on the golden master (grouped with Lot B — single restore cycle).
 
 ## Lot B — Reconcile `.mcp.json` from `engineMcpServers`
 

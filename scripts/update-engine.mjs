@@ -28,6 +28,7 @@ import {
   readTargetManifest,
 } from "./lib/engine-fetch.mjs";
 import { computeApplyPlan } from "./lib/engine-apply-plan.mjs";
+import { matchesAny } from "./lib/glob-match.mjs";
 import { needsReindex } from "./lib/reindex-trigger.mjs";
 import { reseedProvenance } from "./lib/engine-source.mjs";
 import { listFilesRelPosix } from "./lib/fs-walk.mjs";
@@ -128,12 +129,21 @@ export async function updateEngine({
   //    (`regenerate`) are NOT copied — they are rebuilt below. Self-replacement mid-run
   //    is safe: Node caches imported modules, so overwriting the .mjs on disk never
   //    perturbs this process.
+  const sourceFiles = listFilesRelPosix(sourceDir);
   const copyGlobs = [...plan.overwrite, ...plan.replaceScripts];
-  const copied = selectEngineFilesToCopy({
-    sourceFiles: listFilesRelPosix(sourceDir),
-    copyGlobs,
-  });
+  const copied = selectEngineFilesToCopy({ sourceFiles, copyGlobs });
   for (const rel of copied) copyInto(sourceDir, brainDir, rel);
+
+  // 3.bis Install engine-declared skills the brain is MISSING (ADR 0025): additive,
+  //    install-if-absent at the SKILL-DIR level. A skill dir that already exists
+  //    (possibly user-customized, e.g. prepare-1-1) is left byte-identical; a
+  //    brand-new engine skill (e.g. local-mirror) is copied in so upgraders get it.
+  //    Non-declared / custom skills are never in `installSkills` → untouchable.
+  for (const skillGlob of plan.installSkills) {
+    const skillDir = skillGlob.replace(/\/\*\*?$/, ""); // ".../local-mirror/**" → ".../local-mirror"
+    if (existsSync(join(brainDir, skillDir))) continue; // present → preserve, never overwrite
+    for (const rel of sourceFiles.filter((f) => matchesAny([skillGlob], f))) copyInto(sourceDir, brainDir, rel);
+  }
 
   // 4. Regenerate the launchers (both halves, ADR 0015).
   const regenerated = plan.regenerate.length > 0;

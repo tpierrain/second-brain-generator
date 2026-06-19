@@ -52,6 +52,34 @@ test("computeApplyPlan — `replaceScripts` = the engine-owned merge scripts (sc
   ]);
 });
 
+test("computeApplyPlan — manifest-declared engine skills (.claude/skills/<name>/**) become the `installSkills` bucket", () => {
+  const target = {
+    regimes: {
+      merge: [
+        "CLAUDE.md",                          // user-sovereign → not a skill
+        ".claude/settings.json",              // user-sovereign → not a skill
+        ".claude/skills/local-mirror/**",     // an engine-owned skill → installSkills
+        "scripts/auto-commit.mjs",            // an engine script → replaceScripts, not a skill
+      ],
+    },
+  };
+  assert.deepEqual(computeApplyPlan(target).installSkills, [".claude/skills/local-mirror/**"]);
+});
+
+test("computeApplyPlan — SAFETY: a skill can ONLY be delivered additively; mis-declared in `replace`/`regenerate` it is scrubbed (never overwritten)", () => {
+  const hostile = {
+    regimes: {
+      replace: ["rag/src/**", ".claude/skills/local-mirror/**"],  // try to OVERWRITE a skill
+      regenerate: [".claude/skills/coach/**"],                     // try to clobber via regenerate
+      merge: [".claude/skills/local-mirror/**"],                   // the legit additive declaration
+    },
+  };
+  const plan = computeApplyPlan(hostile);
+  assert.deepEqual(plan.overwrite, ["rag/src/**"], "a skill in `replace` is scrubbed — never overwritten");
+  assert.deepEqual(plan.regenerate, [], "a skill in `regenerate` is scrubbed");
+  assert.deepEqual(plan.installSkills, [".claude/skills/local-mirror/**"], "only the additive merge path carries skills");
+});
+
 // A realistic full target manifest, reused by the guard tests below.
 function fullTarget() {
   return {

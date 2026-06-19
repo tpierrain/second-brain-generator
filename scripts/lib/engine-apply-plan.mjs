@@ -19,6 +19,13 @@ import { matchesAny } from "./glob-match.mjs";
 // the user's, deliberately out of Phase 1 Option 1 scope.
 const ENGINE_SCRIPT = /^scripts\/[^/]+\.mjs$/;
 
+// An engine-owned SKILL within the `merge` regime: a `.claude/skills/<name>/**`
+// entry the manifest declares (coach, local-mirror, …). These are carved OUT of the
+// blanket skills scrub into an ADDITIVE install-if-absent bucket (ADR 0025): a
+// brand-new engine skill reaches upgraders, while a custom/non-declared skill stays
+// untouchable (it is never in the manifest) and an already-present one is preserved.
+const ENGINE_SKILL = /^\.claude\/skills\/[^/]+\//;
+
 // The user's sovereign territory — NEVER writable by the engine (ADR 0003/0012),
 // whatever a manifest declares. Exact files + whole subtrees. The vault has no
 // fixed manifest entry, but `vault/` is denied too as belt-and-suspenders.
@@ -50,5 +57,6 @@ export function computeApplyPlan(targetManifest) {
     overwrite: scrub([...(regimes.replace ?? [])]),
     regenerate: scrub([...(regimes.regenerate ?? [])]),
     replaceScripts: scrub((regimes.merge ?? []).filter((entry) => ENGINE_SCRIPT.test(entry))),
+    installSkills: (regimes.merge ?? []).filter((entry) => ENGINE_SKILL.test(entry)),
   };
 }
