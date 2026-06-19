@@ -71,6 +71,8 @@ A few properties define it:
 > **Markdown (`.md`)** files — linked together with `[[wikilink]]` links where it makes sense (a
 > note points to a person, a decision, a topic…). Nothing proprietary, nothing locked in.
 
+> 🧭 **Coming soon — also speaking Google's [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md).** For now your vault uses the **Obsidian flavor** (Markdown + `[[wikilinks]]`). OKF is the *same* idea taken to a standard — Markdown + YAML frontmatter, git-diffable, built to be read by humans **and** agents alike — so support for it is **on the roadmap**, letting your brain interoperate with the wider ecosystem forming around it. And whatever happens, **your brain will ship tooling to migrate its content to the new format automatically** once it's supported — you'll never have to convert anything by hand. Same promise either way: plain files, **zero lock-in**.
+
 > 🪨 **Bonus — turn it into a full read/write app with [Obsidian](https://obsidian.md).** The vault
 > is **Obsidian-compatible by design**. Install Obsidian (free), point it at your `vault/` folder, and
 > you instantly get a **visual reading *and* writing interface** over **every Markdown note in your
