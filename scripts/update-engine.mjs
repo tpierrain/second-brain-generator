@@ -29,6 +29,7 @@ import {
 } from "./lib/engine-fetch.mjs";
 import { computeApplyPlan } from "./lib/engine-apply-plan.mjs";
 import { matchesAny } from "./lib/glob-match.mjs";
+import { reconcileMcpServers } from "./lib/mcp-reconcile.mjs";
 import { needsReindex } from "./lib/reindex-trigger.mjs";
 import { reseedProvenance } from "./lib/engine-source.mjs";
 import { listFilesRelPosix } from "./lib/fs-walk.mjs";
@@ -143,6 +144,22 @@ export async function updateEngine({
     const skillDir = skillGlob.replace(/\/\*\*?$/, ""); // ".../local-mirror/**" → ".../local-mirror"
     if (existsSync(join(brainDir, skillDir))) continue; // present → preserve, never overwrite
     for (const rel of sourceFiles.filter((f) => matchesAny([skillGlob], f))) copyInto(sourceDir, brainDir, rel);
+  }
+
+  // 3.ter Reconcile .mcp.json against the manifest's engineMcpServers (ADR 0025):
+  //    register a newly-shipped engine server (e.g. local-mirror) the brain is
+  //    MISSING, taking its definition from the fetched .mcp.json.template with
+  //    {{PROJECT_ROOT}} substituted to this brain dir. Existing servers (engine OR
+  //    user-added) are preserved; absent template → nothing to reconcile.
+  const engineServerIds = target.engineMcpServers ?? [];
+  const templatePath = join(sourceDir, ".mcp.json.template");
+  const brainMcpPath = join(brainDir, ".mcp.json");
+  if (engineServerIds.length > 0 && existsSync(templatePath) && existsSync(brainMcpPath)) {
+    const projectRoot = brainDir.split("\\").join("/"); // {{PROJECT_ROOT}} is posix (cf. installer toPosix)
+    const templateMcp = JSON.parse(readFileSync(templatePath, "utf8").split("{{PROJECT_ROOT}}").join(projectRoot));
+    const brainMcp = JSON.parse(readFileSync(brainMcpPath, "utf8"));
+    const reconciled = reconcileMcpServers({ brainMcp, templateMcp, engineServerIds });
+    writeFileSync(brainMcpPath, JSON.stringify(reconciled, null, 2) + "\n");
   }
 
   // 4. Regenerate the launchers (both halves, ADR 0015).

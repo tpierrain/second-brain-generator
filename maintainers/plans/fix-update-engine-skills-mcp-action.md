@@ -17,7 +17,7 @@
 
 - [x] **Lot 0 — Investigation & design decisions** _(2026-06-19 · branch created; decisions below + ADR 0025)_
 - [x] **Lot A — Install engine-declared skills on update** (TDD) _(2026-06-19 · commit pending)_
-- [ ] **Lot B — Reconcile `.mcp.json` from `engineMcpServers`** (TDD)
+- [x] **Lot B — Reconcile `.mcp.json` from `engineMcpServers`** (TDD) _(2026-06-19 · commit pending)_
 - [ ] **Lot C — Self-heal path for already-broken v3.2.0 brains** (decided in Lot 0)
 - [ ] **Lot D — npm vulnerability remediation** (TDD where it touches behavior)
 - [ ] **Lot Ship — verify green, `/code-review`, merge, tag v3.2.1, archive, re-run QA §3**
@@ -75,16 +75,15 @@
 
 ## Lot B — Reconcile `.mcp.json` from `engineMcpServers`
 
-- [ ] RED: test — given a brain `.mcp.json` with only `vault-rag`, reconciling against
-      `engineMcpServers: ["vault-rag","local-mirror"]` **adds** `local-mirror` (cwd = brain dir).
-- [ ] RED: test — a **user-added** server in `.mcp.json` is **preserved** (never clobbered).
-- [ ] RED: test — re-running is **idempotent** (already-present engine server → no duplicate, no diff).
-- [ ] GREEN: implement the reconcile step (read fetched `.mcp.json.template`, substitute path, merge
-      missing engine servers) and wire it into `update-engine`.
-- [ ] Refactor; suite green.
-- [ ] Verify empirically on the golden master: after update, `.mcp.json` has `local-mirror`, and the
-      conversation routes "wire up a Notion zone" → the **local-mirror** skill (asks the
-      mirror-vs-native disambiguation), not `sync-sources`.
+- [x] RED→GREEN: new pure lib `mcp-reconcile.mjs` — `reconcileMcpServers({brainMcp, templateMcp,
+      engineServerIds})` ADDS only the missing engine servers from the (path-substituted) template.
+- [x] Tests: a **user-added** server is preserved; re-running is **idempotent** (no duplicate, no diff).
+- [x] GREEN (wiring): `update-engine` reads the fetched `.mcp.json.template`, substitutes
+      `{{PROJECT_ROOT}}` → brain dir (posix, cf. installer `toPosix`), reconciles the brain's
+      `.mcp.json`, writes it back. Gate test proves `local-mirror` registered (cwd = brain dir) +
+      `vault-rag` and a user server preserved.
+- [x] Refactor; full harness suite green (304/304).
+- [ ] Verify empirically on the golden master (grouped with Lot A, run once pre-ship — Lot Ship §QA).
 
 ## Lot C — Self-heal for already-broken v3.2.0 brains
 

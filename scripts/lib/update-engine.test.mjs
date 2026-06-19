@@ -524,6 +524,89 @@ test("gate — an ALREADY-PRESENT engine skill is preserved byte-identical (neve
   );
 });
 
+// ── Lot B (ADR 0025): an engine update RECONCILES .mcp.json against the manifest's
+//    engineMcpServers — registering a newly-shipped engine server (local-mirror) from
+//    the fetched .mcp.json.template (cwd → the brain dir), while preserving every
+//    existing server (vault-rag + any user-added one) and staying idempotent.
+test("gate — registers a missing engine MCP server in .mcp.json (from the template), preserving existing servers", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = mkdtempSync(join(tmpdir(), "sbg-source-mcp-"));
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+
+  // The brain's .mcp.json: only vault-rag + a user-added server (must both survive).
+  writeFile(
+    brainDir,
+    ".mcp.json",
+    JSON.stringify(
+      {
+        mcpServers: {
+          "vault-rag": { type: "stdio", command: "npx", args: ["tsx", "rag/src/index.ts"], cwd: brainDir, env: {} },
+          "my-tool": { type: "stdio", command: "node", args: ["my-tool.js"], cwd: brainDir, env: {} },
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  // The fetched launcher: engine files (vB) + a .mcp.json.template declaring both
+  // engine servers with the {{PROJECT_ROOT}} placeholder + a manifest listing them.
+  for (const [rel, content] of Object.entries(flat(engineFiles("vB")))) writeFile(sourceDir, rel, content);
+  writeFile(
+    sourceDir,
+    ".mcp.json.template",
+    JSON.stringify(
+      {
+        mcpServers: {
+          "vault-rag": { type: "stdio", command: "npx", args: ["tsx", "rag/src/index.ts"], cwd: "{{PROJECT_ROOT}}", env: {} },
+          "local-mirror": { type: "stdio", command: "npx", args: ["tsx", "local-mirror/src/server.ts"], cwd: "{{PROJECT_ROOT}}", env: {} },
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  writeFile(
+    sourceDir,
+    "engine-manifest.json",
+    JSON.stringify(
+      {
+        manifestVersion: 1,
+        engineVersion: { rag: "1.1.0", constitutionTemplate: "1.0.0", scripts: "1.0.0" },
+        indexSchemaVersion: 1,
+        regimes: {
+          replace: ["rag/src/**", "rag/package.json"],
+          regenerate: ["rag/launch.sh", "rag/launch.cmd", "scripts/run-node.sh", "scripts/run-node.cmd"],
+          merge: ["scripts/update-engine.mjs"],
+        },
+        engineMcpServers: ["vault-rag", "local-mirror"],
+        source: { repo: "https://example.test/launcher.git", ref: "v1.1.0" },
+        provenance: {},
+      },
+      null,
+      2,
+    ),
+  );
+
+  await runUpdate({ brainDir, sourceDir, platform: "posix" });
+
+  const mcp = JSON.parse(readFileSync(join(brainDir, ".mcp.json"), "utf8"));
+  // The missing engine server is now registered, with its cwd pointing at THIS brain.
+  assert.ok(mcp.mcpServers["local-mirror"], "the missing engine server must be registered on update");
+  assert.equal(mcp.mcpServers["local-mirror"].cwd, brainDir, "{{PROJECT_ROOT}} must resolve to the brain dir");
+  assert.deepEqual(
+    mcp.mcpServers["local-mirror"].args,
+    ["tsx", "local-mirror/src/server.ts"],
+    "the server definition must come from the fetched template",
+  );
+  // Existing servers — engine AND user-added — are preserved untouched.
+  assert.ok(mcp.mcpServers["vault-rag"], "the existing vault-rag server must be preserved");
+  assert.ok(mcp.mcpServers["my-tool"], "the user-added server must be preserved");
+});
+
 test("gate — no tag resolvable (offline / no semver tag) → fall back to the pinned ref, update still applies", async (t) => {
   const brainDir = buildBrain(); // pinned at v1.0.0
   const sourceDir = buildSource({ indexSchemaVersion: 1 });
