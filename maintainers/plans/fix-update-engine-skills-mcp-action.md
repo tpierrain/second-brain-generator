@@ -20,7 +20,7 @@
 - [x] **Lot B — Reconcile `.mcp.json` from `engineMcpServers`** (TDD) _(2026-06-19 · commit pending)_
 - [x] **Lot C — Self-heal path for already-broken ≤v3.2.0 brains** (doc only, decided in Lot 0) _(2026-06-19)_
 - [x] **Lot D — npm vulnerability remediation** (TDD where it touches behavior) _(2026-06-19 · commit pending)_
-- [ ] **Lot Ship — verify green, `/code-review`, merge, tag v3.2.1, archive, re-run QA §3**
+- [~] **Lot Ship — verify green, `/code-review`, merge, tag v3.2.1, archive, re-run QA §3** _(in progress: suites green + code-review + golden-master QA done; merge/tag pending green light)_
 
 ---
 
@@ -113,9 +113,15 @@
 
 ## Lot Ship
 
-- [ ] All three suites green (harness / rag / local-mirror) + `tsc` clean.
-- [ ] `/code-review` on the branch; fix findings in TDD (commit-only-green).
-- [ ] Re-run QA `§3 local-mirror` on the golden master end-to-end (the campaign that was BLOCKED).
+- [x] All three suites green (harness **305** / rag **178** / local-mirror **84**) + `tsc` clean + **0 vulns**. _(2026-06-19)_
+- [x] `/code-review` on the branch; no correctness bugs. Finding **A** (the update summary never
+      named the newly-installed engine skill / registered MCP server) fixed in TDD: `updateEngine`
+      now returns `installedSkills` + `mcpServersAdded`, `formatReport` names both _(commit `442658e`)_.
+      Findings B (minor dup) / C (planTouches oracle, no runtime hole) logged as backlog, not blocking.
+- [x] Verified empirically end-to-end on the v3.1.0 golden master (working-tree `updateEngine` logic,
+      source = `git archive` snapshot of the branch): `.claude/skills/local-mirror/` installed,
+      `.mcp.json` gained `local-mirror` (cwd = brain dir) with `vault-rag` + all custom skills
+      preserved byte-identical, manifest advanced to rag 1.1.1 / local-mirror 0.1.1 / ref v3.2.1. _(2026-06-19)_
 - [ ] Push, PR, merge to `main` on Thomas's explicit green light.
 - [ ] Tag **v3.2.1** + codename; update README `latest` expectation.
 - [ ] Archive this plan (`plans/archived/`, ✅ status + proof); tick QA finding #1 + #2 as resolved.
