@@ -14,7 +14,7 @@
 
 **🧲 Search by meaning, not keywords.** Ask in your own words — even in another language than your notes — and it finds the right passage, with its source.
 
-**🔒 Private by default, search à la carte.** Your notes are indexed **on your machine by default — nothing leaves it**. Or hand the job to the API of your choice, right down to your company's own endpoint: **you decide who touches your data**.
+**🔒 Private by default, search à la carte.** Your notes are indexed **on your machine by default (local RAG & embedding) — nothing leaves it**. Or hand the job to the API of your choice, right down to your company's own endpoint: **you decide who touches your data**.
 
 **🛟 Bulletproof & zero chores.** Backup, freshness, recovery after a glitch: **its** job, not yours. *You just have to talk.*
 
