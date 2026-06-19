@@ -74,6 +74,24 @@ test("formatReport — schema unchanged → states no reindex was needed (never 
   assert.doesNotMatch(out, /reindexed —/);
 });
 
+// Finding A (ADR 0025 fix QA): an upgrader must SEE that the update delivered the
+// flagship engine skill + registered its MCP server — that is the whole point of
+// v3.2.1. Silent delivery leaves the user unaware they finally have the feature.
+test("formatReport — names the engine skill(s) it installed and the MCP server(s) it registered", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: ["local-mirror"],
+    mcpServersAdded: ["local-mirror"],
+  });
+  assert.match(out, /local-mirror/);
+  assert.match(out, /skill/i);
+  assert.match(out, /server|mcp/i);
+});
+
 function sha256(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
@@ -465,13 +483,19 @@ test("gate — installs a MISSING engine-declared skill (install-if-absent); cus
     "precondition: the brain must lack the engine skill before the update",
   );
 
-  await runUpdate({ brainDir, sourceDir, platform: "posix" });
+  const { report } = await runUpdate({ brainDir, sourceDir, platform: "posix" });
 
   // The engine installed the missing skill from the fetched source…
   assert.equal(
     readFileSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md"), "utf8"),
     skillBody,
     "a missing engine-declared skill must be installed on update (so upgraders get local-mirror)",
+  );
+  // …and the report names it (so the user SEES they got the feature, finding A).
+  assert.deepEqual(
+    report.installedSkills,
+    ["local-mirror"],
+    "the report must name the engine skill(s) it installed",
   );
   // …and the user's custom skill + every sacred file stayed byte-identical.
   assertSacredUntouched(brainDir, before);
@@ -591,11 +615,17 @@ test("gate — registers a missing engine MCP server in .mcp.json (from the temp
     ),
   );
 
-  await runUpdate({ brainDir, sourceDir, platform: "posix" });
+  const { report } = await runUpdate({ brainDir, sourceDir, platform: "posix" });
 
   const mcp = JSON.parse(readFileSync(join(brainDir, ".mcp.json"), "utf8"));
   // The missing engine server is now registered, with its cwd pointing at THIS brain.
   assert.ok(mcp.mcpServers["local-mirror"], "the missing engine server must be registered on update");
+  // The report names only the server it actually ADDED (vault-rag was already there).
+  assert.deepEqual(
+    report.mcpServersAdded,
+    ["local-mirror"],
+    "the report must name the MCP server(s) it registered (only the newly-added one)",
+  );
   assert.equal(mcp.mcpServers["local-mirror"].cwd, brainDir, "{{PROJECT_ROOT}} must resolve to the brain dir");
   assert.deepEqual(
     mcp.mcpServers["local-mirror"].args,
