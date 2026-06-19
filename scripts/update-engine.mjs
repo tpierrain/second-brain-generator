@@ -69,11 +69,19 @@ async function defaultRunReindex({ brainDir, platform }) {
 
 // How many notes the brain holds, for the user-facing recap (F2). The lightest
 // deterministic path (ADR 0009): count the vault's Markdown files on disk — no
-// native deps, no ABI risk, accurate whatever the index state.
-async function defaultCountVaultNotes({ brainDir }) {
+// native deps, no ABI risk, accurate whatever the index state. The exclusions
+// mirror rag/'s document-scanner (`_template.md`, `.gitkeep`, the `.obsidian/`
+// dir) so the recap number matches what the indexer actually treats as a note.
+export async function defaultCountVaultNotes({ brainDir }) {
   const vaultDir = join(brainDir, "vault");
   if (!existsSync(vaultDir)) return 0;
-  return listFilesRelPosix(vaultDir).filter((f) => f.endsWith(".md")).length;
+  const EXCLUDE_NAMES = new Set(["_template.md", ".gitkeep"]);
+  return listFilesRelPosix(vaultDir).filter((rel) => {
+    if (!rel.endsWith(".md")) return false;
+    const parts = rel.split("/");
+    if (parts.includes(".obsidian")) return false;
+    return !EXCLUDE_NAMES.has(parts[parts.length - 1]);
+  }).length;
 }
 
 // Rebuild BOTH launcher halves from the (freshly-updated) rag-launcher.mjs builders.
@@ -102,8 +110,9 @@ export function formatReport(report) {
   // F2: the number the USER cares about — how many notes the brain holds. When a
   // reindex is running, searchability catches up as indexing finishes.
   if (typeof vaultNoteCount === "number") {
+    const noun = vaultNoteCount === 1 ? "note" : "notes";
     lines.push(
-      `   • your vault holds ${vaultNoteCount} note(s)` +
+      `   • your vault holds ${vaultNoteCount} ${noun}` +
         (reindexed ? " — searchable as the reindex finishes" : "")
     );
   }

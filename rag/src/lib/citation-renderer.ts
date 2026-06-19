@@ -23,9 +23,12 @@ export function formatSearchCitations(
       const localLink = `obsidian://open?path=${encodeURIComponent(
         resolve(vaultDir, r.path)
       )}`;
+      // Angle-bracket the destinations (CommonMark): a '(' or ')' inside a URL then
+      // can't terminate the markdown link early. The obsidian link is already
+      // percent-encoded, but wrapping both keeps the rule uniform.
       const links =
-        `🧠 [local copy](${localLink})` +
-        (r.sourceUrl ? ` · 🔗 [Notion source](${r.sourceUrl})` : "");
+        `🧠 [local copy](<${localLink}>)` +
+        (r.sourceUrl ? ` · 🔗 [Notion source](<${r.sourceUrl}>)` : "");
       return (
         `### ${i + 1}. ${r.title} — ${r.section}\n` +
         `**Path:** \`vault/${r.path}\` | **Type:** ${r.type} | **Score:** ${r.score.toFixed(3)}\n` +

@@ -44,7 +44,29 @@ async function loadCore() {
 // ── formatReport: the human summary the brain-side skill prints (Step 6) ──────
 // Pure (report object → string) so the wording is unit-tested; the CLI entry holds
 // only the untestable I/O wiring (ADR 0009).
-import { formatReport } from "../update-engine.mjs";
+import { formatReport, defaultCountVaultNotes } from "../update-engine.mjs";
+
+// F2: the default count must match what the indexer actually treats as a note —
+// the document-scanner excludes `_template.md`, `.gitkeep` and the `.obsidian/`
+// dir, so the recap number doesn't overstate what's searchable.
+test("defaultCountVaultNotes — counts vault .md but skips scanner-excluded files", async () => {
+  const brainDir = mkdtempSync(join(tmpdir(), "sbg-count-"));
+  writeFile(brainDir, "vault/topics/a.md", "# A\n");
+  writeFile(brainDir, "vault/people/b.md", "# B\n");
+  writeFile(brainDir, "vault/_template.md", "# tpl\n"); // scanner-excluded
+  writeFile(brainDir, "vault/.gitkeep", ""); // scanner-excluded (and not .md)
+  writeFile(brainDir, "vault/.obsidian/workspace.md", "# obsidian\n"); // excluded dir
+  writeFile(brainDir, "vault/notes.txt", "not markdown");
+
+  const n = await defaultCountVaultNotes({ brainDir });
+
+  assert.equal(n, 2);
+});
+
+test("defaultCountVaultNotes — a brain with no vault returns 0", async () => {
+  const brainDir = mkdtempSync(join(tmpdir(), "sbg-count-empty-"));
+  assert.equal(await defaultCountVaultNotes({ brainDir }), 0);
+});
 
 test("formatReport — schema moved → reports the new version, the swap, and that a reindex ran", () => {
   const out = formatReport({
@@ -103,7 +125,20 @@ test("formatReport — surfaces the vault note count", () => {
     reindexed: false,
     vaultNoteCount: 9,
   });
-  assert.match(out, /9 note/);
+  assert.match(out, /9 notes/);
+});
+
+test("formatReport — pluralizes the vault note count (1 note, not '1 note(s)')", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    vaultNoteCount: 1,
+  });
+  assert.match(out, /1 note\b/);
+  assert.doesNotMatch(out, /note\(s\)/);
 });
 
 test("formatReport — when reindexed, hints that searchability catches up as indexing finishes", () => {

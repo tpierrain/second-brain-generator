@@ -34,6 +34,17 @@ test("a mirror note renders both a clickable local (obsidian) and Notion link", 
   assert.ok(text.includes("https://www.notion.so/abc"), text);
 });
 
+test("the Notion link is angle-bracket wrapped so a ')' in the URL can't break the markdown", () => {
+  const text = formatSearchCitations(
+    [result({ sourceUrl: "https://www.notion.so/a(b)c" })],
+    "/brain/vault"
+  );
+
+  // CommonMark: a <…> link destination may contain parentheses → the closing
+  // ')' of the URL no longer terminates the markdown link early.
+  assert.ok(text.includes("(<https://www.notion.so/a(b)c>)"), text);
+});
+
 test("a non-mirror note renders only the local link, no Notion link", () => {
   const text = formatSearchCitations([result()], "/brain/vault");
 
