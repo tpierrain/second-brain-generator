@@ -42,6 +42,7 @@ import { formatLastRunMarkdown } from "./lib/progress-report.js";
 import { writeFileSync, appendFileSync } from "fs";
 import { spawn } from "child_process";
 import { capExceededSearchMessage } from "./lib/search-degradation.js";
+import { formatSearchCitations } from "./lib/citation-renderer.js";
 import { readFile } from "fs/promises";
 import { resolve, relative } from "path";
 
@@ -102,14 +103,7 @@ server.tool(
       return { content: [{ type: "text", text: "No results found in the vault." }] };
     }
 
-    const text = results
-      .map(
-        (r, i) =>
-          `### ${i + 1}. ${r.title} — ${r.section}\n` +
-          `**Path:** \`vault/${r.path}\` | **Type:** ${r.type} | **Score:** ${r.score.toFixed(3)}\n\n` +
-          `${r.content.slice(0, 500)}${r.content.length > 500 ? "…" : ""}`
-      )
-      .join("\n\n---\n\n");
+    const text = formatSearchCitations(results, VAULT_DIR);
 
     return { content: [{ type: "text", text }] };
   }
