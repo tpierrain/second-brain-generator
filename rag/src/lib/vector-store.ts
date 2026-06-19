@@ -65,7 +65,8 @@ export function applySchema(database: Database.Database): void {
       type TEXT NOT NULL,
       tags TEXT NOT NULL DEFAULT '[]',
       hash TEXT NOT NULL,
-      updated_at TEXT NOT NULL
+      updated_at TEXT NOT NULL,
+      source_url TEXT
     );
     CREATE TABLE IF NOT EXISTS chunks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,6 +90,11 @@ export function applySchema(database: Database.Database): void {
   // Nullable on purpose — a pre-existing row reads back null (grandfathered v1).
   if (!hasColumn(database, "index_meta", "index_schema_version")) {
     database.exec(`ALTER TABLE index_meta ADD COLUMN index_schema_version INTEGER`);
+  }
+  // Same out-of-band treatment for documents.source_url (clickable Notion link):
+  // a brain indexed before this column existed grandfathers its rows to null.
+  if (!hasColumn(database, "documents", "source_url")) {
+    database.exec(`ALTER TABLE documents ADD COLUMN source_url TEXT`);
   }
 }
 
@@ -202,21 +208,41 @@ export function indexDocument(
     content: string;
     chunkIndex: number;
     embedding: number[];
-  }>
+  }>,
+  sourceUrl: string | null = null
 ): void {
-  const d = getDb();
+  indexDocumentIn(getDb(), path, title, type, tags, hash, chunks, sourceUrl);
+}
+
+/** DB-injectable core of {@link indexDocument} — testable in-memory. */
+export function indexDocumentIn(
+  d: Database.Database,
+  path: string,
+  title: string,
+  type: string,
+  tags: string[],
+  hash: string,
+  chunks: Array<{
+    section: string;
+    content: string;
+    chunkIndex: number;
+    embedding: number[];
+  }>,
+  sourceUrl: string | null = null
+): void {
   const insertChunkStmt = d.prepare(
     "INSERT INTO chunks (doc_path, section, content, chunk_index, embedding) VALUES (?, ?, ?, ?, ?)"
   );
   const upsertDocStmt = d.prepare(
-    `INSERT INTO documents (path, title, type, tags, hash, updated_at)
-     VALUES (?, ?, ?, ?, ?, datetime('now'))
+    `INSERT INTO documents (path, title, type, tags, hash, updated_at, source_url)
+     VALUES (?, ?, ?, ?, ?, datetime('now'), ?)
      ON CONFLICT(path) DO UPDATE SET
        title = excluded.title,
        type = excluded.type,
        tags = excluded.tags,
        hash = excluded.hash,
-       updated_at = excluded.updated_at`
+       updated_at = excluded.updated_at,
+       source_url = excluded.source_url`
   );
 
   const tx = d.transaction(() => {
@@ -224,7 +250,7 @@ export function indexDocument(
     // chunks.doc_path → documents.path is enforced (better-sqlite3 enables
     // PRAGMA foreign_keys=ON by default). For a brand-new doc, inserting the
     // chunks first violated the constraint → FOREIGN KEY constraint failed.
-    upsertDocStmt.run(path, title, type, JSON.stringify(tags), hash);
+    upsertDocStmt.run(path, title, type, JSON.stringify(tags), hash, sourceUrl);
     d.prepare("DELETE FROM chunks WHERE doc_path = ?").run(path);
     for (const c of chunks) {
       const buf = Buffer.from(new Float32Array(c.embedding).buffer);
@@ -253,6 +279,7 @@ export interface SearchResult {
   section: string;
   content: string;
   score: number;
+  sourceUrl?: string | null;
 }
 
 export function searchSimilar(
@@ -261,11 +288,20 @@ export function searchSimilar(
   typeFilter?: string,
   tagFilter?: string
 ): SearchResult[] {
-  const d = getDb();
+  return searchSimilarIn(getDb(), queryEmbedding, limit, typeFilter, tagFilter);
+}
 
+/** DB-injectable core of {@link searchSimilar} — testable in-memory. */
+export function searchSimilarIn(
+  d: Database.Database,
+  queryEmbedding: number[],
+  limit: number,
+  typeFilter?: string,
+  tagFilter?: string
+): SearchResult[] {
   let sql = `
     SELECT c.doc_path, c.section, c.content, c.embedding,
-           d.title, d.type, d.tags
+           d.title, d.type, d.tags, d.source_url
     FROM chunks c
     JOIN documents d ON c.doc_path = d.path
   `;
@@ -292,6 +328,7 @@ export function searchSimilar(
     title: string;
     type: string;
     tags: string;
+    source_url: string | null;
   }>;
 
   const scored = rows.map((row) => {
@@ -307,6 +344,7 @@ export function searchSimilar(
       section: row.section,
       content: row.content,
       score: cosineSimilarity(queryEmbedding, emb),
+      sourceUrl: row.source_url,
     };
   });
 
