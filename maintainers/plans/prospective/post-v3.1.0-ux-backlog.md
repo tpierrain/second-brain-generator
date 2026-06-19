@@ -97,3 +97,50 @@ one friendly report, with **opt-in fixes** (never silent writes).
 > Links: [[prefer-deterministic-adr-0009]], the `import` UX plan
 > (`import-ux-folder-picker-and-index-notify-action.md`), the ABI-skew plan
 > (`node-abi-skew-install-runtime-action.md`).
+
+---
+
+## 💡 Idea — auto-finalize `update-engine` (kill the visible 2-cycle self-heal)
+
+Surfaced during the v3.2.2 QA (upgrading a real brain from **v3.1.0**). `/update-engine` runs the
+`scripts/update-engine.mjs` **loaded at command start** — i.e. the *old* installed version (Node does
+not reload a module mid-run). So any improvement to the update *process itself* (e.g. v3.2.1's
+install-missing-skill + reconcile `.mcp.json` per ADR 0025, v3.2.2's "your vault holds N notes" recap
+line) lands on disk but is **not executed** in the same run — the user must launch `/update-engine` a
+**second time** for the freshly-installed orchestrator to apply it. Field symptom: a v3.1.0 brain
+upgraded to v3.2.2 in one run gets the new `rag/` code but **no local-mirror skill, no MCP entry, no
+note-count line**, and the recap **doesn't even warn** a second run is needed → the next local-mirror
+onboarding runs *without the skill* and improvises (no 2-option disambiguation, weaker token guard).
+
+- [ ] **Promote to an action plan** before coding (idea capture only).
+- [ ] **Deterministic auto-finalize (ADR 0009):** once the new `update-engine.mjs` is copied, re-invoke
+  **the freshly-written script** in a child process (`execFileSync(node, [<brainDir>/scripts/update-engine.mjs, "--finalize"])`)
+  to run the *new* orchestrator's reconcile-skills/MCP + recount + recap in the SAME `/update-engine`.
+- [ ] **Guard against loops/recursion:** `--finalize` must NOT re-fetch / re-resolve a newer tag nor
+  re-spawn itself (single bounded hop); idempotent (install-if-absent, reconcile-if-missing already are).
+- [ ] **Fallback wording:** if auto-finalize can't run (headless, spawn blocked), the **first** recap
+  must explicitly say *"run `/update-engine` once more to finish installing new skills/servers"* —
+  today it says nothing. Cross-platform (ADR 0015); deterministic, fail-loud.
+
+> Note: the 2-cycle is **inherent to self-update** — even a v3.2.1→v3.2.2 hop won't show the new
+> note-count line on the run that introduces it. Auto-finalize makes it invisible going forward.
+> Links: [[prefer-deterministic-adr-0009]], ADR 0025 (install-if-absent skills + MCP reconcile).
+
+## 💡 Idea — `local-mirror` always names the two Notion modes, even when intent is clear
+
+Surfaced during the same QA. When the user says *"je voudrais brancher une réplication Notion"*, the
+brain should make them **aware there are two distinct modes** before routing: the **native Notion
+connector** (live, ad-hoc read/write) vs the **local-mirror MCP** (a durable offline copy indexed by
+the RAG). The skill already encodes a *balanced 2-option question* — but **only for the genuine grey
+zone**; on an obviously-mirror request it says *"don't ask — just route"*, so the user never learns the
+other mode exists. Thomas wants a one-line framing even when the intent is clear.
+
+- [ ] **Refine the routing rule in `.claude/skills/local-mirror/SKILL.md`** (`§ Disambiguate first`):
+  keep "don't ask a full question when obvious", but add: *even when routing directly, name both modes
+  in ONE neutral line and state which one you're taking* (e.g. *"Two ways to touch Notion: the live
+  connector, or a local mirror for offline RAG search — you clearly want the mirror, so I'll set that
+  up."*). Wording-only (no code); product-localized strings stay per-locale.
+- [ ] **Don't regress the grey-zone behavior** — the full balanced 2-option question still applies when
+  the intent is genuinely ambiguous.
+
+> Links: the `local-mirror` skill, [[golden-source-sync-progress]].
