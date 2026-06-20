@@ -1,6 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { obsidianHealth, formatObsidianHint } from "./obsidian-health.mjs";
+import {
+  obsidianHealth,
+  formatObsidianHint,
+  runtimeObsidianHint,
+} from "./obsidian-health.mjs";
 
 const CFG = "/Users/u/Library/Application Support/obsidian/obsidian.json";
 
@@ -55,4 +59,18 @@ test("formatObsidianHint — installed but unregistered → 'Open folder as vaul
   const hint = formatObsidianHint({ status: "unknown", installed: true, registered: false });
   assert.ok(hint, "expected a hint string");
   assert.match(hint, /Open folder as vault/i);
+});
+
+test("runtimeObsidianHint — installed but unregistered → the one-click 'Open folder as vault' nudge", () => {
+  const hint = runtimeObsidianHint({ status: "unknown", installed: true, registered: false });
+  assert.ok(hint, "expected a runtime hint");
+  assert.match(hint, /Open folder as vault/i);
+});
+
+test("runtimeObsidianHint — Obsidian absent → null (respect the choice, no per-session install nag)", () => {
+  assert.equal(runtimeObsidianHint({ status: "unknown", installed: false, registered: false }), null);
+});
+
+test("runtimeObsidianHint — ok → null (quiet)", () => {
+  assert.equal(runtimeObsidianHint({ status: "ok", installed: true, registered: true }), null);
 });

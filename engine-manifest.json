@@ -18,6 +18,7 @@
       "scripts/session-self-heal.mjs",
       "scripts/session-status.mjs",
       "scripts/session-health.mjs",
+      "scripts/session-obsidian-hint.mjs",
       "scripts/health-probe-run.mjs",
       "scripts/lib/**"
     ],

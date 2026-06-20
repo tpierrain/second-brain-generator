@@ -49,3 +49,14 @@ export function formatObsidianHint(health) {
     "links open straight in it."
   );
 }
+
+// Pure: the RUNTIME nag policy (SessionStart). Surfaces the hint ONLY for the
+// actionable, self-resolving case — Obsidian installed but THIS vault not yet
+// registered (one "Open folder as vault" fixes it, then this goes quiet forever).
+// Stays silent when Obsidian is absent (respect the user's choice — the install
+// recommendation is a one-shot install-time message, not a per-session nag) and
+// when all is ok. Keeps SessionStart from nagging.
+export function runtimeObsidianHint(health) {
+  if (health.installed && !health.registered) return formatObsidianHint(health);
+  return null;
+}
