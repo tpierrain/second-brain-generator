@@ -100,9 +100,17 @@ const blockers = gateBlockers(verdict, manifest);
 if (blockers.length === 0) {
   ok("Brain verified — every activated module's health_check is green");
   ok("  (vault-rag: demo answers FROM the vault, canary Quibblethorne found, index intact, embedder ready).");
-  // Surface non-blocking, non-ok optional modules as a soft note (never a failure).
+  // Surface non-blocking, non-ok optional modules as a soft note (never a failure, #3):
+  // an `unknown` optional is simply unconfigured; a `broken` optional is degraded and
+  // deserves a louder, accurate line (it is NOT just "not configured").
   for (const m of verdict.modules) {
-    if (m.status !== "ok") console.log(`  ${c.Y}·${c.X} ${m.module}: ${m.status} (optional, not configured) — skipped`);
+    if (m.status === "broken") {
+      const bad = (m.checks ?? []).filter((ch) => ch.status !== "ok");
+      const why = bad.length ? bad.map((ch) => `${ch.name}: ${ch.detail}`).join("; ") : m.status;
+      console.log(`  ${c.Y}⚠${c.X} ${m.module}: optional capability is BROKEN (not blocking) — ${why}`);
+    } else if (m.status !== "ok") {
+      console.log(`  ${c.Y}·${c.X} ${m.module}: ${m.status} (optional, not configured) — skipped`);
+    }
   }
   console.log(`  You can open Claude Code and ask: "${DEMO_QUESTION}"`);
   process.exit(0);

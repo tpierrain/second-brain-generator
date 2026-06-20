@@ -27,7 +27,7 @@ import { stdin, stdout } from "node:process";
 import { smokeTestMcp } from "./scripts/lib/mcp-smoke.mjs";
 import { runActivatedHealthChecks } from "./scripts/lib/health-check-runner.mjs";
 import { buildHealthCheckCaller } from "./scripts/lib/health-check-wiring.mjs";
-import { gateBlockers } from "./scripts/lib/health-check-gate.mjs";
+import { gateBlockers, optionalBroken } from "./scripts/lib/health-check-gate.mjs";
 import { CONNECTORS } from "./scripts/lib/connectors-catalog.mjs";
 import { applyConnectorFiles } from "./scripts/lib/connectors-apply.mjs";
 import { clearExampleNotes } from "./scripts/lib/example-notes.mjs";
@@ -798,6 +798,14 @@ try {
     const blockers = gateBlockers(verdict, manifest);
     if (blockers.length === 0) {
       ok("post-flight OK — every activated module's health_check is green (RAG canary Quibblethorne found).");
+      // #3: an OPTIONAL module that's broken (e.g. local-mirror whose server can't boot —
+      // its npm install only warned) does NOT fail the install, but say so LOUDLY so it's
+      // visible rather than silently swallowed by the green banner.
+      for (const m of optionalBroken(verdict, manifest)) {
+        const bad = (m.checks ?? []).filter((ch) => ch.status !== "ok");
+        const why = bad.length ? bad.map((ch) => `${ch.name}: ${ch.detail}`).join("; ") : m.status;
+        warn(`Optional capability ${m.module} is BROKEN (not blocking the install) — ${why}`);
+      }
     } else {
       err("POST-FLIGHT FAILURE — a required health_check is not green:");
       for (const m of blockers) {
