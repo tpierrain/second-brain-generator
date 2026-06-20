@@ -4,7 +4,35 @@ import {
   addVaultToObsidianConfig,
   shouldRegisterObsidian,
   obsidianConfigPath,
+  registerVaultInObsidian,
 } from "./obsidian-register.mjs";
+
+// A recording set of injected I/O seams for registerVaultInObsidian tests.
+function makeSeams({ files = {}, isRunning = false } = {}) {
+  const store = { ...files };
+  const writes = [];
+  const backups = [];
+  return {
+    platform: "darwin",
+    env: {},
+    home: "/Users/u",
+    now: () => 1000,
+    isObsidianRunning: () => isRunning,
+    existsSync: (p) => p in store,
+    readFileSync: (p) => store[p],
+    writeFileSync: (p, data) => {
+      store[p] = data;
+      writes.push({ path: p, data });
+    },
+    copyFileSync: (src, dest) => {
+      store[dest] = store[src];
+      backups.push({ src, dest });
+    },
+    _store: store,
+    _writes: writes,
+    _backups: backups,
+  };
+}
 
 test("addVaultToObsidianConfig — empty config gains one vault pointing at the path", () => {
   const result = addVaultToObsidianConfig({}, "/home/u/brain/vault");
@@ -72,4 +100,51 @@ test("obsidianConfigPath — Linux → ~/.config/obsidian/obsidian.json (XDG_CON
     obsidianConfigPath("linux", { XDG_CONFIG_HOME: "/home/u/.myconfig" }, "/home/u"),
     "/home/u/.myconfig/obsidian/obsidian.json"
   );
+});
+
+test("registerVaultInObsidian — config absent (Obsidian not installed) → not-installed, no write", () => {
+  const seams = makeSeams({ files: {} });
+  const result = registerVaultInObsidian("/Users/u/brain/vault", seams);
+  assert.deepEqual(result, { registered: false, reason: "not-installed" });
+  assert.equal(seams._writes.length, 0);
+});
+
+test("registerVaultInObsidian — Obsidian running → skip (it would clobber on quit), no write", () => {
+  const cfg = "/Users/u/Library/Application Support/obsidian/obsidian.json";
+  const seams = makeSeams({ files: { [cfg]: "{}" }, isRunning: true });
+  const result = registerVaultInObsidian("/Users/u/brain/vault", seams);
+  assert.deepEqual(result, { registered: false, reason: "running" });
+  assert.equal(seams._writes.length, 0);
+});
+
+test("registerVaultInObsidian — closed + not yet registered → backs up then writes the vault in", () => {
+  const cfg = "/Users/u/Library/Application Support/obsidian/obsidian.json";
+  const seams = makeSeams({ files: { [cfg]: '{"vaults":{}}' } });
+  const result = registerVaultInObsidian("/Users/u/brain/vault", seams);
+  assert.deepEqual(result, { registered: true, reason: "registered" });
+  // backup taken before the write
+  assert.equal(seams._backups.length, 1);
+  assert.equal(seams._backups[0].src, cfg);
+  // the written config registers the vault path
+  const written = JSON.parse(seams._store[cfg]);
+  const paths = Object.values(written.vaults).map((v) => v.path);
+  assert.ok(paths.includes("/Users/u/brain/vault"));
+});
+
+test("registerVaultInObsidian — already registered → no write, no backup (idempotent)", () => {
+  const cfg = "/Users/u/Library/Application Support/obsidian/obsidian.json";
+  const pre = addVaultToObsidianConfig({ vaults: {} }, "/Users/u/brain/vault", { ts: 5 });
+  const seams = makeSeams({ files: { [cfg]: JSON.stringify(pre) } });
+  const result = registerVaultInObsidian("/Users/u/brain/vault", seams);
+  assert.deepEqual(result, { registered: true, reason: "already-registered" });
+  assert.equal(seams._writes.length, 0);
+  assert.equal(seams._backups.length, 0);
+});
+
+test("registerVaultInObsidian — malformed obsidian.json → fail soft (unreadable-config), no write", () => {
+  const cfg = "/Users/u/Library/Application Support/obsidian/obsidian.json";
+  const seams = makeSeams({ files: { [cfg]: "{ not json" } });
+  const result = registerVaultInObsidian("/Users/u/brain/vault", seams);
+  assert.deepEqual(result, { registered: false, reason: "unreadable-config" });
+  assert.equal(seams._writes.length, 0);
 });

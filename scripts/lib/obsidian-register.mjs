@@ -52,3 +52,41 @@ export function shouldRegisterObsidian(env, platform) {
   if (platform === "linux" && !env.DISPLAY && !env.WAYLAND_DISPLAY) return false;
   return true;
 }
+
+// Thin, fail-soft I/O wrapper: register the brain's vault in Obsidian's config so
+// 🧠 `obsidian://` citation links open without a manual "Open folder as vault".
+// All I/O is injected (testable). NEVER throws — any failure falls soft to a
+// `{ registered: false, reason }` the caller relays as the manual instruction.
+//   reason: "unsupported-platform" | "not-installed" | "running"
+//         | "unreadable-config" | "already-registered" | "registered"
+export function registerVaultInObsidian(vaultPath, seams) {
+  const {
+    platform, env, home, now,
+    existsSync, readFileSync, writeFileSync, copyFileSync,
+    isObsidianRunning,
+  } = seams;
+  const configPath = obsidianConfigPath(platform, env, home);
+  if (!configPath) return { registered: false, reason: "unsupported-platform" };
+  // No config file = Obsidian has never run here = treat as not installed.
+  if (!existsSync(configPath)) return { registered: false, reason: "not-installed" };
+  // Obsidian rewrites obsidian.json from memory on quit → editing it now would be
+  // clobbered. Only safe to touch the file while Obsidian is closed.
+  if (isObsidianRunning()) return { registered: false, reason: "running" };
+
+  let config;
+  try {
+    config = JSON.parse(readFileSync(configPath, "utf8"));
+  } catch {
+    return { registered: false, reason: "unreadable-config" };
+  }
+
+  const updated = addVaultToObsidianConfig(config, vaultPath, { ts: now() });
+  // Already registered → the builder returns an equal config → nothing to write.
+  if (JSON.stringify(updated) === JSON.stringify(config)) {
+    return { registered: true, reason: "already-registered" };
+  }
+  // Back up the existing config before overwriting, then write.
+  copyFileSync(configPath, `${configPath}.sbg-backup`);
+  writeFileSync(configPath, JSON.stringify(updated), "utf8");
+  return { registered: true, reason: "registered" };
+}
