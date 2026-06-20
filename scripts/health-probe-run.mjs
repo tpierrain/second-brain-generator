@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
 // health-probe-run.mjs — the DETACHED probe child (ADR 0028 + 0030, F7/F7-bis).
-// Spawned by session-health.mjs at SessionStart, it asks every ACTIVATED engine
-// module its standard MCP `health_check` (the SAME runner the installer post-flight
-// and verify-rag use — "one definition of operational, three reactions"), persists
-// the fresh verdict to engine-health.json, and OS-notifies the moment a capability
-// becomes NEWLY broken. Runs in the background → session start never waits.
+// Spawned by session-health.mjs at SessionStart, it reads every ACTIVATED engine
+// module's health HEADLESS (read-only, light depth — ADR 0030 §4/§6, F7-ter): it
+// runs the SAME health-check definition (rag/src/health-check-cli.ts) the installer
+// post-flight and verify-rag use, but WITHOUT booting a server. It persists the fresh
+// verdict to engine-health.json and OS-notifies the moment a capability becomes NEWLY
+// broken. Runs in the background → session start never waits.
 //
-// This is a real `health_check` round-trip per module (revises the F7 baby-step-4b
-// presence-only choice: presence ≠ function — a registered-but-dead server, or a
-// RAG that answers nothing, is now caught, not just a vanished launch entry).
+// HEADLESS, never an MCP round-trip (revises fc2e4bb): a vault-rag MCP server is a
+// private stdio child of Claude — booting one here would test a DIFFERENT process, not
+// the live one, and waste resources. The light disk read catches the only truly silent
+// failure (a live server answering from DEGRADED DATA: empty/stale index, embedder gone).
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -18,7 +20,7 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { runActivatedHealthChecks } from "./lib/health-check-runner.mjs";
-import { buildHealthCheckCaller } from "./lib/health-check-wiring.mjs";
+import { buildHeadlessHealthCheckCaller } from "./lib/headless-health-check.mjs";
 
 export async function runProbeChild({ runProbes, readPriorVerdict, writeVerdict, notify }) {
   const verdict = await runProbes();
@@ -66,14 +68,13 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const manifest = JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8"));
   const mcpServers = JSON.parse(readFileSync(join(brainDir, ".mcp.json"), "utf8")).mcpServers ?? {};
 
-  const { isRegistered, callHealthCheck } = buildHealthCheckCaller({
+  const { isRegistered, callHealthCheck } = buildHeadlessHealthCheckCaller({
     mcpServers,
+    brainDir,
     platform,
-    // Mute each module's startup auto-reindex toast (this probe fires its OWN notify,
-    // a separate child below, only on a newly-broken capability); generous headroom so
-    // a slow in-process ONNX reload is never mistaken for a break (false notify).
-    env: { SBG_NO_NOTIFY: "1" },
-    timeoutMs: 60000,
+    // Light depth: file/DB reads only, zero ONNX (ADR 0030 §6) — the per-session probe
+    // must never slow startup. The deeper full read (real embed+search) is verify-rag's job.
+    depth: "light",
   });
 
   runProbeChild({
