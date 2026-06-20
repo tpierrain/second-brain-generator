@@ -81,7 +81,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       const child = spawn(
         process.execPath,
         [reconcileCli, "--brainDir", dir, "--sourceDir", dir, "--platform", process.platform],
-        { detached: true, stdio: "ignore" },
+        // detached + unref → survives the hook process; windowsHide → no console flash on Windows.
+        { detached: true, stdio: "ignore", windowsHide: true },
       );
       child.unref();
     },
