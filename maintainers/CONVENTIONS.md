@@ -104,14 +104,33 @@ section).
 
 ## 6bis. When a decision evolves, AMEND the existing ADR in place — don't spin off a new one
 
-When an already-accepted decision **evolves**, **amend the existing ADR in place** (mark the amendment
-with its date in `STATUS` and enrich the relevant sections — Decision, Safety invariant, Consequences,
-Rejected alternatives). **Do NOT create a new ADR for each evolution.** An evolution that belongs to the
-**same topic** (e.g. "what the reconciler is allowed to write") lives in that topic's ADR, not a separate
-one — multiplying ADRs makes `decisions/` hard to navigate. The dated in-place amendment **is** the
-historical trace; a separate file is not needed. A brand-new ADR stays the right choice only for a
-decision on a **genuinely new topic**. (Origin: decision B was first split into a separate ADR 0031 +
-back-pointer; corrected to fold it into ADR 0026 in place.)
+When an already-accepted decision **evolves**, **amend the existing ADR in place** (enrich the relevant
+sections — Decision, Safety invariant, Consequences, Rejected alternatives) rather than spinning off a new
+ADR. **Do NOT create a new ADR for each evolution.** An evolution that belongs to the **same topic** (e.g.
+"what the reconciler is allowed to write") lives in that topic's ADR, not a separate one — multiplying ADRs
+makes `decisions/` hard to navigate. A brand-new ADR stays the right choice only for a decision on a
+**genuinely new topic**. (Origin: decision B was first split into a separate ADR 0031 + back-pointer;
+corrected to fold it into ADR 0026 in place.) **How to write the amended result: see §6ter** — amending in
+place is about keeping **one ADR per topic**, NOT about leaving dated "AMENDED" scars in the prose.
+
+## 6ter. Write each ADR for a fresh reader — explain the decision, don't justify the change of mind
+
+An ADR is read by someone **discovering** the project, who never witnessed the deliberation. Write it as a
+**single, timeless decision**: explain **why the decision is right** (the reasoning that stands on its own),
+**not** the autobiography of how the thinking evolved. Drop "we first did X, then reverted", "consciously
+revised", "the original §N said…", commit hashes, and "(amended date, person)" markers from the **ADR prose**
+— they address someone who was present, and an unpublished ADR has no "before" for the reader.
+
+- **Where the deliberation history lives:** the **plan** (a process doc — checkboxes, commit hashes, "X then
+  revised to Y"), the **memory**, and **git history**. Not the ADR.
+- **Rejected alternatives stay** — but framed timelessly ("option A was *considered* and rejected because…"),
+  never as "we shipped A then undid it".
+- **The one carve-out:** when the prior decision was **actually published / shipped** and readers may have
+  built on it, keep a short **`supersedes X — migration: …`** note. That serves the reader; an
+  in-the-same-cycle, never-published amendment does not.
+- Composes with §6bis: amend in place (one ADR per topic) **and** write the result clean. (Origin: ADR 0030
+  and 0026 were amended pre-publication with dated "AMENDED IN PLACE" scars; rewritten timeless once we saw
+  the ADR addresses a fresh reader, not a witness.)
 
 ## 7. Plan done = archived
 

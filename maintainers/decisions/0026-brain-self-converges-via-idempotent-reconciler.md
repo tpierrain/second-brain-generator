@@ -4,12 +4,10 @@
   v3.1.0 → v3.2.2 upgrader (a throwaway "legacy" brain); scope locked, implemented in **v3.3.0**.
   Index format unchanged → no schema bump, no forced reindex. The "residual bootstrap" caveat in
   *Consequences* is accepted as the deliberate trade-off (declarative-data convergence in one pass;
-  only a rare reconciler-engine change still lags one update).
-  - **AMENDED 2026-06-20 (decision B, Thomas):** the vault-sacred *Safety invariant* gains **one narrow,
-    nominative exception** — the reconciler may **seed (write-if-absent)** the engine-owned health-check
-    note + incrementally reindex it so the `health_check` canary also works on **upgraders**. Folded in
-    below (Decision §5, Safety invariant, Consequences, Rejected alternatives) rather than spun off into a
-    separate ADR, to keep one coherent record per topic.
+  only a rare reconciler-engine change still lags one update). The vault-sacred *Safety invariant* carries
+  **one narrow, nominative exception** (Decision §5 + invariant below): the reconciler may **seed
+  (write-if-absent)** the engine-owned health-check note + incrementally reindex it, so the `health_check`
+  canary (ADR 0030) also works on upgraders.
 - **Scope:** Second brain (runtime) + Installer — a brain-side **deterministic reconciler** invoked by
   `update-engine` (as a child process) and by the **SessionStart** hook; the installer may reuse the
   same pure libs at install time.
@@ -61,8 +59,8 @@ into a standalone, deterministic, idempotent reconciler, and run it at two point
 4. **Minimum bar if the full reconciler is deferred:** `update-engine` must **loudly tell the user**
    when it merely laid down code that a follow-up run will activate ("run once more" + a counter),
    instead of today's silence.
-5. **(Amendment 2026-06-20, decision B) Seed the engine-owned health-check note so the canary covers
-   upgraders.** The `health_check` RAG canary (ADR 0030) targets a dedicated engine-owned note,
+5. **Seed the engine-owned health-check note so the canary covers upgraders.** The `health_check` RAG
+   canary (ADR 0030) targets a dedicated engine-owned note,
    `vault/engine-health/health-check.md` (unique invented token `Quibblethorne`, no `exemple` tag → it
    survives the demo purge). New installs get it via the install-time vault bulk-copy; upgraders would
    **not** (the vault is sacred + v3.3.0 forces no reindex), leaving their canary `unknown` forever. So:
@@ -83,7 +81,7 @@ into a standalone, deterministic, idempotent reconciler, and run it at two point
 > server and every non-declared/custom skill are untouchable — **EXCEPT** the single, nominative
 > carve-out below.
 
-> **⚠️ The one vault exception (2026-06-20, decision B).** The "vault is untouchable" rule **stands**;
+> **⚠️ The one vault exception.** The "vault is untouchable" rule **stands**;
 > its **only** exception is that the reconciler MAY **create** (write-if-absent — **never** overwrite,
 > **never** delete) the single engine-owned note `vault/engine-health/health-check.md` when it is absent,
 > and incrementally reindex **only** that freshly-seeded note. `.env`, the constitution, settings, user
@@ -109,8 +107,8 @@ into a standalone, deterministic, idempotent reconciler, and run it at two point
   changes, that change still lags one update. By keeping it a **stable interpreter of declarative
   manifest DATA**, **feature additions** (a new skill dir, MCP server, settings entry) land in **one
   pass**; only the **rare** reconciler-engine change lags. We move the cost from *frequent* to *rare*.
-- **(Amendment, decision B) Upgraders get a real canary** without breaking the vault-sacred guarantee in
-  substance: user data is still never read-for-mutation, never overwritten, never deleted — the engine only
+- **Upgraders get a real canary** without breaking the vault-sacred guarantee in substance: user data is
+  still never read-for-mutation, never overwritten, never deleted — the engine only
   (re)places **its own** health file, in **its own** namespace (`engine-health/`), and only when missing.
   Blast radius is a single hard-coded path enforced by tests, so it cannot drift into "the reconciler may
   write the vault" in general. A brain that never re-runs `update-engine` after upgrading keeps an `unknown`
@@ -130,11 +128,11 @@ into a standalone, deterministic, idempotent reconciler, and run it at two point
   composes), but Obsidian may be **running** at session start and would **clobber** our edit on quit →
   keep vault-registration **install-time** (see the findings plan / a future ADR), not in the runtime
   reconciler.
-- **(Amendment, decision B) Install-only for the health-check note** (simplest, fully safe) — rejected:
-  leaves every upgrader's canary permanently `unknown`, so the feature would not serve the existing cohort.
-- **(Amendment, decision B) Seed at update WITHOUT reindex** — rejected: a note on disk with zero index
-  hits yields a false `broken`; the targeted incremental reindex is mandatory.
-- **(Amendment, decision B) Full reindex at update to pick up the note** — rejected: re-encodes the whole
+- **Install-only for the health-check note** (simplest, fully safe) — rejected: leaves every upgrader's
+  canary permanently `unknown`, so the feature would not serve the existing cohort.
+- **Seed at update WITHOUT reindex** — rejected: a note on disk with zero index hits yields a false
+  `broken`; the targeted incremental reindex is mandatory.
+- **Full reindex at update to pick up the note** — rejected: re-encodes the whole
   vault (minutes) for one tiny note and contradicts v3.3.0's "no forced reindex"; use the incremental,
   single-doc path. **Also rejected: seeding in the SessionStart self-heal** (`sourceDir === brainDir` →
   nothing to copy from; writing the vault on every start widens the blast radius for no gain) and

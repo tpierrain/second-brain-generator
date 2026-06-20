@@ -1,11 +1,9 @@
 # ADR 0030 — Each engine module exposes a standard `health_check` port; the calling context owns the policy
 
-- **STATUS:** ✅ ACCEPTED (2026-06-20) — written **cold** after a `/clear`, per Thomas's decision to
-  "start with the ADR" (option C) before touching code. **Extends and partially supersedes
-  [ADR 0028](0028-brain-runs-a-non-blocking-background-health-check.md):** 0028's *runtime policy* (cached
-  verdict, instant banner, detached re-probe, OS notification on a newly-broken capability) stands; what
-  changes is **where the CHECK lives and how it is invoked** — it moves into each module as a standard
-  `health_check` tool, called over MCP.
+- **STATUS:** ✅ ACCEPTED (2026-06-20). **Extends [ADR 0028](0028-brain-runs-a-non-blocking-background-health-check.md):**
+  0028's *runtime policy* (cached verdict, instant banner, detached re-probe, OS notification on a
+  newly-broken capability) stands; this ADR defines **where the check lives and how it is invoked** — one
+  standard `health_check` per engine module, read at a depth proportional to the caller (§3/§4/§6).
 - **Scope:** Second brain (runtime) + Installer — a per-module health **contract** that the installer
   post-flight, the manual `verify-rag.mjs`, and the runtime SessionStart probe all consume the same way.
 - **Related:**
@@ -25,19 +23,18 @@
 
 ## Context
 
-ADR 0028 shipped the brain's functional health-check (F7): a detached background probe at SessionStart
-writes a cached verdict, the next session surfaces it instantly, and a newly-broken capability fires an
-OS notification. That **runtime policy** is field-proven and stays.
+ADR 0028 defines the brain's functional health-check (F7) **runtime policy**: a detached background probe at
+SessionStart writes a cached verdict, the next session surfaces it instantly, and a newly-broken capability
+fires an OS notification. That policy stands.
 
-But while finishing F7 (the installer-reuse baby-step), Thomas stepped back. The *check itself* — "does
-the RAG actually answer from the vault?" — is now defined in **three** places, each blending the check
-with its own reaction:
+The check *itself* — "does the RAG actually answer from the vault?" — must not fragment across the **three**
+contexts that need it, each tempted to blend the check with its own reaction:
 
 - the installer post-flight (loud, gate, `exit 1`),
 - `scripts/verify-rag.mjs` (the manual loud canary),
-- `rag/src/health-vitals.ts` (the runtime probe seam written for F7 baby-step 4b),
+- the runtime SessionStart probe,
 
-plus the canary token "Mollecuisse" is hard-coded in more than one spot. Three definitions of "operational"
+with the canary token at risk of being hard-coded in more than one spot. Three definitions of "operational"
 drift apart over time — the classic smoke-test sprawl. Production systems solve this with **one** smoke
 test per component that serves *both* as a post-deploy gate *and* as a periodic liveness probe; only the
 **reaction** differs by caller.
@@ -96,25 +93,25 @@ health_check() → {
 - **`vault-rag.health_check`** = the OFFICIAL functional check, lightweight, **NEVER a reindex**: embed +
   search the canary token and confirm the **dedicated health-check note** comes back (see §2), index
   integrity (store opens, ≥ 1 row), embedder readiness (in-process weights loadable / API key configured →
-  a missing key is `unknown`, the separately-handled state, **not** `broken`). This is the logic currently
-  in `rag/src/health-vitals.ts`, promoted into the vault-rag server as `health_check`.
-- **`local-mirror.health_check`** = NEW in v3.3.0: config readable, mirror store reachable, mirror metadata
-  consistent. Returns `unknown` (not `broken`) when nothing is configured yet.
+  a missing key is `unknown`, the separately-handled state, **not** `broken`). The logic lives in one place,
+  `rag/src/lib/health-check.ts`, and the server exposes it as `health_check`.
+- **`local-mirror.health_check`**: config readable, mirror store reachable, mirror metadata consistent.
+  Returns `unknown` (not `broken`) when nothing is configured yet.
 
 `unknown` always means "couldn't determine" (cold start, missing key, no config) and never triggers an
 alarm — only `broken` does. This keeps the "no crying wolf" invariant from ADR 0028 at the *module* level.
 
 ### 2. The canary is a DEDICATED engine-owned note, not a deletable demo note
 
-The current canary ("Mollecuisse") lives in a **demo note** — and demo notes are *explicitly meant to be
-purged* (`scripts/clear-example-notes.mjs` invites the user to delete them). So the moment a user clears the
-examples, the canary target vanishes and `vault-rag.health_check` would scream `broken` while the RAG is
-perfectly fine. Unacceptable false alarm.
+A canary that lived in a **demo note** would be fragile: demo notes are *explicitly meant to be purged*
+(`scripts/clear-example-notes.mjs` invites the user to delete them). The moment a user clears the examples,
+the canary target would vanish and `vault-rag.health_check` would scream `broken` while the RAG is perfectly
+fine — an unacceptable false alarm.
 
 **Decision: the canary is a dedicated engine-owned health-check note, decoupled from demo content.**
 
-- A **dedicated note in a dedicated sub-folder** (decided 2026-06-20: e.g. `vault/<engine-subdir>/health-check.md`,
-  kept separate from user notes) is seeded into the **indexed vault** so `search_vault` can actually find it.
+- A **dedicated note in a dedicated sub-folder** (e.g. `vault/<engine-subdir>/health-check.md`, kept separate
+  from user notes) is seeded into the **indexed vault** so `search_vault` can actually find it.
   ⚠️ **Implementation constraint:** the indexer must actually scan that sub-folder — verify empirically (hidden
   `.`-prefixed dirs are commonly skipped; if so, use a plain non-hidden dedicated sub-folder). It carries a
   **unique invented token** — defined **once** as an engine constant and used both to seed the note and to
@@ -128,32 +125,70 @@ perfectly fine. Unacceptable false alarm.
   broken when the probe's own target is gone. Restoration is idempotent and happens at **install / update**
   (the note is carried like engine content), **not at check time** — the check stays read-only w.r.t. the
   vault and never triggers a reindex.
-- This also **kills the token drift** the old design had (the literal split across `health-probe.mjs`,
-  `verify-rag.mjs`, the demo note): one engine constant, one dedicated note, one assertion.
+- **No token drift:** one engine constant, one dedicated note, one assertion — the canary token is never
+  duplicated across files.
 
-### 3. One runner, many policies
+### 3. One CHECK definition, three INVOCATION depths, many policies
 
-Every caller invokes `health_check` **the same way** — a real MCP round-trip — and only its reaction differs:
+The check is defined **once** (`rag/src/lib/health-check.ts` — see §1). It is **invoked at a depth and cost
+proportional to the caller's frequency**, and only the reaction (policy) differs. **Only the installer
+post-flight boots a server** (see §4 for why):
 
-| Caller | Invocation | Policy |
+| Caller | Frequency | Invocation | Policy |
+| --- | --- | --- | --- |
+| Installer post-flight (`installer.mjs`) | once, at install | **spawn + MCP `health_check`** (nothing is running yet; this proves the server *boots and answers* under the real `.mcp.json`/PATH/ABI) | **loud, gate**, `exit 1` if `broken` |
+| `scripts/verify-rag.mjs` (manual) | on demand, **while the live server runs** | **HEADLESS, in-process, read-only** — runs the same `health-check.ts` logic at **full depth** (real embed + search of the canary). **Never spawns a 2nd `vault-rag`.** | **loud**, `exit 0`/`1` |
+| SessionStart probe (runtime) | every session, background | **HEADLESS, in-process, read-only** at **light depth** (disk/DB reads only — see §6); **detached**, never boots a server | fail-open, silent, cache verdict, OS-notify on *newly* broken |
+| Periodic monitoring (future, **not** shipped) | n/a | the protocol allows any of the above | deferred |
+
+> The installer post-flight is the **only** legitimate place to boot a server: at install time nothing is
+> running, and what we genuinely need to prove there is **deployment** ("does it start and handshake under
+> the real launcher/PATH/ABI?", the ABI-skew concern of ADR 0021). At runtime, a server is already alive —
+> booting a second one would test a *different* process, not the live one, and waste resources.
+
+### 4. Invocation depth is governed by the MCP stdio transport
+
+**The mental model that decides this.** A `vault-rag` MCP server is a **child process of Claude** that
+talks over **stdin/stdout pipes** — a *private* channel between Claude and that one server. **There is no
+socket or port**, so no third party (a hook, a CLI, our probe) can attach to the **live** server. Its
+lifecycle: Claude spawns it when a rooted conversation initialises (reads `.mcp.json` → spawns the launcher
+→ handshake → background auto-reindex → file watcher → lazy ONNX); it lives as long as that conversation
+keeps it (≈ one process per conversation, two windows = two processes); it dies on close / `/mcp` / quit;
+it **never self-restarts** (Claude decides, if it crashes).
+
+**Consequence — there are only two ways to "probe", and they answer different questions:**
+
+- **(A) Boot a NEW process** and call `health_check` over a fresh handshake. This tests **deployment**
+  ("*a* server can start and answer under this config"), **not the live server** — it spawns a *second*
+  `vault-rag` next to the running one. Legitimate **only at install** (nothing is running, and deployment
+  is exactly the question — the ABI-skew concern of ADR 0021).
+- **(B) Read the on-disk state HEADLESS, read-only** (the index, the canary note, the embedder weights/key),
+  optionally running the same embed+search the server would. This answers **"is the DATA the live server
+  serves actually sound?"** — without spawning anything.
+
+**Principle: a probe must NEVER boot a `vault-rag` when one may already be running.** So the runtime probe
+and `verify-rag` use **(B), headless** (`verify-rag` at full depth, the runtime probe light — §6); **only the
+installer post-flight uses (A)**.
+
+**The division of labour that falls out of the transport:**
+
+| Concern | Who owns it | How |
 | --- | --- | --- |
-| Installer post-flight (`installer.mjs`) | spawn + `health_check` | **loud, gate**, `exit 1` if `broken` |
-| `scripts/verify-rag.mjs` (manual) | spawn + `health_check` | **loud**, `exit 0`/`1` — becomes a thin wrapper |
-| SessionStart probe (F7, runtime) | **detached** spawn + `health_check` | fail-open, silent, cache verdict, OS-notify on *newly* broken |
-| Periodic monitoring (future, **not** shipped) | same | the protocol allows it — deferred |
+| **Liveness** of the live server (is *this* process answering right now?) | **Claude itself** — *not us* | Claude shows the server `failed`; tool-calls error. The user *sees* it. We cannot reach the live process (private stdio pipe), so we do not try. |
+| **Data / function** (index intact, canary findable, embedder ready) | **Us — headless, read-only** | Read the index + canary + embedder state on disk; this is the layer Claude is *blind* to. |
+| **Deployment** (does a server boot + handshake under the real launcher/PATH/ABI?) | **MCP smoke — once, at install** | Spawn + `health_check` in the post-flight; the only place booting is legitimate. |
 
-### 4. Invocation = a real MCP `health_check` call (option A), not a shared lib (option B)
+This sharpens the refocused North. If Claude already surfaces a **dead** server, then the one mode that is
+*truly silent* — that nobody sees — is **a live server answering from DEGRADED DATA** (empty / stale index,
+missing or wrong embedder): Claude returns few/no results and may answer confidently anyway. **Catching
+degraded data behind a live server is the unique value of this health-check**, and it is precisely a
+headless, read-only, disk-level job — never a server boot.
 
-The runtime probe **really spawns the module's MCP server and calls `health_check`** (over the existing
-MCP round-trip seam `scripts/lib/mcp-smoke.mjs#smokeTestMcp`), detached so session start never waits. This
-**consciously revises** the earlier F7 baby-step-4b choice ("presence ping, no per-session handshake"):
-checking *presence* proved the server file exists, not that the server *starts and answers*. The whole
-point of the functional layer (ADR 0028) is to catch "registered but dead", so the probe must actually
-exercise the tool. The detached-spawn shape keeps the "never slow startup" constraint intact.
-
-Option B (a plain shared library both the MCP and the probe import) was rejected: it would test the
-library, not the **server actually starting** — exactly the ABI-skew / won't-start failure mode (ADR 0021)
-this is meant to catch. Putting the check behind the MCP boundary tests the real thing.
+The headless read and the install-time boot test **different** things and do not substitute for each other:
+the boot proves a server *starts* under the real launcher/PATH/ABI (deployment), the headless read inspects
+the *data a running server serves* (function). A server spawn at runtime could not even observe more — it
+would re-open the same files the headless read opens directly, for the price of a process. Right tool, right
+concern, right frequency.
 
 ### 5. Health-check only ACTIVATED modules — the activation registry
 
@@ -173,45 +208,67 @@ The check runs only against modules the user has **activated**, not every module
   - an **optional** module is probed **only if present** in `.mcp.json`; absent → **skipped silently**,
     never reported `broken` (no false alarm for a mirror the user never set up).
 
-This is the registry the direction note asked for: not "what the package provides" but "what the user
-activated", derived deterministically from `.mcp.json` × the manifest's mandatory/optional tag.
+Activation is therefore **not "what the package provides" but "what the user activated"**, derived
+deterministically from `.mcp.json` × the manifest's mandatory/optional tag.
+
+### 6. Probe DEPTH: light for the background probe, full for `verify-rag`
+
+Headless reading (§4 option B) can be done at two depths. The choice is made **per caller, by frequency**:
+
+- **Light (the background SessionStart probe)** — **file/DB reads only**: index has ≥ 1 row? the dedicated
+  canary note is present on disk? embedder weights present (in-process) / API key configured (API)? →
+  **milliseconds, zero ONNX load, zero boot.** This catches **every realistic *silent* degraded mode**
+  (index empty / never built, index stale vs the vault, embedder weights gone, key missing → `unknown`). It
+  only misses "embedder loads but emits bad vectors" — which is **rare and already visible** (search returns
+  nonsense). Cost has to be near-zero here because it runs every session and must never slow startup (hard
+  constraint, ADR 0028).
+- **Full (`verify-rag`, manual)** — a **real embed + search** of the canary token through the same
+  `health-check.ts` logic. Deliberate, on-demand, so the extra ONNX cost is fine; it additionally catches the
+  bad-vectors / corrupt-index tail.
+
+⚠️ **Startup race to respect:** at session init the live server kicks off a background auto-reindex. If the
+light probe reads "index freshness" mid-reindex it could shout "stale" wrongly → any freshness signal must
+be **tolerant** (grace window) or surfaced only as a **soft nudge**, never a red "broken" banner.
 
 ## Consequences
 
-**On F7, already shipped (nothing is lost — the policy stays, the check moves):**
+**On the runtime policy layer (ADR 0028, reused as-is):**
 
-- ✅ **Kept** — the runtime **policy** layer: the verdict array, `formatHealthBanner`, the newly-broken
-  diff, the cache, the OS notification, the detached re-probe orchestration
-  (`scripts/health-probe-run.mjs#runProbeChild`, `scripts/session-health.mjs`). These already separate
-  policy from check cleanly and need no rework.
-- 🔄 **Moves** — the **check** logic of `rag/src/health-vitals.ts` becomes the vault-rag `health_check`
-  tool; the runtime child does an MCP round-trip to `health_check` instead of spawning `health-vitals.ts`
-  directly. `verify-rag.mjs` and the installer post-flight collapse onto the same call.
-- ⚠️ **Consciously revised** — the F7 baby-step-4b "presence ping, no handshake" decision (see §4): the
-  runtime probe now invokes `health_check` for real.
+- The verdict array, `formatHealthBanner`, the newly-broken diff, the cache, the OS notification and the
+  detached re-probe orchestration (`scripts/health-probe-run.mjs`, `scripts/session-health.mjs`) already
+  separate policy from check, and are reused unchanged.
+- The check is **one** `rag/src/lib/health-check.ts` definition, exposed as the vault-rag `health_check` MCP
+  tool (for the install-time boot) **and** runnable **headless, read-only** (for `verify-rag` and the runtime
+  probe). All callers share that one definition, invoked at the depth of §3/§6.
 
 **General:**
 
-- **One definition of "operational" per module** → no more three-way drift; the installer gate, the manual
-  check, and the runtime probe can never disagree about what healthy means.
+- **One definition of "operational" per module** (`health-check.ts`) → no more three-way drift; the installer
+  gate, the manual check, and the runtime probe can never disagree about what healthy means — even though they
+  invoke it at different depths (MCP boot at install, headless full for `verify-rag`, headless light at runtime).
 - **Cross-OS by construction** (ADR 0015): "healthy" is defined once in the module, not re-encoded per OS.
 - **The RAG tool contract grows additively** (ADR 0006): `health_check` is a new tool; existing tools are
   untouched, so older callers keep working.
 - **Optional modules stay quiet** when not activated — the headline UX win of the activation registry.
 - **Extensible**: a future engine MCP gets health coverage for free by implementing `health_check` and
   declaring its mandatory/optional tag; periodic monitoring can reuse the exact same call.
-- **Cost** (honest): promoting `health-vitals.ts` into the server and adding `health_check` to `local-mirror`
-  is real work inside the rag/ and local-mirror/ packages (bumps their versions), and the runtime probe
-  now pays an MCP spawn per activated module instead of a cheap presence check — acceptable because it is
-  detached and only mandatory + activated-optional modules are spawned.
+- **Cost** (honest): promoting the check into one `health-check.ts` definition + adding `health_check` to
+  `local-mirror` is real work inside the rag/ and local-mirror/ packages (bumps their versions). The runtime
+  probe stays **cheap** (headless light disk reads, no spawn); the only boot is the **once-per-install**
+  post-flight smoke. `verify-rag` pays a real embed+search, but it is manual and deliberate.
 
 ## Rejected / deferred alternatives
 
 - **Keep the check in three places (status quo).** Rejected: guaranteed drift; the canary token already
   lives in more than one file.
-- **Option B — a shared library both the MCP and the probe import.** Rejected (§4): tests the lib, not the
-  server actually starting; misses the ABI-skew / won't-start failure mode (ADR 0021).
-- **Presence ping only, no handshake (the prior F7 choice).** Superseded (§4): presence ≠ function.
+- **An MCP round-trip for every caller (boot a server to run `health_check` everywhere).** Rejected for the
+  runtime probe and `verify-rag`: booting is a *deployment* test that spawns a second `vault-rag` next to the
+  live one (§4). Boot only at install; read headless at runtime.
+- **Boot a server at runtime to test the LIVE one.** Rejected: impossible by construction — the live server
+  is a private stdio child of Claude; a spawn always creates a *different* process (§4). Liveness is Claude's
+  job, not ours.
+- **A mere presence ping (does the server file exist?) instead of exercising function.** Rejected: presence ≠
+  function; only the headless data/function read (§4) catches silent degraded data behind a live server.
 - **Probe every packaged module regardless of activation.** Rejected: false "broken" alarms for optional
   modules the user never enabled (§5).
 - **A dedicated activation-flag config file.** Rejected: extra state to keep in sync; `.mcp.json` already
@@ -224,8 +281,9 @@ activated", derived deterministically from `.mcp.json` × the manifest's mandato
 ## Scope of work for v3.3.0 (what this ADR authorizes)
 
 `health_check` contract + implement it on **vault-rag** (mandatory) and **local-mirror** (optional, probed
-only when activated) + the activation registry (`.mcp.json` × manifest mandatory/optional) + migrate the
-three consumers (installer post-flight, `verify-rag.mjs`, runtime probe) onto one MCP `health_check` call +
+only when activated) + the activation registry (`.mcp.json` × manifest mandatory/optional) + one shared
+`health-check.ts` definition invoked at three depths: **MCP boot** at the installer post-flight, **headless
+full** read in `verify-rag.mjs`, **headless light** read in the detached runtime probe (§3/§4/§6) +
 the **dedicated engine-owned health-check note** with its single-source canary token (decoupled from
 deletable demo notes, excluded from the example purge). **Deferred:** periodic monitoring, dashboard,
 future MCPs.
