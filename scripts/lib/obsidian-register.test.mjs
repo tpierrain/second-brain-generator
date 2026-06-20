@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { addVaultToObsidianConfig } from "./obsidian-register.mjs";
+import {
+  addVaultToObsidianConfig,
+  shouldRegisterObsidian,
+} from "./obsidian-register.mjs";
 
 test("addVaultToObsidianConfig — empty config gains one vault pointing at the path", () => {
   const result = addVaultToObsidianConfig({}, "/home/u/brain/vault");
@@ -26,4 +29,21 @@ test("addVaultToObsidianConfig — re-registering preserves the existing ts (tru
   const once = addVaultToObsidianConfig({}, "/home/u/brain/vault", { ts: 111 });
   const twice = addVaultToObsidianConfig(once, "/home/u/brain/vault", { ts: 999 });
   assert.deepEqual(twice, once);
+});
+
+test("shouldRegisterObsidian — plain desktop session → true", () => {
+  assert.equal(shouldRegisterObsidian({}, "darwin"), true);
+});
+
+test("shouldRegisterObsidian — SBG_NO_OBSIDIAN_REGISTER opts out → false", () => {
+  assert.equal(shouldRegisterObsidian({ SBG_NO_OBSIDIAN_REGISTER: "1" }, "darwin"), false);
+});
+
+test("shouldRegisterObsidian — CI → false", () => {
+  assert.equal(shouldRegisterObsidian({ CI: "true" }, "darwin"), false);
+});
+
+test("shouldRegisterObsidian — headless Linux (no DISPLAY) → false", () => {
+  assert.equal(shouldRegisterObsidian({}, "linux"), false);
+  assert.equal(shouldRegisterObsidian({ DISPLAY: ":0" }, "linux"), true);
 });

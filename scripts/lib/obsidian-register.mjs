@@ -23,3 +23,13 @@ export function addVaultToObsidianConfig(json, vaultPath, { ts = 0 } = {}) {
   if (!vaults[id]) vaults[id] = { path: vaultPath, ts };
   return { ...json, vaults };
 }
+
+// Guard: should we even attempt to register the vault? Opt-in by default, but
+// false in automated/headless contexts where writing Obsidian's config would be
+// pointless or surprising. Opt-out via SBG_NO_OBSIDIAN_REGISTER / CI.
+export function shouldRegisterObsidian(env, platform) {
+  if (env.SBG_NO_OBSIDIAN_REGISTER) return false;
+  if (env.CI) return false;
+  if (platform === "linux" && !env.DISPLAY && !env.WAYLAND_DISPLAY) return false;
+  return true;
+}
