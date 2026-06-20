@@ -102,6 +102,17 @@ vague "both"): **Installer** · **Second brain (runtime)** · **Second brain (ru
 launcher↔brain backbone (ADR 0001). Full convention: [`README.md`](README.md) (the `decisions/`
 section).
 
+## 6bis. When a decision evolves, AMEND the existing ADR in place — don't spin off a new one
+
+When an already-accepted decision **evolves**, **amend the existing ADR in place** (mark the amendment
+with its date in `STATUS` and enrich the relevant sections — Decision, Safety invariant, Consequences,
+Rejected alternatives). **Do NOT create a new ADR for each evolution.** An evolution that belongs to the
+**same topic** (e.g. "what the reconciler is allowed to write") lives in that topic's ADR, not a separate
+one — multiplying ADRs makes `decisions/` hard to navigate. The dated in-place amendment **is** the
+historical trace; a separate file is not needed. A brand-new ADR stays the right choice only for a
+decision on a **genuinely new topic**. (Origin: decision B was first split into a separate ADR 0031 +
+back-pointer; corrected to fold it into ADR 0026 in place.)
+
 ## 7. Plan done = archived
 
 The moment a plan ships, **in the same change**: set its top `STATUS` to ✅ (with proof — commit
