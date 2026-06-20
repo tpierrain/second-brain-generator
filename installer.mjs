@@ -787,6 +787,28 @@ try {
     // Quibblethorne canary + index intact + embedder ready); an unconfigured optional
     // module (local-mirror) stays `unknown` → benign (gateBlockers never blocks on it).
     const manifest = JSON.parse(readFileSync(join(TARGET, "engine-manifest.json"), "utf8"));
+    // #4: STRUCTURAL gate FIRST — assert the vault-rag tool SURFACE is intact
+    // (search_vault, get_document, list_documents, vault_stats). The functional
+    // health_check below proves retrieval works, but it does NOT assert the 4 tools are
+    // all exposed, so a regression dropping get_document/list_documents/vault_stats would
+    // pass green. Keep both: the tool list must be complete AND the canary must answer.
+    const cmd =
+      process.platform === "win32" && /^(npx|npm)$/.test(srv.command) ? `${srv.command}.cmd` : srv.command;
+    const smoke = await smokeTestMcp({
+      command: cmd,
+      args: srv.args ?? [],
+      cwd: srv.cwd ?? TARGET,
+      expectTools: EXPECT_TOOLS,
+      env: { SBG_NO_NOTIFY: "1" },
+      timeoutMs: providerKey === "in-process" ? 60000 : 30000,
+    });
+    if (!smoke.ok) {
+      err("POST-FLIGHT FAILURE — the vault-rag tool surface is incomplete:");
+      err(`  • ${smoke.error ?? `expected ${EXPECT_TOOLS.join(", ")}`}`);
+      err("Refusing to declare the install successful (a brain missing a core tool is broken).");
+      err("Troubleshooting: SETUP.md §8 (.env, index, MCP connection), then re-run the installer.");
+      process.exit(1); // LOUD FAIL — before any success banner
+    }
     const { isRegistered, callHealthCheck } = buildHealthCheckCaller({
       mcpServers: mcp.mcpServers,
       // No OS toast during the post-flight (the MCP startup auto-reindex would pop one),
