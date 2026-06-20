@@ -9,8 +9,8 @@
   the RAG canary). No new MCP server, no new conversation surface.
 - **Related:** [`0026-brain-self-converges-via-idempotent-reconciler.md`](0026-brain-self-converges-via-idempotent-reconciler.md)
   (the *presence* layer this complements with a *functional* layer),
-  [`0009-prefer-deterministic-event-condition-over-probabilistic.md`](0009-prefer-deterministic-event-condition-over-probabilistic.md)
-  (deterministic Node probe, **not** a Claude sub-agent), [`0015-mac-windows-parity-regenerate-launchers.md`](0015-mac-windows-parity-regenerate-launchers.md)
+  [`0009-prefer-deterministic-mechanisms.md`](0009-prefer-deterministic-mechanisms.md)
+  (deterministic Node probe, **not** a Claude sub-agent), [`0015-cross-platform-parity.md`](0015-cross-platform-parity.md)
   (Mac/Win/Linux parity — the OS-notification + probe paths each carry three OS branches). Reuses the
   field-proven `rag/src/lib/notify.ts` (cross-OS OS notification) and `scripts/verify-rag.mjs` (the
   "Mollecuisse" RAG canary).
