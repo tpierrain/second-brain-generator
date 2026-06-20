@@ -170,7 +170,18 @@ export async function updateEngine({
   //    2-cycle into a single invocation. The child reconciles ONLY (never re-fetches,
   //    never re-finalizes) → no recursion. Done last, on top of an already-successful,
   //    already-recorded update.
-  await finalizeReconcile({ brainDir, sourceDir, platform });
+  //
+  //    FAIL-SOFT (#1): auto-finalize is a best-effort finisher on top of an update that
+  //    is ALREADY done + recorded (step 7). A failure in the fresh child (flaky npm
+  //    install, ABI hiccup) must NEVER reject this function — that would print the CLI's
+  //    "the brain was NOT changed past this point" over a successful update. We belt it
+  //    here even though defaultFinalizeReconcile is itself fail-soft, so EVERY injected
+  //    seam is safe. SessionStart self-heal (Layer B) converges the rest on next start.
+  try {
+    await finalizeReconcile({ brainDir, sourceDir, platform });
+  } catch {
+    // swallowed on purpose — the update succeeded; self-heal will finish the job.
+  }
 
   return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded };
 }

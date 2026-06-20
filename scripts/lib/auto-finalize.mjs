@@ -29,5 +29,13 @@ export async function defaultFinalizeReconcile({
   spawnChild = (file, args) => execFileSync(file, args, { stdio: "inherit" }),
 }) {
   const args = [reconcilerPath(), "--brainDir", brainDir, "--sourceDir", sourceDir];
-  spawnChild(process.execPath, args);
+  // FAIL-SOFT: the update is already done + recorded; a child failure (flaky npm install
+  // in the fresh process, ABI hiccup) must never throw past update-engine's own success.
+  // Report it structurally so the caller can log it loudly without aborting.
+  try {
+    spawnChild(process.execPath, args);
+    return { finalized: true };
+  } catch (e) {
+    return { finalized: false, error: e?.message ?? String(e) };
+  }
 }

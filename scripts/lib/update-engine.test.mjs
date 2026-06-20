@@ -516,6 +516,42 @@ test("gate — auto-finalizes once after the update, handing the child the fetch
   );
 });
 
+// ── #1 (code-review): a best-effort auto-finalize child failure must NEVER turn an
+//    already-recorded, already-successful update into a reported FAILURE. The update is
+//    done + recorded at step 7; step 8 (auto-finalize) is a finisher on top. A flaky
+//    npm install / ABI hiccup in the fresh child must fail SOFT — updateEngine still
+//    RESOLVES with the recorded report (the CLI never prints "the brain was NOT changed").
+test("gate — a failing auto-finalize child does NOT reject the update (fail-soft, ADR 0026)", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource({ indexSchemaVersion: 1 });
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+
+  const updateEngine = await loadCore();
+  const report = await updateEngine({
+    brainDir,
+    platform: "posix",
+    countVaultNotes: async () => 7,
+    resolveLatestTag: async () => "v1.1.0",
+    fetchSource: async () => sourceDir,
+    regenerateLaunchers: async () => {},
+    runInstall: async () => {},
+    runReindex: async () => {},
+    // The finalize child blows up (flaky npm install in the fresh process, ABI skew…).
+    finalizeReconcile: async () => {
+      throw new Error("npm install failed in the auto-finalize child");
+    },
+  });
+
+  // The update still succeeded: it resolved with the recorded report, and the manifest
+  // already advanced — a finisher failure must never read as "the brain was NOT changed".
+  assert.equal(report.engineVersion.rag, "1.1.0");
+  const m = JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8"));
+  assert.equal(m.engineVersion.rag, "1.1.0", "the update is recorded even if auto-finalize fails");
+});
+
 test("gate — schema UNCHANGED → engine still swapped but NO reindex", async (t) => {
   const brainDir = buildBrain();
   const sourceDir = buildSource({ indexSchemaVersion: 1 }); // same schema as the brain

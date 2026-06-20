@@ -22,3 +22,29 @@ test("defaultFinalizeReconcile — spawns node on the on-disk reconciler with --
   // …handed the brain + the fetched source as flags the CLI entry parses.
   assert.deepEqual(args.slice(1), ["--brainDir", "/brains/acme", "--sourceDir", "/tmp/clone-xyz"]);
 });
+
+// #1 (code-review): auto-finalize runs on top of an ALREADY-successful, already-recorded
+// update — a child failure must FAIL SOFT (its docstring: "never throwing past
+// update-engine's own success"). A throwing spawn must be swallowed into a structured
+// { finalized: false, error } result, NOT re-thrown, so update-engine never reports a
+// successful update as a failure.
+test("defaultFinalizeReconcile — a throwing child fails soft (returns { finalized:false }, never throws)", async () => {
+  const result = await defaultFinalizeReconcile({
+    brainDir: "/brains/acme",
+    sourceDir: "/tmp/clone-xyz",
+    spawnChild: () => {
+      throw new Error("npm install failed in the fresh child");
+    },
+  });
+  assert.equal(result.finalized, false);
+  assert.match(result.error, /npm install failed/);
+});
+
+test("defaultFinalizeReconcile — a clean child reports { finalized: true }", async () => {
+  const result = await defaultFinalizeReconcile({
+    brainDir: "/brains/acme",
+    sourceDir: "/tmp/clone-xyz",
+    spawnChild: () => {},
+  });
+  assert.deepEqual(result, { finalized: true });
+});
