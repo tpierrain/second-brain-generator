@@ -93,7 +93,10 @@ export function smokeTestMcp({ command, args = [], cwd, expectTools = [], timeou
           return;
         }
         const text = (msg.result?.content ?? []).map((c) => c.text ?? "").join("\n");
-        const ok = probe.expectText.test(text);
+        // With expectText: ok = the response matches the expectation (e.g. cites a
+        // vault source). Without it: the caller interprets probeText itself (e.g. a
+        // structured health_check verdict) → ok just means the call didn't error.
+        const ok = probe.expectText ? probe.expectText.test(text) : true;
         finish({
           ok,
           tools,
