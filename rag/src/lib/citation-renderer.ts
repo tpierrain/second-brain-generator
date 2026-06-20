@@ -26,6 +26,13 @@ function escapeAngleDestination(url: string): string {
  * source (Notion), already canonicalized at write time. The relative path stays
  * visible as plain text so it remains grep-/copy-friendly.
  *
+ * Claude Desktop silently drops custom-scheme (`obsidian://`) clicks — only
+ * `http(s)` is routed — so the 🧠 link looks clickable but does nothing there.
+ * Each citation therefore also carries a plain-text affordance ("ask me to open
+ * citation N"): the user asks Claude, which opens the note via the allowlisted
+ * opener. The number matches the citation heading so "open citation 2" is
+ * unambiguous (ADR 0027).
+ *
  * This lives in the engine-owned deterministic output (not the constitution) so
  * the links reach EVERY brain through `/update-engine`, not just new installs.
  */
@@ -49,7 +56,8 @@ export function formatSearchCitations(
       return (
         `### ${i + 1}. ${r.title} — ${r.section}\n` +
         `**Path:** \`vault/${r.path}\` | **Type:** ${r.type} | **Score:** ${r.score.toFixed(3)}\n` +
-        `${links}\n\n` +
+        `${links}\n` +
+        `_Ask me to "open citation ${i + 1}" and I'll open it in Obsidian._\n\n` +
         `${r.content.slice(0, 500)}${r.content.length > 500 ? "…" : ""}`
       );
     })

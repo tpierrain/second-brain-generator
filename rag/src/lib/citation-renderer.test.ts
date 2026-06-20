@@ -64,3 +64,17 @@ test("a non-mirror note renders only the local link, no Notion link", () => {
   assert.ok(text.includes("obsidian://open?path="), text);
   assert.ok(!text.includes("🔗"), text);
 });
+
+test("each citation carries an 'ask me to open citation N' affordance, numbered", () => {
+  // The 🧠 obsidian:// click is silently dropped by Claude Desktop (custom schemes).
+  // The block must therefore say, in plain text, how to actually open the note:
+  // the user asks Claude, which uses the allowlisted opener. The number matches
+  // the citation heading so "open citation 2" is unambiguous.
+  const text = formatSearchCitations(
+    [result(), result({ title: "Second" })],
+    "/brain/vault"
+  );
+
+  assert.ok(text.includes('open citation 1'), text);
+  assert.ok(text.includes('open citation 2'), text);
+});
