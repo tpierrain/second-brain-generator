@@ -11,6 +11,12 @@
 
 export type HealthStatus = "ok" | "broken" | "unknown";
 
+// Probe depth (ADR 0030 §6). "light" = file/DB reads only (the per-session background
+// probe): zero ONNX, zero embed/search — just "are the preconditions there?". "full"
+// = a real embed + search of the canary (the manual verify-rag), the extra cost is fine
+// because it is deliberate and on-demand.
+export type HealthDepth = "light" | "full";
+
 export interface HealthCheckEntry {
   name: string;
   status: HealthStatus;
@@ -27,7 +33,10 @@ export interface HealthVitals {
   keyConfigured: boolean;
   embedderReady: boolean;
   indexRows: number;
-  canaryHits: number;
+  // Number of canary hits from a REAL search (full depth). `null` = the search was not
+  // run (light depth) → the canary check falls back to the on-disk note presence, never
+  // a "broken" inferred from an absent (because unmeasured) hit count.
+  canaryHits: number | null;
   // Whether the dedicated engine-owned health-check note still exists on disk. If a
   // user purged it (it shouldn't, but it's just a file), we cannot run the canary →
   // "unknown", never "broken" (ADR 0030 §2).
@@ -52,13 +61,19 @@ export interface VitalsSeams {
   readIndexRows: () => number;
   searchCanary: (token: string) => Promise<number>;
   canaryNoteExists: () => boolean;
+  // Light-depth only: "is the embedder ready to run?" WITHOUT running it (in-process
+  // weights present on disk / API key configured). Never called at full depth.
+  weightsReady?: () => boolean;
 }
 
 // Collects the engine's raw functional vitals through injected seams (the real I/O
 // — embedder, vector store — lives in the caller). Every seam fails safe: an index
 // read that throws becomes the -1 "unreadable" sentinel; a canary search that throws
 // means the embedder could not run (embedderReady false), never a thrown probe.
-export async function gatherVitals(seams: VitalsSeams): Promise<HealthVitals> {
+export async function gatherVitals(
+  seams: VitalsSeams,
+  depth: HealthDepth = "full",
+): Promise<HealthVitals> {
   let indexRows = -1;
   try {
     indexRows = seams.readIndexRows();
@@ -67,13 +82,25 @@ export async function gatherVitals(seams: VitalsSeams): Promise<HealthVitals> {
   }
 
   let embedderReady = false;
-  let canaryHits = 0;
-  try {
-    canaryHits = await seams.searchCanary(CANARY_TOKEN);
-    embedderReady = true;
-  } catch {
-    embedderReady = false;
-    canaryHits = 0;
+  let canaryHits: number | null = 0;
+  if (depth === "light") {
+    // Light: no embed/search. Readiness is a pure file/config check (weights present
+    // / key configured); canaryHits stays null = "not measured" (buildHealthCheck then
+    // falls back to the on-disk note presence for the canary verdict).
+    canaryHits = null;
+    try {
+      embedderReady = seams.weightsReady ? seams.weightsReady() : false;
+    } catch {
+      embedderReady = false;
+    }
+  } else {
+    try {
+      canaryHits = await seams.searchCanary(CANARY_TOKEN);
+      embedderReady = true;
+    } catch {
+      embedderReady = false;
+      canaryHits = 0;
+    }
   }
 
   let canaryNotePresent = false;
@@ -101,8 +128,11 @@ function aggregate(checks: HealthCheckEntry[]): HealthStatus {
 
 // The single entry the MCP `health_check` tool calls: gather the vitals through the
 // real seams, then map them onto the standard { status, checks[] } contract.
-export async function runHealthCheck(seams: VitalsSeams): Promise<HealthCheckResult> {
-  return buildHealthCheck(await gatherVitals(seams));
+export async function runHealthCheck(
+  seams: VitalsSeams,
+  depth: HealthDepth = "full",
+): Promise<HealthCheckResult> {
+  return buildHealthCheck(await gatherVitals(seams, depth));
 }
 
 export function buildHealthCheck(v: HealthVitals): HealthCheckResult {
@@ -111,21 +141,27 @@ export function buildHealthCheck(v: HealthVitals): HealthCheckResult {
       name: "canary",
       // The search only proves anything if BOTH the dedicated note still exists AND
       // the embedder actually ran. A missing note or an embedder that couldn't run
-      // → "unknown" (we cannot conclude); never a scary false "broken".
+      // → "unknown" (we cannot conclude); never a scary false "broken". When the
+      // search was never run (light depth, canaryHits === null), the note's presence
+      // on disk is the precondition we can attest → "ok", never "broken".
       status: !v.canaryNotePresent
         ? "unknown"
-        : !v.embedderReady
-          ? "unknown"
-          : v.canaryHits > 0
-            ? "ok"
-            : "broken",
+        : v.canaryHits === null
+          ? "ok"
+          : !v.embedderReady
+            ? "unknown"
+            : v.canaryHits > 0
+              ? "ok"
+              : "broken",
       detail: !v.canaryNotePresent
         ? `health-check note missing (${HEALTH_CHECK_NOTE_RELPATH})`
-        : !v.embedderReady
-          ? "embedder could not run the canary search"
-          : v.canaryHits > 0
-            ? `canary found (${v.canaryHits})`
-            : "canary not found in the vault",
+        : v.canaryHits === null
+          ? "health-check note present (light probe — not searched)"
+          : !v.embedderReady
+            ? "embedder could not run the canary search"
+            : v.canaryHits > 0
+              ? `canary found (${v.canaryHits})`
+              : "canary not found in the vault",
     },
     {
       name: "index",

@@ -123,6 +123,92 @@ test("runHealthCheck: composes gather + build → healthy seams give ok", async 
   assert.equal(result.status, "ok");
 });
 
+test("buildHealthCheck light snapshot (canaryHits null = not searched) → canary ok, not a false broken", () => {
+  // At light depth the search never runs, so canaryHits is null (not 0). A note present
+  // on disk + sound index/embedder must NOT be read as a broken canary just because we
+  // did not search — that would be the very false alarm F7-ter exists to avoid.
+  const result = buildHealthCheck({
+    embedderMode: "in-process",
+    keyConfigured: true,
+    embedderReady: true,
+    indexRows: 42,
+    canaryHits: null,
+    canaryNotePresent: true,
+  });
+  assert.equal(checkNamed(result, "canary").status, "ok");
+  assert.equal(result.status, "ok");
+});
+
+test("gatherVitals light: canaryHits null (unmeasured) + embedderReady from weightsReady seam", async () => {
+  const ready = await gatherVitals(
+    {
+      embedderMode: "in-process",
+      keyConfigured: true,
+      readIndexRows: () => 12,
+      searchCanary: async () => 4,
+      canaryNoteExists: () => true,
+      weightsReady: () => true,
+    },
+    "light",
+  );
+  assert.equal(ready.canaryHits, null);
+  assert.equal(ready.embedderReady, true);
+
+  const noWeights = await gatherVitals(
+    {
+      embedderMode: "in-process",
+      keyConfigured: true,
+      readIndexRows: () => 12,
+      searchCanary: async () => 4,
+      canaryNoteExists: () => true,
+      weightsReady: () => false,
+    },
+    "light",
+  );
+  assert.equal(noWeights.embedderReady, false);
+});
+
+test("gatherVitals light depth never runs the canary search (zero ONNX, zero embed)", async () => {
+  // F7-ter / ADR 0030 §6: the per-session background probe reads file/DB state only.
+  // It must NEVER embed or search — that is the full-depth (verify-rag) job.
+  let searched = false;
+  await gatherVitals(
+    {
+      embedderMode: "in-process",
+      keyConfigured: true,
+      readIndexRows: () => 12,
+      searchCanary: async () => {
+        searched = true;
+        return 4;
+      },
+      canaryNoteExists: () => true,
+      weightsReady: () => true,
+    },
+    "light",
+  );
+  assert.equal(searched, false);
+});
+
+test("runHealthCheck light depth: composes gather(light)+build, never searches, healthy → ok", async () => {
+  let searched = false;
+  const result = await runHealthCheck(
+    {
+      embedderMode: "in-process",
+      keyConfigured: true,
+      readIndexRows: () => 7,
+      searchCanary: async () => {
+        searched = true;
+        return 2;
+      },
+      canaryNoteExists: () => true,
+      weightsReady: () => true,
+    },
+    "light",
+  );
+  assert.equal(searched, false);
+  assert.equal(result.status, "ok");
+});
+
 test("gatherVitals: a throwing canary search → embedderReady false, 0 hits", async () => {
   const vitals = await gatherVitals({
     embedderMode: "in-process",
