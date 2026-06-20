@@ -48,5 +48,6 @@
     ]
   },
   "engineMcpServers": ["vault-rag", "local-mirror"],
+  "engineModuleRequirements": { "vault-rag": "mandatory", "local-mirror": "optional" },
   "provenance": {}
 }

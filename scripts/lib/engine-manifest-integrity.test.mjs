@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { matchesAny } from "./glob-match.mjs";
+import { selectModulesToCheck } from "./health-activation.mjs";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // engine-manifest integrity — a structural guard over the REAL repo-root
@@ -58,5 +59,17 @@ test("engine-manifest — every SessionStart hook script is carried to upgraders
     undeclared,
     [],
     `SessionStart hook scripts not carried by the manifest (upgraders keep stale copies): ${undeclared.join(", ")}`,
+  );
+});
+
+// The health-check activation policy (ADR 0030, F7-bis) reads engineModuleRequirements ×
+// the brain's .mcp.json. vault-rag is the brain's load-bearing module: if it ever silently
+// loses its `mandatory` tag, a vault-rag absent from .mcp.json would no longer be flagged
+// broken (it'd default to optional → skipped). Lock the real manifest against that drift.
+test("engine-manifest — vault-rag is tagged mandatory, so an absent vault-rag is flagged broken", () => {
+  const verdict = selectModulesToCheck({ manifest, isRegistered: () => false });
+  assert.ok(
+    verdict.brokenMissing.includes("vault-rag"),
+    "vault-rag must be mandatory: an unregistered vault-rag has to surface as broken, not be skipped",
   );
 });
