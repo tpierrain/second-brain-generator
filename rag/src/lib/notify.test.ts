@@ -42,6 +42,28 @@ test("buildNotifyCommand: win32 → powershell toast carrying title and body", (
   assert.match(cmd!.args[2], /Indexing done/);
 });
 
+test("buildNotifyCommand: darwin escapes a double-quote in the body so the AppleScript literal can't break (#8)", () => {
+  // v3.3.0 routes health-check detail (incl. arbitrary spawn-error text) into the body.
+  // A raw " would close the `display notification "..."` literal → osascript exits non-zero
+  // → the toast is silently lost exactly when it matters.
+  const cmd = buildNotifyCommand("darwin", { title: 'a "T" b', body: 'broke at "here"' });
+  const script = cmd!.args[1];
+  // Escaped form: \" never bare-closes the literal.
+  assert.match(script, /display notification "broke at \\"here\\"" with title "a \\"T\\" b"/);
+  // No bare (unescaped) double-quote inside the interpolated values.
+  assert.ok(!/[^\\]"here"/.test(script), "the inner quote must be backslash-escaped, not bare");
+});
+
+test("buildNotifyCommand: win32 escapes backtick, double-quote and $ in body/title (#8)", () => {
+  const cmd = buildNotifyCommand("win32", { title: "T", body: 'a "q" `b $env:x' });
+  const ps = cmd!.args[2];
+  // PowerShell double-quoted string: " → `" , ` → `` , $ → `$  (so the literal can't
+  // break and $env:x is not interpolated into the toast).
+  assert.match(ps, /`"q`"/, "a double-quote must be backtick-escaped");
+  assert.match(ps, /`\$env:x/, "a $ must be backtick-escaped (no variable interpolation)");
+  assert.ok(!/ "q" /.test(ps), "no bare double-quote may survive in the PS string");
+});
+
 test("buildNotifyCommand: linux → notify-send title body", () => {
   assert.deepEqual(buildNotifyCommand("linux", { title: "Second brain", body: "Indexing done" }), {
     command: "notify-send",
