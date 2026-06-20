@@ -48,11 +48,15 @@ test("formatObsidianHint — ok → null (quiet, no nag when all good)", () => {
   assert.equal(formatObsidianHint({ status: "ok", installed: true, registered: true }), null);
 });
 
-test("formatObsidianHint — not installed → soft install nudge mentioning obsidian.md", () => {
+test("formatObsidianHint — not installed → opt-in recommendation: free + open-source + over your own Markdown (F8.1)", () => {
   const hint = formatObsidianHint({ status: "unknown", installed: false, registered: false });
   assert.ok(hint, "expected a hint string");
-  assert.match(hint, /obsidian\.md/i);
-  assert.doesNotMatch(hint, /broken|error|fail/i);
+  assert.match(hint, /obsidian\.md/i, "carries the download URL");
+  assert.match(hint, /\bfree\b/i, "frames it as free");
+  assert.match(hint, /open[\s-]?source/i, "frames it as open-source");
+  assert.match(hint, /markdown/i, "names it a viewer/editor over your own Markdown");
+  assert.match(hint, /Open folder as vault/i, "carries the one-time setup step");
+  assert.doesNotMatch(hint, /broken|error|fail/i, "never alarming — Obsidian is optional");
 });
 
 test("formatObsidianHint — installed but unregistered → 'Open folder as vault' nudge", () => {

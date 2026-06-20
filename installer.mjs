@@ -62,6 +62,7 @@ import {
   defaultObsidianSeams,
   shouldRegisterObsidian,
 } from "./scripts/lib/obsidian-register.mjs";
+import { formatObsidianHint } from "./scripts/lib/obsidian-health.mjs";
 import { buildHandoff } from "./scripts/lib/install-handoff.mjs";
 import { recordSourceAndProvenance } from "./scripts/lib/engine-source.mjs";
 import { resolveLatestTag } from "./scripts/lib/engine-fetch.mjs";
@@ -673,8 +674,11 @@ function reportObsidian(result) {
       ok("vault already registered in Obsidian — nothing to do.");
       break;
     case "not-installed":
-      warn("Obsidian not detected — skipped. Install it later (https://obsidian.md), then");
-      warn('  open it once and "Open folder as vault" → your brain\'s vault folder.');
+      // Obsidian absent → not a failure: print the positive opt-in recommendation
+      // (F8.1). Single source of truth shared with the runtime soft hint.
+      console.log(
+        formatObsidianHint({ status: "unknown", installed: false, registered: false }),
+      );
       break;
     case "running":
       warn("Obsidian is running — skipped (it rewrites its config on quit). Quit it and re-run,");

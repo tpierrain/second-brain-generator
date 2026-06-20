@@ -39,8 +39,9 @@ export function formatObsidianHint(health) {
   if (health.status === "ok") return null;
   if (!health.installed) {
     return (
-      "ℹ️  Optional: install Obsidian (https://obsidian.md, free) to open your 🧠 notes in a real " +
-      "editor over the very same files — then \"Open folder as vault\" → your brain's vault."
+      "ℹ️  Optional: install Obsidian (https://obsidian.md) — free and open-source — a viewer/editor " +
+      "over your own Markdown notes (the very same files Claude uses). Then \"Open folder as vault\" " +
+      "→ your brain's vault, so 🧠 citation links open straight in it."
     );
   }
   // Installed but this vault isn't registered yet.
