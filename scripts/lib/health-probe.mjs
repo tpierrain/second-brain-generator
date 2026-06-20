@@ -54,6 +54,21 @@ function probeMcp({ engineServers, pingServer }) {
     : { capability: "mcp", status: "broken", detail: `unreachable: ${dead.join(", ")}` };
 }
 
+// The cached-health reader's pure formatter (ADR 0028 §1): quiet when healthy
+// (all ok / only unknown → null — never cry wolf), one loud banner when any
+// capability is broken. Operates on a verdict array (live or read from cache).
+export function formatHealthBanner(verdict) {
+  const broken = verdict.filter((p) => p.status === "broken");
+  if (broken.length === 0) return null;
+  const noun = broken.length === 1 ? "capability" : "capabilities";
+  const named = broken.map((p) => `${p.capability} (${p.detail})`).join(", ");
+  return [
+    `⚠️ Last health-check found ${broken.length} broken ${noun}: ${named}.`,
+    `   Your brain may silently fail to answer from the vault. Try a full restart of`,
+    `   Claude; if it persists, run /update-engine. Your notes are untouched.`,
+  ].join("\n");
+}
+
 export function runHealthProbes({ manifest, seams }) {
   const engineServers = manifest.engineMcpServers ?? [];
   return [

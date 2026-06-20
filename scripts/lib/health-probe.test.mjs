@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runHealthProbes } from "./health-probe.mjs";
+import { runHealthProbes, formatHealthBanner } from "./health-probe.mjs";
 
 // The probe registry (ADR 0028, F7) runs deterministic functional probes over the
 // engine's real capabilities. Each probe is injectable so the registry is unit-testable
@@ -163,4 +163,36 @@ test("aggregate — every seam throwing never propagates: 4 capabilities, all un
     ["embedder", "index", "mcp", "rag"],
   );
   assert.ok(verdict.every((p) => p.status === "unknown"));
+});
+
+// ── formatHealthBanner — the cached-health reader's pure formatter (ADR 0028 §1).
+// Quiet when healthy (all ok / only unknown → null), one loud banner when broken.
+
+test("formatHealthBanner — all capabilities ok → null (quiet when healthy)", () => {
+  const banner = formatHealthBanner([
+    { capability: "rag", status: "ok" },
+    { capability: "index", status: "ok" },
+    { capability: "embedder", status: "ok" },
+    { capability: "mcp", status: "ok" },
+  ]);
+  assert.equal(banner, null);
+});
+
+test("formatHealthBanner — a broken capability → one loud banner naming it", () => {
+  const banner = formatHealthBanner([
+    { capability: "rag", status: "ok" },
+    { capability: "mcp", status: "broken", detail: "unreachable: local-mirror" },
+  ]);
+  assert.ok(banner, "expected a banner string");
+  assert.match(banner, /mcp/);
+  assert.match(banner, /⚠️/);
+});
+
+test("formatHealthBanner — only unknown (no broken) stays quiet → null", () => {
+  const banner = formatHealthBanner([
+    { capability: "rag", status: "ok" },
+    { capability: "embedder", status: "unknown", detail: "api key not configured" },
+    { capability: "mcp", status: "unknown", detail: "probe error: boom" },
+  ]);
+  assert.equal(banner, null);
 });
