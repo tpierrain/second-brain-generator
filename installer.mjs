@@ -57,6 +57,11 @@ import {
   embedderReady,
 } from "./scripts/lib/embedder-choice.mjs";
 import { openEnvInEditor } from "./scripts/lib/open-env.mjs";
+import {
+  registerVaultInObsidian,
+  defaultObsidianSeams,
+  shouldRegisterObsidian,
+} from "./scripts/lib/obsidian-register.mjs";
 import { buildHandoff } from "./scripts/lib/install-handoff.mjs";
 import { recordSourceAndProvenance } from "./scripts/lib/engine-source.mjs";
 import { resolveLatestTag } from "./scripts/lib/engine-fetch.mjs";
@@ -149,7 +154,7 @@ function run(cmd, args, opts = {}) {
 }
 
 // ── 1. Prerequisites ──────────────────────────────────────────────────────────
-step("1/9 · Checking prerequisites");
+step("1/10 · Checking prerequisites");
 let missing = false;
 
 // Node: we are already running inside it, version readable directly. Compare it
@@ -187,7 +192,7 @@ if (missing) {
 }
 
 // ── 2. Customization ──────────────────────────────────────────────────────────
-step("2/9 · Customizing the harness");
+step("2/10 · Customizing the harness");
 
 const gitUser = run("git", ["config", "user.name"]).out.trim();
 
@@ -296,7 +301,7 @@ const DEMO = DEMO_BY_LOCALE[chosenLocale ?? "en"] ?? DEMO_BY_LOCALE.en;
 // Decision D1 (ADR 0007): explicit 3-way choice, ADAPTIVE recommendation per machine.
 // We no longer FORCE the Gemini key: it is only asked for if the user picks the
 // "API key + Gemini" option. The rest writes EMBEDDING_PROVIDER into .env.
-step("3/9 · RAG embedding engine (the privacy choice)");
+step("3/10 · RAG embedding engine (the privacy choice)");
 const envPath = join(TARGET, ".env");
 
 // Menu labels (reuse the validated educational artifacts — ADR 0007).
@@ -418,7 +423,7 @@ const providerLines = embedderCfg.lines;
 ok(`embedder selected: ${c.B}${providerKey}${c.X}${embedderCfg.needsGeminiKey ? " (Gemini key)" : " (no Gemini key)"}`);
 
 // ── 4. File generation ──────────────────────────────────────────────────────
-step("4/9 · Generating customized files");
+step("4/10 · Generating customized files");
 const replacements = {
   // {{NODE}} = prefix of the hook commands (cf. .claude/settings.json.template).
   // Points to the self-heal launcher run-node.* (generated below) instead of `node`
@@ -602,7 +607,7 @@ else warn("install commit failed (configure git user.name/email).");
 // (idempotent — re-runnable without duplicates). For the native claude.ai ones, we
 // touch nothing: we just point to the account's *Connectors*.
 // Non-interactive (CI / stdin not a TTY) → step fully skipped.
-step("5/9 · Wire up external sources (optional)");
+step("5/10 · Wire up external sources (optional)");
 if (interactive) {
   const want = await ask("Wire up external sources now? [y/N]", "N");
   if (/^y/i.test(want)) {
@@ -633,7 +638,7 @@ if (interactive) {
 // clear them: otherwise they pollute the RAG (answers citing fictional facts). We
 // offer the purge HERE, before indexing, so the index stays clean.
 // The machinery (vault/backlog/harness.md) and the docs (README) are preserved.
-step("6/9 · Clean up the example notes (optional)");
+step("6/10 · Clean up the example notes (optional)");
 const vaultDir = join(TARGET, "vault");
 if (interactive) {
   const purge = await ask(
@@ -650,10 +655,60 @@ if (interactive) {
   warn("Non-interactive input — example notes kept.");
 }
 
+// ── 6.bis Register the brain's vault in Obsidian (optional, opt-in) ───────────
+// So 🧠 obsidian:// citation links open WITHOUT a manual "Open folder as vault"
+// (F8.2). Strictly optional — Obsidian is recommended, never required (the local
+// copy also opens inline in Claude Desktop). Safe by construction: idempotent,
+// backs up obsidian.json before writing, never clobbers other vaults, and only
+// acts when Obsidian is installed AND closed (it rewrites obsidian.json on quit).
+//   • interactive  → opt-in question (default N).
+//   • non-interactive → auto-register WHEN SAFE, opt-out via SBG_NO_OBSIDIAN_REGISTER.
+step("7/10 · Register your vault in Obsidian (optional)");
+function reportObsidian(result) {
+  switch (result.reason) {
+    case "registered":
+      ok("vault registered in Obsidian — 🧠 citation links will open straight in it.");
+      break;
+    case "already-registered":
+      ok("vault already registered in Obsidian — nothing to do.");
+      break;
+    case "not-installed":
+      warn("Obsidian not detected — skipped. Install it later (https://obsidian.md), then");
+      warn('  open it once and "Open folder as vault" → your brain\'s vault folder.');
+      break;
+    case "running":
+      warn("Obsidian is running — skipped (it rewrites its config on quit). Quit it and re-run,");
+      warn('  or just "Open folder as vault" → your brain\'s vault folder once.');
+      break;
+    default:
+      warn(`Obsidian registration skipped (${result.reason}) — you can "Open folder as vault" manually.`);
+  }
+}
+const obsidianVault = join(TARGET, "vault");
+const obsidianSeams = defaultObsidianSeams({
+  platform: process.platform,
+  env: process.env,
+  home: homedir(),
+});
+if (interactive) {
+  const wantObs = await ask(
+    "Register your brain's vault in Obsidian so 🧠 citations open directly? [y/N]",
+    "N",
+  );
+  if (/^y/i.test(wantObs)) reportObsidian(registerVaultInObsidian(obsidianVault, obsidianSeams));
+  else warn('Skipped — you can "Open folder as vault" in Obsidian yourself anytime.');
+} else if (shouldRegisterObsidian(process.env, process.platform)) {
+  // Non-interactive (Claude-driven install): auto-register WHEN SAFE. The wrapper
+  // no-ops cleanly when Obsidian is absent/running, so this never forces anything.
+  reportObsidian(registerVaultInObsidian(obsidianVault, obsidianSeams));
+} else {
+  warn("Obsidian registration opted out (SBG_NO_OBSIDIAN_REGISTER / CI) — skipped.");
+}
+
 if (rl) rl.close();
 
 // ── 6. RAG engine install ────────────────────────────────────────────────────
-step("7/9 · Installing the RAG engine (npm install)");
+step("8/10 · Installing the RAG engine (npm install)");
 const rag = join(TARGET, "rag");
 // Build the native binding (better-sqlite3) UNDER the launcher's self-heal PATH —
 // i.e. the exact Node that rag/launch.sh will later resolve at runtime — so the
@@ -683,7 +738,7 @@ else {
 // in-process → always (the weights download on 1st use, ~28 s once);
 // OpenAI/Ollama endpoint → base URL provided. The fully-local option thus self-verifies
 // right at install, with no key at all.
-step("8/9 · Initial indexing of the example vault");
+step("9/10 · Initial indexing of the example vault");
 const envNow = existsSync(envPath) ? readFileSync(envPath, "utf8") : null;
 const embedderIsReady = embedderReady(envNow);
 if (embedderIsReady) {
@@ -714,7 +769,7 @@ if (embedderIsReady) {
 //     distinguishes a real brain from one that would answer off-target (failure B).
 // Embedder ready: a blocking health_check = LOUD FAIL + exit(1) BEFORE the success
 // banner (no false green). Not ready: structural only + demo check honestly deferred.
-step("9/9 · Post-flight — does the brain answer from the vault?");
+step("10/10 · Post-flight — does the brain answer from the vault?");
 const EXPECT_TOOLS = ["search_vault", "get_document", "list_documents", "vault_stats"];
 try {
   const mcp = JSON.parse(readFileSync(join(TARGET, ".mcp.json"), "utf8"));

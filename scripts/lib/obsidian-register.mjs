@@ -6,6 +6,8 @@
 
 import { createHash } from "crypto";
 import { posix, win32 } from "path";
+import { existsSync, readFileSync, writeFileSync, copyFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 
 // Obsidian identifies each registered vault by a 16-hex id. We derive it
 // deterministically from the absolute path (not random): same path → same id,
@@ -109,4 +111,26 @@ export function registerVaultInObsidian(vaultPath, seams) {
   copyFileSync(configPath, `${configPath}.sbg-backup`);
   writeFileSync(configPath, JSON.stringify(updated), "utf8");
   return { registered: true, reason: "registered" };
+}
+
+// Production glue: assemble the real I/O seams (node:fs + spawnSync + Date.now)
+// for registerVaultInObsidian, so callers stay one-liners. Untested real-I/O
+// wiring on purpose (the branching logic lives in the seam-injected functions
+// above). `platform`/`env`/`home` are passed in for determinism.
+export function defaultObsidianSeams({ platform, env, home }) {
+  return {
+    platform,
+    env,
+    home,
+    now: () => Date.now(),
+    existsSync,
+    readFileSync,
+    writeFileSync,
+    copyFileSync,
+    isObsidianRunning: () =>
+      isObsidianRunning(platform, (command, args) => {
+        const r = spawnSync(command, args, { encoding: "utf8" });
+        return { status: r.status, stdout: r.stdout ?? "" };
+      }),
+  };
 }
