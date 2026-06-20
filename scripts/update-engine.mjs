@@ -17,8 +17,7 @@
 // Everything outside the plan is untouchable BY CONSTRUCTION (the plan is an
 // allowlist) — the Gate asserts byte-identity of the user's sacred files.
 // ─────────────────────────────────────────────────────────────────────────────
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -29,62 +28,16 @@ import {
 } from "./lib/engine-fetch.mjs";
 import { reconcileBrain } from "./lib/reconcile-brain.mjs";
 import { reseedProvenance } from "./lib/engine-source.mjs";
-import { listFilesRelPosix } from "./lib/fs-walk.mjs";
 import {
-  buildShLauncher,
-  buildCmdLauncher,
-  buildNodeRunnerSh,
-  buildNodeRunnerCmd,
-  buildLocalMirrorShLauncher,
-  buildLocalMirrorCmdLauncher,
-} from "./lib/rag-launcher.mjs";
+  defaultRunInstall,
+  defaultRunReindex,
+  defaultCountVaultNotes,
+  defaultRegenerateLaunchers,
+} from "./lib/engine-seams.mjs";
+import { defaultFinalizeReconcile } from "./lib/auto-finalize.mjs";
 
-// npm is a shell-wrapped `.cmd` on Windows (unlike git, a real .exe) → platform switch.
-const npmExe = (platform) => (platform === "win32" ? "npm.cmd" : "npm");
-
-// ─── Default seams (the real CLI wiring; the Gate injects stubs instead) ──────
-async function defaultRunInstall({ ragDir, brainDir, platform }) {
-  execFileSync(npmExe(platform), ["install"], { cwd: ragDir, stdio: "inherit" });
-  // local-mirror deps too, when the brain carries that package (pure JS →
-  // no native build, plain install; absent on pre-local-mirror brains → skip).
-  const gssDir = join(brainDir, "local-mirror");
-  if (existsSync(join(gssDir, "package.json"))) {
-    execFileSync(npmExe(platform), ["install"], { cwd: gssDir, stdio: "inherit" });
-  }
-}
-
-async function defaultRunReindex({ brainDir, platform }) {
-  execFileSync(npmExe(platform), ["run", "reindex"], { cwd: join(brainDir, "rag"), stdio: "inherit" });
-}
-
-// How many notes the brain holds, for the user-facing recap (F2). The lightest
-// deterministic path (ADR 0009): count the vault's Markdown files on disk — no
-// native deps, no ABI risk, accurate whatever the index state. The exclusions
-// mirror rag/'s document-scanner (`_template.md`, `.gitkeep`, the `.obsidian/`
-// dir) so the recap number matches what the indexer actually treats as a note.
-export async function defaultCountVaultNotes({ brainDir }) {
-  const vaultDir = join(brainDir, "vault");
-  if (!existsSync(vaultDir)) return 0;
-  const EXCLUDE_NAMES = new Set(["_template.md", ".gitkeep"]);
-  return listFilesRelPosix(vaultDir).filter((rel) => {
-    if (!rel.endsWith(".md")) return false;
-    const parts = rel.split("/");
-    if (parts.includes(".obsidian")) return false;
-    return !EXCLUDE_NAMES.has(parts[parts.length - 1]);
-  }).length;
-}
-
-// Rebuild BOTH launcher halves from the (freshly-updated) rag-launcher.mjs builders.
-// Machine-independent output → no per-host divergence; both `.sh` and `.cmd` always
-// written (ADR 0015), whatever the host platform.
-async function defaultRegenerateLaunchers({ brainDir }) {
-  writeFileSync(join(brainDir, "rag", "launch.sh"), buildShLauncher());
-  writeFileSync(join(brainDir, "rag", "launch.cmd"), buildCmdLauncher());
-  writeFileSync(join(brainDir, "local-mirror", "launch.sh"), buildLocalMirrorShLauncher());
-  writeFileSync(join(brainDir, "local-mirror", "launch.cmd"), buildLocalMirrorCmdLauncher());
-  writeFileSync(join(brainDir, "scripts", "run-node.sh"), buildNodeRunnerSh());
-  writeFileSync(join(brainDir, "scripts", "run-node.cmd"), buildNodeRunnerCmd());
-}
+// Re-export so the engine's own tests keep importing the count seam from here.
+export { defaultCountVaultNotes };
 
 // Human summary the brain-side `update-engine` skill shows the user (Step 6, ADR
 // 0016). Pure so the wording is unit-tested; the CLI entry only wires the I/O.
@@ -127,6 +80,7 @@ export async function updateEngine({
   runInstall = defaultRunInstall,
   runReindex = defaultRunReindex,
   countVaultNotes = defaultCountVaultNotes,
+  finalizeReconcile = defaultFinalizeReconcile,
 }) {
   const manifestPath = join(brainDir, "engine-manifest.json");
   const local = JSON.parse(readFileSync(manifestPath, "utf8"));
@@ -182,6 +136,15 @@ export async function updateEngine({
     }),
   };
   writeFileSync(manifestPath, JSON.stringify(updated, null, 2) + "\n");
+
+  // 8. Auto-finalize (ADR 0026, Layer A): re-exec the FRESHLY-WRITTEN reconciler in a
+  //    fresh child process, handing it the same source we fetched. A new process reads
+  //    the just-written reconcile-brain.mjs from disk → escapes this process's module
+  //    cache → runs the *just-installed* converge logic, collapsing the historical
+  //    2-cycle into a single invocation. The child reconciles ONLY (never re-fetches,
+  //    never re-finalizes) → no recursion. Done last, on top of an already-successful,
+  //    already-recorded update.
+  await finalizeReconcile({ brainDir, sourceDir, platform });
 
   return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, vaultNoteCount, installedSkills, mcpServersAdded };
 }

@@ -17,7 +17,8 @@
 // update-engine's fetch-result concerns (step 7).
 // ─────────────────────────────────────────────────────────────────────────────
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { computeApplyPlan } from "./engine-apply-plan.mjs";
 import { matchesAny } from "./glob-match.mjs";
@@ -25,6 +26,12 @@ import { reconcileMcpServers } from "./mcp-reconcile.mjs";
 import { needsReindex } from "./reindex-trigger.mjs";
 import { listFilesRelPosix } from "./fs-walk.mjs";
 import { selectEngineFilesToCopy } from "./engine-copy-select.mjs";
+import {
+  defaultRunInstall,
+  defaultRunReindex,
+  defaultCountVaultNotes,
+  defaultRegenerateLaunchers,
+} from "./engine-seams.mjs";
 
 function copyInto(srcDir, destDir, rel) {
   const dest = join(destDir, rel);
@@ -103,4 +110,47 @@ export async function reconcileBrain({
   const vaultNoteCount = await countVaultNotes({ brainDir });
 
   return { copied, regenerated, reindexed, vaultNoteCount, installedSkills, mcpServersAdded };
+}
+
+// ── CLI entry — what the auto-finalize child process runs (ADR 0026, Layer A) ──
+// Parses `--brainDir <dir> --sourceDir <dir> [--platform <p>]` and converges the brain
+// from the fetched source, using the brain's OWN (just-updated) manifest as BOTH target
+// and local → schema is unchanged from its own viewpoint, so the child never reindexes
+// (it converges files; it does not migrate). RECONCILE ONLY: no fetch, no auto-finalize
+// → no recursion. `seams` is injectable for tests; defaults are the real I/O seams.
+function flagValue(argv, name) {
+  const i = argv.indexOf(name);
+  return i >= 0 && i + 1 < argv.length ? argv[i + 1] : undefined;
+}
+
+export async function runReconcileCli({ argv, seams = {} }) {
+  const brainDir = flagValue(argv, "--brainDir");
+  const sourceDir = flagValue(argv, "--sourceDir");
+  const platform = flagValue(argv, "--platform") ?? process.platform;
+  if (!brainDir || !sourceDir) {
+    throw new Error("reconcile-brain: --brainDir and --sourceDir are required");
+  }
+  const manifest = JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8"));
+  return reconcileBrain({
+    brainDir,
+    platform,
+    sourceDir,
+    target: manifest,
+    local: manifest, // same manifest → needsReindex is false → converge without migrating
+    regenerateLaunchers: seams.regenerateLaunchers ?? defaultRegenerateLaunchers,
+    runInstall: seams.runInstall ?? defaultRunInstall,
+    runReindex: seams.runReindex ?? defaultRunReindex,
+    countVaultNotes: seams.countVaultNotes ?? defaultCountVaultNotes,
+  });
+}
+
+// Guarded so importing this module never runs the CLI. FAIL LOUD on error (exit 1) —
+// auto-finalize's own caller treats a child failure as best-effort (fail-soft there).
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  runReconcileCli({ argv: process.argv.slice(2) })
+    .then(() => process.exit(0))
+    .catch((e) => {
+      process.stderr.write(`\n❌ reconcile-brain failed.\n${e?.message ?? e}\n`);
+      process.exit(1);
+    });
 }

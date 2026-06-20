@@ -295,11 +295,17 @@ function assertSacredUntouched(brainDir, before) {
 // object records the side effects we assert on.
 async function runUpdate({ brainDir, sourceDir, platform, resolveLatestTag, countVaultNotes }) {
   const updateEngine = await loadCore();
-  const calls = { install: [], reindex: [], regenerate: [] };
+  const calls = { install: [], reindex: [], regenerate: [], finalize: [] };
   const report = await updateEngine({
     brainDir,
     platform,
     countVaultNotes: countVaultNotes ?? (async () => 0),
+    // Auto-finalize (ADR 0026, Layer A): the real seam re-execs the reconciler in a
+    // fresh child process. Stubbed here so no test spawns a real node process; we just
+    // record that update-engine asked for the finalize pass with the right inputs.
+    finalizeReconcile: async ({ brainDir: bd, sourceDir: sd, platform: p }) => {
+      calls.finalize.push({ brainDir: bd, sourceDir: sd, platform: p });
+    },
     // The launcher's latest release tag on the remote (ADR 0017). Default = the
     // target's version; overridable to exercise the offline/no-tag fallback. The
     // committed launcher manifest has NO `source`, so this — not target.source —
@@ -392,6 +398,28 @@ for (const platform of ["posix", "win32"]) {
     );
   });
 }
+
+// ── Auto-finalize (ADR 0026, Layer A): after a successful update, update-engine
+//    re-execs the freshly-written reconciler in a fresh child process — given the SAME
+//    sourceDir it fetched — so the just-installed converge logic runs in ONE invocation
+//    (kills the 2-cycle). Here we assert the wiring: the seam is invoked once, last,
+//    with the brain + the fetched source.
+test("gate — auto-finalizes once after the update, handing the child the fetched source (ADR 0026)", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource({ indexSchemaVersion: 1 });
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+
+  const { calls } = await runUpdate({ brainDir, sourceDir, platform: "posix" });
+
+  assert.deepEqual(
+    calls.finalize,
+    [{ brainDir, sourceDir, platform: "posix" }],
+    "update-engine must auto-finalize exactly once, handing the child the brain dir + the fetched source",
+  );
+});
 
 test("gate — schema UNCHANGED → engine still swapped but NO reindex", async (t) => {
   const brainDir = buildBrain();

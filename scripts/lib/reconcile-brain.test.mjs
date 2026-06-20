@@ -31,6 +31,10 @@ async function loadReconciler() {
   return (await import("./reconcile-brain.mjs")).reconcileBrain;
 }
 
+async function loadCli() {
+  return (await import("./reconcile-brain.mjs")).runReconcileCli;
+}
+
 function sha256(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
@@ -286,6 +290,35 @@ test("reconcileBrain — never disturbs a user's custom skill / MCP server / add
   const mcp = JSON.parse(readFileSync(join(brainDir, ".mcp.json"), "utf8"));
   assert.ok(mcp.mcpServers["my-tool"], "a user-added MCP server must be preserved");
   assert.equal(mcp.mcpServers["my-tool"].command, "node", "the user's MCP server definition must be intact");
+});
+
+// ── Test 5: the CLI entry the auto-finalize child process runs (ADR 0026). It parses
+//    --brainDir/--sourceDir, loads the brain's OWN (just-updated) manifest as both
+//    target and local (so it converges from the fetched source with no reindex), and
+//    reconciles with the real seams. Here the seams are stubbed; we assert it installed
+//    the missing engine skill the brain manifest declares.
+test("runReconcileCli — parses flags, loads the brain manifest, and converges from the source", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource();
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+  // The source carries a new engine skill; the brain's manifest declares it engine-owned.
+  writeFile(sourceDir, ".claude/skills/local-mirror/SKILL.md", "---\nname: local-mirror\n---\nMirror.\n");
+  writeFile(brainDir, "engine-manifest.json", JSON.stringify(manifest({ extraMerge: [".claude/skills/local-mirror/**"] }), null, 2));
+
+  const { calls, ...s } = seams();
+  const runReconcileCli = await loadCli();
+  const report = await runReconcileCli({
+    argv: ["--brainDir", brainDir, "--sourceDir", sourceDir, "--platform", "posix"],
+    seams: s,
+  });
+
+  assert.equal(existsSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md")), true, "the child installs the missing engine skill");
+  assert.deepEqual(report.installedSkills, ["local-mirror"]);
+  // target = local = the brain's own manifest → schema unchanged → no reindex in the child.
+  assert.deepEqual(calls.reindex, [], "the auto-finalize child must not reindex (it converges, it does not migrate)");
 });
 
 // Tiny indirection so the helpers above read cleanly; resolves the lazily-loaded export.
