@@ -67,6 +67,20 @@ export function formatReport(report) {
   if (mcpServersAdded.length > 0) {
     lines.push(`   • new MCP server(s) registered: ${mcpServersAdded.join(", ")}`);
   }
+  // F1.6 (ADR 0026, point 4): a freshly-installed skill/MCP is on disk but Claude
+  // loads skills/MCP/hooks when a conversation STARTS (Layer B config-freeze), so it
+  // is NOT yet live in THIS conversation. Say so LOUDLY (silence reads as "ready to
+  // use") and point at the lighter sufficient action — a full restart (field-proven,
+  // F4) — rather than leaving the user to discover the gap.
+  const newCapabilities = installedSkills.length + mcpServersAdded.length;
+  if (newCapabilities > 0) {
+    const noun = newCapabilities === 1 ? "capability" : "capabilities";
+    lines.push(
+      `   ⚠️ ${newCapabilities} new ${noun} on disk but NOT active in THIS conversation` +
+        ` yet — fully restart Claude (or open a new conversation rooted here) to use them.`,
+      `   • If they're still missing after a restart, run /update-engine once more.`,
+    );
+  }
   lines.push(`   Your notes, .env, constitution, settings and custom skills were left untouched.`);
   return lines.join("\n");
 }

@@ -114,6 +114,58 @@ test("formatReport — names the engine skill(s) it installed and the MCP server
   assert.match(out, /server|mcp/i);
 });
 
+// F1.6 (ADR 0026, point 4): a freshly-installed skill/MCP is on disk but NOT live in
+// the CURRENT conversation (Layer B config-freeze). The report must LOUDLY say so and
+// tell the user to restart — instead of today's silence that reads as "already usable".
+test("formatReport — when capabilities are installed, loudly says they aren't active in THIS conversation yet and to restart", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: ["local-mirror"],
+    mcpServersAdded: ["local-mirror"],
+  });
+  assert.match(out, /not (yet )?active|aren't active/i);
+  assert.match(out, /this conversation/i);
+  assert.match(out, /restart/i);
+});
+
+// F1.6: the "counter" the user reads = how many new capabilities they just gained
+// (skills + MCP servers), plus the "run once more" residual-bootstrap fallback for
+// the rare case a follow-up pass is still needed.
+test("formatReport — counts the new capabilities and offers the 'run once more' fallback", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: ["local-mirror"],
+    mcpServersAdded: ["local-mirror"],
+  });
+  assert.match(out, /\b2\b/); // 1 skill + 1 MCP server = 2 new capabilities
+  assert.match(out, /once more/i);
+  assert.match(out, /update-engine/);
+});
+
+// F1.6: don't cry wolf. A routine update that installed NO new skill/MCP must NOT
+// shout "restart / run once more" — that signal is reserved for actual new capabilities.
+test("formatReport — no new capabilities → no restart/run-once-more noise", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: [],
+    mcpServersAdded: [],
+  });
+  assert.doesNotMatch(out, /restart/i);
+  assert.doesNotMatch(out, /once more/i);
+});
+
 // F2: the recap must surface the number the USER cares about — how many notes their
 // brain holds — not just the maintainer-facing "N engine files swapped" count.
 test("formatReport — surfaces the vault note count", () => {
