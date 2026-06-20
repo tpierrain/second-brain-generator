@@ -92,6 +92,7 @@ test("notifyDone: desktop session → spawns detached and returns {notified:true
   assert.equal(calls[0].command, "osascript");
   assert.equal(calls[0].opts.detached, true);
   assert.equal(calls[0].opts.stdio, "ignore");
+  assert.equal(calls[0].opts.windowsHide, true); // no console flash on Windows (cross-OS parity)
   assert.equal(unrefed, true);
 });
 

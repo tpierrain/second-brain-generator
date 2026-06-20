@@ -125,7 +125,11 @@ export function notifyDone({ platform, env, title, body, spawn }: NotifyArgs): {
   const cmd = buildNotifyCommand(platform, { title, body });
   if (!cmd) return { notified: false };
   try {
-    const child = spawn(cmd.command, cmd.args, { detached: true, stdio: "ignore" });
+    const child = spawn(cmd.command, cmd.args, {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true, // suppress the powershell console flash on Windows
+    });
     child.unref();
     return { notified: true };
   } catch {
