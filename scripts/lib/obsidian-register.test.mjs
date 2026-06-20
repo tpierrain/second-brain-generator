@@ -5,6 +5,7 @@ import {
   shouldRegisterObsidian,
   obsidianConfigPath,
   registerVaultInObsidian,
+  isObsidianRunning,
 } from "./obsidian-register.mjs";
 
 // A recording set of injected I/O seams for registerVaultInObsidian tests.
@@ -147,4 +148,36 @@ test("registerVaultInObsidian — malformed obsidian.json → fail soft (unreada
   const result = registerVaultInObsidian("/Users/u/brain/vault", seams);
   assert.deepEqual(result, { registered: false, reason: "unreadable-config" });
   assert.equal(seams._writes.length, 0);
+});
+
+test("isObsidianRunning — macOS pgrep finds the process (status 0) → true", () => {
+  let called;
+  const exec = (command, args) => {
+    called = { command, args };
+    return { status: 0, stdout: "501\n" };
+  };
+  assert.equal(isObsidianRunning("darwin", exec), true);
+  assert.equal(called.command, "pgrep");
+});
+
+test("isObsidianRunning — macOS pgrep finds nothing (status 1) → false", () => {
+  const exec = () => ({ status: 1, stdout: "" });
+  assert.equal(isObsidianRunning("darwin", exec), false);
+});
+
+test("isObsidianRunning — Windows tasklist lists Obsidian.exe → true, absent → false", () => {
+  const present = (command, args) => {
+    assert.equal(command, "tasklist");
+    return { status: 0, stdout: "Obsidian.exe  1234 Console  1  120,000 K\n" };
+  };
+  const absent = () => ({ status: 0, stdout: "INFO: No tasks are running.\n" });
+  assert.equal(isObsidianRunning("win32", present), true);
+  assert.equal(isObsidianRunning("win32", absent), false);
+});
+
+test("isObsidianRunning — exec throws → assume running (fail-soft, never clobber)", () => {
+  const exec = () => {
+    throw new Error("pgrep not found");
+  };
+  assert.equal(isObsidianRunning("darwin", exec), true);
 });

@@ -53,6 +53,26 @@ export function shouldRegisterObsidian(env, platform) {
   return true;
 }
 
+// Is Obsidian currently running? Used to avoid editing obsidian.json while it is
+// open (it rewrites the file on quit). `exec(command, args)` is injected and must
+// return `{ status, stdout }`. Fail-soft: if we can't tell (unknown OS / exec
+// throws) we ASSUME running → skip the edit rather than risk a clobbered no-op.
+export function isObsidianRunning(platform, exec) {
+  try {
+    if (platform === "darwin" || platform === "linux") {
+      return exec("pgrep", ["-i", "obsidian"]).status === 0;
+    }
+    if (platform === "win32") {
+      // tasklist always exits 0 → detect by the image name in its output.
+      const { stdout } = exec("tasklist", ["/FI", "IMAGENAME eq Obsidian.exe", "/NH"]);
+      return /obsidian\.exe/i.test(stdout ?? "");
+    }
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 // Thin, fail-soft I/O wrapper: register the brain's vault in Obsidian's config so
 // 🧠 `obsidian://` citation links open without a manual "Open folder as vault".
 // All I/O is injected (testable). NEVER throws — any failure falls soft to a
