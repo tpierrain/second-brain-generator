@@ -5,6 +5,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { createHash } from "crypto";
+import { posix, win32 } from "path";
 
 // Obsidian identifies each registered vault by a 16-hex id. We derive it
 // deterministically from the absolute path (not random): same path → same id,
@@ -22,6 +23,24 @@ export function addVaultToObsidianConfig(json, vaultPath, { ts = 0 } = {}) {
   const id = vaultIdFor(vaultPath);
   if (!vaults[id]) vaults[id] = { path: vaultPath, ts };
   return { ...json, vaults };
+}
+
+// Pure: where Obsidian keeps its `obsidian.json` (the vault registry) on this OS.
+// macOS: ~/Library/Application Support/obsidian; Windows: %APPDATA%\obsidian;
+// Linux: $XDG_CONFIG_HOME or ~/.config/obsidian.
+export function obsidianConfigPath(platform, env, home) {
+  if (platform === "darwin") {
+    return posix.join(home, "Library", "Application Support", "obsidian", "obsidian.json");
+  }
+  if (platform === "win32") {
+    const appData = env.APPDATA ?? win32.join(home, "AppData", "Roaming");
+    return win32.join(appData, "obsidian", "obsidian.json");
+  }
+  if (platform === "linux") {
+    const configHome = env.XDG_CONFIG_HOME ?? posix.join(home, ".config");
+    return posix.join(configHome, "obsidian", "obsidian.json");
+  }
+  return null;
 }
 
 // Guard: should we even attempt to register the vault? Opt-in by default, but

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   addVaultToObsidianConfig,
   shouldRegisterObsidian,
+  obsidianConfigPath,
 } from "./obsidian-register.mjs";
 
 test("addVaultToObsidianConfig — empty config gains one vault pointing at the path", () => {
@@ -46,4 +47,29 @@ test("shouldRegisterObsidian — CI → false", () => {
 test("shouldRegisterObsidian — headless Linux (no DISPLAY) → false", () => {
   assert.equal(shouldRegisterObsidian({}, "linux"), false);
   assert.equal(shouldRegisterObsidian({ DISPLAY: ":0" }, "linux"), true);
+});
+
+test("obsidianConfigPath — macOS → ~/Library/Application Support/obsidian/obsidian.json", () => {
+  assert.equal(
+    obsidianConfigPath("darwin", {}, "/Users/u"),
+    "/Users/u/Library/Application Support/obsidian/obsidian.json"
+  );
+});
+
+test("obsidianConfigPath — Windows → %APPDATA%\\obsidian\\obsidian.json", () => {
+  assert.equal(
+    obsidianConfigPath("win32", { APPDATA: "C:\\Users\\u\\AppData\\Roaming" }, "C:\\Users\\u"),
+    "C:\\Users\\u\\AppData\\Roaming\\obsidian\\obsidian.json"
+  );
+});
+
+test("obsidianConfigPath — Linux → ~/.config/obsidian/obsidian.json (XDG_CONFIG_HOME honored)", () => {
+  assert.equal(
+    obsidianConfigPath("linux", {}, "/home/u"),
+    "/home/u/.config/obsidian/obsidian.json"
+  );
+  assert.equal(
+    obsidianConfigPath("linux", { XDG_CONFIG_HOME: "/home/u/.myconfig" }, "/home/u"),
+    "/home/u/.myconfig/obsidian/obsidian.json"
+  );
 });
