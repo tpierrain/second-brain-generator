@@ -33,7 +33,30 @@ Markdown** (Typora / Obsidian / the GitHub preview), with nothing to re-ask.
 - **By default, when opening a plan**, restore the checkboxes if they're missing — don't wait to be
   asked.
 
-## 2. One canonical plan = the repo's
+## 2. Plan steps lead with the WHAT (capability), not the HOW
+
+At the **first level** of a plan — section titles and the head of each step / sub-step — state the
+**WHAT**: the functional capability being **added / changed / removed**, phrased in terms of what the
+**brain, the installer, or the user can now do** (or what behaviour changes). The **HOW** — TDD,
+baby-steps, file/seam names, the mechanics — belongs **nested underneath**, never at the headline.
+
+Why: a human follows a plan by its **functional coherence** (the capabilities), not by its mechanics. A
+first level that reads *"TDD a pure registry in `health-probe.mjs`"* hides the point; *"Detect when a
+capability is functionally broken (RAG, index, embedder, MCP) and warn the user"* shows it. Leading with
+the HOW, or mixing HOW into the WHAT at the top level, makes the plan unreadable to track.
+
+- **Headline = capability / behaviour**, in user/product terms. Mechanics (test framework, file names,
+  seams, the word "baby-steps") go in **indented detail** below.
+- The HOW is the **default anyway** (TDD baby-steps + green-only = sections 1 and 5) — don't re-announce
+  *"I'll do TDD"* on every step; spell out only what's **non-obvious** about the approach.
+- Applies to plans, **Tracking** lines, ADR titles, **and how progress is narrated in chat** (lead with
+  the capability changed, not "I wrote a test then made it pass").
+
+> Thomas asked for this explicitly (2026-06-20): what matters to follow coherence is the **quoi**
+> (capabilities) at the top level, the **comment** as nested detail — and to make it **emerge in the
+> repo's harness**, not just a local memory. Hence this section.
+
+## 3. One canonical plan = the repo's
 
 The **living plan** is the one under `maintainers/plans/**` (ticked as work proceeds, opened in
 Typora/Obsidian). The auto-saved snapshot under `~/.claude/plans/` is **throwaway**: the moment a plan
@@ -43,7 +66,7 @@ on it again.
 > Trap that motivated this: two desynced v3.3.0 plan files (0 vs 13 checkboxes), 2026-06-20. Always
 > resolve to the repo copy.
 
-## 3. Artifacts in English (conversation may be in French)
+## 4. Artifacts in English (conversation may be in French)
 
 **Every durable artifact** I produce or modify is written in **English** — no hidden exception:
 
@@ -59,7 +82,7 @@ stopwords, proper nouns, quotes, and historical records kept on purpose in anoth
 thumb: **I write it** (code, doc, commit, PR) → English; **the product speaks to a user in their
 language** → respect the locale. A PR or comment left in French is a **defect to fix**, not a choice.
 
-## 4. TDD baby-steps + green-only commits
+## 5. TDD baby-steps + green-only commits
 
 - **Strict TDD on all code — engine AND harness.** One test at a time, **red → green → refactor**
   fully for each test (no test-first batch), fail-first, triangulation, mandatory refactor. The
@@ -71,7 +94,7 @@ language** → respect the locale. A PR or comment left in French is a **defect 
   the suite stays green at `exit 0`; the flag is removed at the apply step. No history rewriting —
   green-only from here on.
 
-## 5. ADRs carry a `Scope:` field
+## 6. ADRs carry a `Scope:` field
 
 Every ADR carries a `- **Scope:**` line right under `STATUS`, with an **explicit** value (never the
 vague "both"): **Installer** · **Second brain (runtime)** · **Second brain (runtime) + Installer** ·
@@ -79,7 +102,7 @@ vague "both"): **Installer** · **Second brain (runtime)** · **Second brain (ru
 launcher↔brain backbone (ADR 0001). Full convention: [`README.md`](README.md) (the `decisions/`
 section).
 
-## 6. Plan done = archived
+## 7. Plan done = archived
 
 The moment a plan ships, **in the same change**: set its top `STATUS` to ✅ (with proof — commit
 SHAs / what was verified) **and `git mv` it into [`plans/archived/`](plans/archived/)**. Never leave a
