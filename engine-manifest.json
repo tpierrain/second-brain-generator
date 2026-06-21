@@ -21,7 +21,9 @@
       "scripts/session-obsidian-hint.mjs",
       "scripts/health-probe-run.mjs",
       "scripts/lib/**",
-      ".claude/settings.json.template"
+      ".claude/settings.json.template",
+      ".mcp.json.template",
+      "engine-skills/**"
     ],
     "regenerate": [
       "rag/launch.sh",
@@ -42,7 +44,6 @@
       ".claude/skills/tdd-discipline/**",
       ".claude/skills/update-engine/**",
       ".claude/skills/import/**",
-      ".claude/skills/local-mirror/**",
       "scripts/auto-commit.mjs",
       "scripts/auto-push.mjs",
       "scripts/status-line.mjs",

@@ -673,11 +673,12 @@ test("gate — F1/F2: dev-only files never land, and the brain keeps its install
   );
 });
 
-// ── Lot A (ADR 0025): an engine update INSTALLS a missing engine-declared skill
-//    (additive, install-if-absent) so the flagship local-mirror skill reaches
-//    upgraders — while never touching a non-declared / custom skill.
+// ── Lot A (ADR 0025): an engine update INSTALLS a missing engine-declared MERGE skill
+//    (additive, install-if-absent) — illustrated by `coach` (local-mirror relocated to
+//    the staged engine-skills/ path, F-B7 2b) — while never touching a non-declared /
+//    custom skill.
 test("gate — installs a MISSING engine-declared skill (install-if-absent); custom skill stays untouched", async (t) => {
-  const brainDir = buildBrain(); // ships zzz-mine (custom), NO local-mirror skill
+  const brainDir = buildBrain(); // ships zzz-mine (custom), NO coach skill
   const sourceDir = mkdtempSync(join(tmpdir(), "sbg-source-skill-"));
   t.after(() => {
     rmSync(brainDir, { recursive: true, force: true });
@@ -688,8 +689,8 @@ test("gate — installs a MISSING engine-declared skill (install-if-absent); cus
   // The fetched launcher carries the engine files (vB) + a NEW engine skill, and its
   // manifest declares that skill path as engine-owned (under `merge`).
   for (const [rel, content] of Object.entries(flat(engineFiles("vB")))) writeFile(sourceDir, rel, content);
-  const skillBody = "---\nname: local-mirror\n---\nMirror a Notion zone into the vault.\n";
-  writeFile(sourceDir, ".claude/skills/local-mirror/SKILL.md", skillBody);
+  const skillBody = "---\nname: coach\n---\nYour sparring partner.\n";
+  writeFile(sourceDir, ".claude/skills/coach/SKILL.md", skillBody);
   writeFile(
     sourceDir,
     "engine-manifest.json",
@@ -704,7 +705,7 @@ test("gate — installs a MISSING engine-declared skill (install-if-absent); cus
           merge: [
             "CLAUDE.md",
             ".claude/settings.json",
-            ".claude/skills/local-mirror/**", // the NEW engine skill, declared engine-owned
+            ".claude/skills/coach/**", // the NEW engine skill, declared engine-owned
             "scripts/auto-commit.mjs",
             "scripts/auto-push.mjs",
             "scripts/status-line.mjs",
@@ -722,7 +723,7 @@ test("gate — installs a MISSING engine-declared skill (install-if-absent); cus
   );
 
   assert.equal(
-    existsSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md")),
+    existsSync(join(brainDir, ".claude/skills/coach/SKILL.md")),
     false,
     "precondition: the brain must lack the engine skill before the update",
   );
@@ -731,14 +732,14 @@ test("gate — installs a MISSING engine-declared skill (install-if-absent); cus
 
   // The engine installed the missing skill from the fetched source…
   assert.equal(
-    readFileSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md"), "utf8"),
+    readFileSync(join(brainDir, ".claude/skills/coach/SKILL.md"), "utf8"),
     skillBody,
-    "a missing engine-declared skill must be installed on update (so upgraders get local-mirror)",
+    "a missing engine-declared merge skill must be installed on update",
   );
   // …and the report names it (so the user SEES they got the feature, finding A).
   assert.deepEqual(
     report.installedSkills,
-    ["local-mirror"],
+    ["coach"],
     "the report must name the engine skill(s) it installed",
   );
   // …and the user's custom skill + every sacred file stayed byte-identical.
@@ -753,14 +754,14 @@ test("gate — an ALREADY-PRESENT engine skill is preserved byte-identical (neve
     rmSync(sourceDir, { recursive: true, force: true });
   });
 
-  // The brain already carries a USER-CUSTOMIZED local-mirror skill.
-  const customized = "---\nname: local-mirror\n---\nMY OWN tweaks — do not overwrite.\n";
-  writeFile(brainDir, ".claude/skills/local-mirror/SKILL.md", customized);
-  const beforeHash = sha256(join(brainDir, ".claude/skills/local-mirror/SKILL.md"));
+  // The brain already carries a USER-CUSTOMIZED coach skill.
+  const customized = "---\nname: coach\n---\nMY OWN tweaks — do not overwrite.\n";
+  writeFile(brainDir, ".claude/skills/coach/SKILL.md", customized);
+  const beforeHash = sha256(join(brainDir, ".claude/skills/coach/SKILL.md"));
 
   // The fetched launcher carries a DIFFERENT version of the same skill + declares it.
   for (const [rel, content] of Object.entries(flat(engineFiles("vB")))) writeFile(sourceDir, rel, content);
-  writeFile(sourceDir, ".claude/skills/local-mirror/SKILL.md", "---\nname: local-mirror\n---\nEngine default.\n");
+  writeFile(sourceDir, ".claude/skills/coach/SKILL.md", "---\nname: coach\n---\nEngine default.\n");
   writeFile(
     sourceDir,
     "engine-manifest.json",
@@ -772,7 +773,7 @@ test("gate — an ALREADY-PRESENT engine skill is preserved byte-identical (neve
         regimes: {
           replace: ["rag/src/**", "rag/package.json"],
           regenerate: ["rag/launch.sh", "rag/launch.cmd", "scripts/run-node.sh", "scripts/run-node.cmd"],
-          merge: [".claude/skills/local-mirror/**", "scripts/update-engine.mjs"],
+          merge: [".claude/skills/coach/**", "scripts/update-engine.mjs"],
         },
         engineMcpServers: ["vault-rag"],
         source: { repo: "https://example.test/launcher.git", ref: "v1.1.0" },
@@ -786,7 +787,7 @@ test("gate — an ALREADY-PRESENT engine skill is preserved byte-identical (neve
   await runUpdate({ brainDir, sourceDir, platform: "posix" });
 
   assert.equal(
-    sha256(join(brainDir, ".claude/skills/local-mirror/SKILL.md")),
+    sha256(join(brainDir, ".claude/skills/coach/SKILL.md")),
     beforeHash,
     "a present (customized) engine skill must be preserved byte-identical — install-if-absent never overwrites",
   );

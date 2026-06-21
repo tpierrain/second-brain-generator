@@ -12,10 +12,14 @@ import { dirname, resolve } from "node:path";
 // routing copy — so a future edit can't silently collapse the two into one and
 // re-introduce the confusion.
 
+// The skill's canonical source relocated to the NON-sacred staged path
+// `engine-skills/local-mirror/` (F-B7 2b): the sacred scrub forbids the engine from
+// delivering under `.claude/skills/`, so an upgrader-bound skill ships staged and is
+// install-if-absent'd into the brain. This guard reads the staged source.
 const SKILL = readFileSync(
   resolve(
     dirname(fileURLToPath(import.meta.url)),
-    "../../.claude/skills/local-mirror/SKILL.md"
+    "../../engine-skills/local-mirror/SKILL.md"
   ),
   "utf8"
 );
