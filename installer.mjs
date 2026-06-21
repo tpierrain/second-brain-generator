@@ -657,9 +657,11 @@ if (interactive) {
 }
 
 // ── 6.bis Register the brain's vault in Obsidian (optional, opt-in) ───────────
-// So 🧠 obsidian:// citation links open WITHOUT a manual "Open folder as vault"
-// (F8.2). Strictly optional — Obsidian is recommended, never required (the local
-// copy also opens inline in Claude Desktop). Safe by construction: idempotent,
+// So the brain's vault shows up ready to browse in Obsidian's switcher WITHOUT a
+// manual "Open folder as vault" (F8.2). Strictly optional — Obsidian is recommended
+// for browsing the vault as a whole, never required (opening a single note goes
+// through the OS default editor; the 🧠 local copy also opens inline in Claude
+// Desktop). Safe by construction: idempotent,
 // backs up obsidian.json before writing, never clobbers other vaults, and only
 // acts when Obsidian is installed AND closed (it rewrites obsidian.json on quit).
 //   • interactive  → opt-in question (default N).

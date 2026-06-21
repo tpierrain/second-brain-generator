@@ -233,14 +233,15 @@ node installer.mjs --non-interactive --name "<name>" --dest "<parent-location>" 
    **normal and healthy** (writes, for their part, will always stay confirmed) and that **it only
    concerns external sources** — the vault itself is already silent.
 5. **Offer the Obsidian viewer (optional, recommended).** Their notes are plain Markdown that already
-   works as-is, but installing **[Obsidian](https://obsidian.md)** (free) gives a full **read/write**
-   interface — links, graph, editor — over **the same files** Claude uses. ⚠️ **Warn them about the
-   very first launch**: on a brand-new Obsidian, the first run lands on a **welcome / vault-picker
-   screen** — this is normal, and **they must do a one-time manual step**: open Obsidian themselves,
-   click **"Open folder as vault"**, and pick the brain's folder (`<parent-location>/<name>`, with the
-   real name substituted). **Until that registration is done, asking Claude to "open a note" has
-   nowhere to land** (the `obsidian://` link errors or stalls on that setup screen). Once the vault is
-   registered, it just works — and Obsidian stays **optional**: without it, Claude shows notes inline.
+   works as-is (asking Claude to "open a note" opens the real file in their **default Markdown editor**
+   — Typora, VS Code, Obsidian, whatever they've set), but installing **[Obsidian](https://obsidian.md)**
+   (free) gives a full **read/write** interface — links, graph, editor — over **the same files** Claude
+   uses, ideal for *browsing the whole vault*. ⚠️ **Warn them about the very first launch**: on a
+   brand-new Obsidian, the first run lands on a **welcome / vault-picker screen** — this is normal, and
+   (unless the installer already registered the vault for them) **they do a one-time manual step**: open
+   Obsidian themselves, click **"Open folder as vault"**, and pick the brain's folder
+   (`<parent-location>/<name>`, with the real name substituted). Obsidian stays **optional** — it's never
+   needed to open a single note (that goes through their default editor, or Claude shows it inline).
    (Full details in SETUP.md.)
 
 ## Guardrails (never to be breached)
