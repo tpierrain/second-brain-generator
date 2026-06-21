@@ -215,13 +215,38 @@ test("formatReport — counts the new capabilities and offers the 'run once more
   assert.match(out, /update-engine/);
 });
 
-// F1.6: don't cry wolf. A routine update that installed NO new skill/MCP must NOT
-// shout "restart / run once more" — that signal is reserved for actual new capabilities.
-test("formatReport — no new capabilities → no restart/run-once-more noise", () => {
+// F-B7d (ship-blocker A1): a steady-state update that swapped engine CODE — but added
+// no brand-new skill/MCP/hook — STILL needs a restart: the running MCP server / hooks /
+// constitution this session loaded are the OLD ones until Claude is reopened. The report
+// must say so LOUDLY (the disease: a "✅ done" with no restart line reads as "already
+// live" → the improvement stays trapped behind a stale session). But this is the generic
+// restart banner, NOT the new-capability path: no capability counter, no "run once more".
+test("formatReport — steady-state code swap (no new capability) still loudly says to restart, without the counter / 'run once more'", () => {
   const out = formatReport({
     ref: "v1.1.0",
     engineVersion: { rag: "1.1.0" },
     copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: [],
+    mcpServersAdded: [],
+  });
+  assert.match(out, /restart/i, "swapped engine code → the running session is stale → restart");
+  assert.match(out, /action needed/i);
+  // Reserved-signal discipline: the capability counter + residual-bootstrap fallback are
+  // for ACTUAL new capabilities only — never on a plain code swap.
+  assert.doesNotMatch(out, /once more/i);
+  assert.doesNotMatch(out, /new capabilit/i);
+});
+
+// F-B7d (A1) — the don't-cry-wolf boundary: a genuine no-op (nothing swapped, nothing
+// regenerated, no new capability — the brain was already up to date) must NOT mention a
+// restart. The restart banner is reserved for an update that actually changed on-disk code.
+test("formatReport — a true no-op (nothing swapped or regenerated) does NOT cry restart", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: [],
     regenerated: false,
     reindexed: false,
     installedSkills: [],

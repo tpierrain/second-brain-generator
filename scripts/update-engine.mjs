@@ -99,6 +99,19 @@ export function formatReport(report) {
       `   brand-new chat for this. Until you restart, your brain CAN'T use ${them}.`,
       `   • If still missing after a restart, run /update-engine once more.`,
     );
+  } else if (copied.length > 0 || regenerated) {
+    // F-B7d (ship-blocker A1): even a steady-state swap with NO brand-new capability still
+    // needs a restart — the MCP server, hooks and constitution THIS conversation loaded are
+    // the OLD ones until Claude is reopened. Stay silent and a "✅ done" reads as "already
+    // live", trapping the improvement behind a stale session. So warn LOUDLY — but WITHOUT the
+    // new-capability counter / "run once more" fallback (those are reserved for actual new
+    // capabilities). The genuine no-op (nothing swapped) skips this entirely → no crying wolf.
+    lines.push(
+      `   ⚠️ ACTION NEEDED — the engine code was updated on disk, but THIS conversation is`,
+      `   still running the OLD version. A FULL RESTART of Claude (close it and reopen) is`,
+      `   enough: come back to THIS same conversation afterwards and the update takes effect.`,
+      `   Until you restart, your brain keeps using the old engine.`,
+    );
   }
   lines.push(`   Your notes, .env, constitution, settings and custom skills were left untouched.`);
   return lines.join("\n");
