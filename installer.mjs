@@ -36,6 +36,7 @@ import { parseAnswers, resolveTargetDir, resolveRunMode } from "./scripts/lib/in
 import { parseLsFilesZ, filterCopyable } from "./scripts/lib/tracked-files.mjs";
 import { resolveLocale, chooseLocale } from "./scripts/lib/locale.mjs";
 import { overlayLocale } from "./scripts/lib/locale-overlay.mjs";
+import { installStagedSkills } from "./scripts/lib/staged-skills.mjs";
 import {
   buildShLauncher,
   buildCmdLauncher,
@@ -292,6 +293,18 @@ const chosenLocale = chooseLocale(locale, availableLocales);
 if (chosenLocale) {
   overlayLocale({ templatesRoot, locale: chosenLocale, target: TARGET });
   ok(`localized artifacts overlaid: locale "${chosenLocale}" (requested: "${locale}")`);
+}
+
+// ── 2ter. Deliver the upgrader-bound skills into .claude/skills/ ───────────────
+// The sacred scrub forbids the engine from writing under `.claude/skills/`
+// (ADR 0026), so the local-mirror skill ships its canonical source at the
+// non-sacred staging path `engine-skills/<name>/` — brought over by the bulk copy
+// above, but NOT yet present under `.claude/skills/`. Install-if-absent it now so a
+// FRESH brain has the skill on disk immediately (the .mcp.json generated from the
+// template already wires the local-mirror server). sourceDir === brainDir === TARGET.
+const stagedSkills = installStagedSkills({ sourceDir: TARGET, brainDir: TARGET });
+if (stagedSkills.length) {
+  ok(`engine skills installed: ${stagedSkills.join(", ")}`);
 }
 // Canary question for the vault actually installed (the overlaid locale, or `en`
 // at the root when no overlay applies) — so an fr brain probes/suggests the fr
