@@ -62,6 +62,21 @@ test("engine-manifest — every SessionStart hook script is carried to upgraders
   );
 });
 
+// F-B2 (ADR 0026): settings.json.template must be CARRIED to upgraders (declared in
+// `replace`). It is the desired-state SOURCE the hook reconcile / SessionStart bootstrap
+// tick reads to detect drift — a brain comparing its settings.json against its OWN STALE
+// template would see no gap and never wire the v3.3.0 runtime hooks. (The generated
+// settings.json itself stays SACRED/merge; only its engine-owned template is shipped.)
+test("engine-manifest — settings.json.template is carried to upgraders (the hook-reconcile desired-state source)", () => {
+  const carried = (manifest.regimes.replace ?? []).some((glob) =>
+    matchesAny([glob], ".claude/settings.json.template"),
+  );
+  assert.ok(
+    carried,
+    "`.claude/settings.json.template` must be in `replace` so upgraders get the new SessionStart entries (F-B2 bootstrap)",
+  );
+});
+
 // The health-check activation policy (ADR 0030, F7-bis) reads engineModuleRequirements ×
 // the brain's .mcp.json. vault-rag is the brain's load-bearing module: if it ever silently
 // loses its `mandatory` tag, a vault-rag absent from .mcp.json would no longer be flagged

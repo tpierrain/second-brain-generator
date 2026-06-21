@@ -20,7 +20,8 @@
       "scripts/session-health.mjs",
       "scripts/session-obsidian-hint.mjs",
       "scripts/health-probe-run.mjs",
-      "scripts/lib/**"
+      "scripts/lib/**",
+      ".claude/settings.json.template"
     ],
     "regenerate": [
       "rag/launch.sh",
