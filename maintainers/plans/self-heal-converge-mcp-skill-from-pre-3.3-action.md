@@ -175,19 +175,63 @@ only `reconcile-brain` + `self-heal-detect`'s *desired-state* derivation moves t
 
 ---
 
-## Rig state + reset (read before Task 4)
+## Rig state — ✅ PREPARED & READY for Task 4 (2026-06-21)
 
-- ⚠️ **The rig `~/legacy-brain` is currently in the TERMINAL STUCK state** (post-update-1 + post-restart):
-  rag 1.1.5, the **4 hooks wired**, but `local-mirror` skill **ABSENT**, `.mcp.json` = `[vault-rag]`,
-  no health note. Next restart is a no-op (bootstrap gates on the now-satisfied hooks-gap; session-self-heal
-  reads the stale manifest → no gap). It will **never** converge `local-mirror` without a 2nd update. This
-  rig is itself the live proof of the bug — keep it for reference or reset for Task 4.
-- **Reset to a fresh v3.1.0:** `rm -rf ~/legacy-brain && tar -xzf ~/legacy-brain.tgz -C ~` (pristine
-  tarball ~356 MB, untouched). Then repoint the source so `/update-engine` pulls the current branch code:
-  set `engine-manifest.json` `source` to `{ "repo": "/Users/tpierrain/Dev/second-brain-generator", "ref": "v3.3.0" }`.
-- ⚠️ **Disposable git tag `v3.3.0`** is moved onto HEAD `9f758d2` (so the rig's update pulls the current
-  branch incl. the F-B4 citation fix). It is **NOT** a release tag — `git tag -d v3.3.0` before any real release.
-- Branch `v3.3.0-self-converging-brain-and-citations`, HEAD `9f758d2`, working tree clean at handoff.
+The rig is **already set up** — do NOT re-extract or re-point unless restarting from scratch. State on disk:
+
+- ✅ **Mirror `~/qa-v33-src.git` resynced to `aa30d7f`** (the F-B7 fix HEAD), via
+  `git push "$HOME/qa-v33-src.git" v3.3.0-self-converging-brain-and-citations:…`. The mirror carries
+  **ONLY that one branch, NO tags** → `resolveLatestTag(mirror)` returns null → `/update-engine` clones
+  the branch HEAD exactly (`git clone --depth 1 --branch <ref>`, engine-fetch.mjs). **No disposable tag to
+  juggle** — this is why the mirror is preferred over pointing at the dev repo (whose `v3.3.0` tag is stale).
+- ✅ **Rig `~/legacy-brain` re-extracted PRISTINE** from `~/legacy-brain.tgz` (356 MB, untouched). Verified
+  genuine pre-3.3.0: **rag 1.1.0**, `engineMcpServers: ["vault-rag"]`, `.mcp.json` = `[vault-rag]` only,
+  **NO `local-mirror` skill** (skills = coach/import/improve/prepare-1-1/sync/sync-sources/tdd-discipline/
+  update-engine), **NO `local-mirror/` module dir**, **SessionStart = `[session-status]` only**.
+- ✅ **Rig `source` repointed** to `{ "repo": "/Users/tpierrain/qa-v33-src.git", "ref":
+  "v3.3.0-self-converging-brain-and-citations" }` (absolute mirror path). `ls-remote` confirmed it resolves
+  to `aa30d7f`. Launcher HEAD verified to deliver `engine-skills/local-mirror/` + `.mcp.json.template`
+  (vault-rag + local-mirror) in `replace`. **Target after update = rag 1.1.5.**
+- ⚠️ Separate disposable tag `v3.3.0` still sits on `9f758d2` in the **dev repo** (unused by this rig since
+  it points at the mirror) — `git tag -d v3.3.0` before any real release.
+- Branch `v3.3.0-self-converging-brain-and-citations`, HEAD `aa30d7f`, working tree clean.
+
+### Task 4 — Desktop manual runbook (the proof that matters)
+
+**What we prove:** from a pre-3.3.0 brain, **ONE `/update-engine` + the restarts the user does anyway**
+wire BOTH the `local-mirror` skill AND its MCP server — **never a 2nd `/update-engine`**. The expected
+convergence path for the one-time pre-3.2 jump (ADR 0026 §6): update → restart 1 (the now-v3.3.0
+`session-status` bootstrap tick detects the gap, spawns the reconciler in the background → it wires the 4
+hooks, install-if-absent's the skill from `engine-skills/`, registers the MCP from `.mcp.json.template`,
+seeds + incrementally reindexes the health note, and emits the one-time "self-healing is now active —
+restart one last time" line) → restart 2 (Claude loads the converged config; `session-self-heal` = no-op).
+
+- [ ] **Step 0 — open the brain in a NEW rooted conversation.** Desktop → Code tab → **new conversation**
+      → click the **folder chip** (not `➕`) → open `~/legacy-brain`. First message `pwd` → must show
+      `/Users/tpierrain/legacy-brain` (not a temp dir). _(Claude can verify pristine disk state here.)_
+- [ ] **Step 1 — ONE update.** Ask the brain "update your engine" (triggers the `update-engine` skill). It
+      should report **rag 1.1.5**. ⚠️ **Do NOT run a 2nd update** — that is the whole point.
+- [ ] **Step 2 — restart 1 (self-heal kicks in).** ⌘Q, reopen, NEW rooted conversation on `~/legacy-brain`.
+      Expect the one-time **"self-healing is now active — restart one last time"** message (locale FR).
+      _(Claude verifies on disk: skill installed, `.mcp.json` gained local-mirror, 4 hooks wired, health note.)_
+- [ ] **Step 3 — restart 2 ("one last time").** ⌘Q, reopen, NEW rooted conversation. Verify IN Desktop:
+      `/mcp` lists **`local-mirror`** (+ vault-rag); ask "what skills do you have?" / "tell me about the local
+      Notion mirror" → `local-mirror` answers; ask a question whose answer is the health note (**Quibblethorne**
+      canary) → `health_check` works.
+- [ ] **Step 4 — verdict.** `/update-engine` was run **ONCE**. If skill + MCP `local-mirror` are present
+      after the restarts → **F-B7 proven** ✅. Then ship gate (push/merge/tag on Thomas's explicit go).
+
+**Claude's disk-level checks between steps (non-perturbing, run on request):**
+```bash
+ls ~/legacy-brain/.claude/skills/                      # gains local-mirror after convergence
+node -e "console.log(Object.keys(require(process.env.HOME+'/legacy-brain/.mcp.json').mcpServers))"  # gains local-mirror
+node -e "const s=require(process.env.HOME+'/legacy-brain/.claude/settings.json');console.log((s.hooks?.SessionStart||[]).flatMap(g=>(g.hooks||[]).map(h=>h.command.split('/').pop())))"  # 4 hooks
+node -e "console.log(require(process.env.HOME+'/legacy-brain/engine-manifest.json').engineVersion.rag)"  # 1.1.5 after update
+ls ~/legacy-brain/vault/engine-health/health-check.md  # health note seeded
+```
+**If the rig must be reset from scratch:** `rm -rf ~/legacy-brain && tar -xzf ~/legacy-brain.tgz -C ~`,
+then repoint `engine-manifest.json` `source` to the mirror (above), and resync the mirror to the branch
+HEAD: `git push "$HOME/qa-v33-src.git" v3.3.0-self-converging-brain-and-citations:v3.3.0-self-converging-brain-and-citations`.
 
 ## Discipline (non-negotiable)
 
