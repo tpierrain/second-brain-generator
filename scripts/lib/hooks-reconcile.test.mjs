@@ -1,0 +1,112 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+
+import { reconcileHooks, detectHookGap } from "./hooks-reconcile.mjs";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// hooks-reconcile — pure, idempotent reconcile of a brain's settings.json hook
+// entries against the engine's template (ADR 0026, the third additive surface
+// after skills and .mcp.json servers). ADD only the engine-owned hook entries the
+// brain is MISSING, dedup by the engine SCRIPT the hook runs; never overwrite,
+// never remove, never touch a user-added entry. The placeholders ({{NODE}},
+// {{PROJECT_ROOT}}) in the appended entries are substituted with the brain's own
+// node interpreter (parsed from its existing hooks) and its dir.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// The engine template (placeholders intact, as it lives on disk).
+const templateHooks = {
+  SessionStart: [
+    { matcher: "", hooks: [{ type: "command", command: '{{NODE}} "{{PROJECT_ROOT}}/scripts/session-self-heal.mjs"', timeout: 20000 }] },
+    { matcher: "", hooks: [{ type: "command", command: '{{NODE}} "{{PROJECT_ROOT}}/scripts/session-health.mjs"', timeout: 20000 }] },
+    { matcher: "", hooks: [{ type: "command", command: '{{NODE}} "{{PROJECT_ROOT}}/scripts/session-obsidian-hint.mjs"', timeout: 20000 }] },
+    { matcher: "", hooks: [{ type: "command", command: '{{NODE}} "{{PROJECT_ROOT}}/scripts/session-status.mjs"', timeout: 20000 }] },
+  ],
+};
+
+// A v3.1.0-origin brain: SessionStart wires session-status ONLY, with concrete,
+// already-substituted paths (its own node interpreter + brain dir).
+function v310BrainHooks() {
+  return {
+    SessionStart: [
+      { matcher: "", hooks: [{ type: "command", command: '/usr/local/bin/node "/brains/foo/scripts/session-status.mjs"', timeout: 20000 }] },
+    ],
+  };
+}
+
+test("reconcileHooks — appends an engine SessionStart hook the brain is missing, substituted", () => {
+  const { hooks, hooksAdded } = reconcileHooks({
+    brainHooks: v310BrainHooks(),
+    templateHooks,
+    projectRoot: "/brains/foo",
+  });
+
+  const commands = hooks.SessionStart.flatMap((g) => g.hooks.map((h) => h.command));
+  assert.ok(
+    commands.includes('/usr/local/bin/node "/brains/foo/scripts/session-self-heal.mjs"'),
+    "the missing self-heal hook must be appended with the brain's own node + dir substituted",
+  );
+  assert.ok(commands.includes('/usr/local/bin/node "/brains/foo/scripts/session-health.mjs"'), "session-health appended");
+  assert.ok(commands.includes('/usr/local/bin/node "/brains/foo/scripts/session-obsidian-hint.mjs"'), "session-obsidian-hint appended");
+  assert.deepEqual(
+    hooksAdded.sort(),
+    ["scripts/session-health.mjs", "scripts/session-obsidian-hint.mjs", "scripts/session-self-heal.mjs"],
+    "hooksAdded names the 3 newly-wired engine scripts (by their script suffix)",
+  );
+});
+
+test("reconcileHooks — idempotent: a converged brain (all 4 engine hooks present) adds nothing", () => {
+  // A v3.3.0 brain already wires the full SessionStart quartet.
+  const converged = {
+    SessionStart: ["session-self-heal", "session-health", "session-obsidian-hint", "session-status"].map((s) => ({
+      matcher: "",
+      hooks: [{ type: "command", command: `/usr/local/bin/node "/brains/foo/scripts/${s}.mjs"`, timeout: 20000 }],
+    })),
+  };
+  const { hooks, hooksAdded } = reconcileHooks({ brainHooks: converged, templateHooks, projectRoot: "/brains/foo" });
+  assert.deepEqual(hooksAdded, [], "a 2nd pass on a converged brain must be a no-op (nothing added)");
+  assert.deepEqual(hooks, converged, "the hooks object is left byte-identical when converged");
+});
+
+test("reconcileHooks — a USER hook entry is preserved (never removed, never clobbered)", () => {
+  const userGroup = {
+    matcher: "Write",
+    hooks: [{ type: "command", command: '/usr/local/bin/node "/brains/foo/my-own-hook.mjs"', timeout: 5000 }],
+  };
+  const brainHooks = {
+    SessionStart: [
+      { matcher: "", hooks: [{ type: "command", command: '/usr/local/bin/node "/brains/foo/scripts/session-status.mjs"', timeout: 20000 }] },
+    ],
+    // a whole user-owned event the engine template doesn't even mention:
+    PreToolUse: [userGroup],
+  };
+  const { hooks, hooksAdded } = reconcileHooks({ brainHooks, templateHooks, projectRoot: "/brains/foo" });
+
+  assert.deepEqual(hooks.PreToolUse, [userGroup], "the user's own event + entry must survive untouched");
+  // session-status kept as the FIRST SessionStart entry, the 3 missing engine ones appended after it:
+  assert.equal(hooks.SessionStart[0].hooks[0].command, '/usr/local/bin/node "/brains/foo/scripts/session-status.mjs"');
+  assert.equal(hooks.SessionStart.length, 4, "the 3 missing engine hooks are appended, the user's stays in place");
+  assert.equal(hooksAdded.length, 3);
+});
+
+// ── detectHookGap — the pure bootstrap drift gate (mirrors detectSelfHealGap) ──
+// session-status uses it to decide whether to spawn the one-time reconcile on a
+// pre-3.2 brain. A converged brain → not needed → the hook stays a TRUE no-op.
+
+test("detectHookGap — a v3.1.0 brain missing the 3 runtime hooks → needed, named", () => {
+  const gap = detectHookGap({ brainHooks: v310BrainHooks(), templateHooks });
+  assert.equal(gap.needed, true);
+  assert.deepEqual(
+    gap.missingHooks.sort(),
+    ["scripts/session-health.mjs", "scripts/session-obsidian-hint.mjs", "scripts/session-self-heal.mjs"],
+  );
+});
+
+test("detectHookGap — a converged brain → not needed (steady-state no-op)", () => {
+  const converged = {
+    SessionStart: ["session-self-heal", "session-health", "session-obsidian-hint", "session-status"].map((s) => ({
+      matcher: "",
+      hooks: [{ type: "command", command: `/usr/local/bin/node "/brains/foo/scripts/${s}.mjs"`, timeout: 20000 }],
+    })),
+  };
+  assert.equal(detectHookGap({ brainHooks: converged, templateHooks }).needed, false);
+});
