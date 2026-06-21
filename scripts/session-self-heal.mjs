@@ -73,6 +73,29 @@ export async function sessionSelfHeal({
   }
 }
 
+// ⛔ Build the SessionStart hook output (Thomas's Desktop QA, 2026-06-21). Claude Desktop's Code
+// tab renders NEITHER a statusLine NOR `systemMessage` — the ONLY Desktop-visible channel is the
+// CHAT. A SessionStart hook's `hookSpecificOutput.additionalContext` IS injected into the agent's
+// context, so the agent relays it into the chat. So the restart nudge MUST ride additionalContext,
+// phrased as a DIRECTIVE the agent surfaces to the user (not raw user prose Desktop would drop).
+// `systemMessage` is kept too — harmless on Desktop (dropped), useful on the CLI (shown).
+export function buildSelfHealHookOutput(lines) {
+  if (!lines || lines.length === 0) return null;
+  const detail = lines.join("\n");
+  return {
+    hookSpecificOutput: {
+      hookEventName: "SessionStart",
+      additionalContext:
+        `[engine self-heal — RESTART REQUIRED] An engine update is finishing in the background ` +
+        `and Claude must be restarted to pick up the new capabilities. You MUST now tell the user, ` +
+        `in their language, LOUDLY and unmissably (emoji + a clear heading), to FULLY restart ` +
+        `Claude (close it and reopen, then resume THIS conversation). Never imply the update is ` +
+        `already live, never say "nothing to do". Relay these specifics:\n${detail}`,
+    },
+    systemMessage: detail,
+  };
+}
+
 // "<…>/local-mirror/**" → "<…>/local-mirror" (mirror reconcile-brain's skill-dir derivation).
 function skillGlobToDir(glob) {
   return glob.replace(/\/\*\*?$/, "");
@@ -160,13 +183,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     emit: (msg) => lines.push(msg),
   })
     .then(() => {
-      if (lines.length > 0) {
-        process.stdout.write(
-          JSON.stringify({
-            hookSpecificOutput: { hookEventName: "SessionStart" },
-            systemMessage: lines.join("\n"),
-          }) + "\n",
-        );
+      const output = buildSelfHealHookOutput(lines);
+      if (output) {
+        // additionalContext is the ONLY Desktop-visible channel (chat) — see buildSelfHealHookOutput.
+        process.stdout.write(JSON.stringify(output) + "\n");
       }
       process.exit(0); // fail-open: ALWAYS exit 0, never block session start
     })

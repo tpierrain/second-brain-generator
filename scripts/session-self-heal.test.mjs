@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { sessionSelfHeal } from "./session-self-heal.mjs";
+import { sessionSelfHeal, buildSelfHealHookOutput } from "./session-self-heal.mjs";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -82,6 +82,22 @@ test("sessionSelfHeal — fail-open: a throwing seam never propagates, logs loud
   assert.equal(calls.spawned.length, 0);
   assert.equal(calls.emitted.length, 1);
   assert.match(calls.emitted[0], /self-heal/i);
+});
+
+// ⛔ CRITICAL (Thomas's Desktop QA, 2026-06-21): Claude Desktop's Code tab renders NEITHER a
+// statusLine NOR `systemMessage` — the ONLY Desktop-visible channel is the CHAT. A SessionStart
+// hook's `hookSpecificOutput.additionalContext` IS injected into the agent's context, so the
+// agent relays it into the chat. The restart nudge MUST travel that channel, phrased as a
+// directive the agent surfaces to the user (not raw user prose Desktop would drop).
+test("buildSelfHealHookOutput — carries the nudge in additionalContext (the Desktop-visible chat channel)", () => {
+  const out = buildSelfHealHookOutput(["⚠️ ACTION NEEDED — restart Claude (MCP: local-mirror)."]);
+  assert.equal(out.hookSpecificOutput.hookEventName, "SessionStart");
+  const ctx = out.hookSpecificOutput.additionalContext;
+  assert.match(ctx, /restart/i);
+  // It must DIRECT the agent to tell the USER in the chat (additionalContext is agent-facing).
+  assert.match(ctx, /tell the user|inform the user/i);
+  // The original detail line is preserved so the agent has the specifics to relay.
+  assert.match(ctx, /local-mirror/);
 });
 
 test("settings.json.template wires session-self-heal as a SessionStart hook, BEFORE session-status", () => {

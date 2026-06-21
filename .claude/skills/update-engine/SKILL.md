@@ -1,7 +1,7 @@
 ---
 name: update-engine
 description: "Updates your second brain's ENGINE (the RAG search code, launchers and engine-owned scripts) to a newer version, opt-in and without ever touching your notes, .env, constitution, settings or custom skills. Reindexes only if the index format changed. Use when the user asks to update/upgrade their brain's engine, or to check whether an engine update is available."
-version: 1.0.0
+version: 1.1.0
 ---
 
 # /update-engine — Upgrade your brain's engine (opt-in, non-destructive)
@@ -81,14 +81,31 @@ exactly the engine-owned files, regenerates the launchers, runs `npm install`, r
 - **`exit 1`** → **relay the error as-is** and tell the user the brain was not changed
   past the point of failure. **Never claim success when it failed.**
 
-> **If the summary says new skills/MCP/runtime hooks were installed** (the "ACTION NEEDED"
-> notice): tell the user a **full restart of Claude** (close it and reopen) is enough, then
-> **come back to THIS same conversation** — the new capability loads on the next start.
-> **Do NOT tell them to open a brand-new conversation** for this: that is the *initial-rooting*
-> rule (only for a session not yet rooted in the brain), **not** what is needed to pick up a
-> new skill/MCP/hook. A restart while resuming this conversation is the lighter, sufficient action.
-> Phrase the reassurance **in the user's language**: it is a one-time, automatic step — the
-> brain wired its own new self-healing in the background; one restart and they're done.
+> 🛑 **MANDATORY — whenever ANY engine file changed, you MUST end your chat message by telling
+> the user, LOUDLY and in their language, to FULLY RESTART Claude.** This is the **only**
+> Desktop-visible channel: Claude Desktop's Code tab renders **no status bar** — just the chat —
+> so if you don't say it in the chat, the user never sees it. The core already prints a loud
+> **`⚠️ ACTION NEEDED … FULL RESTART`** banner on any swap; **reproduce that intent in the chat,
+> don't bury it.** Make it impossible to miss — e.g.:
+>
+> > ## 🔄 ⚠️ RESTART CLAUDE NOW ⚠️ 🔄
+> > Your engine was updated **on disk**, but THIS conversation is still running the **OLD**
+> > version. **Fully close Claude and reopen it** (then come back to THIS same conversation) so
+> > the update takes effect. Until you restart, your brain keeps using the old engine. 🧠
+>
+> **Rules for that banner:**
+> - **Say it on EVERY update that swapped files** — not only when brand-new skills/MCP/hooks were
+>   listed. A steady-state swap of the MCP server, hooks or constitution this conversation loaded
+>   is still the OLD code until Claude is reopened. **Never** say "nothing to do on your side",
+>   "rien à faire", "you're all set" or anything that implies the update is already live —
+>   that directly contradicts the restart and is the bug we are fixing.
+> - **A FULL RESTART (close + reopen), then RESUME this same conversation** is the right action.
+>   **Do NOT tell them to open a brand-new conversation** — that is the distinct *initial-rooting*
+>   rule (a session not yet rooted in the brain), not what picking up new engine code needs.
+> - Phrase it **in the user's language**, calmly: it is a one-time, harmless step — the brain
+>   wired its own self-healing in the background; one restart and they're done.
+> - The **genuine no-op** (the report shows **no** files swapped and **no** reindex) is the only
+>   case where you skip the restart banner — don't cry wolf when nothing changed.
 >
 > _One-time exception (a brain upgrading from a pre-3.2 engine): the first update runs the
 > OLD orchestrator, so this report won't yet list the new runtime hooks. They are wired
