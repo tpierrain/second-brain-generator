@@ -177,6 +177,13 @@
     - [`post-v3.1.0-ux-backlog.md`](plans/prospective/post-v3.1.0-ux-backlog.md) — **💡 backlog** of
       post-v3.1.0 UX ideas (custom notification icon, a `doctor` / "am I OK?" self-check…). Captured,
       **not committed work** — promote one to a real `*-action.md` when it's picked up.
+    - [`local-mirror-auto-refresh-spike.md`](plans/prospective/local-mirror-auto-refresh-spike.md) —
+      **🔭 design spike (doc-only)**: should a declared local mirror refresh itself, and how? Surveys
+      the state of the art (TTL-gated `stale-while-revalidate`), weighs 4 options, and **recommends a
+      session-triggered staleness refresh, no daemon** (a near-clone of the `session-self-heal`
+      reconciler tick, ADR 0009/0026), paired with cheap staleness *surfacing*. **STATUS: 🔭 awaiting
+      Thomas's go/no-go + answers to the open questions** (default freshness window, concurrency lock,
+      who commits the background-written notes). No code started.
   - **`plans/archived/`** — shipped/closed plans (kept for the detail of the steps):
     - [`debounce-auto-push.md`](plans/archived/debounce-auto-push.md) — **debounce the auto-push**: keep
       per-edit local commits, but move `git push` out of the per-edit hook to a **`Stop` hook**
