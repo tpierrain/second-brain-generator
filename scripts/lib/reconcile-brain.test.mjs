@@ -498,6 +498,99 @@ test("reconcileBrain — a note seeded by an update that then crashed pre-index 
   assert.equal(report.reindexed, true, "the canary can never stay a permanent false `broken`");
 });
 
+// The engine's SessionStart quartet, as it lives in settings.json.template (placeholders intact).
+function templateSessionStart() {
+  return {
+    hooks: {
+      PostToolUse: [
+        { matcher: "Write|Edit", hooks: [{ type: "command", command: '{{NODE}} "{{PROJECT_ROOT}}/scripts/auto-commit.mjs"', timeout: 30000 }] },
+      ],
+      SessionStart: ["session-self-heal", "session-health", "session-obsidian-hint", "session-status"].map((s) => ({
+        matcher: "",
+        hooks: [{ type: "command", command: `{{NODE}} "{{PROJECT_ROOT}}/scripts/${s}.mjs"`, timeout: 20000 }],
+      })),
+    },
+  };
+}
+
+// A v3.1.0-origin brain settings.json: SessionStart wires session-status ONLY (the 3
+// runtime hooks added after v3.1.0 are missing), with concrete already-substituted paths.
+function v310Settings(brainDir) {
+  return {
+    mine: true, // a user-owned key the reconcile must preserve
+    hooks: {
+      PostToolUse: [
+        { matcher: "Write|Edit", hooks: [{ type: "command", command: `/usr/local/bin/node "${brainDir}/scripts/auto-commit.mjs"`, timeout: 30000 }] },
+      ],
+      SessionStart: [
+        { matcher: "", hooks: [{ type: "command", command: `/usr/local/bin/node "${brainDir}/scripts/session-status.mjs"`, timeout: 20000 }] },
+      ],
+    },
+  };
+}
+
+// ── Test 12: F-B2 — the engine-owned SessionStart hooks must reach UPGRADERS.
+//    settings.json is SACRED to the write-allowlist, but the reconciler additively merges
+//    engine-owned hook entries from settings.json.template (the THIRD additive surface,
+//    twin of the .mcp.json reconcile). A v3.1.0 brain wired session-status only → after a
+//    real update it gains session-self-heal / session-health / session-obsidian-hint, with
+//    the brain's OWN node interpreter + dir substituted, the user's `mine` key and existing
+//    hook entries untouched, and `hooksAdded` reported.
+test("reconcileBrain — wires the missing engine SessionStart hooks into settings.json (F-B2)", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource();
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+  writeFile(brainDir, ".claude/settings.json", JSON.stringify(v310Settings(brainDir), null, 2) + "\n");
+  writeFile(sourceDir, ".claude/settings.json.template", JSON.stringify(templateSessionStart(), null, 2) + "\n");
+  const target = manifest();
+  const local = manifest({ ragVersion: "1.0.0" });
+
+  const { ...s } = seams();
+  const report = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s });
+
+  assert.deepEqual(
+    report.hooksAdded.sort(),
+    ["scripts/session-health.mjs", "scripts/session-obsidian-hint.mjs", "scripts/session-self-heal.mjs"],
+    "the 3 runtime hooks missing on a v3.1.0 brain must be reported as wired",
+  );
+  const settings = JSON.parse(readFileSync(join(brainDir, ".claude/settings.json"), "utf8"));
+  const cmds = settings.hooks.SessionStart.flatMap((g) => g.hooks.map((h) => h.command));
+  assert.ok(cmds.includes(`/usr/local/bin/node "${brainDir}/scripts/session-self-heal.mjs"`), "self-heal wired with the brain's node + dir");
+  assert.ok(cmds.includes(`/usr/local/bin/node "${brainDir}/scripts/session-health.mjs"`), "session-health wired");
+  assert.ok(cmds.includes(`/usr/local/bin/node "${brainDir}/scripts/session-obsidian-hint.mjs"`), "session-obsidian-hint wired");
+  assert.equal(settings.mine, true, "a user-owned settings key must be preserved");
+  assert.equal(settings.hooks.SessionStart[0].hooks[0].command, `/usr/local/bin/node "${brainDir}/scripts/session-status.mjs"`, "the existing session-status entry stays first, untouched");
+});
+
+// ── Test 13: idempotence + A2 invariant — a SECOND reconcile over a converged brain wires
+//    nothing AND leaves settings.json byte-identical (no auto-commit churn). settings.json is
+//    written ONLY when a hook is actually added.
+test("reconcileBrain — a converged brain's settings.json is left byte-identical (no hook churn)", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource();
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+  writeFile(brainDir, ".claude/settings.json", JSON.stringify(v310Settings(brainDir), null, 2) + "\n");
+  writeFile(sourceDir, ".claude/settings.json.template", JSON.stringify(templateSessionStart(), null, 2) + "\n");
+  const target = manifest();
+  const local = manifest({ ragVersion: "1.0.0" });
+
+  const s1 = seams();
+  const first = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s1 });
+  assert.equal(first.hooksAdded.length, 3, "first run wires the 3 missing hooks");
+  const settingsHash = sha256(join(brainDir, ".claude/settings.json"));
+
+  const s2 = seams();
+  const second = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s2 });
+  assert.deepEqual(second.hooksAdded, [], "a converged brain wires nothing");
+  assert.equal(sha256(join(brainDir, ".claude/settings.json")), settingsHash, "settings.json must be byte-identical on the 2nd run (no churn)");
+});
+
 // Tiny indirection so the helpers above read cleanly; resolves the lazily-loaded export.
 async function reconcile(args) {
   const reconcileBrain = await loadReconciler();

@@ -23,6 +23,7 @@ import { fileURLToPath } from "node:url";
 import { computeApplyPlan } from "./engine-apply-plan.mjs";
 import { matchesAny } from "./glob-match.mjs";
 import { reconcileMcpServers } from "./mcp-reconcile.mjs";
+import { reconcileHooks } from "./hooks-reconcile.mjs";
 import { needsReindex } from "./reindex-trigger.mjs";
 import { listFilesRelPosix } from "./fs-walk.mjs";
 import { selectEngineFilesToCopy } from "./engine-copy-select.mjs";
@@ -108,6 +109,36 @@ export async function reconcileBrain({
     mcpServersAdded.push(...Object.keys(reconciled.mcpServers).filter((id) => !before.has(id)));
   }
 
+  // 2.quinquies Reconcile settings.json HOOK ENTRIES against the source's
+  //    settings.json.template (ADR 0026): the THIRD additive surface, twin of the
+  //    .mcp.json reconcile (2.ter). settings.json is SACRED to the write-allowlist
+  //    (`computeApplyPlan` never lists it), so this is a surgical SIDE-CHANNEL: the ONLY
+  //    write the reconciler ever makes to it, and purely ADDITIVE — wire the engine-owned
+  //    hook entries the brain is MISSING (e.g. a v3.1.0 brain that never got
+  //    session-self-heal / session-health / session-obsidian-hint), dedup by the engine
+  //    script each hook runs, with the brain's OWN node interpreter + dir substituted into
+  //    the template placeholders. Never overwrite, never remove, never touch a user entry;
+  //    WRITE ONLY when something is actually added → a converged brain is byte-identical
+  //    (no auto-commit churn). Self-heal (sourceDir === brainDir) carries no template under
+  //    sourceDir to read from → naturally a no-op there; upgraders converge via auto-finalize.
+  const hooksAdded = [];
+  const settingsTemplatePath = join(sourceDir, ".claude", "settings.json.template");
+  const brainSettingsPath = join(brainDir, ".claude", "settings.json");
+  if (existsSync(settingsTemplatePath) && existsSync(brainSettingsPath)) {
+    const projectRoot = brainDir.split("\\").join("/"); // {{PROJECT_ROOT}} is posix (cf. step 2.ter)
+    const brainSettings = JSON.parse(readFileSync(brainSettingsPath, "utf8"));
+    const templateSettings = JSON.parse(readFileSync(settingsTemplatePath, "utf8"));
+    const { hooks, hooksAdded: added } = reconcileHooks({
+      brainHooks: brainSettings.hooks ?? {},
+      templateHooks: templateSettings.hooks ?? {},
+      projectRoot,
+    });
+    if (added.length > 0) {
+      writeFileSync(brainSettingsPath, JSON.stringify({ ...brainSettings, hooks }, null, 2) + "\n");
+      hooksAdded.push(...added);
+    }
+  }
+
   // 2.quater Ensure the engine-owned health-check note is present AND indexed on
   //    UPGRADERS (ADR 0026 amended, decision B): the ONE narrow, nominative carve-out to
   //    the vault-sacred invariant. At a REAL update (sourceDir !== brainDir) only,
@@ -152,7 +183,7 @@ export async function reconcileBrain({
   //    any reindex so it reflects the current vault.
   const vaultNoteCount = await countVaultNotes({ brainDir });
 
-  return { copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded };
+  return { copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded, hooksAdded };
 }
 
 // ── CLI entry — what the auto-finalize child process runs (ADR 0026, Layer A) ──
