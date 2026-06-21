@@ -16,15 +16,19 @@
   (deterministic-first — this is its natural extension), [`0025-update-engine-installs-missing-engine-skills-and-servers.md`](0025-update-engine-installs-missing-engine-skills-and-servers.md)
   (the install-if-absent capability this **generalizes**), [`0015-mac-windows-parity...`](0015-mac-windows-parity-regenerate-launchers.md)
   (Mac/Win/Linux parity), [`0016-update-engine-is-a-skill-not-an-mcp-tool.md`](0016-update-engine-is-a-skill-not-an-mcp-tool.md)
-  (skill vs MCP), the write-allowlist safety core. Field findings: [`../plans/prospective/post-v3.2.2-field-qa-findings-action.md`](../plans/prospective/post-v3.2.2-field-qa-findings-action.md).
+  (skill vs MCP), the write-allowlist safety core. Field findings: [`../plans/prospective/post-v3.2.2-field-qa-findings-action.md`](../plans/prospective/post-v3.2.2-field-qa-findings-action.md);
+  the upgrader convergence fix (desired-state from delivered files + `engine-skills/` staging):
+  [`../plans/self-heal-converge-mcp-skill-from-pre-3.3-action.md`](../plans/self-heal-converge-mcp-skill-from-pre-3.3-action.md).
 
 ## Crux
 
-> - **Decision —** the brain converges its own on-disk engine state to the manifest's *desired state*
->   through one idempotent **reconciler**, run after every update (an auto-finalize child process) and at
->   every **SessionStart** (self-heal — plus, for the one-time pre-3.2 jump, a bootstrap tick on the
->   already-wired `session-status` hook).
-> - **Guarantee —** the reconciler only ever **adds** manifest-declared, engine-owned things **when
+> - **Decision —** the brain converges its own on-disk engine state to the *desired state the engine
+>   DELIVERS* — read from the `replace`-regime files themselves (`settings.json.template` hooks,
+>   `.mcp.json.template` server keys, `engine-skills/<name>/` skill presence), **never** the brain's frozen
+>   `engine-manifest.json` (which `update-engine` never refreshes) — through one idempotent **reconciler**,
+>   run after every update (an auto-finalize child process) and at every **SessionStart** (self-heal — plus,
+>   for the one-time pre-3.2 jump, a bootstrap tick on the already-wired `session-status` hook).
+> - **Guarantee —** the reconciler only ever **adds** engine-delivered, engine-owned things **when
 >   absent**: engine skill dirs, `.mcp.json` servers, `settings.json` **hook entries**, regenerated
 >   launchers, and the single health-check note. It **never** overwrites or deletes the vault, `.env`, the
 >   constitution, a user skill, or any user-authored `.mcp.json` server or `settings.json` entry.
@@ -75,23 +79,42 @@ reconciliation loop** at the heart of:
   re-assert desired configuration.
 - **Windows Installer self-healing** — a missing managed resource is re-provisioned on next use.
 
-Our mapping is one-to-one: `engine-manifest.json` (`target`) is the **desired state**; `reconcileBrain` is
-the **reconciler** (the *Set*); `self-heal-detect` / `detectHookGap` is the **drift gate** (the *Test*);
-and **SessionStart is the level-triggered tick** (the equivalent of chef-client's interval or Argo's
-continuous loop). Running an idempotent, true-no-op reconciler at every session start is therefore the
+Our mapping is one-to-one: the **files the engine delivers** (the `replace`-regime `settings.json.template`,
+`.mcp.json.template`, `engine-skills/`) are the **desired state**; `reconcileBrain` is the **reconciler**
+(the *Set*); `self-heal-detect` / `detectHookGap` is the **drift gate** (the *Test*); and **SessionStart is
+the level-triggered tick** (the equivalent of chef-client's interval or Argo's continuous loop). Crucially,
+desired-state is read from those *delivered files*, **not** the brain's `engine-manifest.json` — a manifest
+frozen at install version would be a *stale* spec, the one drift a reconciler must never trust as truth.
+Running an idempotent, true-no-op reconciler at every session start is therefore the
 **canonical** continuous-reconciliation pattern — which is exactly why the "the first update runs the old
 code" bootstrap worry dissolves: a level-triggered loop self-corrects on the next tick by design. The only
 thing we add on top is naming discipline (see the terminology note in `CONVENTIONS.md`).
 
 ## Decision
 
-**Extract the "converge the brain's on-disk state to the manifest's desired state" half of `updateEngine`
-into a standalone, deterministic, idempotent reconciler, and run it at two points.**
+**Extract the "converge the brain's on-disk state to the engine's delivered desired state" half of
+`updateEngine` into a standalone, deterministic, idempotent reconciler, and run it at two points.**
 
-1. **`reconcile-brain.mjs` (the reconciler).** Driven entirely by the declarative `engine-manifest.json`:
-   ensure engine-owned skill dirs present (**install-if-absent**, ADR 0025), `.mcp.json` carries the
-   declared `engineMcpServers`, launchers regenerated. **No network.** Same **write-allowlist safety
-   core** — never touch the vault, `.env`, the constitution, settings, or any non-declared/custom skill.
+1. **`reconcile-brain.mjs` (the reconciler).** Driven by the **desired state the engine DELIVERS** to the
+   brain — the `replace`-regime files themselves, **not** the brain's `engine-manifest.json`:
+   - **hooks** ← `.claude/settings.json.template`;
+   - **MCP servers** ← the **keys of the delivered `.mcp.json.template`** (`Object.keys(...mcpServers)`);
+   - **upgrader-bound skills** ← the presence of delivered **`engine-skills/<name>/`** staging dirs (plus,
+     for v3.3.0+ auto-finalize, the engine merge-skill dirs the manifest still lists).
+
+   This closes the residual gap (see §7): the brain's `engine-manifest.json` is **frozen at its install
+   version** — `update-engine` rewrites only `engineVersion`/`source`/`provenance`, never `regimes` or
+   `engineMcpServers` — so reading desired-state from it would re-introduce the very staleness this whole
+   convergence work fights (a pre-3.3.0 brain's manifest names neither the `local-mirror` skill nor its MCP
+   server, no matter how many updates run). Reading from the **files the engine actually lays on disk** is
+   self-refreshing by construction. The reconciler then ensures engine-owned skill dirs present
+   (**install-if-absent**, ADR 0025), `.mcp.json` carries the delivered server keys, launchers regenerated.
+   **No network.** Same **write-allowlist safety core** — never touch the vault, `.env`, the constitution,
+   settings, or any non-declared/custom skill.
+
+   > Other consumers of `manifest.engineMcpServers` / `engineModuleRequirements` (the health probe,
+   > status-line, version display) **keep reading the manifest** — only the reconciler's + self-heal gate's
+   > *desired-state derivation* moves to the delivered files.
 2. **Auto-finalize (solves Layer A).** At the **end** of `update-engine`, after files are placed,
    **re-exec the freshly-written reconciler in a fresh child process**. A new `node` process reads the
    just-written code/manifest from disk → escapes the in-memory module cache → executes the
@@ -144,6 +167,18 @@ into a standalone, deterministic, idempotent reconciler, and run it at two point
      hook string; a tiny tested catalog, fail-soft to English), carried both in the `update-engine` report
      (Desktop-visible) and as a deterministic `session-status` CLI belt.
 
+7. **A NEW upgrader-bound skill ships from a non-sacred `engine-skills/` staging dir, install-if-absent.**
+   The write-allowlist's **sacred scrub** strips `.claude/skills/` from every engine write bucket
+   (`SACRED_TREES`, ADR 0003/0012) — so a brand-new engine skill **cannot** be delivered under
+   `.claude/skills/` via any regime: pass-1 (the upgrader's *old* orchestrator) scrubs it. The skill's
+   canonical source therefore lives at a **non-sacred** delivered path, `engine-skills/<name>/` (in the
+   `replace` regime → pass-1 copies it, the scrub keeps it because it is not under `.claude/skills/`), and a
+   shared `installStagedSkills({ sourceDir, brainDir })` helper **install-if-absent**'s it into
+   `.claude/skills/<name>/` — at install time (a fresh brain, `sourceDir === brainDir === TARGET`) and at
+   every reconcile (auto-finalize + SessionStart self-heal). **Single source of truth** (the staging dir),
+   never a delivered duplicate to keep in sync. Accepted consequence: the **launcher itself** no longer
+   auto-discovers that skill — it is an engine-delivered asset that runs in a brain, not the launcher.
+
 ### Safety invariant (every test asserts it)
 
 > The reconciler only ever writes manifest-declared engine-owned skills/MCP servers (install-if-absent)
@@ -193,9 +228,15 @@ into a standalone, deterministic, idempotent reconciler, and run it at two point
 - **First localized runtime hook string**: the one-time "self-healing is now active" reassurance follows
   the brain's locale (`BRAIN_LOCALE`), establishing the seam for future localized hook output; every other
   hook string stays English-only for now.
+- **Intrinsically future-proof, no second source of truth.** Because desired-state is read from the files
+  the engine **delivers**, any future skill or MCP server delivered via `replace` (a new `engine-skills/<x>/`
+  dir, a new `.mcp.json.template` key) converges on its own at the next update/restart — **no manifest-refresh
+  backstop and no separate `engine-spec.json` to keep in sync** (a dedicated spec file would just be a second
+  declaration to maintain alongside the files it describes — the same anti-duplication reasoning that keeps
+  the skill at a single staging source in §7).
 - **Aligns with ADR 0009**: deterministic, idempotent, fail-open — see the *Prior art* section above for
-  the industry standard this mirrors, framed as *make on-disk state match the manifest*, not *run a sequence
-  of migrations*.
+  the industry standard this mirrors, framed as *make on-disk state match the delivered files*, not *run a
+  sequence of migrations*.
 - **Residual bootstrap (honest):** the reconciler is itself part of the payload, so if its **algorithm**
   changes, that change still lags one update. By keeping it a **stable interpreter of declarative
   manifest DATA**, **feature additions** (a new skill dir, MCP server, settings entry) land in **one
@@ -240,3 +281,16 @@ into a standalone, deterministic, idempotent reconciler, and run it at two point
   engine-owned hook entries — the exact shape `.mcp.json` already takes.
 - **Localize every runtime hook string now.** Deferred: only the one-time reassurance is user-facing
   enough to justify the locale seam; the rest stay English-only until a concrete need appears.
+- **Read desired-state from the brain's `engine-manifest.json`.** Rejected — this was the residual bug:
+  `update-engine` never refreshes the manifest's `regimes`/`engineMcpServers`, so a pre-3.3.0 brain's
+  manifest names neither the `local-mirror` skill nor its MCP server, and the reconciler would see "no gap"
+  forever (the user stuck needing a second update). Desired-state must come from the **delivered files**,
+  which are self-refreshing.
+- **Deliver a dedicated `engine-spec.json` desired-state file.** Rejected — it would be a **second source of
+  truth** to keep in sync with the very files it describes (the templates + `engine-skills/`). Deriving
+  desired-state directly from those delivered files is strictly less to maintain and cannot drift out of
+  step with what is actually on disk.
+- **Punch a hole in the sacred scrub to deliver the new skill under `.claude/skills/` via `replace`.**
+  Rejected — exposing `.claude/skills/` to engine writes breaks the user-sovereignty core (ADR 0003/0012).
+  The non-sacred `engine-skills/` staging dir + install-if-absent (§7) delivers the skill without weakening
+  the boundary.
