@@ -121,8 +121,12 @@ export async function reconcileBrain({
   //    script each hook runs, with the brain's OWN node interpreter + dir substituted into
   //    the template placeholders. Never overwrite, never remove, never touch a user entry;
   //    WRITE ONLY when something is actually added → a converged brain is byte-identical
-  //    (no auto-commit churn). Self-heal (sourceDir === brainDir) carries no template under
-  //    sourceDir to read from → naturally a no-op there; upgraders converge via auto-finalize.
+  //    (no auto-commit churn). settings.json.template is itself an engine-delivered file
+  //    (`replace` regime), so a brain that received the engine code CARRIES it — which means
+  //    self-heal (sourceDir === brainDir) reads the brain's OWN template and DOES wire the
+  //    hooks. That is exactly how a pre-3.2 brain converges at the next restart: the
+  //    session-status bootstrap tick spawns this reconcile in self-heal mode (no 2nd update
+  //    needed). Upgraders from v3.3.0+ converge the same way in-band via auto-finalize.
   const hooksAdded = [];
   const settingsTemplatePath = join(sourceDir, ".claude", "settings.json.template");
   const brainSettingsPath = join(brainDir, ".claude", "settings.json");
