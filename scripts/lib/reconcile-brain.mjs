@@ -25,6 +25,7 @@ import { fileURLToPath } from "node:url";
 import { computeApplyPlan } from "./engine-apply-plan.mjs";
 import { matchesAny } from "./glob-match.mjs";
 import { installStagedSkills } from "./staged-skills.mjs";
+import { seedHealthNote } from "./staged-health-note.mjs";
 import { reconcileMcpServers } from "./mcp-reconcile.mjs";
 import { reconcileHooks } from "./hooks-reconcile.mjs";
 import { needsReindex } from "./reindex-trigger.mjs";
@@ -36,11 +37,6 @@ import {
   defaultCountVaultNotes,
   defaultRegenerateLaunchers,
 } from "./engine-seams.mjs";
-
-// The single, nominative vault carve-out (ADR 0026 amended, decision B): the ONLY vault
-// path the reconciler may ever write, and only write-if-absent on a real update — so the
-// `health_check` canary (ADR 0030) also covers upgraders, never overwriting a user note.
-const HEALTH_NOTE = "vault/engine-health/health-check.md";
 
 // Copies `rel` from srcDir into destDir. Returns true if it copied, false if it
 // SKIPPED a self-copy: in SessionStart self-heal mode srcDir === brainDir, so a file
@@ -156,24 +152,21 @@ export async function reconcileBrain({
     }
   }
 
-  // 2.quater Ensure the engine-owned health-check note is present AND indexed on
-  //    UPGRADERS (ADR 0026 amended, decision B): the ONE narrow, nominative carve-out to
-  //    the vault-sacred invariant. At a REAL update (sourceDir !== brainDir) only,
-  //    write-if-absent the single note `vault/engine-health/health-check.md` from the
-  //    source — NEVER overwrite, NEVER delete, NEVER any other vault path. New installs
-  //    already get it via the install bulk-copy; self-heal runs with sourceDir === brainDir
-  //    → nothing to copy from. We key the index pairing (step 5) off the note's ON-DISK
-  //    PRESENCE, not a one-shot "just copied" flag: if a prior update seeded the note but
-  //    crashed before indexing it (flaky npm / ABI hiccup), the next run still finds it
-  //    present-but-maybe-unindexed and re-pairs the (cheap, incremental) reindex → the
-  //    canary can never become a permanent false `broken` (finding #6).
-  let healthNotePresent = false;
-  if (resolve(sourceDir) !== resolve(brainDir)) {
-    const srcNote = join(sourceDir, HEALTH_NOTE);
-    const destNote = join(brainDir, HEALTH_NOTE);
-    if (existsSync(srcNote) && !existsSync(destNote)) copyInto(sourceDir, brainDir, HEALTH_NOTE);
-    healthNotePresent = existsSync(destNote);
-  }
+  // 2.quater Ensure the engine-owned health-check note is present AND indexed (ADR 0026
+  //    amended): the ONE narrow, nominative carve-out to the vault-sacred invariant. The
+  //    note's runtime home `vault/engine-health/health-check.md` is SACRED, so its source
+  //    ships at the NON-sacred staged path `engine-health/health-check.md` (a `replace`
+  //    file the engine DELIVERS); `seedHealthNote` write-if-absent's it into the vault from
+  //    that staged copy — NEVER overwrite, NEVER delete, NEVER any other vault path. This
+  //    converges in BOTH update (sourceDir !== brainDir) AND self-heal (sourceDir ===
+  //    brainDir, the staged copy is on the brain's own disk) modes — the F-B7b fix: a
+  //    pre-3.3.0 upgrader, whose old in-process update neither seeds nor auto-finalizes,
+  //    finally gets the canary at the restart's self-heal. We key the index pairing (step 5)
+  //    off the note's ON-DISK PRESENCE, not a one-shot "just copied" flag: if a prior run
+  //    seeded the note but crashed before indexing it (flaky npm / ABI hiccup), the next run
+  //    still finds it present-but-maybe-unindexed and re-pairs the (cheap, incremental)
+  //    reindex → the canary can never become a permanent false `broken` (finding #6).
+  const { present: healthNotePresent } = seedHealthNote({ sourceDir, brainDir });
 
   // 3. Regenerate the launchers (both halves, ADR 0015).
   const regenerated = plan.regenerate.length > 0;

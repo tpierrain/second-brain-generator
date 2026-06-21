@@ -348,9 +348,11 @@ test("reconcileBrain — self-heal mode (sourceDir === brainDir) copies nothing 
   assert.equal(sha256(join(brainDir, "rag/src/index.ts")), engineHash, "the present engine file must stay byte-identical");
 });
 
-// The single, nominative vault carve-out (ADR 0026 amended, decision B): the ONLY
-// vault path the reconciler may ever write — and only write-if-absent.
+// The single, nominative vault carve-out (ADR 0026 amended): the ONLY vault path the
+// reconciler may ever write — write-if-absent — seeded from the NON-sacred staged copy
+// the engine DELIVERS (F-B7b), so it converges in BOTH update and self-heal modes.
 const HEALTH_NOTE = "vault/engine-health/health-check.md";
+const STAGED_HEALTH_NOTE = "engine-health/health-check.md";
 
 // ── Test 7: UPGRADERS get the canary (ADR 0026, decision B). At a REAL update
 //    (sourceDir !== brainDir), if the engine-owned health-check note is absent from the
@@ -366,7 +368,7 @@ test("reconcileBrain — seeds the engine-health note on an upgrader (absent) an
     rmSync(sourceDir, { recursive: true, force: true });
   });
   const noteBody = "---\ntitle: Engine health check\n---\nQuibblethorne canary — engine-owned.\n";
-  writeFile(sourceDir, HEALTH_NOTE, noteBody);
+  writeFile(sourceDir, STAGED_HEALTH_NOTE, noteBody);
   // Same index schema → needsReindex is false; any reindex here is the seed's pairing.
   const target = manifest();
   const local = manifest({ ragVersion: "1.0.0" });
@@ -398,7 +400,7 @@ test("reconcileBrain — never re-writes an existing health note, but re-pairs a
     rmSync(brainDir, { recursive: true, force: true });
     rmSync(sourceDir, { recursive: true, force: true });
   });
-  writeFile(sourceDir, HEALTH_NOTE, "---\ntitle: src\n---\nQuibblethorne (source copy).\n");
+  writeFile(sourceDir, STAGED_HEALTH_NOTE, "---\ntitle: src\n---\nQuibblethorne (source copy).\n");
   // The brain already carries its OWN health note (a user could even have edited it).
   writeFile(brainDir, HEALTH_NOTE, "---\ntitle: mine\n---\nQuibblethorne (brain copy, kept).\n");
   const target = manifest();
@@ -423,7 +425,7 @@ test("reconcileBrain — seeds ONLY the engine-health path, never another vault 
     rmSync(brainDir, { recursive: true, force: true });
     rmSync(sourceDir, { recursive: true, force: true });
   });
-  writeFile(sourceDir, HEALTH_NOTE, "---\ntitle: health\n---\nQuibblethorne.\n");
+  writeFile(sourceDir, STAGED_HEALTH_NOTE, "---\ntitle: health\n---\nQuibblethorne.\n");
   // A decoy "user" note sitting in the source vault — must NOT be copied into the brain.
   writeFile(sourceDir, "vault/some-demo-note.md", "# A note that is NOT the engine canary\n");
   const target = manifest();
@@ -440,11 +442,34 @@ test("reconcileBrain — seeds ONLY the engine-health path, never another vault 
   );
 });
 
-// ── Test 10: self-heal mode (sourceDir === brainDir) NEVER seeds (ADR 0026, decision B).
-//    Self-heal has nothing to copy FROM (same dir), and writing the vault on every session
-//    start would widen the blast radius. So even with the note absent, it stays absent and
-//    no reindex runs. (Upgraders get the note via auto-finalize, where sourceDir !== brainDir.)
-test("reconcileBrain — self-heal mode never seeds the health note (sourceDir === brainDir)", async (t) => {
+// ── Test 10: self-heal mode (sourceDir === brainDir) SEEDS from the brain's OWN staged
+//    copy (F-B7b). The pre-3.3.0 upgrader's old in-process update never seeds the note and
+//    has no auto-finalize → convergence falls to the restart's self-heal, which runs with
+//    sourceDir === brainDir. Because the note's source ships at the NON-sacred staged path
+//    `engine-health/health-check.md` (delivered onto the brain's disk), self-heal CAN seed
+//    the vault note (src `engine-health/…` ≠ dest `vault/engine-health/…`, no self-copy),
+//    pairing a cheap incremental reindex so the canary is findable.
+test("reconcileBrain — self-heal mode seeds the vault note from the brain's own staged copy (F-B7b)", async (t) => {
+  const brainDir = buildBrain();
+  t.after(() => rmSync(brainDir, { recursive: true, force: true }));
+  // The update delivered the staged note onto the brain's disk (non-sacred `replace`); the
+  // restart's self-heal (sourceDir === brainDir) must STILL seed the vault from it.
+  const noteBody = "---\ntitle: Engine health check\n---\nQuibblethorne canary.\n";
+  writeFile(brainDir, STAGED_HEALTH_NOTE, noteBody);
+  const target = manifest({ ragVersion: "1.0.0" });
+  const local = manifest({ ragVersion: "1.0.0" });
+
+  const { calls, ...s } = seams();
+  const report = await reconcile({ brainDir, platform: "posix", sourceDir: brainDir, target, local, ...s });
+
+  assert.equal(readFileSync(join(brainDir, HEALTH_NOTE), "utf8"), noteBody, "self-heal must seed the vault note from the brain's own staged copy");
+  assert.deepEqual(calls.reindexMode, ["incremental"], "the self-heal seed pairs a cheap incremental reindex");
+  assert.equal(report.reindexed, true);
+});
+
+// ── Test 10b: self-heal with NOTHING staged seeds nothing (safety). A brain with no staged
+//    note and no vault note stays untouched — no phantom note, no needless reindex.
+test("reconcileBrain — self-heal with no staged note seeds nothing, no reindex", async (t) => {
   const brainDir = buildBrain();
   t.after(() => rmSync(brainDir, { recursive: true, force: true }));
   const target = manifest({ ragVersion: "1.0.0" });
@@ -453,8 +478,8 @@ test("reconcileBrain — self-heal mode never seeds the health note (sourceDir =
   const { calls, ...s } = seams();
   await reconcile({ brainDir, platform: "posix", sourceDir: brainDir, target, local, ...s });
 
-  assert.equal(existsSync(join(brainDir, HEALTH_NOTE)), false, "self-heal must not seed (nothing to copy from)");
-  assert.deepEqual(calls.reindex, [], "self-heal seeds nothing → no reindex");
+  assert.equal(existsSync(join(brainDir, HEALTH_NOTE)), false, "nothing staged → nothing seeded");
+  assert.deepEqual(calls.reindex, [], "nothing seeded → no reindex");
 });
 
 // ── Test 11: finding #6 — a seeded-but-unindexed note can NEVER become a permanent
@@ -472,7 +497,7 @@ test("reconcileBrain — a note seeded by an update that then crashed pre-index 
     rmSync(brainDir, { recursive: true, force: true });
     rmSync(sourceDir, { recursive: true, force: true });
   });
-  writeFile(sourceDir, HEALTH_NOTE, "---\ntitle: health\n---\nQuibblethorne — engine-owned.\n");
+  writeFile(sourceDir, STAGED_HEALTH_NOTE, "---\ntitle: health\n---\nQuibblethorne — engine-owned.\n");
   const target = manifest();
   const local = manifest({ ragVersion: "1.0.0" }); // same schema → no schema-driven reindex
 
