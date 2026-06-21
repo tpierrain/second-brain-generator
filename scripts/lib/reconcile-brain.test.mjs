@@ -128,10 +128,12 @@ test("reconcileBrain — copies engine files, installs a missing engine skill, r
     rmSync(brainDir, { recursive: true, force: true });
     rmSync(sourceDir, { recursive: true, force: true });
   });
-  // The source carries a NEW engine skill the brain lacks, declared engine-owned.
-  const skillBody = "---\nname: local-mirror\n---\nMirror a Notion zone into the vault.\n";
-  writeFile(sourceDir, ".claude/skills/local-mirror/SKILL.md", skillBody);
-  const target = manifest({ extraMerge: [".claude/skills/local-mirror/**"] });
+  // The source carries a NEW engine MERGE skill the brain lacks, declared engine-owned
+  // (the merge install-if-absent mechanism, illustrated by `coach` now that local-mirror
+  // relocated to the staged `engine-skills/` path — F-B7 2b).
+  const skillBody = "---\nname: coach\n---\nYour sparring partner.\n";
+  writeFile(sourceDir, ".claude/skills/coach/SKILL.md", skillBody);
+  const target = manifest({ extraMerge: [".claude/skills/coach/**"] });
   const local = manifest({ ragVersion: "1.0.0" }); // same schema → no reindex
   const before = {};
   for (const rel of Object.keys(SACRED)) before[rel] = sha256(join(brainDir, rel));
@@ -142,8 +144,8 @@ test("reconcileBrain — copies engine files, installs a missing engine skill, r
   // Engine file swapped to vB.
   assert.equal(readFileSync(join(brainDir, "rag/src/index.ts"), "utf8"), "// engine vB\n");
   // Missing engine skill installed from the source, and named in the report.
-  assert.equal(readFileSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md"), "utf8"), skillBody);
-  assert.deepEqual(report.installedSkills, ["local-mirror"]);
+  assert.equal(readFileSync(join(brainDir, ".claude/skills/coach/SKILL.md"), "utf8"), skillBody);
+  assert.deepEqual(report.installedSkills, ["coach"]);
   // Launchers regenerated once for this platform.
   assert.deepEqual(calls.regenerate, ["posix"]);
   assert.ok(existsSync(join(brainDir, "rag/launch.sh")));
@@ -167,7 +169,7 @@ test("reconcileBrain — a second run over a converged brain is a true no-op (ze
     rmSync(brainDir, { recursive: true, force: true });
     rmSync(sourceDir, { recursive: true, force: true });
   });
-  writeFile(sourceDir, ".claude/skills/local-mirror/SKILL.md", "---\nname: local-mirror\n---\nMirror.\n");
+  writeFile(sourceDir, ".claude/skills/coach/SKILL.md", "---\nname: coach\n---\nYour sparring partner.\n");
   // A brain .mcp.json with only vault-rag; the source template adds local-mirror.
   writeFile(brainDir, ".mcp.json", JSON.stringify({ mcpServers: { "vault-rag": { type: "stdio" } } }, null, 2));
   writeFile(
@@ -185,17 +187,17 @@ test("reconcileBrain — a second run over a converged brain is a true no-op (ze
     ),
   );
   const target = manifest({
-    extraMerge: [".claude/skills/local-mirror/**"],
+    extraMerge: [".claude/skills/coach/**"],
     engineMcpServers: ["vault-rag", "local-mirror"],
   });
   const local = manifest({ ragVersion: "1.0.0" });
   const s1 = seams();
   const first = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s1 });
   // First run did the work: installed the skill + registered the server.
-  assert.deepEqual(first.installedSkills, ["local-mirror"]);
+  assert.deepEqual(first.installedSkills, ["coach"]);
   assert.deepEqual(first.mcpServersAdded, ["local-mirror"]);
 
-  const skillHash = sha256(join(brainDir, ".claude/skills/local-mirror/SKILL.md"));
+  const skillHash = sha256(join(brainDir, ".claude/skills/coach/SKILL.md"));
   const mcpHash = sha256(join(brainDir, ".mcp.json"));
 
   const s2 = seams();
@@ -205,7 +207,7 @@ test("reconcileBrain — a second run over a converged brain is a true no-op (ze
   assert.deepEqual(second.installedSkills, [], "an already-present engine skill is not reinstalled");
   assert.deepEqual(second.mcpServersAdded, [], "an already-registered MCP server is not re-added");
   // No churn: the skill file and .mcp.json are byte-identical to after the first run.
-  assert.equal(sha256(join(brainDir, ".claude/skills/local-mirror/SKILL.md")), skillHash, "skill must not churn");
+  assert.equal(sha256(join(brainDir, ".claude/skills/coach/SKILL.md")), skillHash, "skill must not churn");
   assert.equal(sha256(join(brainDir, ".mcp.json")), mcpHash, ".mcp.json must not churn on a converged brain");
 });
 
@@ -256,7 +258,7 @@ test("reconcileBrain — never disturbs a user's custom skill / MCP server / add
   );
 
   // The fetched engine ships a NEW engine skill + declares both engine MCP servers.
-  writeFile(sourceDir, ".claude/skills/local-mirror/SKILL.md", "---\nname: local-mirror\n---\nMirror.\n");
+  writeFile(sourceDir, ".claude/skills/coach/SKILL.md", "---\nname: coach\n---\nYour sparring partner.\n");
   writeFile(
     sourceDir,
     ".mcp.json.template",
@@ -267,7 +269,7 @@ test("reconcileBrain — never disturbs a user's custom skill / MCP server / add
     ),
   );
   const target = manifest({
-    extraMerge: [".claude/skills/local-mirror/**"],
+    extraMerge: [".claude/skills/coach/**"],
     engineMcpServers: ["vault-rag", "local-mirror"],
   });
   const local = manifest({ ragVersion: "1.0.0" });
@@ -284,9 +286,9 @@ test("reconcileBrain — never disturbs a user's custom skill / MCP server / add
   }
 
   // The engine DID its additive job (pass 1 installed the new engine skill + server)…
-  assert.deepEqual(installed.installedSkills, ["local-mirror"], "the engine skill is still installed");
+  assert.deepEqual(installed.installedSkills, ["coach"], "the engine skill is still installed");
   assert.deepEqual(installed.mcpServersAdded, ["local-mirror"], "the engine MCP server is still registered");
-  assert.ok(existsSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md")));
+  assert.ok(existsSync(join(brainDir, ".claude/skills/coach/SKILL.md")));
 
   // …WITHOUT ever perturbing the user's territory, across both passes.
   assert.equal(sha256(join(brainDir, ".claude/skills/my-private/SKILL.md")), myskillHash, "a custom skill must stay byte-identical");
@@ -309,8 +311,8 @@ test("runReconcileCli — parses flags, loads the brain manifest, and converges 
     rmSync(sourceDir, { recursive: true, force: true });
   });
   // The source carries a new engine skill; the brain's manifest declares it engine-owned.
-  writeFile(sourceDir, ".claude/skills/local-mirror/SKILL.md", "---\nname: local-mirror\n---\nMirror.\n");
-  writeFile(brainDir, "engine-manifest.json", JSON.stringify(manifest({ extraMerge: [".claude/skills/local-mirror/**"] }), null, 2));
+  writeFile(sourceDir, ".claude/skills/coach/SKILL.md", "---\nname: coach\n---\nYour sparring partner.\n");
+  writeFile(brainDir, "engine-manifest.json", JSON.stringify(manifest({ extraMerge: [".claude/skills/coach/**"] }), null, 2));
 
   const { calls, ...s } = seams();
   const runReconcileCli = await loadCli();
@@ -319,8 +321,8 @@ test("runReconcileCli — parses flags, loads the brain manifest, and converges 
     seams: s,
   });
 
-  assert.equal(existsSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md")), true, "the child installs the missing engine skill");
-  assert.deepEqual(report.installedSkills, ["local-mirror"]);
+  assert.equal(existsSync(join(brainDir, ".claude/skills/coach/SKILL.md")), true, "the child installs the missing engine skill");
+  assert.deepEqual(report.installedSkills, ["coach"]);
   // target = local = the brain's own manifest → schema unchanged → no reindex in the child.
   assert.deepEqual(calls.reindex, [], "the auto-finalize child must not reindex (it converges, it does not migrate)");
 });
@@ -589,6 +591,65 @@ test("reconcileBrain — a converged brain's settings.json is left byte-identica
   const second = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s2 });
   assert.deepEqual(second.hooksAdded, [], "a converged brain wires nothing");
   assert.equal(sha256(join(brainDir, ".claude/settings.json")), settingsHash, "settings.json must be byte-identical on the 2nd run (no churn)");
+});
+
+// ── Test 14: F-B7 2d — STAGED skills converge on upgraders. A new upgrader-bound
+//    skill ships at the NON-sacred `engine-skills/<name>/` path (the sacred scrub forbids
+//    delivering under `.claude/skills/`). reconcileBrain install-if-absent's it into
+//    `.claude/skills/<name>/` ALONGSIDE the merge-skill install, and folds it into
+//    `installedSkills`. This is how local-mirror reaches a pre-3.3.0 brain at restart.
+test("reconcileBrain — installs a STAGED engine-skills/ skill the brain is missing (F-B7 2d)", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource();
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+  const skillBody = "---\nname: local-mirror\n---\nMirror a Notion zone into the vault.\n";
+  writeFile(sourceDir, "engine-skills/local-mirror/SKILL.md", skillBody);
+  const target = manifest(); // local-mirror is NOT a merge skill — it is staged
+  const local = manifest({ ragVersion: "1.0.0" });
+
+  const { ...s } = seams();
+  const report = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s });
+
+  assert.equal(readFileSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md"), "utf8"), skillBody, "the staged skill lands under .claude/skills/");
+  assert.ok(report.installedSkills.includes("local-mirror"), "a staged skill is reported in installedSkills");
+});
+
+// ── Test 15: F-B7 2e — the engine MCP servers to register are derived from the keys of
+//    the DELIVERED `.mcp.json.template`, NOT the frozen `manifest.engineMcpServers` (which
+//    update-engine never refreshes — the root cause). Here the manifest is STALE (only
+//    vault-rag) but the delivered template carries local-mirror → it must STILL register.
+test("reconcileBrain — registers MCP servers from the DELIVERED template keys, not the frozen manifest (F-B7 2e)", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource();
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+  writeFile(brainDir, ".mcp.json", JSON.stringify({ mcpServers: { "vault-rag": { type: "stdio" } } }, null, 2));
+  writeFile(
+    sourceDir,
+    ".mcp.json.template",
+    JSON.stringify(
+      { mcpServers: { "vault-rag": { type: "stdio", cwd: "{{PROJECT_ROOT}}" }, "local-mirror": { type: "stdio", cwd: "{{PROJECT_ROOT}}" } } },
+      null,
+      2,
+    ),
+  );
+  // The manifest is FROZEN at v3.1.0: it names ONLY vault-rag. The delivered template is
+  // the source of truth → local-mirror must register despite the stale manifest.
+  const target = manifest({ engineMcpServers: ["vault-rag"] });
+  const local = manifest({ ragVersion: "1.0.0" });
+
+  const { ...s } = seams();
+  const report = await reconcile({ brainDir, platform: "posix", sourceDir, target, local, ...s });
+
+  assert.deepEqual(report.mcpServersAdded, ["local-mirror"], "the template's local-mirror server registers even though the manifest is stale");
+  const mcp = JSON.parse(readFileSync(join(brainDir, ".mcp.json"), "utf8"));
+  assert.ok(mcp.mcpServers["local-mirror"], "local-mirror is now in .mcp.json");
+  assert.ok(mcp.mcpServers["vault-rag"], "vault-rag is preserved");
 });
 
 // Tiny indirection so the helpers above read cleanly; resolves the lazily-loaded export.

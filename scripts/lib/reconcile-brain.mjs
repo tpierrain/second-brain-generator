@@ -24,6 +24,7 @@ import { fileURLToPath } from "node:url";
 
 import { computeApplyPlan } from "./engine-apply-plan.mjs";
 import { matchesAny } from "./glob-match.mjs";
+import { installStagedSkills } from "./staged-skills.mjs";
 import { reconcileMcpServers } from "./mcp-reconcile.mjs";
 import { reconcileHooks } from "./hooks-reconcile.mjs";
 import { needsReindex } from "./reindex-trigger.mjs";
@@ -93,17 +94,27 @@ export async function reconcileBrain({
     installedSkills.push(skillDir.split("/").pop()); // the skill name, for the report
   }
 
-  // 2.ter Reconcile .mcp.json against the manifest's engineMcpServers (ADR 0025):
-  //    register a newly-shipped engine server the brain is MISSING, taking its
-  //    definition from the source's .mcp.json.template with {{PROJECT_ROOT}} substituted
-  //    to this brain dir. Existing servers (engine OR user-added) are preserved.
-  const engineServerIds = target.engineMcpServers ?? [];
+  // 2.bis-staged Install STAGED engine skills (F-B7 2d, ADR 0026): a new upgrader-bound
+  //    skill (local-mirror) can't ride in under `.claude/skills/` (the sacred scrub forbids
+  //    it), so its source ships at the NON-sacred `engine-skills/<name>/` path (a `replace`
+  //    file → pass-1 delivers it). install-if-absent each into `.claude/skills/<name>/`,
+  //    alongside the merge-skill install above; fold the names into the same report.
+  installedSkills.push(...installStagedSkills({ sourceDir, brainDir }));
+
+  // 2.ter Reconcile .mcp.json against the engine's MCP servers (ADR 0025): register a
+  //    newly-shipped engine server the brain is MISSING, taking its definition from the
+  //    source's .mcp.json.template with {{PROJECT_ROOT}} substituted to this brain dir.
+  //    The set of engine servers is derived from the DELIVERED template's keys (F-B7 2e) —
+  //    NOT the frozen `manifest.engineMcpServers`, which update-engine never refreshes (the
+  //    root cause of the pre-3.3.0 non-convergence). Existing servers (engine OR user-added)
+  //    are preserved.
   const templatePath = join(sourceDir, ".mcp.json.template");
   const brainMcpPath = join(brainDir, ".mcp.json");
   const mcpServersAdded = [];
-  if (engineServerIds.length > 0 && existsSync(templatePath) && existsSync(brainMcpPath)) {
+  if (existsSync(templatePath) && existsSync(brainMcpPath)) {
     const projectRoot = brainDir.split("\\").join("/"); // {{PROJECT_ROOT}} is posix (cf. installer toPosix)
     const templateMcp = JSON.parse(readFileSync(templatePath, "utf8").split("{{PROJECT_ROOT}}").join(projectRoot));
+    const engineServerIds = Object.keys(templateMcp.mcpServers ?? {}); // desired-state = delivered template keys
     const brainMcp = JSON.parse(readFileSync(brainMcpPath, "utf8"));
     const before = new Set(Object.keys(brainMcp.mcpServers ?? {}));
     const reconciled = reconcileMcpServers({ brainMcp, templateMcp, engineServerIds });
