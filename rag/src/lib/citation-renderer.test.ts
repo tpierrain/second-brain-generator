@@ -65,6 +65,29 @@ test("a non-mirror note renders only the local file link, no Notion link", () =>
   assert.ok(!text.includes("🔗"), text);
 });
 
+test("when a mirror note is present, the output carries an engine-owned relay directive (both 🧠+🔗 links, as-is)", () => {
+  // B5 belt (F-B7e): the dual-link relay directive ALSO lives here, adjacent to
+  // the data, so it reaches EVERY brain through `/update-engine` (rag/src is the
+  // `replace` regime) — not only brains whose SACRED constitution happens to carry
+  // it. Without it Claude paraphrases and the two emoji-links collapse into one.
+  const text = formatSearchCitations(
+    [result({ sourceUrl: "https://www.notion.so/abc" })],
+    "/brain/vault"
+  );
+
+  // The directive must name BOTH emoji-links and tell Claude to relay them as-is.
+  assert.match(text, /🧠/, text);
+  assert.match(text, /🔗/, text);
+  assert.match(text, /relay[\s\S]*as-is/i, text);
+});
+
+test("a result set with NO mirror note carries no relay directive (no noise)", () => {
+  // The belt fires ONLY when at least one cited note actually has a source link;
+  // a plain vault search stays clean.
+  const text = formatSearchCitations([result()], "/brain/vault");
+  assert.ok(!/relay/i.test(text), text);
+});
+
 test("each citation carries an 'ask me to open citation N' affordance, numbered + editor-agnostic", () => {
   // Claude Desktop only routes http(s), so a 🧠 file:// click can be dropped there
   // too. The block must therefore say, in plain text, how to actually open the note:

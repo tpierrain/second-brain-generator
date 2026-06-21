@@ -43,7 +43,20 @@ export function formatSearchCitations(
   results: SearchResult[],
   vaultDir: string
 ): string {
-  return results
+  // B5 belt (F-B7e): when any cited note came from a local mirror (it carries a
+  // 🔗 source link), stamp the relay directive at the TOP of the output, adjacent
+  // to the data. The same directive lives in the constitution, but the constitution
+  // is SACRED and never reaches an already-installed brain — this engine-owned line
+  // does, through `/update-engine` (rag/src is the `replace` regime). Without it
+  // Claude paraphrases and the two emoji-links collapse into one. Fires only when a
+  // mirror note is actually present, so a plain vault search stays noise-free.
+  const hasMirror = results.some((r) => r.sourceUrl);
+  const relayDirective = hasMirror
+    ? "> ⚠️ Some cited notes come from a local mirror and carry TWO links — " +
+      "🧠 the local copy AND 🔗 the source. Relay BOTH to the user as-is; do not " +
+      "collapse them into one.\n\n"
+    : "";
+  return relayDirective + results
     .map((r, i) => {
       // A real-file URL: pathToFileURL encodes spaces / unicode / reserved chars
       // correctly while keeping the slashes — so the OS opener resolves the actual
