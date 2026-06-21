@@ -124,6 +124,10 @@ Reference other notes with `[[relative/path/without-extension]]`:
 - `[[daily/2026-04-15#Section]]` (link to a section)
 - `[[topics/capacity-management]]`
 
+> **Notes from a local mirror** (`vault/mirrors/…`): when you cite one, present **two**
+> links — 🧠 the **local copy** (opens the note inside the brain) **and** 🔗 the **source** (the
+> original Notion page). The `search_vault` output already hands them to you ready-made; relay them as-is.
+
 ### Append-only for dailies
 
 A daily note, once written, is **never edited retroactively** — you add a new daily the next day. Corrections go through topic notes or decisions. The `people/` and `topics/` files are, on the contrary, **living**: you append dated sections to them.
