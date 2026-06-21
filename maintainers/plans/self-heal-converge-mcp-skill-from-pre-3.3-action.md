@@ -1,5 +1,5 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🟡 IN PROGRESS (diagnosed 2026-06-21) — v3.3.0 SHIP-BLOCKING finding F-B7. Task 1 DONE (RED test a0d7801); next = Task 2 (FIX). -->
+<!-- STATUS: 🟡 IN PROGRESS (diagnosed 2026-06-21) — v3.3.0 SHIP-BLOCKING finding F-B7. Task 1 DONE (RED test a0d7801). Design RESOLVED: b1 (relocate skill to engine-skills/) + derive desired-state from DELIVERED files (no engine-spec). Next = Task 2 (FIX), ready to execute. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # F-B7 — Upgrading from a pre-3.3.0 brain wires the new skill + MCP in **1 update + 1 restart**
@@ -23,16 +23,20 @@ restart self-heal converge the manifest-sourced capabilities (skill + MCP), clos
   - [x] 1a — rewrite `scripts/lib/restart-convergence.test.mjs` to source pass-1 delivery from the **real launcher**, with a genuinely-stale v3.1.0 brain manifest (see "Integration test" below) _(2026-06-21 · a0d7801 — pass-1 copies the 228 launcher files matching the fetched `replace`+`regenerate`; verified the skill + `.mcp.json.template` are NOT among them, the hook template IS)_
   - [x] 1b — confirm it is **RED for the right reason** (skill absent / MCP not wired after self-heal), mark `{ todo }`/skip so the suite stays green at commit (commit-only-green gate) _(2026-06-21 · a0d7801 — main case fails on "local-mirror MCP must be registered"; harness 458 pass / 0 fail / 2 todo, exit 0)_
   - [x] 1c — add the **terminal-stuck-state** assertion: a brain with the 4 hooks already wired but `local-mirror` still missing + stale manifest must STILL converge at the next restart (gating must not rely on the hooks-gap alone — this is exactly the rig's current stuck state) _(2026-06-21 · a0d7801 — fails on "self-heal must detect the skill/MCP gap even when the 4 hooks are already wired"; seeded the coach skill so the ONLY genuine gap is local-mirror, making `healed===true` load-bearing)_
-- [ ] **2 — FIX (TDD baby-steps, green-only)** — ship the engine's desired-state + the sources self-heal needs as delivered engine-owned files
-  - [ ] 2a — deliver `.mcp.json.template` via `regimes.replace` (pass-1 then lays down the local-mirror server def)
-  - [ ] 2b — make the `local-mirror` skill present on disk after pass-1 (decide: pragmatic `regimes.replace` for the brand-new skill, OR a staging-dir + install-if-absent that keeps `merge` semantics — see "Design decision D1")
-  - [ ] 2c — ship the engine's canonical desired-state as a delivered engine-owned file (`engine-spec.json`, in `regimes.replace`) = `regimes` + `engineMcpServers` + `indexSchemaVersion` + `engineVersion`
-  - [ ] 2d — `reconcile-brain.mjs` `runReconcileCli` reads `target` from `engine-spec.json` if present, else falls back to `engine-manifest.json`
-  - [ ] 2e — `self-heal-detect.mjs` + `scripts/session-self-heal.mjs` read desired-state (engineMcpServers + regimes→installSkills) from the spec, not the frozen user manifest
-  - [ ] 2f — BACKSTOP for v3.3.0+→future: `update-engine.mjs` step 7 (line 161-172) refreshes the on-disk manifest's `engineMcpServers` + `regimes` from `target` AND writes/refreshes `engine-spec.json`
-  - [ ] 2g — the RED test goes GREEN; remove the `{ todo }` flag; run the full harness + rag + local-mirror suites + `tsc`
+- [ ] **2 — FIX (TDD baby-steps, green-only)** — derive desired-state from DELIVERED files (not the frozen manifest); relocate the new skill to a non-sacred staging dir so pass-1 can deliver it
+  > **Design locked (2026-06-21, see "Design decision D1 — RESOLVED"):** (i) the engine derives its desired-state from the files it ALREADY delivers via `replace` — `settings.json.template` for hooks (works today), `.mcp.json.template` keys for MCP servers, `engine-skills/<name>/` presence for upgrader-bound skills — **NOT** a new `engine-spec.json` (which would be a 2nd source of truth to keep in sync, the very thing b1 avoids for the skill). (ii) the `local-mirror` skill is RELOCATED to `engine-skills/local-mirror/` (b1, single source): the sacred scrub (`.claude/skills/` is stripped from `overwrite`, proven in BOTH current and v3.1.0 `engine-apply-plan.mjs`) makes it IMPOSSIBLE to deliver a skill under `.claude/skills/` via `replace`, so the source must live at a non-sacred path + be install-if-absent'd. This is **intrinsically future-proof** (a future skill/server delivered via `replace` converges on its own) → no engine-spec, no step-7 backstop.
+  - [ ] 2a — deliver `.mcp.json.template` via `regimes.replace` (pass-1 then lays the local-mirror server def on disk; it is non-sacred so the scrub keeps it)
+  - [ ] 2b — RELOCATE the skill (b1): `git mv .claude/skills/local-mirror/** engine-skills/local-mirror/**`; add `engine-skills/**` to `regimes.replace`; REMOVE `.claude/skills/local-mirror/**` from `regimes.merge`. (Accepted consequence: the LAUNCHER itself no longer auto-discovers the local-mirror skill — it now lives as an engine-delivered asset; the skill runs in a brain, not the launcher.)
+  - [ ] 2c — new shared helper `scripts/lib/staged-skills.mjs` → `installStagedSkills({ sourceDir, brainDir })`: scan `<sourceDir>/engine-skills/*`, for each `<name>` install-if-absent into `<brainDir>/.claude/skills/<name>/` (copy whole subtree, NEVER overwrite a present dir), return the installed names. Pure I/O, win32-safe (ADR 0015). TDD.
+  - [ ] 2d — `reconcile-brain.mjs` calls `installStagedSkills` (ALONGSIDE the existing 2.bis merge-skill install-if-absent that still serves coach/sync/import/… for v3.3.0+ auto-finalize); fold the result into the `installedSkills` report
+  - [ ] 2e — `reconcile-brain.mjs` MCP reconcile (2.ter): derive `engineServerIds` from the DELIVERED `.mcp.json.template` keys (`Object.keys(templateMcp.mcpServers)`), NOT the frozen `target.engineMcpServers`. (Leave `manifest.engineMcpServers` + `engineModuleRequirements` for the health/version consumers — verify those during apply.)
+  - [ ] 2f — `installer.mjs`: after the bulk copy + locale overlay (~line 295), call `installStagedSkills({ sourceDir: TARGET, brainDir: TARGET })` so a FRESH brain gets `.claude/skills/local-mirror/` immediately (the bulk copy only brings `engine-skills/`). `.mcp.json` is generated from the template → local-mirror server already present on fresh install (verified).
+  - [ ] 2g — gate `self-heal-detect.mjs`: take EXPLICIT `wantedSkillDirs` + `wantedServerIds` (drop the in-function manifest read). The wrapper `scripts/session-self-heal.mjs` derives `wantedSkillDirs` = merge-skills(manifest) ∪ staged-skills(scan `engine-skills/`) and `wantedServerIds` = `Object.keys(.mcp.json.template.mcpServers)`. (This is what makes 1c converge despite the satisfied hook gap.)
+  - [ ] 2h — make the integration test (`restart-convergence.test.mjs`) pass-1 FAITHFUL: copy via `computeApplyPlan(target)` (scrubbed: overwrite ∪ regenerate ∪ replaceScripts) + `selectEngineFilesToCopy`, NOT raw `matchesAny` (else a `replace`-skill "fix" that the real scrubbed pass-1 would drop could falsely go green). Repoint the 1c desired-state seam to derive from delivered files (drop the `engine-spec.json` fallback). Both cases GREEN; remove the `{ todo }` flag.
+  - [ ] 2i — RIPPLE tests: rename the `local-mirror` MERGE-skill EXAMPLE to a generic/other skill (e.g. `coach`) in `engine-apply-plan.test.mjs`, `reconcile-brain.test.mjs`, `self-heal-detect.test.mjs`, `update-engine.test.mjs` (the merge mechanism is unchanged — just no longer illustrated by local-mirror); repoint `local-mirror-skill.test.mjs:18` to `engine-skills/local-mirror/SKILL.md`; add a NEW staging-skill test (`installStagedSkills` install-if-absent + idempotent + preserve-present).
+  - [ ] 2j — full harness + `cd rag && … --test` + `cd local-mirror && … --test` + both `tsc --noEmit` GREEN
 - [ ] **3 — ADR + docs**
-  - [ ] 3a — amend **ADR 0026 in place** (not a new ADR): the engine ships its own desired-state spec; self-heal reads the **delivered** spec, never the frozen user manifest; `.mcp.json.template` + the new skill join the delivered (replace) surface. Add `- **Scope:**` line.
+  - [ ] 3a — amend **ADR 0026 in place** (not a new ADR): the engine derives its desired-state from the files it DELIVERS (`settings.json.template` hooks, `.mcp.json.template` server keys, `engine-skills/` skill presence), NEVER the frozen user manifest; a NEW upgrader-bound skill rides in via a non-sacred `engine-skills/` staging dir + install-if-absent (because the sacred scrub forbids delivering skills under `.claude/skills/`). Explicitly note this SUPERSEDES the `engine-spec.json` sketch (no 2nd source of truth to keep synced — same anti-duplication reasoning as b1). Add `- **Scope:**` line.
   - [ ] 3b — update the QA plan `v3.3.0-qa-plan-action.md` (record F-B7 + the fix) and the in-progress memory
 - [ ] **4 — RE-VERIFY on the real rig** (the proof that matters)
   - [ ] 4a — reset rig (commands below), run `/update-engine` ONCE in Desktop, restart + resume, confirm `local-mirror` skill + MCP + health note converge **without a 2nd update**
@@ -71,6 +75,14 @@ the skill or the MCP because:
 **The asymmetry is the whole bug:** file-sourced desired-state (the hook template) converges; manifest-
 sourced desired-state (skill + MCP) does not, because the manifest is frozen and the sources aren't delivered.
 
+### Addendum (2026-06-21) — the sacred scrub forbids delivering a skill under `.claude/skills/`
+
+`computeApplyPlan` strips `.claude/skills/` from the `overwrite` bucket (safety core). So even putting the
+skill in `regimes.replace` would NOT deliver it — pass-1 scrubs it (proven in the v3.1.0 rig tarball too).
+A NEW skill can only reach an upgrader's disk by riding in at a NON-sacred `replace` path. **The FIX is
+therefore: deliver desired-state from the files already delivered (template + a non-sacred `engine-skills/`
+staging dir), and relocate the skill to that staging dir.** Details in "Design decision D1 — RESOLVED".
+
 ### Why the existing unit test lied (`restart-convergence.test.mjs`, pre-fix)
 
 Its `manifest()` (lines 72-86) already declares `engineMcpServers: ["vault-rag","local-mirror"]` AND a
@@ -81,41 +93,47 @@ rewritten to source delivery from the real launcher with a genuinely-stale brain
 
 ---
 
-## Design decision D1 (resolve before coding 2b)
+## Design decision D1 — RESOLVED (2026-06-21, Thomas)
 
-Making the `local-mirror` skill present on disk after pass-1:
-- **Pragmatic (recommended for v3.3.0):** add `.claude/skills/local-mirror/**` to `regimes.replace`.
-  It is a **brand-new** skill — no existing user has customized it — so "preserve user edits" (the
-  reason skills live in `merge`) does not yet apply. Aligns with "no over-engineering against an
-  unproven risk". Caveat: future updates would overwrite a user's edits to THIS skill.
-- **Principled (future hardening):** ship the skill **source** under an engine-owned staging dir
-  (delivered via `replace`) and `install-if-absent` from there into `.claude/skills/` — keeps `merge`
-  semantics (fresh source on disk + preserve user edits). More machinery; defer unless needed.
+**The blocking discovery:** `computeApplyPlan` **scrubs** `.claude/skills/` from the `overwrite`
+bucket (the safety core, ADR 0003/0012: the engine NEVER writes under `.claude/skills/`). Verified
+this scrub exists in BOTH the current launcher AND the real v3.1.0 rig tarball
+(`/tmp/legacy-brain/scripts/lib/engine-apply-plan.mjs` → `SACRED_TREES = [".claude/skills/", "vault/"]`).
+**Consequence:** adding `.claude/skills/local-mirror/**` to `regimes.replace` does NOT deliver the skill —
+pass-1 (v3.1.0 AND current) strips it. The "pragmatic" option below was therefore **non-viable** without
+punching a hole in the safety core (rejected).
 
-Likewise consider whether `engine-spec.json` (2c) is a **new** file or simply the launcher's own
-`engine-manifest.json` minus `source`/`provenance` delivered under a new name (it already carries
-`regimes` + `engineMcpServers` + versions). Prefer the latter (no second source of truth to maintain).
+**RESOLVED = b1 (relocate, single source):** ship the skill's canonical source at a NON-sacred delivered
+path `engine-skills/local-mirror/` (added to `regimes.replace` → pass-1 copies it, the scrub keeps it
+because it is not under `.claude/skills/`), then `install-if-absent` it into `.claude/skills/local-mirror/`.
+SINGLE source of truth (b1, chosen over b2's delivered-duplicate to avoid two copies to keep in sync).
+
+**And, decided together (supersedes the `engine-spec.json` sketch):** the engine derives its desired-state
+from the files it ALREADY delivers via `replace`, mirroring how the HOOKS already converge
+(`settings.json.template` is a delivered file). So:
+- hooks ← `settings.json.template` (unchanged, already works);
+- MCP servers ← keys of the delivered `.mcp.json.template` (NOT the frozen `manifest.engineMcpServers`);
+- upgrader-bound skills ← presence of delivered `engine-skills/<name>/`.
+
+No `engine-spec.json`, no step-7 manifest-refresh backstop: a NEW skill/server delivered via `replace`
+converges on its own at the next update/restart — **intrinsically future-proof**, and avoids a 2nd
+source of truth to keep in sync (the same anti-duplication reasoning b1 applies to the skill).
 
 ---
 
-## Integration test (Task 1) — faithful, sourced from the REAL launcher
+## Integration test (Task 1) — DONE (a0d7801), faithfulness fix pending in 2h
 
-Rewrite `scripts/lib/restart-convergence.test.mjs`:
-1. Resolve `LAUNCHER` = repo root (from `import.meta.url`, up from `scripts/lib/`). Read
-   `LAUNCHER/engine-manifest.json` as the fetched **target**.
-2. Build a **genuinely v3.1.0** brain in a tmp dir: manifest with `engineMcpServers: ["vault-rag"]`,
-   `regimes.merge` **without** the local-mirror skill, `.mcp.json` = `[vault-rag]`,
-   `.claude/settings.json` = `session-status` only (+ a user-owned key), **no** skill, **no**
-   local-mirror `.mcp.json.template`.
-3. **Simulate pass-1 (old code):** copy the launcher's `replace` + `regenerate` regime files into the
-   brain via the real `copyInto` (use `listFilesRelPosix` + `matchesAny` against `target.regimes`).
-   Do **NOT** install merge skills, do **NOT** reconcile wiring, do **NOT** refresh the brain manifest.
-4. Run the **REAL** `runReconcileCli({ argv: ["--brainDir", b, "--sourceDir", b, "--platform", "posix"], seams })`
-   (self-heal), stubbing only the heavy I/O seams (`runInstall`/`runReindex`/`regenerateLaunchers`/`countVaultNotes`).
-5. **Assert:** `.claude/skills/local-mirror/SKILL.md` exists; `.mcp.json` has `local-mirror` (+ `vault-rag`
-   preserved); `settings.json` has the 4 hooks (+ the user key preserved). Then the **2nd tick = no-op**
-   (byte-identical settings.json + .mcp.json). Then the **terminal-stuck-state** case (1c).
-6. **RED now** (the launcher delivers none of the needed files/spec) → **GREEN** once Task 2 lands.
+`scripts/lib/restart-convergence.test.mjs` was rewritten (Task 1, ✅): it sources pass-1 from the REAL
+launcher, builds a genuinely-v3.1.0 brain, drives the REAL `runReconcileCli` (self-heal) + `sessionSelfHeal`
+(1c), and is RED-for-the-right-reason under `{ todo }` (harness 458 pass / 0 fail / 2 todo).
+
+⚠️ **One faithfulness fix is owed in Task 2h before flipping it green:** the current `simulatePass1FromRealLauncher`
+copies via **raw `matchesAny`** against `target.regimes` — but the REAL pass-1 SCRUBS `.claude/skills/`
+(proven). Today this changes nothing (the skill is in `merge`, unmatched either way), but a `replace`-skill
+"fix" that the real scrubbed pass-1 would DROP could falsely turn the test green. So in 2h, switch the sim to
+`computeApplyPlan(target)` (overwrite ∪ regenerate ∪ replaceScripts) + `selectEngineFilesToCopy`, and update
+the 1c desired-state seam to derive from delivered files (`.mcp.json.template` keys + `engine-skills/` scan),
+dropping the `engine-spec.json` fallback. Then both cases go GREEN and the `{ todo }` flag is removed.
 
 **Helpers (already exported):** `computeApplyPlan` (`engine-apply-plan.mjs`, returns
 `{overwrite=replace regime, regenerate, replaceScripts=engine merge scripts, installSkills=merge skill globs}`),
@@ -123,15 +141,37 @@ Rewrite `scripts/lib/restart-convergence.test.mjs`:
 (`glob-match.mjs`), `runReconcileCli`/`reconcileBrain` (`reconcile-brain.mjs`), `detectSelfHealGap`
 (`self-heal-detect.mjs`), `bootstrapSessionHooks` (`hook-bootstrap.mjs`).
 
-## Files to touch (Task 2)
+## Files to touch (Task 2) — exhaustive
 
-- `engine-manifest.json` (launcher) — `regimes.replace` gains `.mcp.json.template`,
-  `.claude/skills/local-mirror/**` (per D1), and `engine-spec.json`.
-- `scripts/lib/reconcile-brain.mjs` — `runReconcileCli` reads target from `engine-spec.json` if present.
-- `scripts/lib/self-heal-detect.mjs` + `scripts/session-self-heal.mjs` — desired-state from the spec.
-- `scripts/update-engine.mjs` (step 7, line 161-172) — refresh manifest engine fields + write `engine-spec.json`.
-- `scripts/lib/restart-convergence.test.mjs` — the faithful integration test (Task 1).
-- `maintainers/decisions/0026-*.md` — amend in place (Task 3a).
+**Relocation (2b):**
+- `git mv .claude/skills/local-mirror/` → `engine-skills/local-mirror/` (whole subtree).
+- `engine-manifest.json` (launcher) — `regimes.replace` gains `.mcp.json.template` (2a) + `engine-skills/**` (2b);
+  `regimes.merge` LOSES `.claude/skills/local-mirror/**` (2b).
+
+**New code (2c–2g):**
+- `scripts/lib/staged-skills.mjs` (NEW) + `scripts/lib/staged-skills.test.mjs` (NEW) — `installStagedSkills`.
+- `scripts/lib/reconcile-brain.mjs` — call `installStagedSkills` (2d); MCP `engineServerIds` from
+  `.mcp.json.template` keys (2e).
+- `scripts/lib/self-heal-detect.mjs` — explicit `wantedSkillDirs` + `wantedServerIds` (2g).
+- `scripts/session-self-heal.mjs` — wrapper derives wanted skills (merge ∪ staged scan) + wanted servers
+  (template keys) (2g).
+- `installer.mjs` — call `installStagedSkills({ sourceDir: TARGET, brainDir: TARGET })` after bulk copy +
+  locale overlay (~line 295) (2f).
+
+**Tests (2h–2i):**
+- `scripts/lib/restart-convergence.test.mjs` — faithful scrubbed pass-1 + 1c file-sourced seam; remove `{ todo }` (2h).
+- `scripts/lib/engine-apply-plan.test.mjs`, `scripts/lib/reconcile-brain.test.mjs`,
+  `scripts/lib/self-heal-detect.test.mjs`, `scripts/lib/update-engine.test.mjs` — rename the local-mirror
+  merge-skill EXAMPLE to `coach`/generic (2i).
+- `scripts/lib/local-mirror-skill.test.mjs` — repoint to `engine-skills/local-mirror/SKILL.md` (2i).
+
+**Docs (Task 3):**
+- `maintainers/decisions/0026-*.md` — amend in place (3a).
+- `maintainers/plans/v3.3.0-qa-plan-action.md` + memory (3b).
+
+**Verify-don't-break (grep during apply):** other consumers of `manifest.engineMcpServers` /
+`engineModuleRequirements` (health-probe, status-line, version display) must keep reading the manifest —
+only `reconcile-brain` + `self-heal-detect`'s *desired-state* derivation moves to the delivered files.
 
 ---
 
