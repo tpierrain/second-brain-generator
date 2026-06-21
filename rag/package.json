@@ -10,7 +10,8 @@
     "index": "tsx src/index.ts --once",
     "reindex": "tsx src/index.ts --force",
     "dev": "tsx src/index.ts",
-    "test": "node --import tsx --test src/lib/*.test.ts"
+    "test": "node --import tsx --test src/lib/*.test.ts",
+    "postinstall": "node -e \"import('./postinstall-restart-notice.mjs').then(m => m.main()).catch(() => {})\""
   },
   "dependencies": {
     "@google/genai": "^1.0.0",
