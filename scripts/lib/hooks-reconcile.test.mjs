@@ -88,6 +88,40 @@ test("reconcileHooks — a USER hook entry is preserved (never removed, never cl
   assert.equal(hooksAdded.length, 3);
 });
 
+// ── Cross-OS parity (ADR 0015): the REAL brain hook command is not a bare `node` but
+//    a QUOTED launcher invocation — `/bin/sh "<…>/run-node.sh" "<…>/X.mjs"` on posix,
+//    `cmd /c "<…>\run-node.cmd" "<…>\X.mjs"` on win32 (the run-node PATH self-heal). The
+//    node prefix derived for the appended entries must keep that whole wrapper, not stop
+//    at the first quote — and the new entry's script path must be POSIX {{PROJECT_ROOT}}.
+
+test("reconcileHooks — preserves the real run-node launcher prefix (posix), appends a posix path", () => {
+  const brainHooks = {
+    SessionStart: [
+      { matcher: "", hooks: [{ type: "command", command: '/bin/sh "/brains/foo/scripts/run-node.sh" "/brains/foo/scripts/session-status.mjs"', timeout: 20000 }] },
+    ],
+  };
+  const { hooks } = reconcileHooks({ brainHooks, templateHooks, projectRoot: "/brains/foo" });
+  const cmds = hooks.SessionStart.flatMap((g) => g.hooks.map((h) => h.command));
+  assert.ok(
+    cmds.includes('/bin/sh "/brains/foo/scripts/run-node.sh" "/brains/foo/scripts/session-self-heal.mjs"'),
+    "the appended entry must keep the FULL /bin/sh \"…/run-node.sh\" wrapper, not just /bin/sh",
+  );
+});
+
+test("reconcileHooks — preserves the run-node prefix on win32 (quoted backslash path), posix script path", () => {
+  const brainHooks = {
+    SessionStart: [
+      { matcher: "", hooks: [{ type: "command", command: 'cmd /c "C:\\brains\\foo\\scripts\\run-node.cmd" "C:\\brains\\foo\\scripts\\session-status.mjs"', timeout: 20000 }] },
+    ],
+  };
+  const { hooks } = reconcileHooks({ brainHooks, templateHooks, projectRoot: "C:/brains/foo" });
+  const cmds = hooks.SessionStart.flatMap((g) => g.hooks.map((h) => h.command));
+  assert.ok(
+    cmds.includes('cmd /c "C:\\brains\\foo\\scripts\\run-node.cmd" "C:/brains/foo/scripts/session-self-heal.mjs"'),
+    "win32: keep the quoted run-node.cmd prefix; the new script path uses the posix {{PROJECT_ROOT}}",
+  );
+});
+
 // ── detectHookGap — the pure bootstrap drift gate (mirrors detectSelfHealGap) ──
 // session-status uses it to decide whether to spawn the one-time reconcile on a
 // pre-3.2 brain. A converged brain → not needed → the hook stays a TRUE no-op.

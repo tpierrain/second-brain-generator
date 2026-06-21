@@ -20,20 +20,23 @@ function hookScript(command) {
   return m ? m[0] : null;
 }
 
-// The node interpreter the brain itself uses for its hooks — everything before the
-// first quoted path in any existing hook command (every brain wires session-status /
-// auto-commit with a concrete node path). So appended entries run the SAME interpreter.
+// The {{NODE}} prefix the brain itself uses for its hooks — i.e. everything BEFORE the
+// final quoted "<…>/scripts/<name>.mjs" argument of any existing hook command. So appended
+// entries run the SAME interpreter/launcher. Cross-OS (ADR 0015): the real prefix is not a
+// bare `node` but the quoted run-node launcher — `/bin/sh "<…>/run-node.sh"` on posix,
+// `cmd /c "<…>\run-node.cmd"` on win32 — which itself contains quotes, so we must NOT stop
+// at the first quote; we anchor on the final .mjs argument (posix `/` or win32 `\`).
+const NODE_PREFIX_RE = /^(.*?)\s*"[^"]*scripts[/\\][^"]*\.mjs"\s*$/;
 function deriveNodePrefix(brainHooks) {
   for (const groups of Object.values(brainHooks ?? {})) {
     for (const group of groups ?? []) {
       for (const h of group.hooks ?? []) {
-        if (typeof h.command === "string" && h.command.includes('"')) {
-          return h.command.slice(0, h.command.indexOf('"')).trim();
-        }
+        const m = typeof h.command === "string" ? h.command.match(NODE_PREFIX_RE) : null;
+        if (m) return m[1].trim();
       }
     }
   }
-  return "{{NODE}}"; // no quoted command to learn from → leave the placeholder (caller's belt)
+  return "{{NODE}}"; // no learnable command → leave the placeholder (caller's belt)
 }
 
 function substituteCommand(command, { node, projectRoot }) {
