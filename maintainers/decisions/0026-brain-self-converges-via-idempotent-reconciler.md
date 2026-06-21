@@ -80,7 +80,7 @@ reconciliation loop** at the heart of:
 - **Windows Installer self-healing** — a missing managed resource is re-provisioned on next use.
 
 Our mapping is one-to-one: the **files the engine delivers** (the `replace`-regime `settings.json.template`,
-`.mcp.json.template`, `engine-skills/`) are the **desired state**; `reconcileBrain` is the **reconciler**
+`.mcp.json.template`, `engine-skills/`, `engine-health/`) are the **desired state**; `reconcileBrain` is the **reconciler**
 (the *Set*); `self-heal-detect` / `detectHookGap` is the **drift gate** (the *Test*); and **SessionStart is
 the level-triggered tick** (the equivalent of chef-client's interval or Argo's continuous loop). Crucially,
 desired-state is read from those *delivered files*, **not** the brain's `engine-manifest.json` — a manifest
@@ -128,19 +128,29 @@ thing we add on top is naming discipline (see the terminology note in `CONVENTIO
    when it merely laid down code that a follow-up run will activate ("run once more" + a counter),
    instead of today's silence.
 5. **Seed the engine-owned health-check note so the canary covers upgraders.** The `health_check` RAG
-   canary (ADR 0030) targets a dedicated engine-owned note,
+   canary (ADR 0030) is answered from a dedicated engine-owned note whose runtime home,
    `vault/engine-health/health-check.md` (unique invented token `Quibblethorne`, no `exemple` tag → it
-   survives the demo purge). New installs get it via the install-time vault bulk-copy; upgraders would
-   **not** (the vault is sacred + v3.3.0 forces no reindex), leaving their canary `unknown` forever. So:
-   - **Seed-if-absent, one path.** At a **real update** (`sourceDir !== brainDir`), if the note is
-     absent in the brain, **copy it** from `sourceDir/vault/engine-health/health-check.md`. **Never
-     overwrite, never delete**; scoped to that **exact single path**. (SessionStart self-heal runs with
-     `sourceDir === brainDir` → cannot self-seed and does not try.)
-   - **Targeted incremental reindex — only on a fresh seed.** Right after seeding, run an **incremental**
-     reindex (the index-manager skips unchanged docs → only the one new note is encoded; NOT the
-     schema-change full re-encode v3.3.0 avoids). If nothing was seeded, **no reindex** runs.
-     ⚠️ Mandatory pairing: seeding **without** indexing → note on disk + 0 index hits + embedder ran →
-     `health_check` returns a **false `broken`** (worse than `unknown`).
+   survives the demo purge), is **sacred** (the vault scrub, `SACRED_TREES`). New installs get it via the
+   install-time vault bulk-copy; upgraders would **not** (the vault is sacred + v3.3.0 forces no reindex),
+   leaving their canary `unknown` forever. So — the **same delivered-files principle** as the skill (§7):
+   - **Ship the source at a non-sacred staged path, seed-if-absent in BOTH modes.** The note's canonical
+     source ships at `engine-health/health-check.md` — a **non-sacred** `replace`-regime file the engine
+     **delivers** (pass-1/update copies it, the vault scrub keeps it because it is not under `vault/`).
+     `seedHealthNote({ sourceDir, brainDir })` then **install-if-absent**'s it into
+     `vault/engine-health/health-check.md`. This converges at **a real update** (`sourceDir !== brainDir`)
+     **AND at SessionStart self-heal** (`sourceDir === brainDir`): the staged source lives on the brain's
+     **own disk**, and the src path `engine-health/…` differs from the dest `vault/engine-health/…`, so it
+     is **never a self-copy** (exactly like `installStagedSkills`). **Never overwrite, never delete**;
+     scoped to that **exact single** vault path. Seeding in self-heal is what finally gives a **pre-3.3.0
+     upgrader** its canary: that cohort's *old* in-process update neither seeds the note nor auto-finalizes,
+     so the note arrives at the restart's self-heal — no second update required.
+   - **Targeted incremental reindex — keyed off the note's on-disk presence.** Whenever the vault note is
+     present, pair an **incremental** reindex (the index-manager skips unchanged docs → only the one new
+     note is encoded; NOT the schema-change full re-encode v3.3.0 avoids). Keying the pairing off
+     **presence** (not a one-shot "just copied" flag) means a run that seeded the note but crashed before
+     indexing it re-pairs the cheap reindex on the next run → the canary can never become a permanent
+     false `broken`. ⚠️ Mandatory pairing: a present-but-unindexed note → 0 index hits → `health_check`
+     returns a **false `broken`** (worse than `unknown`).
 6. **Merge engine-owned hook entries into `settings.json` so the runtime hooks reach upgraders.** The
    reconciler reconciles the brain's `.claude/settings.json` against the engine's desired hook set
    (`.claude/settings.json.template`, itself in the `replace` regime so a brain compares against the
@@ -245,9 +255,10 @@ thing we add on top is naming discipline (see the terminology note in `CONVENTIO
   still never read-for-mutation, never overwritten, never deleted — the engine only
   (re)places **its own** health file, in **its own** namespace (`engine-health/`), and only when missing.
   Blast radius is a single hard-coded path enforced by tests, so it cannot drift into "the reconciler may
-  write the vault" in general. A brain that never re-runs `update-engine` after upgrading keeps an `unknown`
-  canary (safe); the carve-out activates on the next real update. Cross-platform: the seed reuses the
-  self-copy-guarded `copyInto`, the reindex the existing seam — both to be verified on `win32` (ADR 0015).
+  write the vault" in general. An upgrader's canary converges at the **first restart's self-heal** — no
+  second real update needed, because the staged source is delivered to the brain's own disk. Cross-platform:
+  the seed (`seedHealthNote`) is a guarded write-if-absent copy, the reindex the existing incremental seam —
+  both verified on `win32` (ADR 0015).
 
 ## Rejected / deferred alternatives
 
@@ -268,10 +279,8 @@ thing we add on top is naming discipline (see the terminology note in `CONVENTIO
   `broken`; the targeted incremental reindex is mandatory.
 - **Full reindex at update to pick up the note** — rejected: re-encodes the whole
   vault (minutes) for one tiny note and contradicts v3.3.0's "no forced reindex"; use the incremental,
-  single-doc path. **Also rejected: seeding in the SessionStart self-heal** (`sourceDir === brainDir` →
-  nothing to copy from; writing the vault on every start widens the blast radius for no gain) and
-  **widening the carve-out to "engine-owned notes" in general** (premature; stays nominative to this one
-  path until a second engine note ever justifies revisiting).
+  single-doc path. Also rejected: **widening the carve-out to "engine-owned notes" in general**
+  (premature; stays nominative to this one path until a second engine note ever justifies revisiting).
 - **A separate ADR for the hook-entry merge, or for the localized message.** Rejected: both belong to the
   **same topic** as this ADR — *what the reconciler may write, and how it reaches upgraders* — so they are
   folded in here per the amend-in-place convention (`CONVENTIONS.md` §6bis), not spun off as new ADRs.
