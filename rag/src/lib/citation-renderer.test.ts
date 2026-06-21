@@ -15,21 +15,21 @@ function result(over: Partial<SearchResult> = {}): SearchResult {
   };
 }
 
-test("a mirror note renders both a clickable local (obsidian) and Notion link", () => {
+test("a mirror note renders both a real-file local link and a Notion link", () => {
   const text = formatSearchCitations(
     [result({ sourceUrl: "https://www.notion.so/abc" })],
     "/brain/vault"
   );
 
-  // 🧠 local copy: obsidian://open?path=<absolute, encoded> resolves the vault
-  // from the absolute path (no vault-name guess).
+  // 🧠 local copy: a real-file `file://<absolute>` link, NOT an Obsidian custom
+  // scheme. A click (where the renderer routes it) opens the note in the user's
+  // DEFAULT Markdown editor (Typora, Obsidian, …) — editor-agnostic, editable.
   assert.ok(
-    text.includes(
-      "obsidian://open?path=" +
-        encodeURIComponent("/brain/vault/mirrors/facture/a.md")
-    ),
+    text.includes("file:///brain/vault/mirrors/facture/a.md"),
     text
   );
+  // We must NOT emit the Obsidian-specific custom scheme anymore.
+  assert.ok(!text.includes("obsidian://"), text);
   // 🔗 Notion source: rendered as-is (already canonicalized at write time).
   assert.ok(text.includes("https://www.notion.so/abc"), text);
 });
@@ -58,18 +58,19 @@ test("a '>' or space in the Notion url is percent-encoded so it can't break the 
   assert.ok(text.includes("(<https://www.notion.so/a%3Eb%20c>)"), text);
 });
 
-test("a non-mirror note renders only the local link, no Notion link", () => {
+test("a non-mirror note renders only the local file link, no Notion link", () => {
   const text = formatSearchCitations([result()], "/brain/vault");
 
-  assert.ok(text.includes("obsidian://open?path="), text);
+  assert.ok(text.includes("file:///brain/vault/mirrors/facture/a.md"), text);
   assert.ok(!text.includes("🔗"), text);
 });
 
-test("each citation carries an 'ask me to open citation N' affordance, numbered", () => {
-  // The 🧠 obsidian:// click is silently dropped by Claude Desktop (custom schemes).
-  // The block must therefore say, in plain text, how to actually open the note:
-  // the user asks Claude, which uses the allowlisted opener. The number matches
-  // the citation heading so "open citation 2" is unambiguous.
+test("each citation carries an 'ask me to open citation N' affordance, numbered + editor-agnostic", () => {
+  // Claude Desktop only routes http(s), so a 🧠 file:// click can be dropped there
+  // too. The block must therefore say, in plain text, how to actually open the note:
+  // the user asks Claude, which uses the allowlisted opener to open it in WHATEVER
+  // Markdown editor is the OS default (Typora, Obsidian, …) — never Obsidian-specific.
+  // The number matches the citation heading so "open citation 2" is unambiguous.
   const text = formatSearchCitations(
     [result(), result({ title: "Second" })],
     "/brain/vault"
@@ -77,4 +78,7 @@ test("each citation carries an 'ask me to open citation N' affordance, numbered"
 
   assert.ok(text.includes('open citation 1'), text);
   assert.ok(text.includes('open citation 2'), text);
+  // Editor-agnostic wording — the affordance must not promise Obsidian.
+  assert.ok(text.includes("Markdown editor"), text);
+  assert.ok(!/in Obsidian/.test(text), text);
 });
