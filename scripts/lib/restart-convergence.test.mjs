@@ -13,9 +13,10 @@ import { join, dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { runReconcileCli } from "./reconcile-brain.mjs";
-import { sessionSelfHeal } from "../session-self-heal.mjs";
+import { sessionSelfHeal, deriveWanted } from "../session-self-heal.mjs";
 import { listFilesRelPosix } from "./fs-walk.mjs";
-import { matchesAny } from "./glob-match.mjs";
+import { computeApplyPlan } from "./engine-apply-plan.mjs";
+import { selectEngineFilesToCopy } from "./engine-copy-select.mjs";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // restart-convergence — the FAITHFUL integration proof (F-B7) that a one-time
@@ -116,19 +117,25 @@ function buildV310Brain() {
   return dir;
 }
 
-// Simulate pass-1 (the v3.1.0 orchestrator running against the fetched v3.3.0
-// engine): copy every launcher file that the FETCHED target's `replace` +
-// `regenerate` regimes own, via the real fs walk + glob dialect. It lays the engine
-// FILES down but — exactly like the old code — installs NO merge skill, reconciles
-// NO wiring, and REFRESHES the brain manifest NOT AT ALL. So after this:
-//   • the hook template (in `replace`) IS on disk  → hooks can converge;
-//   • the skill (in `merge`) + `.mcp.json.template` (in no regime) + the spec
-//     (does not exist yet) are NOT on disk        → skill + MCP cannot converge.
+// Simulate pass-1 FAITHFULLY (the v3.1.0 orchestrator running against the fetched
+// v3.3.0 engine): copy exactly the files the REAL Phase-1 apply would write — the
+// SCRUBBED allowlist `computeApplyPlan(target)` (overwrite ∪ regenerate ∪
+// replaceScripts, with `.claude/skills/` + vault stripped), refined by
+// `selectEngineFilesToCopy` (drop dev-only + locale-owned files). NOT raw
+// `matchesAny`: a future `replace`-skill under `.claude/skills/` that the real scrub
+// would DROP must not falsely converge here. Like the old orchestrator it then
+// installs NO merge skill, reconciles NO wiring, and REFRESHES the manifest NOT AT
+// ALL. So after this, from the relocated layout (F-B7 2a/2b):
+//   • the hook template + `engine-skills/local-mirror/**` + `.mcp.json.template` (all
+//     non-sacred `replace` files) ARE on disk → the restart CAN converge them;
+//   • but the skill is NOT yet under `.claude/skills/` and `.mcp.json` is still
+//     `[vault-rag]` only → only the restart's self-heal install + MCP reconcile finish it.
 function simulatePass1FromRealLauncher(brainDir) {
   const target = JSON.parse(readFileSync(join(LAUNCHER, "engine-manifest.json"), "utf8"));
-  const copyGlobs = [...(target.regimes.replace ?? []), ...(target.regimes.regenerate ?? [])];
-  for (const rel of listFilesRelPosix(LAUNCHER)) {
-    if (!matchesAny(copyGlobs, rel)) continue;
+  const plan = computeApplyPlan(target);
+  const copyGlobs = [...plan.overwrite, ...plan.regenerate, ...plan.replaceScripts];
+  const sourceFiles = listFilesRelPosix(LAUNCHER);
+  for (const rel of selectEngineFilesToCopy({ sourceFiles, copyGlobs })) {
     const dest = join(brainDir, rel.split("/").join(sep));
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, readFileSync(join(LAUNCHER, rel.split("/").join(sep))));
@@ -166,7 +173,6 @@ function sessionStartScripts(settings) {
 
 test(
   "F-B7 — ONE restart's self-heal converges the local-mirror skill + MCP + the new hooks from a REAL v3.1.0 pass-1 (no 2nd update), idempotent after",
-  { todo: true },
   async (t) => {
     const brainDir = buildV310Brain();
     t.after(() => rmSync(brainDir, { recursive: true, force: true }));
@@ -202,19 +208,8 @@ test(
   },
 );
 
-// Reads the engine's DESIRED-STATE the way the fixed self-heal must (2d/2e): the
-// DELIVERED `engine-spec.json` if present, else the frozen user manifest. Pre-fix the
-// spec is never delivered → this falls back to the stale manifest → the gate sees no
-// gap (the bug). Post-fix the spec carries local-mirror → the gate fires.
-function readDesiredState(brainDir) {
-  const specPath = join(brainDir, "engine-spec.json");
-  const path = existsSync(specPath) ? specPath : join(brainDir, "engine-manifest.json");
-  return JSON.parse(readFileSync(path, "utf8"));
-}
-
 test(
   "F-B7/1c — terminal stuck state: the 4 hooks are ALREADY wired but local-mirror is still missing; the next restart STILL converges it (the gate must not rely on the hook gap alone)",
-  { todo: true },
   async (t) => {
     const brainDir = buildV310Brain();
     t.after(() => rmSync(brainDir, { recursive: true, force: true }));
@@ -237,10 +232,14 @@ test(
 
     // The real self-heal gate + heal: it must DETECT the skill/MCP gap (despite the
     // satisfied hook gap) and run the reconcile that converges it.
+    // Desired-state derived from the DELIVERED files (the real production wrapper's
+    // `deriveWanted`: engine merge skills ∪ staged `engine-skills/` scan, + the
+    // `.mcp.json.template` server keys) — NEVER the frozen manifest, which is exactly
+    // why the gate fires here despite the satisfied hook gap.
     let reconcilePromise = Promise.resolve();
     const res = await sessionSelfHeal({
       brainDir,
-      readManifest: () => readDesiredState(brainDir),
+      readWanted: () => deriveWanted(brainDir),
       skillDirExists: (dir) => existsSync(join(brainDir, dir)),
       mcpServerRegistered: (id) => Boolean(JSON.parse(readFileSync(join(brainDir, ".mcp.json"), "utf8")).mcpServers?.[id]),
       spawnReconcile: ({ brainDir: dir }) => {

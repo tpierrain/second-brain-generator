@@ -71,7 +71,7 @@ function skillGlobToDir(glob) {
 //                      sacred scrub forbids delivering under `.claude/skills/`);
 //   • wanted servers = keys of the delivered `.mcp.json.template` (the local-mirror
 //                      server arrives here once pass-1 lays the template on disk).
-function deriveWanted(brainDir) {
+export function deriveWanted(brainDir) {
   const manifest = JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8"));
   const mergeSkillDirs = computeApplyPlan(manifest).installSkills.map(skillGlobToDir);
 
