@@ -94,6 +94,17 @@ exactly the engine-owned files, regenerates the launchers, runs `npm install`, r
 > OLD orchestrator, so this report won't yet list the new runtime hooks. They are wired
 > silently-but-correctly when the user restarts once — a deterministic reassurance line is
 > shown then (localized) by the startup hook. From the next update onward it lands here._
+>
+> _**Honest one-restart blind spot (F-B7c, the restart NUDGE itself).** The loud "restart
+> Claude" cues added in v3.3.0 — the steady-state banner at the end of this report (A1) and the
+> persistent `status-line` nudge (A2) — are themselves engine code (`update-engine.mjs`,
+> `status-line.mjs`, `scripts/lib/restart-nudge.mjs`). A brain on a **pre-3.3** engine runs the
+> **OLD** versions on its **first** `/update-engine`: that first run's report may be silent about
+> the restart, and the status-line shows no nudge — we cannot rewrite already-installed code
+> retroactively. The fix is self-healing by construction: that first update DELIVERS the new
+> versions to disk, so after **one** restart the loud report + the persistent nudge take over and
+> every subsequent update is loud. Tell a pre-3.3 upgrader plainly: "restart once after this
+> first update — from then on your brain will tell you loudly whenever a restart is needed."_
 
 ## Edge cases
 - **No source recorded** (`source.repo` is null — e.g. a brain whose launcher had no
