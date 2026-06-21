@@ -37,6 +37,7 @@ import { parseLsFilesZ, filterCopyable } from "./scripts/lib/tracked-files.mjs";
 import { resolveLocale, chooseLocale } from "./scripts/lib/locale.mjs";
 import { overlayLocale } from "./scripts/lib/locale-overlay.mjs";
 import { installStagedSkills } from "./scripts/lib/staged-skills.mjs";
+import { seedHealthNote } from "./scripts/lib/staged-health-note.mjs";
 import {
   buildShLauncher,
   buildCmdLauncher,
@@ -306,6 +307,10 @@ const stagedSkills = installStagedSkills({ sourceDir: TARGET, brainDir: TARGET }
 if (stagedSkills.length) {
   ok(`engine skills installed: ${stagedSkills.join(", ")}`);
 }
+// The health-check canary note's source ships at the same non-sacred staging path
+// (engine-health/health-check.md, vault/ is sacred — ADR 0026). Seed the runtime
+// vault note from it so a FRESH brain has the canary indexed from the first run.
+seedHealthNote({ sourceDir: TARGET, brainDir: TARGET });
 // Canary question for the vault actually installed (the overlaid locale, or `en`
 // at the root when no overlay applies) — so an fr brain probes/suggests the fr
 // question, matching its fr vault and its demo-locale.mjs marker.
