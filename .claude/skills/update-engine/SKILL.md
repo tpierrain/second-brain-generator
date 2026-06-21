@@ -73,12 +73,19 @@ exactly the engine-owned files, regenerates the launchers, runs `npm install`, r
 - **`exit 1`** → **relay the error as-is** and tell the user the brain was not changed
   past the point of failure. **Never claim success when it failed.**
 
-> **If the summary says new skills/MCP were installed** (the "ACTION NEEDED" notice):
-> tell the user a **full restart of Claude** (close it and reopen) is enough, then **come
-> back to THIS same conversation** — the new capability loads on the next start.
+> **If the summary says new skills/MCP/runtime hooks were installed** (the "ACTION NEEDED"
+> notice): tell the user a **full restart of Claude** (close it and reopen) is enough, then
+> **come back to THIS same conversation** — the new capability loads on the next start.
 > **Do NOT tell them to open a brand-new conversation** for this: that is the *initial-rooting*
 > rule (only for a session not yet rooted in the brain), **not** what is needed to pick up a
-> new skill+MCP. A restart while resuming this conversation is the lighter, sufficient action.
+> new skill/MCP/hook. A restart while resuming this conversation is the lighter, sufficient action.
+> Phrase the reassurance **in the user's language**: it is a one-time, automatic step — the
+> brain wired its own new self-healing in the background; one restart and they're done.
+>
+> _One-time exception (a brain upgrading from a pre-3.2 engine): the first update runs the
+> OLD orchestrator, so this report won't yet list the new runtime hooks. They are wired
+> silently-but-correctly when the user restarts once — a deterministic reassurance line is
+> shown then (localized) by the startup hook. From the next update onward it lands here._
 
 ## Edge cases
 - **No source recorded** (`source.repo` is null — e.g. a brain whose launcher had no

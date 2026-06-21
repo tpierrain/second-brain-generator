@@ -131,6 +131,28 @@ test("formatReport — names the engine skill(s) it installed and the MCP server
   assert.match(out, /server|mcp/i);
 });
 
+// F-B2 (ADR 0026): an upgrade that wired the v3.3.0 runtime hooks into settings.json must
+// NAME them (the user finally has self-heal / health / obsidian-hint) AND fold them into the
+// "restart needed" count — a newly-wired SessionStart hook is on disk but loads only at the
+// next session start, exactly like a new skill/MCP.
+test("formatReport — names the runtime hook(s) it wired and counts them as needing a restart", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: [],
+    mcpServersAdded: [],
+    hooksAdded: ["scripts/session-self-heal.mjs", "scripts/session-health.mjs", "scripts/session-obsidian-hint.mjs"],
+  });
+  assert.match(out, /session-self-heal/);
+  assert.match(out, /hook/i, "the wired hooks must be named as such");
+  assert.match(out, /\b3\b/, "3 wired hooks count as 3 capabilities needing a restart");
+  assert.match(out, /action needed/i);
+  assert.match(out, /restart/i);
+});
+
 // F1.6 (ADR 0026, point 4): a freshly-installed skill/MCP is on disk but NOT live in
 // the CURRENT conversation (Layer B config-freeze). The report must LOUDLY say so and
 // tell the user to restart — instead of today's silence that reads as "already usable".

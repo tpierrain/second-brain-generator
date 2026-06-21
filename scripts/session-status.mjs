@@ -24,6 +24,7 @@ import { fileURLToPath } from "node:url";
 import { hasGeminiKey, geminiKeyRequired } from "./lib/gemini-key.mjs";
 import { repoStatusLine, countVaultUncommitted } from "./lib/repo-status.mjs";
 import { bootstrapSessionHooks } from "./lib/hook-bootstrap.mjs";
+import { bootstrapReassuranceMessage } from "./lib/self-heal-message.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, "..");
@@ -137,13 +138,10 @@ if (geminiKeyRequired(envContent) && !hasGeminiKey(envContent)) {
 // session-status is the ONLY SessionStart hook a pre-3.2 brain has wired, so it is the
 // anchor that wires the v3.3.0 runtime trio (self-heal / health / obsidian-hint). It
 // detects the drift (settings.json vs the now-current template), and — only if a gap
-// exists — spawns the detached reconcile ONCE + emits one belt line. Converged → no-op,
-// no spawn. Fail-soft: a broken bootstrap NEVER blocks session start. The same reconcile
-// CLI the self-heal spawns; sourceDir === brainDir (local converge, no fetch).
-// TODO(step 4): localize this line via the BRAIN_LOCALE message catalog.
-const BOOTSTRAP_LINE =
-  "⚠️ One-time engine update — wiring your brain's new self-healing in the background. " +
-  "RESTART Claude once (close it and reopen) and everything's in place. Nothing else to do.";
+// exists — spawns the detached reconcile ONCE + emits one belt line (localized via the
+// brain's BRAIN_LOCALE). Converged → no-op, no spawn. Fail-soft: a broken bootstrap NEVER
+// blocks session start. The same reconcile CLI the self-heal spawns; sourceDir === brainDir
+// (local converge, no fetch).
 let bootstrapLine = null;
 try {
   const settingsPath = join(REPO, ".claude", "settings.json");
@@ -156,7 +154,7 @@ try {
       brainHooks,
       templateHooks,
       brainDir: REPO,
-      message: BOOTSTRAP_LINE,
+      message: bootstrapReassuranceMessage(),
       spawnReconcile: ({ brainDir }) => {
         const child = spawn(
           process.execPath,

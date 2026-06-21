@@ -42,7 +42,10 @@ export { defaultCountVaultNotes };
 // Human summary the brain-side `update-engine` skill shows the user (Step 6, ADR
 // 0016). Pure so the wording is unit-tested; the CLI entry only wires the I/O.
 export function formatReport(report) {
-  const { ref, engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills = [], mcpServersAdded = [] } = report;
+  const { ref, engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills = [], mcpServersAdded = [], hooksAdded = [] } = report;
+  // F-B2 (ADR 0026): the engine-owned SessionStart hooks wired into an upgrader's
+  // settings.json, by their bare name (scripts/session-health.mjs → session-health).
+  const wiredHooks = hooksAdded.map((s) => s.replace(/^scripts\//, "").replace(/\.mjs$/, ""));
   // Honest reindex line: a schema move re-encodes EVERY note; the health-note pairing (ADR
   // 0026 decision B, upgraders) only makes sure the one engine-owned note is present and
   // indexed (incremental — your other notes are untouched) — never claim "the index format
@@ -74,6 +77,9 @@ export function formatReport(report) {
   if (mcpServersAdded.length > 0) {
     lines.push(`   • new MCP server(s) registered: ${mcpServersAdded.join(", ")}`);
   }
+  if (wiredHooks.length > 0) {
+    lines.push(`   • new runtime hook(s) wired: ${wiredHooks.join(", ")}`);
+  }
   // F1.6 (ADR 0026, point 4): a freshly-installed skill/MCP is on disk but Claude
   // loads skills/MCP/hooks when a conversation STARTS (Layer B config-freeze), so it
   // is NOT yet live in THIS conversation. Say so LOUDLY (silence reads as "ready to
@@ -81,7 +87,7 @@ export function formatReport(report) {
   // this same conversation (field-proven, F4). Do NOT muddy it with "start a new
   // conversation": that is the distinct initial-rooting rule (a never-rooted session),
   // not what is needed just to pick up new capabilities.
-  const newCapabilities = installedSkills.length + mcpServersAdded.length;
+  const newCapabilities = installedSkills.length + mcpServersAdded.length + wiredHooks.length;
   if (newCapabilities > 0) {
     const noun = newCapabilities === 1 ? "capability" : "capabilities";
     const them = newCapabilities === 1 ? "it" : "them";
@@ -130,7 +136,7 @@ export async function updateEngine({
   //    moved, and count the vault notes — all behind the deterministic, idempotent
   //    `reconcileBrain`. Extracted so the SAME converger runs at auto-finalize (a fresh
   //    child process at the end of this function) and at SessionStart self-heal.
-  const { copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded } =
+  const { copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded, hooksAdded } =
     await reconcileBrain({
       brainDir,
       platform,
@@ -184,7 +190,7 @@ export async function updateEngine({
     // swallowed on purpose — the update succeeded; self-heal will finish the job.
   }
 
-  return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded };
+  return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded, hooksAdded };
 }
 
 // ── CLI entry (the command the brain-side `update-engine` skill runs) ─────────
