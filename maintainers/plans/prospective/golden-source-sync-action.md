@@ -26,7 +26,7 @@ These were settled before starting; the steps assume them.
       `setup_source`, not hand-edited daily (§20.4 of the PRD — resolved to JSON here).
 - [x] **Branch scope** → **full engine (milestones 1→7) + bootstrap layer + `setup_source`**, all
       in **Outside-in Diamond TDD** with SPI stubs (testable without a live Notion). The **e2e
-      milestone 8 (real Notion PA/SC zone) = manual QA gate by Thomas before merge**, mirroring the
+      milestone 8 (real Notion Team A zone) = manual QA gate by Thomas before merge**, mirroring the
       usual QA-before-main discipline.
 - [x] **No native deps** → unlike `rag/` (`better-sqlite3`), this module is **pure JS**
       (`@notionhq/client`, `notion-to-md`, `gray-matter`, `zod` are all pure) → **no ABI-skew
@@ -190,7 +190,7 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
       MECHANICS (Block A); the **add-a-source use case** must be exercised through the **real product UX**,
       not by hand-pasting tokens into the driver's `.env`. So run Block B on a **fresh THROWAWAY brain**
       installed from the `golden-source-sync` branch (the `golden-source-sync` MCP is wired at install) —
-      **never `inqom-brain`** (real private brain). The MCP only lives in a session **rooted in the brain**
+      **never the user's real private brain** (a personal brain folder). The MCP only lives in a session **rooted in the brain**
       (the list is frozen at session start → the launcher session can't call `setup_source`), so open a
       **NEW conversation ROOTED in the throwaway brain**. Purge the brain after QA. _(The driver's
       `setup2`/`setup3`/`perimeters` remain only a deterministic fallback for the mechanics.)_
@@ -293,7 +293,7 @@ vault/golden-sources/<name>/  # produced .md (indexed by FileWatcher)
 - [x] **Perimeter enumeration error (429/401/network) → ZERO deletion**; sync `partial`, watermark not advanced. _(domain-proven, Step 5; + empty-perimeter lost-scope guard)_
 - [x] Sub-page edit detected (watermark = max of perimeter). _(Step 3)_
 - [x] Delta only: a no-change sync rewrites nothing (no noise commit/reindex). _(Step 3)_
-- [ ] Routing: a PA question refreshes `pa-sc`, not `comex`.
+- [ ] Routing: a PA question refreshes `team-a`, not `team-b`.
 - [ ] Bounded answer + clickable citation; no secret in repo/logs; two sources without perimeter leak.
 
 ## Risks & guardrails

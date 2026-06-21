@@ -25,6 +25,9 @@ import { tmpdir, homedir, totalmem } from "node:os";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { smokeTestMcp } from "./scripts/lib/mcp-smoke.mjs";
+import { runActivatedHealthChecks } from "./scripts/lib/health-check-runner.mjs";
+import { buildHealthCheckCaller } from "./scripts/lib/health-check-wiring.mjs";
+import { gateBlockers, optionalBroken } from "./scripts/lib/health-check-gate.mjs";
 import { CONNECTORS } from "./scripts/lib/connectors-catalog.mjs";
 import { applyConnectorFiles } from "./scripts/lib/connectors-apply.mjs";
 import { clearExampleNotes } from "./scripts/lib/example-notes.mjs";
@@ -33,6 +36,8 @@ import { parseAnswers, resolveTargetDir, resolveRunMode } from "./scripts/lib/in
 import { parseLsFilesZ, filterCopyable } from "./scripts/lib/tracked-files.mjs";
 import { resolveLocale, chooseLocale } from "./scripts/lib/locale.mjs";
 import { overlayLocale } from "./scripts/lib/locale-overlay.mjs";
+import { installStagedSkills } from "./scripts/lib/staged-skills.mjs";
+import { seedHealthNote } from "./scripts/lib/staged-health-note.mjs";
 import {
   buildShLauncher,
   buildCmdLauncher,
@@ -46,7 +51,7 @@ import {
   buildLocalMirrorCmdLauncher,
   applyLocalMirrorLauncher,
 } from "./scripts/lib/rag-launcher.mjs";
-import { DEMO_BY_LOCALE, DEMO_EXPECT } from "./scripts/lib/demo.mjs";
+import { DEMO_BY_LOCALE } from "./scripts/lib/demo.mjs";
 import {
   buildEmbedderOptions,
   recommendedEmbedderKey,
@@ -54,6 +59,12 @@ import {
   embedderReady,
 } from "./scripts/lib/embedder-choice.mjs";
 import { openEnvInEditor } from "./scripts/lib/open-env.mjs";
+import {
+  registerVaultInObsidian,
+  defaultObsidianSeams,
+  shouldRegisterObsidian,
+} from "./scripts/lib/obsidian-register.mjs";
+import { formatObsidianHint } from "./scripts/lib/obsidian-health.mjs";
 import { buildHandoff } from "./scripts/lib/install-handoff.mjs";
 import { recordSourceAndProvenance } from "./scripts/lib/engine-source.mjs";
 import { resolveLatestTag } from "./scripts/lib/engine-fetch.mjs";
@@ -88,9 +99,10 @@ const warn = (m) => console.log(`${c.Y}!${c.X} ${m}`);
 const err = (m) => console.error(`${c.R}✗${c.X} ${m}`);
 const step = (m) => console.log(`\n${c.B}━━ ${m}${c.X}`);
 
-// DEMO (canary question) + DEMO_EXPECT: from scripts/lib/demo.mjs (source of truth
-// shared with verify-rag.mjs). Used by the post-flight probe and the final message
-// ("ask a question, e.g. …"). The question is resolved to the INSTALLED locale (see
+// DEMO (canary question): from scripts/lib/demo.mjs (source of truth shared with
+// verify-rag.mjs). Used in the final message ("ask a question, e.g. …"); the
+// post-flight gate now uses each module's MCP health_check (ADR 0030), not a
+// hard-coded demo probe. The question is resolved to the INSTALLED locale (see
 // `DEMO` below, once `locale` is known) so an fr brain probes with the fr question
 // against its fr vault — the launcher-root export would otherwise always be `en`.
 
@@ -145,7 +157,7 @@ function run(cmd, args, opts = {}) {
 }
 
 // ── 1. Prerequisites ──────────────────────────────────────────────────────────
-step("1/9 · Checking prerequisites");
+step("1/10 · Checking prerequisites");
 let missing = false;
 
 // Node: we are already running inside it, version readable directly. Compare it
@@ -183,7 +195,7 @@ if (missing) {
 }
 
 // ── 2. Customization ──────────────────────────────────────────────────────────
-step("2/9 · Customizing the harness");
+step("2/10 · Customizing the harness");
 
 const gitUser = run("git", ["config", "user.name"]).out.trim();
 
@@ -283,6 +295,22 @@ if (chosenLocale) {
   overlayLocale({ templatesRoot, locale: chosenLocale, target: TARGET });
   ok(`localized artifacts overlaid: locale "${chosenLocale}" (requested: "${locale}")`);
 }
+
+// ── 2ter. Deliver the upgrader-bound skills into .claude/skills/ ───────────────
+// The sacred scrub forbids the engine from writing under `.claude/skills/`
+// (ADR 0026), so the local-mirror skill ships its canonical source at the
+// non-sacred staging path `engine-skills/<name>/` — brought over by the bulk copy
+// above, but NOT yet present under `.claude/skills/`. Install-if-absent it now so a
+// FRESH brain has the skill on disk immediately (the .mcp.json generated from the
+// template already wires the local-mirror server). sourceDir === brainDir === TARGET.
+const stagedSkills = installStagedSkills({ sourceDir: TARGET, brainDir: TARGET });
+if (stagedSkills.length) {
+  ok(`engine skills installed: ${stagedSkills.join(", ")}`);
+}
+// The health-check canary note's source ships at the same non-sacred staging path
+// (engine-health/health-check.md, vault/ is sacred — ADR 0026). Seed the runtime
+// vault note from it so a FRESH brain has the canary indexed from the first run.
+seedHealthNote({ sourceDir: TARGET, brainDir: TARGET });
 // Canary question for the vault actually installed (the overlaid locale, or `en`
 // at the root when no overlay applies) — so an fr brain probes/suggests the fr
 // question, matching its fr vault and its demo-locale.mjs marker.
@@ -292,7 +320,7 @@ const DEMO = DEMO_BY_LOCALE[chosenLocale ?? "en"] ?? DEMO_BY_LOCALE.en;
 // Decision D1 (ADR 0007): explicit 3-way choice, ADAPTIVE recommendation per machine.
 // We no longer FORCE the Gemini key: it is only asked for if the user picks the
 // "API key + Gemini" option. The rest writes EMBEDDING_PROVIDER into .env.
-step("3/9 · RAG embedding engine (the privacy choice)");
+step("3/10 · RAG embedding engine (the privacy choice)");
 const envPath = join(TARGET, ".env");
 
 // Menu labels (reuse the validated educational artifacts — ADR 0007).
@@ -414,7 +442,7 @@ const providerLines = embedderCfg.lines;
 ok(`embedder selected: ${c.B}${providerKey}${c.X}${embedderCfg.needsGeminiKey ? " (Gemini key)" : " (no Gemini key)"}`);
 
 // ── 4. File generation ──────────────────────────────────────────────────────
-step("4/9 · Generating customized files");
+step("4/10 · Generating customized files");
 const replacements = {
   // {{NODE}} = prefix of the hook commands (cf. .claude/settings.json.template).
   // Points to the self-heal launcher run-node.* (generated below) instead of `node`
@@ -598,7 +626,7 @@ else warn("install commit failed (configure git user.name/email).");
 // (idempotent — re-runnable without duplicates). For the native claude.ai ones, we
 // touch nothing: we just point to the account's *Connectors*.
 // Non-interactive (CI / stdin not a TTY) → step fully skipped.
-step("5/9 · Wire up external sources (optional)");
+step("5/10 · Wire up external sources (optional)");
 if (interactive) {
   const want = await ask("Wire up external sources now? [y/N]", "N");
   if (/^y/i.test(want)) {
@@ -629,7 +657,7 @@ if (interactive) {
 // clear them: otherwise they pollute the RAG (answers citing fictional facts). We
 // offer the purge HERE, before indexing, so the index stays clean.
 // The machinery (vault/backlog/harness.md) and the docs (README) are preserved.
-step("6/9 · Clean up the example notes (optional)");
+step("6/10 · Clean up the example notes (optional)");
 const vaultDir = join(TARGET, "vault");
 if (interactive) {
   const purge = await ask(
@@ -646,10 +674,65 @@ if (interactive) {
   warn("Non-interactive input — example notes kept.");
 }
 
+// ── 6.bis Register the brain's vault in Obsidian (optional, opt-in) ───────────
+// So the brain's vault shows up ready to browse in Obsidian's switcher WITHOUT a
+// manual "Open folder as vault" (F8.2). Strictly optional — Obsidian is recommended
+// for browsing the vault as a whole, never required (opening a single note goes
+// through the OS default editor; the 🧠 local copy also opens inline in Claude
+// Desktop). Safe by construction: idempotent,
+// backs up obsidian.json before writing, never clobbers other vaults, and only
+// acts when Obsidian is installed AND closed (it rewrites obsidian.json on quit).
+//   • interactive  → opt-in question (default N).
+//   • non-interactive → auto-register WHEN SAFE, opt-out via SBG_NO_OBSIDIAN_REGISTER.
+step("7/10 · Register your vault in Obsidian (optional)");
+function reportObsidian(result) {
+  switch (result.reason) {
+    case "registered":
+      ok("vault registered in Obsidian — 🧠 citation links will open straight in it.");
+      break;
+    case "already-registered":
+      ok("vault already registered in Obsidian — nothing to do.");
+      break;
+    case "not-installed":
+      // Obsidian absent → not a failure: print the positive opt-in recommendation
+      // (F8.1). Single source of truth shared with the runtime soft hint.
+      console.log(
+        formatObsidianHint({ status: "unknown", installed: false, registered: false }),
+      );
+      break;
+    case "running":
+      warn("Obsidian is running — skipped (it rewrites its config on quit). Quit it and re-run,");
+      warn('  or just "Open folder as vault" → your brain\'s vault folder once.');
+      break;
+    default:
+      warn(`Obsidian registration skipped (${result.reason}) — you can "Open folder as vault" manually.`);
+  }
+}
+const obsidianVault = join(TARGET, "vault");
+const obsidianSeams = defaultObsidianSeams({
+  platform: process.platform,
+  env: process.env,
+  home: homedir(),
+});
+if (interactive) {
+  const wantObs = await ask(
+    "Register your brain's vault in Obsidian so 🧠 citations open directly? [y/N]",
+    "N",
+  );
+  if (/^y/i.test(wantObs)) reportObsidian(registerVaultInObsidian(obsidianVault, obsidianSeams));
+  else warn('Skipped — you can "Open folder as vault" in Obsidian yourself anytime.');
+} else if (shouldRegisterObsidian(process.env, process.platform)) {
+  // Non-interactive (Claude-driven install): auto-register WHEN SAFE. The wrapper
+  // no-ops cleanly when Obsidian is absent/running, so this never forces anything.
+  reportObsidian(registerVaultInObsidian(obsidianVault, obsidianSeams));
+} else {
+  warn("Obsidian registration opted out (SBG_NO_OBSIDIAN_REGISTER / CI) — skipped.");
+}
+
 if (rl) rl.close();
 
 // ── 6. RAG engine install ────────────────────────────────────────────────────
-step("7/9 · Installing the RAG engine (npm install)");
+step("8/10 · Installing the RAG engine (npm install)");
 const rag = join(TARGET, "rag");
 // Build the native binding (better-sqlite3) UNDER the launcher's self-heal PATH —
 // i.e. the exact Node that rag/launch.sh will later resolve at runtime — so the
@@ -679,7 +762,7 @@ else {
 // in-process → always (the weights download on 1st use, ~28 s once);
 // OpenAI/Ollama endpoint → base URL provided. The fully-local option thus self-verifies
 // right at install, with no key at all.
-step("8/9 · Initial indexing of the example vault");
+step("9/10 · Initial indexing of the example vault");
 const envNow = existsSync(envPath) ? readFileSync(envPath, "utf8") : null;
 const embedderIsReady = embedderReady(envNow);
 if (embedderIsReady) {
@@ -701,23 +784,83 @@ if (embedderIsReady) {
 }
 
 // ── 8. Post-flight — verify the brain answers FROM the vault ─────────────────
-// "Loud failure" strategy: we don't try to prevent a broken install,
-// we CATCH it. Two levels:
+// "Loud failure" strategy: we don't try to prevent a broken install, we CATCH it.
+// Two levels:
 //   • structural — stdio handshake + `vault-rag` tools exposed (no key required).
-//   • functional (probe) — if the key is there, we actually call search_vault with
-//     the DEMO question and require a vault source to be cited ("vault/…"). That's
-//     what distinguishes a real brain from one that would answer off-target (failure B).
-// With key: a failing probe = LOUD FAIL + exit(1) BEFORE the success banner
-// (no false green). Without key: structural only + demo check honestly deferred.
-step("9/9 · Post-flight — does the brain answer from the vault?");
+//   • functional (gate) — if the embedder is ready, ask every ACTIVATED module its
+//     standard MCP health_check (ADR 0030, F7-bis): vault-rag proves the brain
+//     answers FROM the vault (the dedicated Quibblethorne canary), which is what
+//     distinguishes a real brain from one that would answer off-target (failure B).
+// Embedder ready: a blocking health_check = LOUD FAIL + exit(1) BEFORE the success
+// banner (no false green). Not ready: structural only + demo check honestly deferred.
+step("10/10 · Post-flight — does the brain answer from the vault?");
 const EXPECT_TOOLS = ["search_vault", "get_document", "list_documents", "vault_stats"];
 try {
   const mcp = JSON.parse(readFileSync(join(TARGET, ".mcp.json"), "utf8"));
   const srv = mcp.mcpServers?.["vault-rag"];
   if (!srv) {
     warn(".mcp.json without a \"vault-rag\" server — verification skipped.");
+  } else if (embedderIsReady) {
+    // Embedder ready → FUNCTIONAL gate: ask every ACTIVATED engine module its own
+    // standard health_check (ADR 0030, F7-bis) — the SAME runner verify-rag and the
+    // runtime probe use. vault-rag proves the brain answers FROM the vault (dedicated
+    // Quibblethorne canary + index intact + embedder ready); an unconfigured optional
+    // module (local-mirror) stays `unknown` → benign (gateBlockers never blocks on it).
+    const manifest = JSON.parse(readFileSync(join(TARGET, "engine-manifest.json"), "utf8"));
+    // #4: STRUCTURAL gate FIRST — assert the vault-rag tool SURFACE is intact
+    // (search_vault, get_document, list_documents, vault_stats). The functional
+    // health_check below proves retrieval works, but it does NOT assert the 4 tools are
+    // all exposed, so a regression dropping get_document/list_documents/vault_stats would
+    // pass green. Keep both: the tool list must be complete AND the canary must answer.
+    const cmd =
+      process.platform === "win32" && /^(npx|npm)$/.test(srv.command) ? `${srv.command}.cmd` : srv.command;
+    const smoke = await smokeTestMcp({
+      command: cmd,
+      args: srv.args ?? [],
+      cwd: srv.cwd ?? TARGET,
+      expectTools: EXPECT_TOOLS,
+      env: { SBG_NO_NOTIFY: "1" },
+      timeoutMs: providerKey === "in-process" ? 60000 : 30000,
+    });
+    if (!smoke.ok) {
+      err("POST-FLIGHT FAILURE — the vault-rag tool surface is incomplete:");
+      err(`  • ${smoke.error ?? `expected ${EXPECT_TOOLS.join(", ")}`}`);
+      err("Refusing to declare the install successful (a brain missing a core tool is broken).");
+      err("Troubleshooting: SETUP.md §8 (.env, index, MCP connection), then re-run the installer.");
+      process.exit(1); // LOUD FAIL — before any success banner
+    }
+    const { isRegistered, callHealthCheck } = buildHealthCheckCaller({
+      mcpServers: mcp.mcpServers,
+      // No OS toast during the post-flight (the MCP startup auto-reindex would pop one),
+      // and headroom for an in-process ONNX reload (30 s for network embedders).
+      env: { SBG_NO_NOTIFY: "1" },
+      timeoutMs: providerKey === "in-process" ? 60000 : 30000,
+    });
+    const verdict = await runActivatedHealthChecks({ manifest, isRegistered, callHealthCheck });
+    const blockers = gateBlockers(verdict, manifest);
+    if (blockers.length === 0) {
+      ok("post-flight OK — every activated module's health_check is green (RAG canary Quibblethorne found).");
+      // #3: an OPTIONAL module that's broken (e.g. local-mirror whose server can't boot —
+      // its npm install only warned) does NOT fail the install, but say so LOUDLY so it's
+      // visible rather than silently swallowed by the green banner.
+      for (const m of optionalBroken(verdict, manifest)) {
+        const bad = (m.checks ?? []).filter((ch) => ch.status !== "ok");
+        const why = bad.length ? bad.map((ch) => `${ch.name}: ${ch.detail}`).join("; ") : m.status;
+        warn(`Optional capability ${m.module} is BROKEN (not blocking the install) — ${why}`);
+      }
+    } else {
+      err("POST-FLIGHT FAILURE — a required health_check is not green:");
+      for (const m of blockers) {
+        const bad = (m.checks ?? []).filter((ch) => ch.status !== "ok");
+        const why = bad.length ? bad.map((ch) => `${ch.name}: ${ch.detail}`).join("; ") : m.status;
+        err(`  • ${m.module} → ${m.status} — ${why}`);
+      }
+      err("Refusing to declare the install successful (a brain that answers off the vault is worse than a broken one).");
+      err("Troubleshooting: SETUP.md §8 (.env, index, MCP connection), then re-run the installer.");
+      process.exit(1); // LOUD FAIL — before any success banner
+    }
   } else {
-    // npx/npm carry .cmd on Windows (cf. NPM above).
+    // Embedder not ready → we can't prove retrieval; structural smoke only, KO = warn.
     const cmd =
       process.platform === "win32" && /^(npx|npm)$/.test(srv.command)
         ? `${srv.command}.cmd`
@@ -727,43 +870,21 @@ try {
       args: srv.args ?? [],
       cwd: srv.cwd ?? TARGET,
       expectTools: EXPECT_TOOLS,
-      // No OS toast during the post-flight (the MCP auto-reindex would otherwise
-      // pop one); the notify seam honours SBG_NO_NOTIFY.
       env: { SBG_NO_NOTIFY: "1" },
-      // In-process reloads an ONNX session in the smoke's MCP process → we
-      // allow more headroom (the fallback stays 30 s for network embedders).
-      timeoutMs: providerKey === "in-process" ? 60000 : 30000,
-      // Functional probe only if the embedder is ready (otherwise search_vault
-      // fails because the index doesn't exist yet — Gemini key absent, or endpoint
-      // not configured). In-process: ready with no key → the canary runs.
-      ...(embedderIsReady
-        ? { probe: { tool: "search_vault", args: { query: DEMO }, expectText: DEMO_EXPECT } }
-        : {}),
+      timeoutMs: 30000,
     });
-    if (embedderIsReady) {
-      if (res.ok) {
-        ok("post-flight OK — the RAG finds a fact unfindable outside the vault (canary Pélagie de Mollecuisse).");
-      } else {
-        err(`POST-FLIGHT FAILURE — the brain does NOT answer from the vault: ${res.error ?? "unknown reason"}`);
-        err("Refusing to declare the install successful (a brain that answers off the vault is worse than a broken one).");
-        err("Troubleshooting: SETUP.md §8 (.env, index, MCP connection), then re-run the installer.");
-        process.exit(1); // LOUD FAIL — before any success banner
-      }
+    if (res.ok) {
+      ok(`MCP connection OK — ${res.tools.length} tools exposed (${EXPECT_TOOLS.join(", ")}).`);
     } else {
-      // Embedder not ready → we can't prove retrieval; structural only, KO = warn.
-      if (res.ok) {
-        ok(`MCP connection OK — ${res.tools.length} tools exposed (${EXPECT_TOOLS.join(", ")}).`);
-      } else {
-        warn(`MCP connection KO: ${res.error ?? "unknown reason"}`);
-        warn("Claude Code might not see the vault. Troubleshooting: SETUP.md §8.");
-      }
-      if (embedderCfg.needsGeminiKey) {
-        warn("Demo check DEFERRED (no key) — next step: paste your Gemini key into .env,");
-      } else {
-        warn("Demo check DEFERRED (embedder still to be configured) — complete .env,");
-      }
-      warn("then validate the RAG with:  node scripts/verify-rag.mjs  (loud verdict, sourced from the vault).");
+      warn(`MCP connection KO: ${res.error ?? "unknown reason"}`);
+      warn("Claude Code might not see the vault. Troubleshooting: SETUP.md §8.");
     }
+    if (embedderCfg.needsGeminiKey) {
+      warn("Demo check DEFERRED (no key) — next step: paste your Gemini key into .env,");
+    } else {
+      warn("Demo check DEFERRED (embedder still to be configured) — complete .env,");
+    }
+    warn("then validate the RAG with:  node scripts/verify-rag.mjs  (loud verdict, sourced from the vault).");
   }
 } catch (e) {
   warn(`MCP verification impossible (${e.message}) — see SETUP.md §8.`);

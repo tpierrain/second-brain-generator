@@ -17,95 +17,50 @@
 // Everything outside the plan is untouchable BY CONSTRUCTION (the plan is an
 // allowlist) — the Gate asserts byte-identity of the user's sacred files.
 // ─────────────────────────────────────────────────────────────────────────────
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { RESTART_FLAG_REL } from "./lib/restart-nudge.mjs";
 
 import {
   fetchSource as defaultFetchSource,
   resolveLatestTag as defaultResolveLatestTag,
   readTargetManifest,
 } from "./lib/engine-fetch.mjs";
-import { computeApplyPlan } from "./lib/engine-apply-plan.mjs";
-import { matchesAny } from "./lib/glob-match.mjs";
-import { reconcileMcpServers } from "./lib/mcp-reconcile.mjs";
-import { needsReindex } from "./lib/reindex-trigger.mjs";
+import { reconcileBrain } from "./lib/reconcile-brain.mjs";
 import { reseedProvenance } from "./lib/engine-source.mjs";
-import { listFilesRelPosix } from "./lib/fs-walk.mjs";
-import { selectEngineFilesToCopy } from "./lib/engine-copy-select.mjs";
 import {
-  buildShLauncher,
-  buildCmdLauncher,
-  buildNodeRunnerSh,
-  buildNodeRunnerCmd,
-  buildLocalMirrorShLauncher,
-  buildLocalMirrorCmdLauncher,
-} from "./lib/rag-launcher.mjs";
+  defaultRunInstall,
+  defaultRunReindex,
+  defaultCountVaultNotes,
+  defaultRegenerateLaunchers,
+} from "./lib/engine-seams.mjs";
+import { defaultFinalizeReconcile } from "./lib/auto-finalize.mjs";
 
-function copyInto(srcDir, destDir, rel) {
-  const dest = join(destDir, rel);
-  mkdirSync(dirname(dest), { recursive: true });
-  copyFileSync(join(srcDir, rel), dest);
-}
-
-// npm is a shell-wrapped `.cmd` on Windows (unlike git, a real .exe) → platform switch.
-const npmExe = (platform) => (platform === "win32" ? "npm.cmd" : "npm");
-
-// ─── Default seams (the real CLI wiring; the Gate injects stubs instead) ──────
-async function defaultRunInstall({ ragDir, brainDir, platform }) {
-  execFileSync(npmExe(platform), ["install"], { cwd: ragDir, stdio: "inherit" });
-  // local-mirror deps too, when the brain carries that package (pure JS →
-  // no native build, plain install; absent on pre-local-mirror brains → skip).
-  const gssDir = join(brainDir, "local-mirror");
-  if (existsSync(join(gssDir, "package.json"))) {
-    execFileSync(npmExe(platform), ["install"], { cwd: gssDir, stdio: "inherit" });
-  }
-}
-
-async function defaultRunReindex({ brainDir, platform }) {
-  execFileSync(npmExe(platform), ["run", "reindex"], { cwd: join(brainDir, "rag"), stdio: "inherit" });
-}
-
-// How many notes the brain holds, for the user-facing recap (F2). The lightest
-// deterministic path (ADR 0009): count the vault's Markdown files on disk — no
-// native deps, no ABI risk, accurate whatever the index state. The exclusions
-// mirror rag/'s document-scanner (`_template.md`, `.gitkeep`, the `.obsidian/`
-// dir) so the recap number matches what the indexer actually treats as a note.
-export async function defaultCountVaultNotes({ brainDir }) {
-  const vaultDir = join(brainDir, "vault");
-  if (!existsSync(vaultDir)) return 0;
-  const EXCLUDE_NAMES = new Set(["_template.md", ".gitkeep"]);
-  return listFilesRelPosix(vaultDir).filter((rel) => {
-    if (!rel.endsWith(".md")) return false;
-    const parts = rel.split("/");
-    if (parts.includes(".obsidian")) return false;
-    return !EXCLUDE_NAMES.has(parts[parts.length - 1]);
-  }).length;
-}
-
-// Rebuild BOTH launcher halves from the (freshly-updated) rag-launcher.mjs builders.
-// Machine-independent output → no per-host divergence; both `.sh` and `.cmd` always
-// written (ADR 0015), whatever the host platform.
-async function defaultRegenerateLaunchers({ brainDir }) {
-  writeFileSync(join(brainDir, "rag", "launch.sh"), buildShLauncher());
-  writeFileSync(join(brainDir, "rag", "launch.cmd"), buildCmdLauncher());
-  writeFileSync(join(brainDir, "local-mirror", "launch.sh"), buildLocalMirrorShLauncher());
-  writeFileSync(join(brainDir, "local-mirror", "launch.cmd"), buildLocalMirrorCmdLauncher());
-  writeFileSync(join(brainDir, "scripts", "run-node.sh"), buildNodeRunnerSh());
-  writeFileSync(join(brainDir, "scripts", "run-node.cmd"), buildNodeRunnerCmd());
-}
+// Re-export so the engine's own tests keep importing the count seam from here.
+export { defaultCountVaultNotes };
 
 // Human summary the brain-side `update-engine` skill shows the user (Step 6, ADR
 // 0016). Pure so the wording is unit-tested; the CLI entry only wires the I/O.
 export function formatReport(report) {
-  const { ref, engineVersion, copied, regenerated, reindexed, vaultNoteCount, installedSkills = [], mcpServersAdded = [] } = report;
+  const { ref, engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills = [], mcpServersAdded = [], hooksAdded = [] } = report;
+  // F-B2 (ADR 0026): the engine-owned SessionStart hooks wired into an upgrader's
+  // settings.json, by their bare name (scripts/session-health.mjs → session-health).
+  const wiredHooks = hooksAdded.map((s) => s.replace(/^scripts\//, "").replace(/\.mjs$/, ""));
+  // Honest reindex line: a schema move re-encodes EVERY note; the health-note pairing (ADR
+  // 0026 decision B, upgraders) only makes sure the one engine-owned note is present and
+  // indexed (incremental — your other notes are untouched) — never claim "the index format
+  // changed" in that case.
+  const reindexLine = !reindexed
+    ? `   • index format unchanged — no reindex needed`
+    : reindexReason === "health-note-seed"
+      ? `   • ensured the engine health-check note is present and indexed (incremental — your other notes were not re-encoded)`
+      : `   • reindexed — the index format changed (your notes were re-encoded, nothing lost)`;
   const lines = [
     `✅ Engine updated to ${ref} (rag ${engineVersion?.rag}).`,
     `   • ${copied.length} engine file(s) swapped` + (regenerated ? " + launchers regenerated" : ""),
-    reindexed
-      ? `   • reindexed — the index format changed (your notes were re-encoded, nothing lost)`
-      : `   • index format unchanged — no reindex needed`,
+    reindexLine,
   ];
   // F2: the number the USER cares about — how many notes the brain holds. When a
   // reindex is running, searchability catches up as indexing finishes.
@@ -124,6 +79,42 @@ export function formatReport(report) {
   if (mcpServersAdded.length > 0) {
     lines.push(`   • new MCP server(s) registered: ${mcpServersAdded.join(", ")}`);
   }
+  if (wiredHooks.length > 0) {
+    lines.push(`   • new runtime hook(s) wired: ${wiredHooks.join(", ")}`);
+  }
+  // F1.6 (ADR 0026, point 4): a freshly-installed skill/MCP is on disk but Claude
+  // loads skills/MCP/hooks when a conversation STARTS (Layer B config-freeze), so it
+  // is NOT yet live in THIS conversation. Say so LOUDLY (silence reads as "ready to
+  // use") and point at the lighter sufficient action — a full restart, then RESUMING
+  // this same conversation (field-proven, F4). Do NOT muddy it with "start a new
+  // conversation": that is the distinct initial-rooting rule (a never-rooted session),
+  // not what is needed just to pick up new capabilities.
+  const newCapabilities = installedSkills.length + mcpServersAdded.length + wiredHooks.length;
+  if (newCapabilities > 0) {
+    const noun = newCapabilities === 1 ? "capability" : "capabilities";
+    const them = newCapabilities === 1 ? "it" : "them";
+    lines.push(
+      `   ⚠️ ACTION NEEDED — ${newCapabilities} new ${noun} ${newCapabilities === 1 ? "is" : "are"}` +
+        ` installed on disk but NOT active in THIS conversation.`,
+      `   A FULL RESTART of Claude (close it and reopen) is enough: come back to THIS same`,
+      `   conversation afterwards and your brain can use ${them}. You do NOT need to start a`,
+      `   brand-new chat for this. Until you restart, your brain CAN'T use ${them}.`,
+      `   • If still missing after a restart, run /update-engine once more.`,
+    );
+  } else if (copied.length > 0 || regenerated) {
+    // F-B7d (ship-blocker A1): even a steady-state swap with NO brand-new capability still
+    // needs a restart — the MCP server, hooks and constitution THIS conversation loaded are
+    // the OLD ones until Claude is reopened. Stay silent and a "✅ done" reads as "already
+    // live", trapping the improvement behind a stale session. So warn LOUDLY — but WITHOUT the
+    // new-capability counter / "run once more" fallback (those are reserved for actual new
+    // capabilities). The genuine no-op (nothing swapped) skips this entirely → no crying wolf.
+    lines.push(
+      `   ⚠️ ACTION NEEDED — the engine code was updated on disk, but THIS conversation is`,
+      `   still running the OLD version. A FULL RESTART of Claude (close it and reopen) is`,
+      `   enough: come back to THIS same conversation afterwards and the update takes effect.`,
+      `   Until you restart, your brain keeps using the old engine.`,
+    );
+  }
   lines.push(`   Your notes, .env, constitution, settings and custom skills were left untouched.`);
   return lines.join("\n");
 }
@@ -137,6 +128,7 @@ export async function updateEngine({
   runInstall = defaultRunInstall,
   runReindex = defaultRunReindex,
   countVaultNotes = defaultCountVaultNotes,
+  finalizeReconcile = defaultFinalizeReconcile,
 }) {
   const manifestPath = join(brainDir, "engine-manifest.json");
   const local = JSON.parse(readFileSync(manifestPath, "utf8"));
@@ -152,71 +144,26 @@ export async function updateEngine({
   const sourceDir = await fetchSource({ repo: source.repo, ref });
   const target = readTargetManifest(sourceDir);
 
-  // 2. The write-allowlist (the safety core, Step 3): the ONLY files we may write.
-  const plan = computeApplyPlan(target);
-
-  // 3. Apply the COPY buckets — overwrite (`replace`) + the engine-owned scripts
-  //    (incl. update-engine.mjs → self-update). Globs are resolved against the files
-  //    the fetched source actually carries, then refined by `selectEngineFilesToCopy`
-  //    with the SAME two exclusions the INSTALLER applies (so update-engine never
-  //    copies more than the install would, PR #10 QA findings): F1 drops the dev-only
-  //    files (scripts/lib/eval-*/mcp-search.*), F2 keeps the brain's locale-owned
-  //    files (scripts/lib/demo-locale.mjs → no fr→en regression). The launchers
-  //    (`regenerate`) are NOT copied — they are rebuilt below. Self-replacement mid-run
-  //    is safe: Node caches imported modules, so overwriting the .mjs on disk never
-  //    perturbs this process.
-  const sourceFiles = listFilesRelPosix(sourceDir);
-  const copyGlobs = [...plan.overwrite, ...plan.replaceScripts];
-  const copied = selectEngineFilesToCopy({ sourceFiles, copyGlobs });
-  for (const rel of copied) copyInto(sourceDir, brainDir, rel);
-
-  // 3.bis Install engine-declared skills the brain is MISSING (ADR 0025): additive,
-  //    install-if-absent at the SKILL-DIR level. A skill dir that already exists
-  //    (possibly user-customized, e.g. prepare-1-1) is left byte-identical; a
-  //    brand-new engine skill (e.g. local-mirror) is copied in so upgraders get it.
-  //    Non-declared / custom skills are never in `installSkills` → untouchable.
-  const installedSkills = [];
-  for (const skillGlob of plan.installSkills) {
-    const skillDir = skillGlob.replace(/\/\*\*?$/, ""); // ".../local-mirror/**" → ".../local-mirror"
-    if (existsSync(join(brainDir, skillDir))) continue; // present → preserve, never overwrite
-    for (const rel of sourceFiles.filter((f) => matchesAny([skillGlob], f))) copyInto(sourceDir, brainDir, rel);
-    installedSkills.push(skillDir.split("/").pop()); // the skill name, for the report
-  }
-
-  // 3.ter Reconcile .mcp.json against the manifest's engineMcpServers (ADR 0025):
-  //    register a newly-shipped engine server (e.g. local-mirror) the brain is
-  //    MISSING, taking its definition from the fetched .mcp.json.template with
-  //    {{PROJECT_ROOT}} substituted to this brain dir. Existing servers (engine OR
-  //    user-added) are preserved; absent template → nothing to reconcile.
-  const engineServerIds = target.engineMcpServers ?? [];
-  const templatePath = join(sourceDir, ".mcp.json.template");
-  const brainMcpPath = join(brainDir, ".mcp.json");
-  const mcpServersAdded = [];
-  if (engineServerIds.length > 0 && existsSync(templatePath) && existsSync(brainMcpPath)) {
-    const projectRoot = brainDir.split("\\").join("/"); // {{PROJECT_ROOT}} is posix (cf. installer toPosix)
-    const templateMcp = JSON.parse(readFileSync(templatePath, "utf8").split("{{PROJECT_ROOT}}").join(projectRoot));
-    const brainMcp = JSON.parse(readFileSync(brainMcpPath, "utf8"));
-    const before = new Set(Object.keys(brainMcp.mcpServers ?? {}));
-    const reconciled = reconcileMcpServers({ brainMcp, templateMcp, engineServerIds });
-    writeFileSync(brainMcpPath, JSON.stringify(reconciled, null, 2) + "\n");
-    mcpServersAdded.push(...Object.keys(reconciled.mcpServers).filter((id) => !before.has(id)));
-  }
-
-  // 4. Regenerate the launchers (both halves, ADR 0015).
-  const regenerated = plan.regenerate.length > 0;
-  if (regenerated) await regenerateLaunchers({ brainDir, platform });
-
-  // 5. npm install in the brain's rag/ (+ local-mirror/ when present).
-  await runInstall({ ragDir: join(brainDir, "rag"), brainDir, platform });
-
-  // 6. Reindex IFF the index schema moved (else the existing index stays valid).
-  //    The decision is the deterministic `needsReindex` (Step 5, ADR 0009).
-  const reindexed = needsReindex({ local, target });
-  if (reindexed) await runReindex({ brainDir, platform });
-
-  // 6.bis Count the notes the brain holds, for the user-facing recap (F2). Read after
-  //    any reindex so it reflects the current vault. Deterministic, no native deps.
-  const vaultNoteCount = await countVaultNotes({ brainDir });
+  // 2.→6. CONVERGE the brain's on-disk engine state to the target manifest (ADR 0026):
+  //    compute the write-allowlist, copy the engine files (F1/F2 refinements), install
+  //    -if-absent the engine-declared skills, reconcile .mcp.json against
+  //    engineMcpServers, add-if-absent the engine-owned hook entries into settings.json,
+  //    regenerate the launchers, run install, reindex IFF the schema moved, and count the
+  //    vault notes — all behind the deterministic, idempotent
+  //    `reconcileBrain`. Extracted so the SAME reconciler runs at auto-finalize (a fresh
+  //    child process at the end of this function) and at SessionStart self-heal.
+  const { copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded, hooksAdded } =
+    await reconcileBrain({
+      brainDir,
+      platform,
+      sourceDir,
+      target,
+      local,
+      regenerateLaunchers,
+      runInstall,
+      runReindex,
+      countVaultNotes,
+    });
 
   // 7. Record the new engine version + the ref we pulled, and RE-SEED `provenance`
   //    (Step 5): refresh the 3-way base for the merge files the engine just
@@ -239,7 +186,27 @@ export async function updateEngine({
   };
   writeFileSync(manifestPath, JSON.stringify(updated, null, 2) + "\n");
 
-  return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, vaultNoteCount, installedSkills, mcpServersAdded };
+  // 8. Auto-finalize (ADR 0026, Layer A): re-exec the FRESHLY-WRITTEN reconciler in a
+  //    fresh child process, handing it the same source we fetched. A new process reads
+  //    the just-written reconcile-brain.mjs from disk → escapes this process's module
+  //    cache → runs the *just-installed* converge logic, collapsing the historical
+  //    2-cycle into a single invocation. The child reconciles ONLY (never re-fetches,
+  //    never re-finalizes) → no recursion. Done last, on top of an already-successful,
+  //    already-recorded update.
+  //
+  //    FAIL-SOFT (#1): auto-finalize is a best-effort finisher on top of an update that
+  //    is ALREADY done + recorded (step 7). A failure in the fresh child (flaky npm
+  //    install, ABI hiccup) must NEVER reject this function — that would print the CLI's
+  //    "the brain was NOT changed past this point" over a successful update. We belt it
+  //    here even though defaultFinalizeReconcile is itself fail-soft, so EVERY injected
+  //    seam is safe. SessionStart self-heal (Layer B) converges the rest on next start.
+  try {
+    await finalizeReconcile({ brainDir, sourceDir, platform });
+  } catch {
+    // swallowed on purpose — the update succeeded; self-heal will finish the job.
+  }
+
+  return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded, hooksAdded };
 }
 
 // ── CLI entry (the command the brain-side `update-engine` skill runs) ─────────
@@ -251,6 +218,20 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const brainDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   updateEngine({ brainDir })
     .then((report) => {
+      // A2 (F-B7d): if this update placed anything a restart is needed for, arm the
+      // persistent restart flag so the statusLine keeps nudging until the user restarts —
+      // a belt for the in-session converged case (the report banner alone scrolls away).
+      // The next fresh, converged session clears it (session-self-heal). Fail-soft.
+      const newCaps = (report.installedSkills?.length ?? 0) + (report.mcpServersAdded?.length ?? 0) + (report.hooksAdded?.length ?? 0);
+      if (report.copied?.length > 0 || report.regenerated || newCaps > 0) {
+        try {
+          const flagPath = join(brainDir, RESTART_FLAG_REL);
+          mkdirSync(dirname(flagPath), { recursive: true });
+          writeFileSync(flagPath, "restart needed to finish the engine update\n");
+        } catch {
+          /* fail-soft: the nudge is a convenience, never a blocker */
+        }
+      }
       process.stdout.write(formatReport(report) + "\n");
       process.exit(0);
     })

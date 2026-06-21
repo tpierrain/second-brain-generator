@@ -16,13 +16,15 @@
 //   - DB reading via better-sqlite3 (already installed in rag/node_modules);
 //     degrades gracefully if the module is not loadable.
 // ─────────────────────────────────────────────────────────────────────────────
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { hasGeminiKey, geminiKeyRequired } from "./lib/gemini-key.mjs";
 import { repoStatusLine, countVaultUncommitted } from "./lib/repo-status.mjs";
+import { bootstrapSessionHooks } from "./lib/hook-bootstrap.mjs";
+import { bootstrapReassuranceMessage } from "./lib/self-heal-message.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, "..");
@@ -132,8 +134,46 @@ if (geminiKeyRequired(envContent) && !hasGeminiKey(envContent)) {
     "it on its own). If it persists, reconnect the MCP (/mcp) or restart Claude Code.";
 }
 
+// ─── Bootstrap tick (ADR 0026): the one-time pre-3.2 → v3.3.0 hook wiring ─────
+// session-status is the ONLY SessionStart hook a pre-3.2 brain has wired, so it is the
+// anchor that wires the v3.3.0 runtime trio (self-heal / health / obsidian-hint). It
+// detects the drift (settings.json vs the now-current template), and — only if a gap
+// exists — spawns the detached reconcile ONCE + emits one belt line (localized via the
+// brain's BRAIN_LOCALE). Converged → no-op, no spawn. Fail-soft: a broken bootstrap NEVER
+// blocks session start. The same reconcile CLI the self-heal spawns; sourceDir === brainDir
+// (local converge, no fetch).
+let bootstrapLine = null;
+try {
+  const settingsPath = join(REPO, ".claude", "settings.json");
+  const templatePath = join(REPO, ".claude", "settings.json.template");
+  if (existsSync(settingsPath) && existsSync(templatePath)) {
+    const brainHooks = JSON.parse(readFileSync(settingsPath, "utf8")).hooks ?? {};
+    const templateHooks = JSON.parse(readFileSync(templatePath, "utf8")).hooks ?? {};
+    const reconcileCli = join(__dirname, "lib", "reconcile-brain.mjs");
+    const r = bootstrapSessionHooks({
+      brainHooks,
+      templateHooks,
+      brainDir: REPO,
+      message: bootstrapReassuranceMessage(),
+      spawnReconcile: ({ brainDir }) => {
+        const child = spawn(
+          process.execPath,
+          [reconcileCli, "--brainDir", brainDir, "--sourceDir", brainDir, "--platform", process.platform],
+          // detached + unref → outlives the hook; windowsHide → no console flash (ADR 0015).
+          { detached: true, stdio: "ignore", windowsHide: true },
+        );
+        child.unref();
+      },
+      emit: (msg) => (bootstrapLine = msg),
+    });
+    void r;
+  }
+} catch {
+  bootstrapLine = null; // fail-soft: never block session start over a bootstrap hiccup
+}
+
 // ─── Emission via systemMessage: displays directly in the terminal ───────────
-const systemMessage = [keyLine, repoLine, ragLine].filter(Boolean).join("\n");
+const systemMessage = [bootstrapLine, keyLine, repoLine, ragLine].filter(Boolean).join("\n");
 process.stdout.write(
   JSON.stringify({
     hookSpecificOutput: { hookEventName: "SessionStart" },

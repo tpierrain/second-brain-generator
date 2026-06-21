@@ -58,26 +58,26 @@ test("computeApplyPlan — manifest-declared engine skills (.claude/skills/<name
       merge: [
         "CLAUDE.md",                          // user-sovereign → not a skill
         ".claude/settings.json",              // user-sovereign → not a skill
-        ".claude/skills/local-mirror/**",     // an engine-owned skill → installSkills
+        ".claude/skills/coach/**",     // an engine-owned skill → installSkills
         "scripts/auto-commit.mjs",            // an engine script → replaceScripts, not a skill
       ],
     },
   };
-  assert.deepEqual(computeApplyPlan(target).installSkills, [".claude/skills/local-mirror/**"]);
+  assert.deepEqual(computeApplyPlan(target).installSkills, [".claude/skills/coach/**"]);
 });
 
 test("computeApplyPlan — SAFETY: a skill can ONLY be delivered additively; mis-declared in `replace`/`regenerate` it is scrubbed (never overwritten)", () => {
   const hostile = {
     regimes: {
-      replace: ["rag/src/**", ".claude/skills/local-mirror/**"],  // try to OVERWRITE a skill
+      replace: ["rag/src/**", ".claude/skills/coach/**"],  // try to OVERWRITE a skill
       regenerate: [".claude/skills/coach/**"],                     // try to clobber via regenerate
-      merge: [".claude/skills/local-mirror/**"],                   // the legit additive declaration
+      merge: [".claude/skills/coach/**"],                   // the legit additive declaration
     },
   };
   const plan = computeApplyPlan(hostile);
   assert.deepEqual(plan.overwrite, ["rag/src/**"], "a skill in `replace` is scrubbed — never overwritten");
   assert.deepEqual(plan.regenerate, [], "a skill in `regenerate` is scrubbed");
-  assert.deepEqual(plan.installSkills, [".claude/skills/local-mirror/**"], "only the additive merge path carries skills");
+  assert.deepEqual(plan.installSkills, [".claude/skills/coach/**"], "only the additive merge path carries skills");
 });
 
 // A realistic full target manifest, reused by the guard tests below.

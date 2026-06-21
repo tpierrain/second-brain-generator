@@ -13,9 +13,9 @@ test('a second sync with no upstream change rewrites nothing', async () => {
     aNotionPage({ id: 'page-2', content: 'Second.\n' }),
   );
   const gss = harness.build();
-  await gss.sync('pa-sc');
+  await gss.sync('team-a');
 
-  const second = await gss.sync('pa-sc');
+  const second = await gss.sync('team-a');
 
   assert.equal(second.written, 0);
   assert.equal(second.unchanged, 2);
@@ -28,7 +28,7 @@ test('a successful sync advances the watermark to the max last_edited_time of th
   );
   const gss = harness.build();
 
-  await gss.sync('pa-sc');
+  await gss.sync('team-a');
 
   const [source] = await gss.listSources();
   assert.equal(source.watermark, '2026-06-15T09:32:00.000Z');
@@ -43,11 +43,11 @@ test('a partial sync (an item fails to fetch) keeps the readable file but freeze
   );
   const gss = harness.build();
 
-  const report = await gss.sync('pa-sc');
+  const report = await gss.sync('team-a');
 
   assert.equal(report.status, 'partial');
   assert.equal(report.written, 1);
-  assert.ok(harness.vaultFiles().has('mirrors/pa-sc/page-1.md'));
+  assert.ok(harness.vaultFiles().has('mirrors/team-a/page-1.md'));
   const [source] = await gss.listSources();
   assert.equal(source.watermark, null); // never advanced past a failed perimeter
   assert.equal(source.lastSyncStatus, 'partial');

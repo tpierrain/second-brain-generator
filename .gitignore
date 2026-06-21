@@ -53,6 +53,8 @@ node_modules/
 rag/.cache/
 rag/dist/
 local-mirror/dist/
+# Transient per-brain health-check verdict (ADR 0028) — regenerated each session.
+engine-health.json
 
 # ── Misc ────────────────────────────────────────────────────────────
 *.log

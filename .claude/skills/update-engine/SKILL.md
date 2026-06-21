@@ -1,7 +1,7 @@
 ---
 name: update-engine
 description: "Updates your second brain's ENGINE (the RAG search code, launchers and engine-owned scripts) to a newer version, opt-in and without ever touching your notes, .env, constitution, settings or custom skills. Reindexes only if the index format changed. Use when the user asks to update/upgrade their brain's engine, or to check whether an engine update is available."
-version: 1.0.0
+version: 1.1.0
 ---
 
 # /update-engine — Upgrade your brain's engine (opt-in, non-destructive)
@@ -56,6 +56,14 @@ Explain, plainly:
   `npm install` means installing the RAG engine's **dependencies locally** — nothing is
   published to or pulled from a package registry.
 
+> **Phrasing — make the ENGINE the visible actor, never the user.** These are things the
+> update *will do*, not commands addressed to the reader. Always use an **explicit subject +
+> future tense** ("it will fetch a newer engine", "it will never touch what's yours", "it will
+> reindex only if the format changed") — **never a bare verb** that could read as an order. This
+> matters especially when you answer in a **pro-drop language** (French, Spanish, Italian…),
+> where a subjectless present ("récupère un moteur…", "ne touche pas à…") looks like an
+> imperative aimed at the user instead of a description of what the engine does.
+
 Then ask for an explicit **yes** before proceeding.
 
 ### Step 2 — Run the deterministic core
@@ -72,6 +80,48 @@ exactly the engine-owned files, regenerates the launchers, runs `npm install`, r
   swapped, whether a reindex ran). Reassure that nothing of theirs was touched.
 - **`exit 1`** → **relay the error as-is** and tell the user the brain was not changed
   past the point of failure. **Never claim success when it failed.**
+
+> 🛑 **MANDATORY — whenever ANY engine file changed, you MUST end your chat message by telling
+> the user, LOUDLY and in their language, to FULLY RESTART Claude.** This is the **only**
+> Desktop-visible channel: Claude Desktop's Code tab renders **no status bar** — just the chat —
+> so if you don't say it in the chat, the user never sees it. The core already prints a loud
+> **`⚠️ ACTION NEEDED … FULL RESTART`** banner on any swap; **reproduce that intent in the chat,
+> don't bury it.** Make it impossible to miss — e.g.:
+>
+> > ## 🔄 ⚠️ RESTART CLAUDE NOW ⚠️ 🔄
+> > Your engine was updated **on disk**, but THIS conversation is still running the **OLD**
+> > version. **Fully close Claude and reopen it** (then come back to THIS same conversation) so
+> > the update takes effect. Until you restart, your brain keeps using the old engine. 🧠
+>
+> **Rules for that banner:**
+> - **Say it on EVERY update that swapped files** — not only when brand-new skills/MCP/hooks were
+>   listed. A steady-state swap of the MCP server, hooks or constitution this conversation loaded
+>   is still the OLD code until Claude is reopened. **Never** say "nothing to do on your side",
+>   "rien à faire", "you're all set" or anything that implies the update is already live —
+>   that directly contradicts the restart and is the bug we are fixing.
+> - **A FULL RESTART (close + reopen), then RESUME this same conversation** is the right action.
+>   **Do NOT tell them to open a brand-new conversation** — that is the distinct *initial-rooting*
+>   rule (a session not yet rooted in the brain), not what picking up new engine code needs.
+> - Phrase it **in the user's language**, calmly: it is a one-time, harmless step — the brain
+>   wired its own self-healing in the background; one restart and they're done.
+> - The **genuine no-op** (the report shows **no** files swapped and **no** reindex) is the only
+>   case where you skip the restart banner — don't cry wolf when nothing changed.
+>
+> _One-time exception (a brain upgrading from a pre-3.2 engine): the first update runs the
+> OLD orchestrator, so this report won't yet list the new runtime hooks. They are wired
+> silently-but-correctly when the user restarts once — a deterministic reassurance line is
+> shown then (localized) by the startup hook. From the next update onward it lands here._
+>
+> _**Honest one-restart blind spot (F-B7c, the restart NUDGE itself).** The loud "restart
+> Claude" cues added in v3.3.0 — the steady-state banner at the end of this report (A1) and the
+> persistent `status-line` nudge (A2) — are themselves engine code (`update-engine.mjs`,
+> `status-line.mjs`, `scripts/lib/restart-nudge.mjs`). A brain on a **pre-3.3** engine runs the
+> **OLD** versions on its **first** `/update-engine`: that first run's report may be silent about
+> the restart, and the status-line shows no nudge — we cannot rewrite already-installed code
+> retroactively. The fix is self-healing by construction: that first update DELIVERS the new
+> versions to disk, so after **one** restart the loud report + the persistent nudge take over and
+> every subsequent update is loud. Tell a pre-3.3 upgrader plainly: "restart once after this
+> first update — from then on your brain will tell you loudly whenever a restart is needed."_
 
 ## Edge cases
 - **No source recorded** (`source.repo` is null — e.g. a brain whose launcher had no

@@ -27,6 +27,8 @@ class LocalMirrorBuilder {
   private autoDeclare = true;
   /** When set, the connector fails to enumerate the perimeter (PRD §7/§12 guardrail). */
   private enumerationError: string | undefined;
+  /** When true, the sidecar state store cannot be read (a corrupt/unreachable store). */
+  private unreachableStore = false;
   /** Stable reference so tests can inspect the vault after build()/sync(). */
   private readonly vault = new RecordingVaultWriter();
   /** Stable reference so tests can inspect what `setup_source` declared. */
@@ -90,6 +92,12 @@ class LocalMirrorBuilder {
     return this;
   }
 
+  /** Make the sidecar state store unreadable — a corrupt/unreachable mirror store. */
+  withUnreachableStore(): this {
+    this.unreachableStore = true;
+    return this;
+  }
+
   /**
    * Make the vault refuse to delete a given file (I/O error, permission, transient FS
    * failure). A failing deletion must not abort the whole sync after the page writes
@@ -116,7 +124,7 @@ class LocalMirrorBuilder {
     }
     return new LocalMirror({
       configStore: this.configs,
-      stateStore: new InMemoryStateStore(),
+      stateStore: new InMemoryStateStore(this.unreachableStore),
       vaultWriter: this.vault,
       clock: new FixedClock(new Date('2026-06-17T00:00:00.000Z')),
       connectorFor: () => new StubConnector(() => this.pages, () => this.enumerationError),
@@ -133,13 +141,13 @@ export interface StubPage extends SourceItem {
 
 /** A Notion page with sensible defaults (override per test). */
 export function aNotionPage(overrides: Partial<StubPage> = {}): StubPage {
-  const id = overrides.id ?? '304a2ca-page-1';
+  const id = overrides.id ?? '0123abc-page-1';
   return {
     id,
-    title: overrides.title ?? 'Chaintrust error catalog',
-    url: overrides.url ?? `https://www.notion.so/inqom/${id}`,
+    title: overrides.title ?? 'Sample error catalog',
+    url: overrides.url ?? `https://www.notion.so/acme/${id}`,
     lastEditedTime: overrides.lastEditedTime ?? '2026-06-12T14:21:00.000Z',
-    content: overrides.content ?? '# Chaintrust error catalog\n\nWhen the API returns 402…\n',
+    content: overrides.content ?? '# Sample error catalog\n\nWhen the API returns 402…\n',
     fetchError: overrides.fetchError,
   };
 }
@@ -153,16 +161,16 @@ export function anUnreadableNotionPage(overrides: Partial<StubPage> = {}): StubP
 export function aNotionLocalMirror(
   overrides: Partial<LocalMirrorConfig> = {},
 ): LocalMirrorConfig {
-  const name = overrides.name ?? 'pa-sc';
+  const name = overrides.name ?? 'team-a';
   return {
     name,
-    title: overrides.title ?? 'PA/SC — supplier accounting',
-    description: overrides.description ?? 'Questions about supplier accounting and e-invoicing.',
+    title: overrides.title ?? 'Team A — invoices',
+    description: overrides.description ?? 'Questions about team workflows.',
     connector: overrides.connector ?? {
       type: 'notion',
       config: {
-        root_page_url: 'https://www.notion.so/inqom/HUB-304a2ca0b1c24d6e8f0a1b2c3d4e5f60',
-        token_env: 'GOLDEN_PA_SC_NOTION_TOKEN',
+        root_page_url: 'https://www.notion.so/acme/Page-0123abc0b1c24d6e8f0a1b2c3d4e5f60',
+        token_env: 'GOLDEN_TEAM_A_NOTION_TOKEN',
       },
     },
     target_dir: overrides.target_dir ?? `mirrors/${name}`,
@@ -187,7 +195,9 @@ class InMemoryConfigStore implements IConfigStore {
 
 class InMemoryStateStore implements IStateStore {
   private readonly states = new Map<string, PersistedState>();
+  constructor(private readonly unreachable = false) {}
   async load(name: string): Promise<PersistedState | null> {
+    if (this.unreachable) throw new Error(`state store unreachable for "${name}"`);
     return this.states.get(name) ?? null;
   }
   async save(name: string, state: PersistedState): Promise<void> {

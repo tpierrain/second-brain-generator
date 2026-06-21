@@ -1,6 +1,6 @@
 ---
 name: local-mirror
-description: "Declare and refresh a LOCAL MIRROR — a one-way local copy of a chosen zone of an internal tool (Notion today) replicated into this brain's vault as Markdown, so the LOCAL RAG can search and cite it OFFLINE. A mirror is a 'synchronized source' kept locally: copied once, then refreshed on demand. Use when the user wants to mirror / replicate / copy a Notion zone locally, declare / set up / connect a local mirror, refresh / sync / update one (e.g. 'mirror the PA-SC zone from Notion', 'refresh my product mirror', 'réplique cette zone Notion en local', 'mets en place un miroir local pour ce Notion', 'mets en place une synchronisation miroir avec ce Notion', 'fais que mon cerveau puisse chercher dans ce Notion'), check whether one is behind, list them, or remove one. DO NOT use this skill when the user simply wants to read, write, create, edit, fetch or SEARCH Notion content live and ad hoc — that is the job of the NATIVE Notion connector (a different tool); this skill is ONLY for mirroring a Notion zone locally for the RAG. When the intent is genuinely ambiguous (durable / offline / 'puisse chercher' → mirror; one-off / live / now → native connector), ask the balanced 2-option question first. The actual work runs in the local-mirror MCP server; this skill is the thin conversational driver."
+description: "Declare and refresh a LOCAL MIRROR — a one-way local copy of a chosen zone of an internal tool (Notion today) replicated into this brain's vault as Markdown, so the LOCAL RAG can search and cite it OFFLINE. A mirror is a 'synchronized source' kept locally: copied once, then refreshed on demand. Use when the user wants to mirror / replicate / copy a Notion zone locally, declare / set up / connect a local mirror, refresh / sync / update one (e.g. 'mirror the Team A zone from Notion', 'refresh my product mirror', 'réplique cette zone Notion en local', 'mets en place un miroir local pour ce Notion', 'mets en place une synchronisation miroir avec ce Notion', 'fais que mon cerveau puisse chercher dans ce Notion'), check whether one is behind, list them, or remove one. DO NOT use this skill when the user simply wants to read, write, create, edit, fetch or SEARCH Notion content live and ad hoc — that is the job of the NATIVE Notion connector (a different tool); this skill is ONLY for mirroring a Notion zone locally for the RAG. When the intent is genuinely ambiguous (durable / offline / 'puisse chercher' → mirror; one-off / live / now → native connector), ask the balanced 2-option question first. The actual work runs in the local-mirror MCP server; this skill is the thin conversational driver."
 version: 1.0.0
 ---
 
@@ -101,7 +101,7 @@ committed. The `setup_source` tool takes the **name of the env var**, not the to
 ## Onboarding flow (`setup_source`)
 
 1. **Gather the declaration** (ask in chat, conversationally):
-   - `name` — short technical id = the vault subfolder (e.g. `pa-sc`). Lowercase, no spaces.
+   - `name` — short technical id = the vault subfolder (e.g. `team-a`). Lowercase, no spaces.
    - `title` — human label (e.g. "PA / SC zone").
    - `description` — the **topics** this mirror covers, in natural language. This is the **routing
      key**: it's how you'll later know which question should refresh which mirror.

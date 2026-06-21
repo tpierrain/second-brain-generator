@@ -1,6 +1,11 @@
 {
   "manifestVersion": 1,
-  "engineVersion": { "rag": "1.1.2", "local-mirror": "0.1.1", "constitutionTemplate": "1.0.0", "scripts": "1.0.0" },
+  "engineVersion": {
+    "rag": "1.1.5",
+    "local-mirror": "0.2.0",
+    "constitutionTemplate": "1.0.0",
+    "scripts": "1.1.0"
+  },
   "indexSchemaVersion": 1,
   "regimes": {
     "replace": [
@@ -8,6 +13,7 @@
       "rag/package.json",
       "rag/package-lock.json",
       "rag/tsconfig.json",
+      "rag/postinstall-restart-notice.mjs",
       "local-mirror/src/**",
       "local-mirror/package.json",
       "local-mirror/package-lock.json",
@@ -15,7 +21,16 @@
       "scripts/update-engine.mjs",
       "scripts/import-brain.mjs",
       "scripts/open-env.mjs",
-      "scripts/lib/**"
+      "scripts/session-self-heal.mjs",
+      "scripts/session-status.mjs",
+      "scripts/session-health.mjs",
+      "scripts/session-obsidian-hint.mjs",
+      "scripts/health-probe-run.mjs",
+      "scripts/lib/**",
+      ".claude/settings.json.template",
+      ".mcp.json.template",
+      "engine-skills/**",
+      "engine-health/**"
     ],
     "regenerate": [
       "rag/launch.sh",
@@ -36,13 +51,19 @@
       ".claude/skills/tdd-discipline/**",
       ".claude/skills/update-engine/**",
       ".claude/skills/import/**",
-      ".claude/skills/local-mirror/**",
       "scripts/auto-commit.mjs",
       "scripts/auto-push.mjs",
       "scripts/status-line.mjs",
       "scripts/verify-rag.mjs"
     ]
   },
-  "engineMcpServers": ["vault-rag", "local-mirror"],
+  "engineMcpServers": [
+    "vault-rag",
+    "local-mirror"
+  ],
+  "engineModuleRequirements": {
+    "vault-rag": "mandatory",
+    "local-mirror": "optional"
+  },
   "provenance": {}
 }

@@ -1,5 +1,7 @@
 import type {
   FreshnessReport,
+  HealthCheckEntry,
+  HealthReport,
   LocalMirrorConfig,
   RemoveResult,
   SetupRequest,
@@ -36,6 +38,8 @@ export interface ILocalMirror {
   checkFreshness(name: string): Promise<FreshnessReport>;
   status(name: string): Promise<SourceStatus>;
   removeSource(name: string, cleanup?: boolean): Promise<RemoveResult>;
+  /** Standard module health (ADR 0030): is the optional mirror operational? */
+  healthCheck(): Promise<HealthReport>;
 }
 
 /** Driven dependencies of the Domain Service — all SPI, all stubbable (PRD §5). */
@@ -286,6 +290,39 @@ export class LocalMirror implements ILocalMirror {
     return this.describe(await this.configOrThrow(name));
   }
 
+  /**
+   * Standard module health (ADR 0030): is the OPTIONAL Notion mirror operational?
+   * The check belongs here (the module); the caller owns the reaction. Read-only —
+   * it loads config + per-source sidecar state, pulls NOTHING from Notion. Nothing
+   * declared yet → `unknown` (never `broken`): an un-set-up mirror is not a failure.
+   */
+  async healthCheck(): Promise<HealthReport> {
+    let configs: LocalMirrorConfig[];
+    try {
+      configs = await this.deps.configStore.loadAll();
+    } catch (error) {
+      return unknownReport('config', `config unreadable: ${errorMessage(error)}`);
+    }
+    if (configs.length === 0) {
+      return unknownReport('config', 'no local mirror configured');
+    }
+
+    const checks: HealthCheckEntry[] = [
+      { name: 'config', status: 'ok', detail: `${configs.length} mirror(s) declared` },
+    ];
+
+    // Store reachability: every declared source's sidecar state must be loadable. A
+    // null state (never synced) is fine; only a THROW means the store is unreachable.
+    try {
+      await Promise.all(configs.map((c) => this.deps.stateStore.load(c.name)));
+      checks.push({ name: 'store', status: 'ok', detail: 'mirror state readable' });
+    } catch (error) {
+      checks.push({ name: 'store', status: 'broken', detail: `mirror store unreachable: ${errorMessage(error)}` });
+    }
+
+    return { status: aggregateHealth(checks), checks };
+  }
+
   /** Finds a declared source by name, or throws a clear error for the caller to surface. */
   private async configOrThrow(name: string): Promise<LocalMirrorConfig> {
     const configs = await this.deps.configStore.loadAll();
@@ -314,6 +351,18 @@ export class LocalMirror implements ILocalMirror {
     await this.deps.configStore.remove(name);
     return { name, removed: true, cleanedUp: cleanup };
   }
+}
+
+/** A single-check `unknown` health report — the "couldn't determine" verdict (ADR 0030). */
+function unknownReport(checkName: string, detail: string): HealthReport {
+  return { status: 'unknown', checks: [{ name: checkName, status: 'unknown', detail }] };
+}
+
+/** Aggregate verdict: any broken → broken; else any unknown → unknown; else ok (ADR 0030). */
+function aggregateHealth(checks: HealthCheckEntry[]): HealthReport['status'] {
+  if (checks.some((c) => c.status === 'broken')) return 'broken';
+  if (checks.some((c) => c.status === 'unknown')) return 'unknown';
+  return 'ok';
 }
 
 /** A source that threw during the fan-out — reported failed, never aborting the batch. */

@@ -18,8 +18,25 @@ export interface NotifyCommand {
   args: string[];
 }
 
+// Escape a string for an AppleScript double-quoted literal: backslash is the escape
+// char, so a stray `"` (e.g. from a health-check spawn-error detail) can't close the
+// `display notification "..."` literal and make osascript exit non-zero (lost toast).
+function escapeAppleScript(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+// Escape a string for a PowerShell double-quoted literal: backtick is the escape char,
+// `"` ends the literal, and `$` triggers variable interpolation. Escape the backtick
+// FIRST so the others' inserted backticks aren't doubled.
+function escapePowerShell(s: string): string {
+  return s.replace(/`/g, "``").replace(/"/g, '`"').replace(/\$/g, "`$");
+}
+
 // Maps a platform + content to the native notification command, or null when the
-// platform is unknown (caller then stays silent).
+// platform is unknown (caller then stays silent). Title/body are arbitrary text (a
+// health-check detail may carry a `"`/`` ` ``/`$`), so each is escaped per target — the
+// command is always an argv array (not a shell line), so this is literal-safety, not
+// shell-injection defence.
 export function buildNotifyCommand(
   platform: NodeJS.Platform,
   { title, body }: NotifyContent,
@@ -27,7 +44,7 @@ export function buildNotifyCommand(
   if (platform === "darwin") {
     return {
       command: "osascript",
-      args: ["-e", `display notification "${body}" with title "${title}"`],
+      args: ["-e", `display notification "${escapeAppleScript(body)}" with title "${escapeAppleScript(title)}"`],
     };
   }
   if (platform === "win32") {
@@ -39,11 +56,12 @@ export function buildNotifyCommand(
       `$n = New-Object System.Windows.Forms.NotifyIcon; ` +
       `$n.Icon = [System.Drawing.SystemIcons]::Information; ` +
       `$n.Visible = $true; ` +
-      `$n.ShowBalloonTip(5000, "${title}", "${body}", ` +
+      `$n.ShowBalloonTip(5000, "${escapePowerShell(title)}", "${escapePowerShell(body)}", ` +
       `[System.Windows.Forms.ToolTipIcon]::Info)`;
     return { command: "powershell", args: ["-NoProfile", "-Command", ps] };
   }
   if (platform === "linux") {
+    // notify-send receives title/body as separate argv entries → no literal to break.
     return { command: "notify-send", args: [title, body] };
   }
   return null;
@@ -125,7 +143,11 @@ export function notifyDone({ platform, env, title, body, spawn }: NotifyArgs): {
   const cmd = buildNotifyCommand(platform, { title, body });
   if (!cmd) return { notified: false };
   try {
-    const child = spawn(cmd.command, cmd.args, { detached: true, stdio: "ignore" });
+    const child = spawn(cmd.command, cmd.args, {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true, // suppress the powershell console flash on Windows
+    });
     child.unref();
     return { notified: true };
   } catch {

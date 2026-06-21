@@ -44,26 +44,26 @@ test('upsert of an existing name replaces it in place (no duplicate)', async () 
 
 test('upsert preserves other declared sources', async () => {
   const store = new FsConfigStore(await aTempConfigFile());
-  await store.upsert(aNotionLocalMirror({ name: 'pa-sc', target_dir: 'mirrors/pa-sc' }));
+  await store.upsert(aNotionLocalMirror({ name: 'team-a', target_dir: 'mirrors/team-a' }));
 
-  await store.upsert(aNotionLocalMirror({ name: 'comex', target_dir: 'mirrors/comex' }));
+  await store.upsert(aNotionLocalMirror({ name: 'team-b', target_dir: 'mirrors/team-b' }));
 
   assert.deepEqual(
     (await store.loadAll()).map((s) => s.name),
-    ['pa-sc', 'comex'],
+    ['team-a', 'team-b'],
   );
 });
 
 test('remove drops a declared source', async () => {
   const store = new FsConfigStore(await aTempConfigFile());
-  await store.upsert(aNotionLocalMirror({ name: 'pa-sc' }));
-  await store.upsert(aNotionLocalMirror({ name: 'comex' }));
+  await store.upsert(aNotionLocalMirror({ name: 'team-a' }));
+  await store.upsert(aNotionLocalMirror({ name: 'team-b' }));
 
-  await store.remove('pa-sc');
+  await store.remove('team-a');
 
   assert.deepEqual(
     (await store.loadAll()).map((s) => s.name),
-    ['comex'],
+    ['team-b'],
   );
 });
 

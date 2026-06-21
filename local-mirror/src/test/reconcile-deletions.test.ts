@@ -14,14 +14,14 @@ test('a page that left the Notion perimeter has its .md deleted', async () => {
     aNotionPage({ id: 'page-2', content: 'Gone tomorrow.\n' }),
   );
   const gss = harness.build();
-  await gss.sync('pa-sc');
+  await gss.sync('team-a');
 
   harness.withoutPage('page-2');
-  const report = await gss.sync('pa-sc');
+  const report = await gss.sync('team-a');
 
   assert.equal(report.deleted, 1);
-  assert.ok(harness.vaultFiles().has('mirrors/pa-sc/page-1.md'));
-  assert.ok(!harness.vaultFiles().has('mirrors/pa-sc/page-2.md'));
+  assert.ok(harness.vaultFiles().has('mirrors/team-a/page-1.md'));
+  assert.ok(!harness.vaultFiles().has('mirrors/team-a/page-2.md'));
   const [source] = await gss.listSources();
   assert.equal(source.itemCount, 1); // page-2 no longer tracked in the state map
 });
@@ -35,15 +35,15 @@ test('a failed perimeter enumeration deletes nothing and freezes the watermark',
     aNotionPage({ id: 'page-2', lastEditedTime: '2026-06-15T09:32:00.000Z' }),
   );
   const gss = harness.build();
-  await gss.sync('pa-sc');
+  await gss.sync('team-a');
 
   harness.withFailingEnumeration('notion: 401 unauthorized');
-  const report = await gss.sync('pa-sc');
+  const report = await gss.sync('team-a');
 
   assert.equal(report.status, 'partial');
   assert.equal(report.deleted, 0);
-  assert.ok(harness.vaultFiles().has('mirrors/pa-sc/page-1.md'));
-  assert.ok(harness.vaultFiles().has('mirrors/pa-sc/page-2.md'));
+  assert.ok(harness.vaultFiles().has('mirrors/team-a/page-1.md'));
+  assert.ok(harness.vaultFiles().has('mirrors/team-a/page-2.md'));
   const [source] = await gss.listSources();
   assert.equal(source.itemCount, 2); // both pages still tracked — nothing pruned
   assert.equal(source.watermark, '2026-06-15T09:32:00.000Z'); // frozen at the last good sync
@@ -60,17 +60,17 @@ test('a failing deletion does not abort the sync and keeps the page tracked for 
     aNotionPage({ id: 'page-2', content: 'Gone tomorrow.\n' }),
   );
   const gss = harness.build();
-  await gss.sync('pa-sc');
+  await gss.sync('team-a');
 
   harness
     .withoutPage('page-2')
-    .withFailingDeletionOf('mirrors/pa-sc/page-2.md');
-  const report = await gss.sync('pa-sc'); // must NOT throw
+    .withFailingDeletionOf('mirrors/team-a/page-2.md');
+  const report = await gss.sync('team-a'); // must NOT throw
 
   assert.equal(report.status, 'partial'); // a failed delete is not a clean sync
   assert.equal(report.deleted, 0); // the delete did not succeed
-  assert.ok(harness.vaultFiles().has('mirrors/pa-sc/page-1.md'));
-  assert.ok(harness.vaultFiles().has('mirrors/pa-sc/page-2.md')); // still on disk
+  assert.ok(harness.vaultFiles().has('mirrors/team-a/page-1.md'));
+  assert.ok(harness.vaultFiles().has('mirrors/team-a/page-2.md')); // still on disk
   const [source] = await gss.listSources();
   assert.equal(source.itemCount, 2); // page-2 kept tracked → next sync retries the delete
   assert.equal(source.lastSyncStatus, 'partial');
@@ -83,15 +83,15 @@ test('renaming a page rewrites the same .md without orphaning a file', async () 
     aNotionPage({ id: 'page-1', title: 'Old title', content: 'Body v1.\n' }),
   );
   const gss = harness.build();
-  await gss.sync('pa-sc');
+  await gss.sync('team-a');
 
   harness.withRevisedPage(aNotionPage({ id: 'page-1', title: 'New title', content: 'Body v1.\n' }));
-  const report = await gss.sync('pa-sc');
+  const report = await gss.sync('team-a');
 
   assert.equal(report.written, 1); // title lives in the frontmatter → markdown hash changed
   assert.equal(report.deleted, 0);
   assert.equal(harness.vaultFiles().size, 1);
-  assert.ok(harness.vaultFiles().has('mirrors/pa-sc/page-1.md'));
+  assert.ok(harness.vaultFiles().has('mirrors/team-a/page-1.md'));
   const [source] = await gss.listSources();
   assert.equal(source.itemCount, 1);
 });
@@ -107,10 +107,10 @@ test('an empty perimeter over a non-empty corpus deletes nothing (lost scope, no
     aNotionPage({ id: 'page-2' }),
   );
   const gss = harness.build();
-  await gss.sync('pa-sc');
+  await gss.sync('team-a');
 
   harness.withoutPage('page-1').withoutPage('page-2');
-  const report = await gss.sync('pa-sc');
+  const report = await gss.sync('team-a');
 
   assert.equal(report.status, 'partial');
   assert.equal(report.deleted, 0);

@@ -23,6 +23,9 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { geminiKeyWarning } from "./lib/gemini-key.mjs";
 import { formatEngineVersion } from "./lib/engine-version.mjs";
+import { restartNudgeSegment, isRestartPending, RESTART_FLAG_REL } from "./lib/restart-nudge.mjs";
+import { deriveWanted } from "./session-self-heal.mjs";
+import { detectSelfHealGap } from "./lib/self-heal-detect.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, "..");
@@ -110,5 +113,33 @@ function readEngineSeg() {
 }
 const engineSeg = readEngineSeg();
 
-// ─── A single line, segments separated by "·" ────────────────────────────────
-process.stdout.write([gitSeg, ragSeg, engineSeg, keySeg].filter(Boolean).join(" · "));
+// ─── Restart nudge (A2, F-B7d): the PERSISTENT, Desktop-visible "⚠️ RESTART Claude" the
+// SessionStart self-heal can't deliver (Desktop drops its systemMessage). statusLine re-runs
+// continuously and reads THIS file fresh each time, so the new version runs even inside a
+// stale session — the moment an update delivers it. Pending iff EITHER signal holds:
+//   • an on-disk GAP (engine-delivered skill/MCP not yet installed) — the signal that fires
+//     in the SAME session after a silent (old-orchestrator) update, with no fresh session;
+//   • the explicit FLAG (self-heal / new core wrote it for converged-but-not-loaded).
+// Both reads are fail-soft: a hiccup must never break or freeze the status line.
+function onDiskGapNeeded() {
+  try {
+    const { wantedSkillDirs, wantedServerIds } = deriveWanted(REPO);
+    const mcpPath = join(REPO, ".mcp.json");
+    const registered = existsSync(mcpPath)
+      ? new Set(Object.keys(JSON.parse(readFileSync(mcpPath, "utf8")).mcpServers ?? {}))
+      : new Set();
+    return detectSelfHealGap({
+      wantedSkillDirs,
+      wantedServerIds,
+      skillDirExists: (dir) => existsSync(join(REPO, dir)),
+      mcpServerRegistered: (id) => registered.has(id),
+    }).needed;
+  } catch {
+    return false;
+  }
+}
+const flagExists = existsSync(join(REPO, RESTART_FLAG_REL));
+const restartSeg = restartNudgeSegment(isRestartPending({ flagExists, gapNeeded: onDiskGapNeeded() }));
+
+// ─── A single line, segments separated by "·" — the restart nudge leads (unmissable) ─
+process.stdout.write([restartSeg, gitSeg, ragSeg, engineSeg, keySeg].filter(Boolean).join(" · "));

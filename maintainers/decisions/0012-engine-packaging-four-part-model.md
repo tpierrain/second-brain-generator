@@ -12,6 +12,17 @@
   what makes a format change safe). Working detail: [`../plans/archived/engine-packaging-study.md`](../plans/archived/engine-packaging-study.md)
   and its Phase 0 action plan.
 
+## Crux
+
+> - **Decision —** a brain has **four parts** — Installer, **Engine** (upgradable), **Personal Extensions**
+>   (user-authored tooling), **Content** (the vault) — and an engine upgrade touches **only the Engine**.
+> - **Guarantee —** additive-only by construction: an upgrade writes **only** manifest-declared engine
+>   files (a **write-allowlist**, a managed file set), and can **never** delete or overwrite a Personal
+>   Extension or any Content. (Two later, surgical side-channels sit *alongside* this allowlist — see the
+>   forward-note in Decision §2.)
+> - **Prior art (not NIH) —** this is the package-manager *managed-file-set* model (dpkg/rpm/Homebrew own
+>   and touch only the files they installed); upgrades never `rsync --delete` a user's tree.
+
 ## Context
 
 ADR 0003 deferred engine upgradability and **named its own trigger**: reopen when publication widens the
@@ -46,6 +57,14 @@ delete or overwrite a Personal Extension or any Content.** Mechanically: the upg
 files declared in the engine **manifest** (a **write-allowlist**), as a **managed file set** — **never**
 "replace the folder" / `rsync --delete`. A file absent from the manifest *cannot even be enumerated* for
 deletion. This is a **structural** guarantee, stronger than 0003's "non-destructive behaviour".
+
+> **Forward-note (0025 / 0026).** The write-allowlist is the *destructive-write* boundary: anything it
+> overwrites/regenerates must be manifest-declared. Two **additive, install-if-absent** side-channels were
+> later added **alongside** it — never overwriting, never deleting, only adding what is absent: the
+> `.mcp.json` engine-server reconcile ([ADR 0025](0025-update-engine-installs-missing-engine-skills-and-servers.md))
+> and the `settings.json` engine-owned **hook-entry** merge ([ADR 0026](0026-brain-self-converges-via-idempotent-reconciler.md)).
+> They do **not** weaken this principle: they live *outside* the allowlist (so `.mcp.json` and
+> `settings.json` stay blanket-sacred to destructive writes) and only ever append engine-owned entries.
 
 **3 — Three upgrade regimes.** Every engine file falls in exactly one:
 - **Replace (re-substituted):** pure upstream machinery the user never edits (`rag/src/**`, provided

@@ -14,25 +14,25 @@ import {
 
 test('childPageToMarkdown emits a clickable www.notion.so link with the page title', () => {
   const block = {
-    id: '304a2ca0-b1c2-4d6e-8f0a-1b2c3d4e5f60',
-    child_page: { title: 'Chaintrust error catalog' },
+    id: '0123abc0-b1c2-4d6e-8f0a-1b2c3d4e5f60',
+    child_page: { title: 'Sample error catalog' },
   };
 
   const md = childPageToMarkdown(block);
 
   assert.equal(
     md,
-    '[Chaintrust error catalog](https://www.notion.so/304a2ca0b1c24d6e8f0a1b2c3d4e5f60)',
+    '[Sample error catalog](https://www.notion.so/0123abc0b1c24d6e8f0a1b2c3d4e5f60)',
   );
 });
 
 test('childPageToMarkdown falls back to "Untitled" when the child page has no title', () => {
   const md = childPageToMarkdown({
-    id: '304a2ca0-b1c2-4d6e-8f0a-1b2c3d4e5f60',
+    id: '0123abc0-b1c2-4d6e-8f0a-1b2c3d4e5f60',
     child_page: { title: '' },
   });
 
-  assert.equal(md, '[Untitled](https://www.notion.so/304a2ca0b1c24d6e8f0a1b2c3d4e5f60)');
+  assert.equal(md, '[Untitled](https://www.notion.so/0123abc0b1c24d6e8f0a1b2c3d4e5f60)');
 });
 
 // B1 (R2-5): notion-to-md renders a `link_to_page` block with the literal label "link_to_page"
@@ -40,20 +40,20 @@ test('childPageToMarkdown falls back to "Untitled" when the child page has no ti
 // but gives it a readable label instead — no title fetch (decision A: simplest, cheap, deterministic).
 test('linkToPageToMarkdown links a page_id with a readable label (not the literal "link_to_page")', () => {
   const md = linkToPageToMarkdown({
-    link_to_page: { type: 'page_id', page_id: '304a2ca0-b1c2-4d6e-8f0a-1b2c3d4e5f60' },
+    link_to_page: { type: 'page_id', page_id: '0123abc0-b1c2-4d6e-8f0a-1b2c3d4e5f60' },
   });
 
-  assert.equal(md, '[Linked Notion page](https://www.notion.so/304a2ca0b1c24d6e8f0a1b2c3d4e5f60)');
+  assert.equal(md, '[Linked Notion page](https://www.notion.so/0123abc0b1c24d6e8f0a1b2c3d4e5f60)');
 });
 
 test('linkToPageToMarkdown labels a database_id target as a linked database', () => {
   const md = linkToPageToMarkdown({
-    link_to_page: { type: 'database_id', database_id: '304a2ca0-b1c2-4d6e-8f0a-1b2c3d4e5f60' },
+    link_to_page: { type: 'database_id', database_id: '0123abc0-b1c2-4d6e-8f0a-1b2c3d4e5f60' },
   });
 
   assert.equal(
     md,
-    '[Linked Notion database](https://www.notion.so/304a2ca0b1c24d6e8f0a1b2c3d4e5f60)',
+    '[Linked Notion database](https://www.notion.so/0123abc0b1c24d6e8f0a1b2c3d4e5f60)',
   );
 });
 
@@ -65,7 +65,7 @@ test('makeChildDatabaseTransformer renders each row as a clickable bullet under 
   const queryDatabase = async (_databaseId: string) => [
     {
       id: 'aaaaaaaa-1111-2222-3333-444444444444',
-      properties: { Name: { type: 'title', title: [{ plain_text: 'Chaintrust' }] } },
+      properties: { Name: { type: 'title', title: [{ plain_text: 'Sample' }] } },
     },
     {
       id: 'bbbbbbbb-1111-2222-3333-444444444444',
@@ -82,7 +82,7 @@ test('makeChildDatabaseTransformer renders each row as a clickable bullet under 
   assert.equal(
     md,
     '**Partner accounts**\n\n' +
-      '- [Chaintrust](https://www.notion.so/aaaaaaaa111122223333444444444444)\n' +
+      '- [Sample](https://www.notion.so/aaaaaaaa111122223333444444444444)\n' +
       '- [Nexcer](https://www.notion.so/bbbbbbbb111122223333444444444444)\n',
   );
 });
@@ -95,7 +95,7 @@ test('makeChildDatabaseTransformer renders key properties of a row after its lin
     {
       id: 'aaaaaaaa-1111-2222-3333-444444444444',
       properties: {
-        Name: { type: 'title', title: [{ plain_text: 'Chaintrust' }] },
+        Name: { type: 'title', title: [{ plain_text: 'Sample' }] },
         SIRET: { type: 'rich_text', rich_text: [{ plain_text: '853 200 000 00012' }] },
         Status: { type: 'select', select: { name: 'Active' } },
         Notes: { type: 'rich_text', rich_text: [] },
@@ -109,7 +109,7 @@ test('makeChildDatabaseTransformer renders key properties of a row after its lin
   assert.equal(
     md,
     '**FE directory**\n\n' +
-      '- [Chaintrust](https://www.notion.so/aaaaaaaa111122223333444444444444)' +
+      '- [Sample](https://www.notion.so/aaaaaaaa111122223333444444444444)' +
       ' — SIRET: 853 200 000 00012 · Status: Active\n',
   );
 });

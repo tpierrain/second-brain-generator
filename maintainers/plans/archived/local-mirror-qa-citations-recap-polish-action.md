@@ -184,9 +184,9 @@ All in `.claude/skills/local-mirror/SKILL.md` (no code; the deterministic helper
 
 ## Confidentiality (QA carve-out)
 
-The QA zone is **private ex-employer data**. NEVER reuse the mirror name, page titles, URLs, Notion IDs
-or any business content (multi-PA, e-invoicing, "HUB Facture", `inqom`, the UUIDs) in the repo, commits
-or PR. Purge the throwaway brains (`~/legacy-brain` and any `~/gss-qa*`) when done.
+The QA zone is **private client data**. NEVER reuse the mirror name, page titles, URLs, Notion IDs
+or any client business content (the workspace slug, product names, internal squad names, the UUIDs) in the
+repo, commits or PR. Purge the throwaway brains (`~/legacy-brain` and any `~/gss-qa*`) when done.
 
 ## Backlog / deferred (not in this plan)
 

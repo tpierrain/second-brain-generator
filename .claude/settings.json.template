@@ -67,6 +67,36 @@
         "hooks": [
           {
             "type": "command",
+            "command": "{{NODE}} \"{{PROJECT_ROOT}}/scripts/session-self-heal.mjs\"",
+            "timeout": 20000
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{NODE}} \"{{PROJECT_ROOT}}/scripts/session-health.mjs\"",
+            "timeout": 20000
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{NODE}} \"{{PROJECT_ROOT}}/scripts/session-obsidian-hint.mjs\"",
+            "timeout": 20000
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
             "command": "{{NODE}} \"{{PROJECT_ROOT}}/scripts/session-status.mjs\"",
             "timeout": 20000
           }

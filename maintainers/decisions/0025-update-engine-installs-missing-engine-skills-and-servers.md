@@ -13,6 +13,18 @@
   [`../qa/qa-v3.2.0.md`](../qa/qa-v3.2.0.md); fix plan:
   [`../plans/fix-update-engine-skills-mcp-action.md`](../plans/fix-update-engine-skills-mcp-action.md).
 
+## Crux
+
+> - **Decision —** an engine update **adds** the engine-owned skills and MCP servers the manifest declares,
+>   but **only where ABSENT** — never overwriting, never touching anything the manifest does not declare.
+> - **Guarantee —** install-if-absent: a brand-new engine skill (e.g. `local-mirror`) lands on upgraders,
+>   while an already-present (possibly user-customized) skill and every user-added `.mcp.json` server are
+>   left byte-identical. The destructive `overwrite`/`regenerate` buckets stay blanket-sacred.
+> - **Prior art (not NIH) —** these are standard declarative-provisioning *"ensure installed"* semantics
+>   (apt/brew install-if-absent, Ansible `state: present`). **[ADR 0026](0026-brain-self-converges-via-idempotent-reconciler.md)
+>   generalizes this** into the full desired-state reconciliation loop; **`settings.json` hook entries are
+>   the third additive surface** (skills → servers → **hooks**).
+
 ## Context
 
 Post-v3.2.0 QA, run as a real v3.1.0→v3.2.0 upgrader on a golden master, surfaced a **major** gap:
@@ -69,6 +81,11 @@ where they are ABSENT — never overwrite, never touch anything the manifest doe
 - **The safety core is unchanged in spirit**: still a write-allowlist; the one new bucket is additive
   and conditional, and the sacred scrub on the destructive buckets is intact.
 - **No schema change, no forced reindex.**
+- **Forward-note (ADR 0026):** this additive, install-if-absent pattern is later generalized into a full
+  desired-state reconciler. `settings.json` **hook entries** become the **third additive surface** after
+  skills and `.mcp.json` servers. The `computeApplyPlan` invariant here is **unchanged** — the hook merge,
+  like the `.mcp.json` reconcile, is a surgical side-channel **outside** the write-allowlist, not a new
+  allowlist bucket.
 
 ## Rejected alternatives
 

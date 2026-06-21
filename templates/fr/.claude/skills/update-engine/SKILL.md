@@ -74,6 +74,14 @@ applique exactement les fichiers du moteur, régénère les launchers, lance `np
 - **`exit 1`** → **relaie l'erreur telle quelle** et dis à l'utilisateur que le cerveau n'a pas
   été modifié au-delà du point d'échec. **Ne prétends jamais que ça a marché si ça a échoué.**
 
+> **Si le résumé indique que de nouveaux skills/MCP ont été installés** (l'avertissement
+> « ACTION NEEDED ») : dis à l'utilisateur qu'un **redémarrage complet de Claude** (fermer puis
+> rouvrir) suffit, puis de **revenir dans CETTE même conversation** — la nouvelle capacité se
+> charge au prochain démarrage. **Ne lui dis pas d'ouvrir une conversation toute neuve** pour
+> ça : c'est la règle de *rooting initial* (uniquement pour une session pas encore ancrée dans
+> le cerveau), **pas** ce qu'il faut pour capter un nouveau skill+MCP. Un redémarrage en
+> reprenant cette conversation est l'action la plus légère et suffisante.
+
 ## Cas limites
 - **Aucune source enregistrée** (`source.repo` est null — p. ex. un cerveau dont le launcher
   n'avait pas de remote) → le cœur lève une erreur claire ; indique à l'utilisateur d'où un

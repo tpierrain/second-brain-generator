@@ -16,11 +16,11 @@ import type {
 function aSearchPage(overrides: Partial<NotionSearchPage> = {}): NotionSearchPage {
   return {
     object: 'page',
-    id: overrides.id ?? '304a2ca0-b1c2-4d6e-8f0a-1b2c3d4e5f60',
-    url: overrides.url ?? 'https://www.notion.so/inqom/abc',
+    id: overrides.id ?? '0123abc0-b1c2-4d6e-8f0a-1b2c3d4e5f60',
+    url: overrides.url ?? 'https://www.notion.so/acme/abc',
     last_edited_time: overrides.last_edited_time ?? '2026-06-12T14:21:00.000Z',
     properties: overrides.properties ?? {
-      Name: { type: 'title', title: [{ plain_text: 'Chaintrust error catalog' }] },
+      Name: { type: 'title', title: [{ plain_text: 'Sample error catalog' }] },
     },
   };
 }
@@ -56,9 +56,9 @@ test('listItems maps a search page to a SourceItem (id, title, url, lastEditedTi
 
   assert.deepEqual(items, [
     {
-      id: '304a2ca0-b1c2-4d6e-8f0a-1b2c3d4e5f60',
-      title: 'Chaintrust error catalog',
-      url: 'https://www.notion.so/inqom/abc',
+      id: '0123abc0-b1c2-4d6e-8f0a-1b2c3d4e5f60',
+      title: 'Sample error catalog',
+      url: 'https://www.notion.so/acme/abc',
       lastEditedTime: '2026-06-12T14:21:00.000Z',
     },
   ]);
@@ -111,7 +111,7 @@ test('listItems canonicalizes a broken app.notion.com page URL to www.notion.so'
   const { gateway } = aGatewayServing({
     results: [
       aSearchPage({
-        url: 'https://app.notion.com/p/Spec-304a2ca0b1c24d6e8f0a1b2c3d4e5f60',
+        url: 'https://app.notion.com/p/Spec-0123abc0b1c24d6e8f0a1b2c3d4e5f60',
       }),
     ],
     has_more: false,
@@ -121,7 +121,7 @@ test('listItems canonicalizes a broken app.notion.com page URL to www.notion.so'
 
   const items = await connector.listItems();
 
-  assert.equal(items[0].url, 'https://www.notion.so/304a2ca0b1c24d6e8f0a1b2c3d4e5f60');
+  assert.equal(items[0].url, 'https://www.notion.so/0123abc0b1c24d6e8f0a1b2c3d4e5f60');
 });
 
 test('fetchContent delegates to notion-to-md for that page', async () => {
@@ -166,13 +166,13 @@ test('fetchContent canonicalizes broken app.notion.com inline links in the body'
       return { results: [], has_more: false, next_cursor: null };
     },
     async pageToMarkdown() {
-      return 'See [Spec](https://app.notion.com/p/Spec-304a2ca0b1c24d6e8f0a1b2c3d4e5f60).\n';
+      return 'See [Spec](https://app.notion.com/p/Spec-0123abc0b1c24d6e8f0a1b2c3d4e5f60).\n';
     },
   };
   const connector = new NotionConnector(gateway);
 
   const body = await connector.fetchContent({ id: 'p', title: 'X', url: 'u', lastEditedTime: 't' });
 
-  assert.equal(body, 'See [Spec](https://www.notion.so/304a2ca0b1c24d6e8f0a1b2c3d4e5f60).\n');
+  assert.equal(body, 'See [Spec](https://www.notion.so/0123abc0b1c24d6e8f0a1b2c3d4e5f60).\n');
   assert.ok(!body.includes('app.notion.com/p/'), 'no app.notion.com/p link must ever be emitted');
 });

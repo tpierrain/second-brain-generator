@@ -14,7 +14,7 @@ function sourceWithTokenEnv(tokenEnv: string) {
   return aNotionLocalMirror({
     connector: {
       type: 'notion',
-      config: { root_page_url: 'https://www.notion.so/inqom/HUB-304a2ca0b1c24d6e8f0a1b2c3d4e5f60', token_env: tokenEnv },
+      config: { root_page_url: 'https://www.notion.so/acme/Page-0123abc0b1c24d6e8f0a1b2c3d4e5f60', token_env: tokenEnv },
     },
   });
 }

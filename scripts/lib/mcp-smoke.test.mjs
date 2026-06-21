@@ -85,6 +85,22 @@ test("unsourced probe: empty/down RAG → ok=false, error names the missing sour
   assert.match(res.error ?? "", /source/i); // the error names the missing source
 });
 
+test("probe without expectText: returns the tool's text, ok=true when the call doesn't error", async () => {
+  const res = await smokeTestMcp({
+    command: process.execPath,
+    args: [STUB],
+    cwd: HERE,
+    expectTools: EXPECTED,
+    timeoutMs: 5000,
+    env: { STUB_SEARCH: "health" },
+    probe: { tool: "health_check", args: {} }, // no expectText → caller interprets probeText
+  });
+
+  assert.equal(res.ok, true);
+  assert.equal(res.error, undefined);
+  assert.equal(JSON.parse(res.probeText ?? "{}").status, "ok"); // structured verdict round-tripped
+});
+
 test("dying server: detected fast, ok=false, error ≠ timeout", async () => {
   const res = await smokeTestMcp({
     command: process.execPath,

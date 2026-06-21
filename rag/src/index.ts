@@ -39,10 +39,11 @@ import { ReindexScheduler } from "./lib/reindex-scheduler.js";
 import { startVaultWatcher } from "./lib/vault-watcher.js";
 import { FileProgressStorage } from "./lib/reindex-reporter.js";
 import { formatLastRunMarkdown } from "./lib/progress-report.js";
-import { writeFileSync, appendFileSync } from "fs";
+import { writeFileSync, appendFileSync, existsSync } from "fs";
 import { spawn } from "child_process";
 import { capExceededSearchMessage } from "./lib/search-degradation.js";
 import { formatSearchCitations } from "./lib/citation-renderer.js";
+import { runHealthCheck, HEALTH_CHECK_NOTE_RELPATH } from "./lib/health-check.js";
 import { readFile } from "fs/promises";
 import { resolve, relative } from "path";
 
@@ -239,6 +240,40 @@ server.tool(
       `- Chunks: ${stats.chunkCount}\n` +
       `- By type:\n${typeLines}`;
     return { content: [{ type: "text", text }] };
+  }
+);
+
+server.tool(
+  "health_check",
+  "Reports whether the RAG engine actually works: canary search finds the seeded note, index is intact, embedder is ready. Lightweight — NEVER reindexes. Returns a JSON { status, checks[] } verdict (ADR 0030).",
+  {},
+  async () => {
+    const embedder = createEmbedder();
+    const mode = embedder.identity.providerId;
+    // API providers need a key; the in-process adapter never does (it embeds locally).
+    const keyConfigured =
+      mode === "gemini"
+        ? Boolean(process.env.GOOGLE_GEMINI_API_KEY)
+        : mode === "openai-compatible"
+          ? Boolean(process.env.EMBEDDING_API_KEY)
+          : true;
+
+    const result = await runHealthCheck({
+      embedderMode: mode,
+      keyConfigured,
+      readIndexRows: () => getStats().chunkCount,
+      // Embed + search the canary in one go: success proves the embedder loads, the
+      // index is queryable, and retrieval returns the seeded note. Never reindexes.
+      searchCanary: async (token) => {
+        const queryEmbedding = await embedder.embedQuery(token);
+        return searchSimilar(queryEmbedding, 8).length;
+      },
+      // The dedicated health-check note must still be on disk; if a user deleted it,
+      // the canary is "unknown" (we cannot run it), never a false "broken".
+      canaryNoteExists: () => existsSync(resolve(VAULT_DIR, HEALTH_CHECK_NOTE_RELPATH)),
+    });
+
+    return { content: [{ type: "text", text: JSON.stringify(result) }] };
   }
 );
 

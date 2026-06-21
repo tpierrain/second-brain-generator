@@ -9,14 +9,14 @@ import { aLocalMirror, aNotionPage } from './builder.js';
 test('removing a source de-registers it but keeps the files by default', async () => {
   const harness = aLocalMirror().withNotionPages(aNotionPage({ id: 'p1' }));
   const gss = harness.build();
-  await gss.sync('pa-sc');
+  await gss.sync('team-a');
 
-  const result = await gss.removeSource('pa-sc');
+  const result = await gss.removeSource('team-a');
 
   assert.equal(result.removed, true);
   assert.equal(result.cleanedUp, false);
   assert.deepEqual(await gss.listSources(), []);
-  assert.ok(harness.vaultFiles().has('mirrors/pa-sc/p1.md'), 'files kept unless cleanup');
+  assert.ok(harness.vaultFiles().has('mirrors/team-a/p1.md'), 'files kept unless cleanup');
 });
 
 test('removing a source with cleanup also deletes its files', async () => {
@@ -25,9 +25,9 @@ test('removing a source with cleanup also deletes its files', async () => {
     aNotionPage({ id: 'p2' }),
   );
   const gss = harness.build();
-  await gss.sync('pa-sc');
+  await gss.sync('team-a');
 
-  const result = await gss.removeSource('pa-sc', true);
+  const result = await gss.removeSource('team-a', true);
 
   assert.equal(result.removed, true);
   assert.equal(result.cleanedUp, true);

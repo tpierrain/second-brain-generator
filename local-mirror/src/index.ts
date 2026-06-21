@@ -17,15 +17,15 @@ function asText(result: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
 }
 
-/** Declare the 6 tools (PRD §9), each a thin 1:1 wrapper over the API port. */
+/** Declare the 7 tools (PRD §9), each a thin 1:1 wrapper over the API port. */
 export function createMcpServer(api: ILocalMirror): McpServer {
-  const server = new McpServer({ name: SERVER_NAME, version: '0.1.0' });
+  const server = new McpServer({ name: SERVER_NAME, version: '0.2.0' });
 
   server.tool(
     'setup_source',
     'Interactive onboarding of a local mirror: tests the connection/scope, does the first sync, explains each step. The token travels via an env var, never through this tool.',
     {
-      name: z.string().describe('Short technical id = vault subfolder name (e.g. pa-sc)'),
+      name: z.string().describe('Short technical id = vault subfolder name (e.g. team-a)'),
       title: z.string().describe('Human label'),
       description: z.string().describe('Natural-language topics covered (routing key)'),
       root_page_url: z.string().describe('Root Notion page URL of the zone'),
@@ -70,6 +70,13 @@ export function createMcpServer(api: ILocalMirror): McpServer {
       cleanup: z.boolean().optional().describe('Also delete the folder + sidecar (default: false)'),
     },
     async ({ name, cleanup }) => asText(await api.removeSource(name, cleanup)),
+  );
+
+  server.tool(
+    'health_check',
+    'Reports whether this OPTIONAL Notion mirror is operational (config readable, mirror store reachable). Pulls nothing. Returns a JSON { status, checks[] } verdict; nothing configured → unknown, never broken (ADR 0030).',
+    {},
+    async () => asText(await api.healthCheck()),
   );
 
   return server;

@@ -80,7 +80,9 @@ function handle(line) {
           ? "No results found in the vault."
           : mode === "echo"
             ? `query=${msg.params?.arguments?.query ?? ""}` // echoes the query → correlation test
-            : "Result 1\n**Path:** `vault/decisions/0001-example.md`\nRelevant excerpt…";
+            : mode === "health" // health_check verdict (ADR 0030): a structured JSON line
+              ? JSON.stringify({ status: "ok", checks: [{ name: "canary", status: "ok", detail: "found (8)" }] })
+              : "Result 1\n**Path:** `vault/decisions/0001-example.md`\nRelevant excerpt…";
       send({
         jsonrpc: "2.0",
         id: msg.id,

@@ -13,7 +13,7 @@
 >   into the vault. It is the name visible in `/mcp` (explicit by construction).
 > - **"a Notion golden source synced onto `<zone>`"** = on the user side, **one instance**: a golden
 >   source whose connector is Notion, pointed at a zone. That is what we install ("set up the sync of a
->   Notion golden source on the HUB Facture Électronique").
+>   Notion golden source on the Team A hub").
 >
 > **Amendments applied when integrating this PRD into the repo** (consistent with the action plan +
 > ADR 0022): config file is **JSON** (`golden-source-sync.config.json`, §20.4 resolved); the module
@@ -56,8 +56,8 @@ change** (cf. §19), not the code.
 > The day the central platform arrives, we switch over without rewriting the engine.
 
 **MVP target:** the "knowers" who **already have a second brain** and want to plug live internal sources
-into it **right now**, without waiting for a central platform. Pilot case: Thomas, golden source PA/SC
-(supplier accounting & electronic invoicing).
+into it **right now**, without waiting for a central platform. Pilot case: Thomas, golden source Team A
+(team workflows).
 
 > **User-facing counterpart:** the "why & when" of a golden source is surfaced for end users in
 > [CONNECTORS.md → "Why a golden source"](../../CONNECTORS.md#-why-a-golden-source--and-when-its-not-worth-it)
@@ -70,28 +70,28 @@ A **Golden Source** = a live reference documentary source, reflected in the seco
 
 | Field | Role |
 |---|---|
-| `name` | short technical id = **name of the subfolder** in the vault (e.g. `pa-sc`). |
+| `name` | short technical id = **name of the subfolder** in the vault (e.g. `team-a`). |
 | `title` | human label. |
 | `description` | **natural-language text** of the topics covered. **Routing key**: the agent matches the question against it to know *when/which* source to refresh. |
 | `connector` | type (`notion` \| `drive` \| `slack` \| …) + config. **For Notion: the root page URL** (golden-source-sync extracts the page id from it) + the name of the env var holding the token. |
-| `target_dir` | dedicated subfolder of the vault (e.g. `golden-sources/pa-sc`). |
+| `target_dir` | dedicated subfolder of the vault (e.g. `golden-sources/team-a`). |
 
 Example (Notion config via **URL**, JSON):
 
 ```json
 {
   "golden_source": {
-    "name": "pa-sc",
-    "title": "PA/SC — supplier accounting & electronic invoicing",
-    "description": "Questions about supplier accounting, the support process, electronic invoicing, the Chaintrust error catalog.",
+    "name": "team-a",
+    "title": "Team A — team workflows",
+    "description": "Questions about invoices, the support process, billing, the Sample error catalog.",
     "connector": {
       "type": "notion",
       "config": {
-        "root_page_url": "https://www.notion.so/inqom/HUB-Facture-...-304a2ca...",
-        "token_env": "GOLDEN_PA_SC_NOTION_TOKEN"
+        "root_page_url": "https://www.notion.so/acme/Page-...-0123abc...",
+        "token_env": "GOLDEN_TEAM_A_NOTION_TOKEN"
       }
     },
-    "target_dir": "golden-sources/pa-sc"
+    "target_dir": "golden-sources/team-a"
   }
 }
 ```
@@ -233,8 +233,8 @@ more to do on the RAG side.
 
 **Resulting structure:**
 ```
-vault/golden-sources/pa-sc/<pageId>.md   ← synced · indexed (FileWatcher) · never hand-edited
-.golden-source-sync/pa-sc.state.json      ← private state · committed · NOT indexed
+vault/golden-sources/team-a/<pageId>.md   ← synced · indexed (FileWatcher) · never hand-edited
+.golden-source-sync/team-a.state.json      ← private state · committed · NOT indexed
 ```
 
 ## 8. Freshness & routing (no read-through, no search)
@@ -285,19 +285,19 @@ Persistence **incrementally (per item)** → at worst one item is lost at the qu
 whole batch; free resume on the next run.
 
 ```jsonc
-// .golden-source-sync/pa-sc.state.json
+// .golden-source-sync/team-a.state.json
 {
   "schemaVersion": 1,
-  "name": "pa-sc",
+  "name": "team-a",
   "connector": "notion",
-  "rootPageId": "304a2ca…",
+  "rootPageId": "0123abc…",
   "watermark": "2026-06-15T09:32:00.000Z",  // max(last_edited_time) of the perimeter at the last SUCCESSFUL sync
   "lastSyncAt": "2026-06-15T09:35:12.000Z",
   "lastSyncStatus": "ok",                     // "ok" | "partial" | "failed"
   "items": {
     "<pageId>": {
-      "title": "Chaintrust error catalog",
-      "vaultPath": "golden-sources/pa-sc/<pageId>.md",
+      "title": "Sample error catalog",
+      "vaultPath": "golden-sources/team-a/<pageId>.md",
       "lastEditedTime": "2026-06-12T14:21:00.000Z",
       "contentHash": "sha256:…",              // hash of the PRODUCED MARKDOWN (not the raw Notion JSON)
       "lastWrittenAt": "2026-06-12T14:30:00.000Z"
@@ -439,7 +439,7 @@ detected (watermark = max); no-change sync = no-op; two sources without perimete
       not advanced.
 - [ ] **Sub-page** edit detected (watermark = max of the perimeter).
 - [ ] Delta only: a no-change sync rewrites nothing (no noise commit/reindex).
-- [ ] Routing: a PA question → refreshes `pa-sc`, not `comex`.
+- [ ] Routing: a PA question → refreshes `team-a`, not `team-b`.
 - [ ] **Bounded + clickable citation** answer; no secret in the repo/logs; two sources without perimeter
       leak.
 
@@ -459,7 +459,7 @@ adapters. Each milestone is shippable and tested.
    purpose.
 6. **`setup_source` (onboarding).** Scope test, 1st sync, step-by-step explanation (§13).
 7. **`check_freshness` / `status` / `remove_source`.**
-8. **End-to-end (the demo).** PA question → harness routing → `sync(pa-sc)` → FileWatcher reindexes →
+8. **End-to-end (the demo).** PA question → harness routing → `sync(team-a)` → FileWatcher reindexes →
    **bounded + clickable citation** answer.
 
 ## 19. Trajectory (out of MVP)
@@ -495,7 +495,7 @@ token, which sees the whole sub-tree). For **reading**, one might want to filter
   paths (broad sync vs filtered read).
 
 **Decision:** **A** now. Rationale = the **local-first positioning** (§1): the MVP is a **personal,
-single-user** second brain (Thomas, PA/SC) — per-rights filtering only makes sense in **multi-user with
+single-user** second brain (Thomas, Team A) — per-rights filtering only makes sense in **multi-user with
 heterogeneously-permissioned sources**, which is precisely the **central target** (§19). We note that the
 "sync API (broad access) vs filtered read view" split is already natural in the target architecture → B
 will plug in without renouncing A.

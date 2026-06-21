@@ -10,25 +10,25 @@ import { aLocalMirror, aNotionPage } from './builder.js';
 test('syncing a source writes one local-mirror .md per page, with mandatory frontmatter', async () => {
   const page = aNotionPage({
     id: 'abc123',
-    title: 'Chaintrust error catalog',
-    url: 'https://www.notion.so/inqom/abc123',
+    title: 'Sample error catalog',
+    url: 'https://www.notion.so/acme/abc123',
     lastEditedTime: '2026-06-12T14:21:00.000Z',
-    content: '# Chaintrust error catalog\n\nWhen the API returns 402…\n',
+    content: '# Sample error catalog\n\nWhen the API returns 402…\n',
   });
   const harness = aLocalMirror().withNotionPages(page);
   const gss = harness.build();
 
-  const report = await gss.sync('pa-sc');
+  const report = await gss.sync('team-a');
 
   assert.equal(report.written, 1);
-  const file = harness.vaultFiles().get('mirrors/pa-sc/abc123.md');
-  assert.ok(file, 'expected a .md written at mirrors/pa-sc/abc123.md');
+  const file = harness.vaultFiles().get('mirrors/team-a/abc123.md');
+  assert.ok(file, 'expected a .md written at mirrors/team-a/abc123.md');
   const { data, content } = parseLocalMirrorMarkdown(file);
-  assert.equal(data.source_url, 'https://www.notion.so/inqom/abc123');
+  assert.equal(data.source_url, 'https://www.notion.so/acme/abc123');
   assert.equal(data.last_edited_time, '2026-06-12T14:21:00.000Z');
-  assert.equal(data.mirror, 'pa-sc');
+  assert.equal(data.mirror, 'team-a');
   assert.equal(data.source_id, 'abc123');
-  assert.equal(data.title, 'Chaintrust error catalog');
+  assert.equal(data.title, 'Sample error catalog');
   assert.match(content, /When the API returns 402/);
 });
 
@@ -39,9 +39,9 @@ test('syncing a source writes one .md per enumerated page', async () => {
   );
   const gss = harness.build();
 
-  const report = await gss.sync('pa-sc');
+  const report = await gss.sync('team-a');
 
   assert.equal(report.written, 2);
-  assert.ok(harness.vaultFiles().has('mirrors/pa-sc/page-1.md'));
-  assert.ok(harness.vaultFiles().has('mirrors/pa-sc/page-2.md'));
+  assert.ok(harness.vaultFiles().has('mirrors/team-a/page-1.md'));
+  assert.ok(harness.vaultFiles().has('mirrors/team-a/page-2.md'));
 });

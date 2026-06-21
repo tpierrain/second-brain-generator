@@ -4,17 +4,22 @@
 // into .env (the key is never there at install time).
 //
 // (Re)indexes the sample vault, then proves in a DETERMINISTIC and LOUD way that
-// the demo question answers FROM the vault — by requiring the unique canary token
-// "Mollecuisse" (not found outside the vault). This is the post-key failure-catch B:
+// the brain answers FROM the vault — a HEADLESS, read-only full health-check (real
+// embed + search of the dedicated "Quibblethorne" canary, ADR 0030 §3/§4/§6, F7-ter).
+// It NEVER boots a 2nd vault-rag: Thomas runs this while the live server is up, so we
+// read the on-disk data headless instead of spawning a duplicate process. This is the
+// post-key failure-catch B:
 //   exit 0 = the brain really works; exit 1 = failure, to relay as-is.
 // ─────────────────────────────────────────────────────────────────────────────
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
-import { smokeTestMcp } from "./lib/mcp-smoke.mjs";
 import { hasGeminiKey, geminiKeyRequired } from "./lib/gemini-key.mjs";
-import { DEMO_QUESTION, DEMO_EXPECT } from "./lib/demo.mjs";
+import { DEMO_QUESTION } from "./lib/demo.mjs";
+import { runActivatedHealthChecks } from "./lib/health-check-runner.mjs";
+import { buildHeadlessHealthCheckCaller } from "./lib/headless-health-check.mjs";
+import { gateBlockers } from "./lib/health-check-gate.mjs";
 
 const tty = process.stdout.isTTY;
 const c = {
@@ -28,7 +33,6 @@ const step = (m) => console.log(`\n${c.B}━━ ${m}${c.X}`);
 const ROOT = process.cwd();
 const rag = join(ROOT, "rag");
 const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
-const EXPECT_TOOLS = ["search_vault", "get_document", "list_documents", "vault_stats"];
 
 // 1. Key present? — ONLY if the chosen embedder is Gemini. Local embedders
 //    (in-process "Gemma inside" / Ollama) and OpenAI-compatible endpoints have
@@ -58,36 +62,65 @@ if (idx.status !== 0) {
 }
 ok("vault indexed");
 
-// 3. Canary probe — LOUD.
-step("Verification: does the demo answer FROM the vault?");
-let srv;
+// 3. Health-check probe — LOUD, HEADLESS, read-only (ADR 0030 §4/§6, F7-ter). The
+//    SAME health-check definition (rag/src/health-check-cli.ts) the installer post-flight
+//    runs, but read HEADLESS at FULL depth — NEVER booting a 2nd vault-rag next to the
+//    live one. For vault-rag that proves the brain answers FROM the vault (dedicated
+//    "Quibblethorne" canary found via a real embed+search + index intact + embedder
+//    ready). A module with no headless reader (local-mirror) stays `unknown` and is not
+//    booted. The gate blocks on any `broken` module and on a MANDATORY module that's
+//    `unknown` — but an unconfigured OPTIONAL module stays `unknown` and is benign.
+step("Verification: is the brain operational? (headless full health-check)");
+let mcp;
 try {
-  const mcp = JSON.parse(readFileSync(join(ROOT, ".mcp.json"), "utf8"));
-  srv = mcp.mcpServers?.["vault-rag"];
+  mcp = JSON.parse(readFileSync(join(ROOT, ".mcp.json"), "utf8"));
 } catch (e) {
   err(`.mcp.json unreadable (${e.message}) — re-run the installer from the launcher?`);
   process.exit(1);
 }
-if (!srv) {
-  err(".mcp.json without a \"vault-rag\" server.");
+let manifest;
+try {
+  manifest = JSON.parse(readFileSync(join(ROOT, "engine-manifest.json"), "utf8"));
+} catch (e) {
+  err(`engine-manifest.json unreadable (${e.message}) — re-run the installer from the launcher?`);
   process.exit(1);
 }
 
-const res = await smokeTestMcp({
-  command: srv.command,
-  args: srv.args ?? [],
-  cwd: srv.cwd ?? ROOT,
-  expectTools: EXPECT_TOOLS,
-  timeoutMs: 60000,
-  probe: { tool: "search_vault", args: { query: DEMO_QUESTION }, expectText: DEMO_EXPECT },
+const { isRegistered, callHealthCheck } = buildHeadlessHealthCheckCaller({
+  mcpServers: mcp.mcpServers,
+  brainDir: ROOT,
+  platform: process.platform,
+  // FULL depth: a real embed + search of the canary (deliberate, on-demand — the extra
+  // ONNX/API cost is fine here, unlike the per-session light probe). Headless: no boot.
+  depth: "full",
 });
+const verdict = await runActivatedHealthChecks({ manifest, isRegistered, callHealthCheck });
+const blockers = gateBlockers(verdict, manifest);
 
-if (res.ok) {
-  ok("RAG verified — the demo answers FROM the vault (canary Pélagie de Mollecuisse found).");
+if (blockers.length === 0) {
+  ok("Brain verified — every activated module's health_check is green");
+  ok("  (vault-rag: demo answers FROM the vault, canary Quibblethorne found, index intact, embedder ready).");
+  // Surface non-blocking, non-ok optional modules as a soft note (never a failure, #3):
+  // an `unknown` optional is simply unconfigured; a `broken` optional is degraded and
+  // deserves a louder, accurate line (it is NOT just "not configured").
+  for (const m of verdict.modules) {
+    if (m.status === "broken") {
+      const bad = (m.checks ?? []).filter((ch) => ch.status !== "ok");
+      const why = bad.length ? bad.map((ch) => `${ch.name}: ${ch.detail}`).join("; ") : m.status;
+      console.log(`  ${c.Y}⚠${c.X} ${m.module}: optional capability is BROKEN (not blocking) — ${why}`);
+    } else if (m.status !== "ok") {
+      console.log(`  ${c.Y}·${c.X} ${m.module}: ${m.status} (optional, not configured) — skipped`);
+    }
+  }
   console.log(`  You can open Claude Code and ask: "${DEMO_QUESTION}"`);
   process.exit(0);
 }
 
-err(`RAG VERIFY FAILED — the demo does NOT answer from the vault: ${res.error ?? "unknown reason"}`);
-err("The RAG doesn't surface the fact unfindable outside the vault (canary). Troubleshooting: SETUP.md §8.");
+err("BRAIN VERIFY FAILED — a required health_check is not green:");
+for (const m of blockers) {
+  const bad = (m.checks ?? []).filter((ch) => ch.status !== "ok");
+  const why = bad.length ? bad.map((ch) => `${ch.name}: ${ch.detail}`).join("; ") : m.status;
+  err(`  • ${m.module} → ${m.status} — ${why}`);
+}
+err("Troubleshooting: SETUP.md §8.");
 process.exit(1);

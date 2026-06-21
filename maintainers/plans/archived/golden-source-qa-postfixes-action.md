@@ -24,7 +24,7 @@
 
 ## 🌙 TONIGHT-SHIP MODE (2026-06-18) — lean critical path
 
-Thomas must ship tonight so Inqom colleagues can start using it. Reprioritized:
+Thomas must ship tonight so his colleagues can start using it. Reprioritized:
 - **DO NOW (zero-code, high impact):** Step 1 (Obs 4 local-first) + Step 3 (Obs 5 disclaimer) — skill prose.
 - **DO IF QUICK:** Step 2 (Obs 3/F5 toast) — RAG TDD; else defer to fast-follow.
 - **FAST-FOLLOW (post-ship, does NOT block usage):** Step 4 (why/when doc + Mermaid diagram).

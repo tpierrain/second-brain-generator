@@ -11,11 +11,11 @@ test('status of a synced source reports watermark, item count and last sync stat
     aNotionPage({ id: 'p2', lastEditedTime: '2026-06-13T09:00:00.000Z' }),
   );
   const gss = harness.build();
-  await gss.sync('pa-sc');
+  await gss.sync('team-a');
 
-  const status = await gss.status('pa-sc');
+  const status = await gss.status('team-a');
 
-  assert.equal(status.name, 'pa-sc');
+  assert.equal(status.name, 'team-a');
   assert.equal(status.itemCount, 2);
   assert.equal(status.watermark, '2026-06-13T09:00:00.000Z');
   assert.equal(status.lastSyncStatus, 'ok');
@@ -24,7 +24,7 @@ test('status of a synced source reports watermark, item count and last sync stat
 test('status of a never-synced declared source reports the "never" state', async () => {
   const gss = aLocalMirror().withNotionPages(aNotionPage()).build();
 
-  const status = await gss.status('pa-sc');
+  const status = await gss.status('team-a');
 
   assert.equal(status.lastSyncStatus, 'never');
   assert.equal(status.watermark, null);

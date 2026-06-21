@@ -8,11 +8,11 @@ import { aLocalMirror, aNotionPage } from './builder.js';
 // declares the source (config file) and runs a first sync, explaining each step.
 
 const aSetupRequest = (overrides: Record<string, string> = {}) => ({
-  name: 'pa-sc',
-  title: 'PA/SC — supplier accounting',
-  description: 'Questions about supplier accounting and e-invoicing.',
-  rootPageUrl: 'https://www.notion.so/inqom/HUB-304a2ca0b1c24d6e8f0a1b2c3d4e5f60',
-  tokenEnv: 'GOLDEN_PA_SC_NOTION_TOKEN',
+  name: 'team-a',
+  title: 'Team A — invoices',
+  description: 'Questions about team workflows.',
+  rootPageUrl: 'https://www.notion.so/acme/Page-0123abc0b1c24d6e8f0a1b2c3d4e5f60',
+  tokenEnv: 'GOLDEN_TEAM_A_NOTION_TOKEN',
   ...overrides,
 });
 
@@ -25,10 +25,10 @@ test('setting up a connectable source declares it and runs a first sync', async 
   assert.equal(result.ok, true);
   const declared = await harness.declaredSources();
   assert.equal(declared.length, 1, 'the source must be written to the config file');
-  assert.equal(declared[0].name, 'pa-sc');
+  assert.equal(declared[0].name, 'team-a');
   const sources = await gss.listSources();
   assert.equal(sources[0].itemCount, 1, 'the first sync must have synced the zone');
-  assert.ok(harness.vaultFiles().has('mirrors/pa-sc/page-1.md'));
+  assert.ok(harness.vaultFiles().has('mirrors/team-a/page-1.md'));
 });
 
 test('setting up a zone whose root is not connected returns a clear message and declares nothing', async () => {

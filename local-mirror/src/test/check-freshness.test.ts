@@ -12,9 +12,9 @@ test('a source with no upstream change is not behind', async () => {
     aNotionPage({ id: 'p1', lastEditedTime: '2026-06-12T14:21:00.000Z' }),
   );
   const gss = harness.build();
-  await gss.sync('pa-sc');
+  await gss.sync('team-a');
 
-  const fr = await gss.checkFreshness('pa-sc');
+  const fr = await gss.checkFreshness('team-a');
 
   assert.equal(fr.behind, false);
   assert.equal(fr.localWatermark, '2026-06-12T14:21:00.000Z');
@@ -26,10 +26,10 @@ test('a source whose upstream got a newer edit is behind', async () => {
     aNotionPage({ id: 'p1', lastEditedTime: '2026-06-12T14:21:00.000Z' }),
   );
   const gss = harness.build();
-  await gss.sync('pa-sc');
+  await gss.sync('team-a');
 
   harness.withRevisedPage(aNotionPage({ id: 'p1', lastEditedTime: '2026-06-15T10:00:00.000Z' }));
-  const fr = await gss.checkFreshness('pa-sc');
+  const fr = await gss.checkFreshness('team-a');
 
   assert.equal(fr.behind, true);
   assert.equal(fr.localWatermark, '2026-06-12T14:21:00.000Z');
@@ -41,7 +41,7 @@ test('a never-synced source is behind as soon as the perimeter has any page', as
     .withNotionPages(aNotionPage({ id: 'p1', lastEditedTime: '2026-06-12T14:21:00.000Z' }))
     .build();
 
-  const fr = await gss.checkFreshness('pa-sc');
+  const fr = await gss.checkFreshness('team-a');
 
   assert.equal(fr.behind, true);
   assert.equal(fr.localWatermark, null);

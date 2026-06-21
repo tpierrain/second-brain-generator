@@ -96,6 +96,23 @@ test("formatReport — schema unchanged → states no reindex was needed (never 
   assert.doesNotMatch(out, /reindexed —/);
 });
 
+// ADR 0026 (decision B): on an upgrader the schema does NOT move, but seeding the
+// engine-health note triggers an INCREMENTAL reindex of that one note. The report must
+// be honest — never claim "the index format changed" (it didn't) — and say only the
+// health-check note was added/indexed, the user's other notes were not re-encoded.
+test("formatReport — health-note seed reindex → honest incremental message, not 'index format changed'", () => {
+  const out = formatReport({
+    ref: "v3.3.0",
+    engineVersion: { rag: "1.1.4" },
+    copied: ["rag/src/index.ts"],
+    regenerated: true,
+    reindexed: true,
+    reindexReason: "health-note-seed",
+  });
+  assert.doesNotMatch(out, /format changed/i, "must not claim the index format changed on a seed-only reindex");
+  assert.match(out, /health[- ]check note|incremental/i, "names the incremental health-check seed");
+});
+
 // Finding A (ADR 0025 fix QA): an upgrader must SEE that the update delivered the
 // flagship engine skill + registered its MCP server — that is the whole point of
 // v3.2.1. Silent delivery leaves the user unaware they finally have the feature.
@@ -112,6 +129,131 @@ test("formatReport — names the engine skill(s) it installed and the MCP server
   assert.match(out, /local-mirror/);
   assert.match(out, /skill/i);
   assert.match(out, /server|mcp/i);
+});
+
+// F-B2 (ADR 0026): an upgrade that wired the v3.3.0 runtime hooks into settings.json must
+// NAME them (the user finally has self-heal / health / obsidian-hint) AND fold them into the
+// "restart needed" count — a newly-wired SessionStart hook is on disk but loads only at the
+// next session start, exactly like a new skill/MCP.
+test("formatReport — names the runtime hook(s) it wired and counts them as needing a restart", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: [],
+    mcpServersAdded: [],
+    hooksAdded: ["scripts/session-self-heal.mjs", "scripts/session-health.mjs", "scripts/session-obsidian-hint.mjs"],
+  });
+  assert.match(out, /session-self-heal/);
+  assert.match(out, /hook/i, "the wired hooks must be named as such");
+  assert.match(out, /\b3\b/, "3 wired hooks count as 3 capabilities needing a restart");
+  assert.match(out, /action needed/i);
+  assert.match(out, /restart/i);
+});
+
+// F1.6 (ADR 0026, point 4): a freshly-installed skill/MCP is on disk but NOT live in
+// the CURRENT conversation (Layer B config-freeze). The report must LOUDLY say so and
+// tell the user to restart — instead of today's silence that reads as "already usable".
+test("formatReport — when capabilities are installed, loudly says they aren't active in THIS conversation yet and to restart", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: ["local-mirror"],
+    mcpServersAdded: ["local-mirror"],
+  });
+  assert.match(out, /not (yet )?active|aren't active/i);
+  assert.match(out, /this conversation/i);
+  assert.match(out, /restart/i);
+  // Strong framing (Thomas): not a polite "to load them" — make the consequence of
+  // NOT restarting explicit, so the user actually does it.
+  assert.match(out, /action needed/i);
+  assert.match(out, /can(?:no|')?t use|won't work/i);
+});
+
+// F4: the field finding — a full app restart, then RESUMING this same conversation,
+// is enough to pick up a freshly-installed skill+MCP. A brand-new conversation is NOT
+// required for that (that's the distinct initial-rooting rule, for a never-rooted
+// session). The notice must say "restart and come back here", not muddy it by offering
+// "or start a new conversation" as if one were needed just to load new capabilities.
+test("formatReport — the activation notice says a restart + resuming THIS conversation is enough, not a brand-new one", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: ["local-mirror"],
+    mcpServersAdded: ["local-mirror"],
+  });
+  // Restart, then come back to THIS conversation (resume) — the lighter sufficient action.
+  assert.match(out, /reopen/i);
+  assert.match(out, /come back here|this (same )?conversation/i);
+  // Do NOT present a brand-new conversation as required for picking up capabilities.
+  assert.doesNotMatch(out, /new conversation/i);
+});
+
+// F1.6: the "counter" the user reads = how many new capabilities they just gained
+// (skills + MCP servers), plus the "run once more" residual-bootstrap fallback for
+// the rare case a follow-up pass is still needed.
+test("formatReport — counts the new capabilities and offers the 'run once more' fallback", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: ["local-mirror"],
+    mcpServersAdded: ["local-mirror"],
+  });
+  assert.match(out, /\b2\b/); // 1 skill + 1 MCP server = 2 new capabilities
+  assert.match(out, /once more/i);
+  assert.match(out, /update-engine/);
+});
+
+// F-B7d (ship-blocker A1): a steady-state update that swapped engine CODE — but added
+// no brand-new skill/MCP/hook — STILL needs a restart: the running MCP server / hooks /
+// constitution this session loaded are the OLD ones until Claude is reopened. The report
+// must say so LOUDLY (the disease: a "✅ done" with no restart line reads as "already
+// live" → the improvement stays trapped behind a stale session). But this is the generic
+// restart banner, NOT the new-capability path: no capability counter, no "run once more".
+test("formatReport — steady-state code swap (no new capability) still loudly says to restart, without the counter / 'run once more'", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["rag/src/index.ts"],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: [],
+    mcpServersAdded: [],
+  });
+  assert.match(out, /restart/i, "swapped engine code → the running session is stale → restart");
+  assert.match(out, /action needed/i);
+  // Reserved-signal discipline: the capability counter + residual-bootstrap fallback are
+  // for ACTUAL new capabilities only — never on a plain code swap.
+  assert.doesNotMatch(out, /once more/i);
+  assert.doesNotMatch(out, /new capabilit/i);
+});
+
+// F-B7d (A1) — the don't-cry-wolf boundary: a genuine no-op (nothing swapped, nothing
+// regenerated, no new capability — the brain was already up to date) must NOT mention a
+// restart. The restart banner is reserved for an update that actually changed on-disk code.
+test("formatReport — a true no-op (nothing swapped or regenerated) does NOT cry restart", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: [],
+    regenerated: false,
+    reindexed: false,
+    installedSkills: [],
+    mcpServersAdded: [],
+  });
+  assert.doesNotMatch(out, /restart/i);
+  assert.doesNotMatch(out, /once more/i);
 });
 
 // F2: the recap must surface the number the USER cares about — how many notes their
@@ -295,11 +437,17 @@ function assertSacredUntouched(brainDir, before) {
 // object records the side effects we assert on.
 async function runUpdate({ brainDir, sourceDir, platform, resolveLatestTag, countVaultNotes }) {
   const updateEngine = await loadCore();
-  const calls = { install: [], reindex: [], regenerate: [] };
+  const calls = { install: [], reindex: [], regenerate: [], finalize: [] };
   const report = await updateEngine({
     brainDir,
     platform,
     countVaultNotes: countVaultNotes ?? (async () => 0),
+    // Auto-finalize (ADR 0026, Layer A): the real seam re-execs the reconciler in a
+    // fresh child process. Stubbed here so no test spawns a real node process; we just
+    // record that update-engine asked for the finalize pass with the right inputs.
+    finalizeReconcile: async ({ brainDir: bd, sourceDir: sd, platform: p }) => {
+      calls.finalize.push({ brainDir: bd, sourceDir: sd, platform: p });
+    },
     // The launcher's latest release tag on the remote (ADR 0017). Default = the
     // target's version; overridable to exercise the offline/no-tag fallback. The
     // committed launcher manifest has NO `source`, so this — not target.source —
@@ -392,6 +540,64 @@ for (const platform of ["posix", "win32"]) {
     );
   });
 }
+
+// ── Auto-finalize (ADR 0026, Layer A): after a successful update, update-engine
+//    re-execs the freshly-written reconciler in a fresh child process — given the SAME
+//    sourceDir it fetched — so the just-installed converge logic runs in ONE invocation
+//    (kills the 2-cycle). Here we assert the wiring: the seam is invoked once, last,
+//    with the brain + the fetched source.
+test("gate — auto-finalizes once after the update, handing the child the fetched source (ADR 0026)", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource({ indexSchemaVersion: 1 });
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+
+  const { calls } = await runUpdate({ brainDir, sourceDir, platform: "posix" });
+
+  assert.deepEqual(
+    calls.finalize,
+    [{ brainDir, sourceDir, platform: "posix" }],
+    "update-engine must auto-finalize exactly once, handing the child the brain dir + the fetched source",
+  );
+});
+
+// ── #1 (code-review): a best-effort auto-finalize child failure must NEVER turn an
+//    already-recorded, already-successful update into a reported FAILURE. The update is
+//    done + recorded at step 7; step 8 (auto-finalize) is a finisher on top. A flaky
+//    npm install / ABI hiccup in the fresh child must fail SOFT — updateEngine still
+//    RESOLVES with the recorded report (the CLI never prints "the brain was NOT changed").
+test("gate — a failing auto-finalize child does NOT reject the update (fail-soft, ADR 0026)", async (t) => {
+  const brainDir = buildBrain();
+  const sourceDir = buildSource({ indexSchemaVersion: 1 });
+  t.after(() => {
+    rmSync(brainDir, { recursive: true, force: true });
+    rmSync(sourceDir, { recursive: true, force: true });
+  });
+
+  const updateEngine = await loadCore();
+  const report = await updateEngine({
+    brainDir,
+    platform: "posix",
+    countVaultNotes: async () => 7,
+    resolveLatestTag: async () => "v1.1.0",
+    fetchSource: async () => sourceDir,
+    regenerateLaunchers: async () => {},
+    runInstall: async () => {},
+    runReindex: async () => {},
+    // The finalize child blows up (flaky npm install in the fresh process, ABI skew…).
+    finalizeReconcile: async () => {
+      throw new Error("npm install failed in the auto-finalize child");
+    },
+  });
+
+  // The update still succeeded: it resolved with the recorded report, and the manifest
+  // already advanced — a finisher failure must never read as "the brain was NOT changed".
+  assert.equal(report.engineVersion.rag, "1.1.0");
+  const m = JSON.parse(readFileSync(join(brainDir, "engine-manifest.json"), "utf8"));
+  assert.equal(m.engineVersion.rag, "1.1.0", "the update is recorded even if auto-finalize fails");
+});
 
 test("gate — schema UNCHANGED → engine still swapped but NO reindex", async (t) => {
   const brainDir = buildBrain();
@@ -492,11 +698,12 @@ test("gate — F1/F2: dev-only files never land, and the brain keeps its install
   );
 });
 
-// ── Lot A (ADR 0025): an engine update INSTALLS a missing engine-declared skill
-//    (additive, install-if-absent) so the flagship local-mirror skill reaches
-//    upgraders — while never touching a non-declared / custom skill.
+// ── Lot A (ADR 0025): an engine update INSTALLS a missing engine-declared MERGE skill
+//    (additive, install-if-absent) — illustrated by `coach` (local-mirror relocated to
+//    the staged engine-skills/ path, F-B7 2b) — while never touching a non-declared /
+//    custom skill.
 test("gate — installs a MISSING engine-declared skill (install-if-absent); custom skill stays untouched", async (t) => {
-  const brainDir = buildBrain(); // ships zzz-mine (custom), NO local-mirror skill
+  const brainDir = buildBrain(); // ships zzz-mine (custom), NO coach skill
   const sourceDir = mkdtempSync(join(tmpdir(), "sbg-source-skill-"));
   t.after(() => {
     rmSync(brainDir, { recursive: true, force: true });
@@ -507,8 +714,8 @@ test("gate — installs a MISSING engine-declared skill (install-if-absent); cus
   // The fetched launcher carries the engine files (vB) + a NEW engine skill, and its
   // manifest declares that skill path as engine-owned (under `merge`).
   for (const [rel, content] of Object.entries(flat(engineFiles("vB")))) writeFile(sourceDir, rel, content);
-  const skillBody = "---\nname: local-mirror\n---\nMirror a Notion zone into the vault.\n";
-  writeFile(sourceDir, ".claude/skills/local-mirror/SKILL.md", skillBody);
+  const skillBody = "---\nname: coach\n---\nYour sparring partner.\n";
+  writeFile(sourceDir, ".claude/skills/coach/SKILL.md", skillBody);
   writeFile(
     sourceDir,
     "engine-manifest.json",
@@ -523,7 +730,7 @@ test("gate — installs a MISSING engine-declared skill (install-if-absent); cus
           merge: [
             "CLAUDE.md",
             ".claude/settings.json",
-            ".claude/skills/local-mirror/**", // the NEW engine skill, declared engine-owned
+            ".claude/skills/coach/**", // the NEW engine skill, declared engine-owned
             "scripts/auto-commit.mjs",
             "scripts/auto-push.mjs",
             "scripts/status-line.mjs",
@@ -541,7 +748,7 @@ test("gate — installs a MISSING engine-declared skill (install-if-absent); cus
   );
 
   assert.equal(
-    existsSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md")),
+    existsSync(join(brainDir, ".claude/skills/coach/SKILL.md")),
     false,
     "precondition: the brain must lack the engine skill before the update",
   );
@@ -550,14 +757,14 @@ test("gate — installs a MISSING engine-declared skill (install-if-absent); cus
 
   // The engine installed the missing skill from the fetched source…
   assert.equal(
-    readFileSync(join(brainDir, ".claude/skills/local-mirror/SKILL.md"), "utf8"),
+    readFileSync(join(brainDir, ".claude/skills/coach/SKILL.md"), "utf8"),
     skillBody,
-    "a missing engine-declared skill must be installed on update (so upgraders get local-mirror)",
+    "a missing engine-declared merge skill must be installed on update",
   );
   // …and the report names it (so the user SEES they got the feature, finding A).
   assert.deepEqual(
     report.installedSkills,
-    ["local-mirror"],
+    ["coach"],
     "the report must name the engine skill(s) it installed",
   );
   // …and the user's custom skill + every sacred file stayed byte-identical.
@@ -572,14 +779,14 @@ test("gate — an ALREADY-PRESENT engine skill is preserved byte-identical (neve
     rmSync(sourceDir, { recursive: true, force: true });
   });
 
-  // The brain already carries a USER-CUSTOMIZED local-mirror skill.
-  const customized = "---\nname: local-mirror\n---\nMY OWN tweaks — do not overwrite.\n";
-  writeFile(brainDir, ".claude/skills/local-mirror/SKILL.md", customized);
-  const beforeHash = sha256(join(brainDir, ".claude/skills/local-mirror/SKILL.md"));
+  // The brain already carries a USER-CUSTOMIZED coach skill.
+  const customized = "---\nname: coach\n---\nMY OWN tweaks — do not overwrite.\n";
+  writeFile(brainDir, ".claude/skills/coach/SKILL.md", customized);
+  const beforeHash = sha256(join(brainDir, ".claude/skills/coach/SKILL.md"));
 
   // The fetched launcher carries a DIFFERENT version of the same skill + declares it.
   for (const [rel, content] of Object.entries(flat(engineFiles("vB")))) writeFile(sourceDir, rel, content);
-  writeFile(sourceDir, ".claude/skills/local-mirror/SKILL.md", "---\nname: local-mirror\n---\nEngine default.\n");
+  writeFile(sourceDir, ".claude/skills/coach/SKILL.md", "---\nname: coach\n---\nEngine default.\n");
   writeFile(
     sourceDir,
     "engine-manifest.json",
@@ -591,7 +798,7 @@ test("gate — an ALREADY-PRESENT engine skill is preserved byte-identical (neve
         regimes: {
           replace: ["rag/src/**", "rag/package.json"],
           regenerate: ["rag/launch.sh", "rag/launch.cmd", "scripts/run-node.sh", "scripts/run-node.cmd"],
-          merge: [".claude/skills/local-mirror/**", "scripts/update-engine.mjs"],
+          merge: [".claude/skills/coach/**", "scripts/update-engine.mjs"],
         },
         engineMcpServers: ["vault-rag"],
         source: { repo: "https://example.test/launcher.git", ref: "v1.1.0" },
@@ -605,7 +812,7 @@ test("gate — an ALREADY-PRESENT engine skill is preserved byte-identical (neve
   await runUpdate({ brainDir, sourceDir, platform: "posix" });
 
   assert.equal(
-    sha256(join(brainDir, ".claude/skills/local-mirror/SKILL.md")),
+    sha256(join(brainDir, ".claude/skills/coach/SKILL.md")),
     beforeHash,
     "a present (customized) engine skill must be preserved byte-identical — install-if-absent never overwrites",
   );

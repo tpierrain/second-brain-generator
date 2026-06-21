@@ -17,16 +17,16 @@ const tracked = (vaultPath: string): PersistedItem => ({
 });
 
 test('a page still in the perimeter is not a deletion candidate', () => {
-  const deletions = pagesToDelete([{ id: 'page-1' }], { 'page-1': tracked('mirrors/pa-sc/page-1.md') });
+  const deletions = pagesToDelete([{ id: 'page-1' }], { 'page-1': tracked('mirrors/team-a/page-1.md') });
 
   assert.deepEqual(deletions, []);
 });
 
 test('a tracked page absent from the perimeter is returned for deletion', () => {
   const deletions = pagesToDelete([{ id: 'page-1' }], {
-    'page-1': tracked('mirrors/pa-sc/page-1.md'),
-    'page-2': tracked('mirrors/pa-sc/page-2.md'),
+    'page-1': tracked('mirrors/team-a/page-1.md'),
+    'page-2': tracked('mirrors/team-a/page-2.md'),
   });
 
-  assert.deepEqual(deletions, [{ id: 'page-2', ...tracked('mirrors/pa-sc/page-2.md') }]);
+  assert.deepEqual(deletions, [{ id: 'page-2', ...tracked('mirrors/team-a/page-2.md') }]);
 });

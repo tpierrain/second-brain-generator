@@ -15,15 +15,15 @@ test('a brand-new local-mirror declares no sources', async () => {
 
 test('a declared but never-synced source is listed with empty state', async () => {
   const gss = aLocalMirror()
-    .withDeclaredSources(aNotionLocalMirror({ name: 'comex', title: 'COMEX' }))
+    .withDeclaredSources(aNotionLocalMirror({ name: 'team-b', title: 'Team B' }))
     .build();
 
   const sources = await gss.listSources();
 
   assert.deepEqual(sources, [
     {
-      name: 'comex',
-      title: 'COMEX',
+      name: 'team-b',
+      title: 'Team B',
       connector: 'notion',
       watermark: null,
       lastSyncAt: null,
