@@ -97,14 +97,17 @@ path** (Capability E) — otherwise the next Windows regression slips the same w
     on the happy path). 10 new tests, fail-first.
   - [x] Launcher-side only (`node-compat` already excluded from the brain). Cross-platform (`{platform,
     arch}` matrix). ADR 0020 amended in place (point 3 + dated amendment).
-- [ ] **Capability E — CI actually exercises the Windows install path (close the blind spot)** *(depends on: A, B, C)*
-  - [ ] `ci.yml`: the harness suites already run on `windows-latest` → the new `needsShell` /
-    preflight / `rag-launcher` seams are covered there. **Confirm** they run and are meaningful.
-  - [ ] Add a job step that **executes `installer.mjs --non-interactive …` end-to-end on
-    `windows-latest`** (into a temp dest, `--embedder in-process` or a no-key path) and asserts a clean
-    exit + `rag/node_modules` populated — the check that would have caught Bugs 1 & 2.
-  - [ ] **Do NOT add a Node-20 cell** (we dropped 20 on purpose). Matrix stays 22/24/26; the preflight
-    test (Capability C) is what proves "Node < 22 fails loud".
+- [x] **Capability E — CI actually exercises the Windows install path (close the blind spot)** *(depends on: A, B, C)* _(2026-06-22 · be41a3c)_
+  - [x] `ci.yml`: **confirmed** the harness suites run on `windows-latest` via the
+    `scripts/*.test.mjs` + `scripts/lib/*.test.mjs` glob (507 tests) — the new `needsShell`,
+    `node-compat` and `rag-launcher` seams are all in it, so they're meaningful on Windows.
+    *(Known pre-existing gap, out of scope: `rag/postinstall-restart-notice.test.mjs` (4 tests) is run
+    by neither the harness glob nor `rag/`'s `src/lib/*.test.ts` — parked.)*
+  - [x] Added an `install-e2e` job: **executes `installer.mjs --non-interactive` end-to-end on
+    `windows-latest`** (temp dest, `--embedder in-process`, no key) and asserts a clean exit +
+    `rag/node_modules/better-sqlite3` populated — the exact check Bugs 1 & 2 would have failed.
+  - [x] **No Node-20 cell** (dropped on purpose). Matrix stays 22/24/26; the Cap-C preflight tests
+    prove "Node < 22 fails loud". e2e pinned to Node 22 (the floor; spawn EINVAL is version-insensitive).
 - [ ] **Ship** *(depends on: A–E)*
   - [ ] Full suite green (harness + `rag/`), `tsc` clean, CI green on macOS **and** Windows.
   - [ ] PR with a "The One Where…" codename (memory `release-naming-the-one-with`); body in English.
