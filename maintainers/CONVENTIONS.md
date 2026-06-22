@@ -164,6 +164,14 @@ shipped plan at the root; never delete it (the archive keeps the step detail). A
 shipped but that still carries an open conditional/exploratory tail goes to `plans/prospective/`.
 Update the plans listing in [`README.md`](README.md). Full convention: [`README.md`](README.md).
 
+**Ship ⇒ also retire the working-memory pointer (anti-context-rot).** A maintainer's running
+working-memory (the agent's `MEMORY.md` index, loaded in full every session) must NOT accumulate
+"✅ SHIPPED" lines — a shipped chantier's trace already lives in git + the archived plan. So, **in the
+same change that archives the plan**, delete the chantier's thin memory pointer and its index line. Keep
+a memory only for a **durable lesson not derivable from the code** the work produced (saved as its own
+`feedback`/`reference` note), never as a delivery-status line. An active chantier keeps exactly **one
+thin pointer** to its repo plan — never a copy of the plan's state.
+
 ## 8. Terminology — `reconcile` (mechanism) vs `self-heal` (runtime/user)
 
 Use the cloud-native 2020s vocabulary consistently, so code and prose name the same thing the same way:
