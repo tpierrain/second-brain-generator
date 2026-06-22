@@ -71,22 +71,20 @@ path** (Capability E) — otherwise the next Windows regression slips the same w
   - [x] Caller `installer.mjs` passes `ragDir` + calls `cleanup()` after run (pass or fail).
   - [x] `rag-launcher.test.mjs` locks the new contract (3 win32/posix tests). Harness 498/498.
   - [ ] Cross-check on real Windows that `rag/node_modules` is populated (proven by Capability E).
-- [ ] **Capability C — The supported Node window starts at 22 (Node 20 is dropped, on purpose)** 🧪 TDD *(Bug 3; depends on: —)*
-  - [ ] `scripts/lib/node-compat.mjs`: `NODE_WINDOW.min 20 → 22`; update the actionable below-floor
-    message ("install Node 22+ via nvm/volta — Node 20 is EOL and has no prebuilt binary"). Test the
-    new boundary (21 → fail, 22 → ok). RED first.
-  - [ ] `rag/package.json` `engines.node ">=20" → ">=22"`; `.nvmrc` already `22` (verify).
-  - [ ] `rag/package.json` `better-sqlite3 "^12.0.0"` → keep `^12` (its prebuild story is fine on
-    Node 22+); **regenerate `rag/package-lock.json`** so it no longer pins a Node-20-only assumption.
-    *(No version pin to 12.9.0 — that was the "keep Node 20" path we rejected.)*
-  - [ ] **Amend ADR 0020 in place** (dated addendum): floor 20 → 22; rationale = `engines.node`
-    declared 20.x but `better-sqlite3 ≥ 12.10` **stopped publishing Node-20 (ABI 115) prebuilds**, and
-    Node 20 is **EOL April 2026**. Note this *aligns the policy with the CI matrix*, which already
-    tests 22+ only.
-  - [ ] Propagation note: `rag/package.json` + lockfile live in `update-engine`'s `replace` bucket →
-    brains ≥ 3.0.0 pick up the floor bump on their next engine update (ADR 0020 §"How the fix reaches
-    the fleet"). Confirm no extra wiring needed.
-  - [ ] Harness + engine tests green.
+- [x] **Capability C — The supported Node window starts at 22 (Node 20 is dropped, on purpose)** 🧪 TDD *(Bug 3; depends on: —)* _(2026-06-22 · e75f045)_
+  - [x] `scripts/lib/node-compat.mjs`: `NODE_WINDOW.min 20 → 22`; updated the actionable below-floor
+    message (Node 20 is EOL + no prebuilt binary; install Node 22+ via nvm/volta). New boundary tests
+    (20 → fail, 21 → fail, 22 → inclusive floor), fail-first, baby-steps. Header prose realigned.
+  - [x] `rag/package.json` `engines.node ">=20" → ">=22"`; `.nvmrc` already `22` (verified).
+  - [x] `better-sqlite3` kept at `^12` (lockfile resolves `12.10.1`); **regenerated
+    `rag/package-lock.json`** (`--package-lock-only`) so its root entry mirrors `">=22"`, not `">=20"`.
+  - [x] **Amended ADR 0020 in place** (dated 2026-06-22): floor 20 → 22; rationale = Node 20 EOL +
+    `better-sqlite3 ≥ 12.10` dropped the Node-20 (ABI 115) prebuild; aligns the policy with the CI
+    matrix (already 22+ only). STATUS carries the amendment marker.
+  - [x] Propagation confirmed: `rag/package.json` + `rag/package-lock.json` are both in the
+    `engine-manifest.json` `replace` bucket → brains ≥ 3.0.0 pick up the floor bump on their next
+    engine update. **No extra wiring needed.**
+  - [x] Harness (504/504) + engine (`rag/` 209/209, native binding builds) tests green.
 - [ ] **Capability D — An incompatible setup fails in ~5 s with an actionable message, not ~2 min** 🧪 TDD *(Bug 4; depends on: C)*
   - [ ] Extend the step-1 preflight (`node-compat.mjs` / installer step `1/10`): after the
     version-window check, **verify the native-dep story for the running Node ABI**
