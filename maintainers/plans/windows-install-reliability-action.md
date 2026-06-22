@@ -43,28 +43,23 @@ path** (Capability E) — otherwise the next Windows regression slips the same w
 
 ## Tracking — checkboxes (live-monitorable in this file)
 
-- [ ] **🔸 DECIDE (pre-flight, Thomas) — two open sub-decisions** *(blocks coding)*
-  - [ ] **D-A — Bug 2 implementation**: keep ADR 0021-A's self-heal-PATH-at-install (single source
-    of truth) but execute it correctly on Windows. **Recommended: temp `.cmd` file** (write the
-    `pathPrependCmd()` block + `npm install` to a real temp `.cmd`, run `cmd /c <tmp>`), which
-    *preserves* ADR 0021-A on both OSes. Alternative considered: compute the prepended `PATH` in JS
-    and pass it via `run()`'s `env` (no shell script at all) — cleaner but **duplicates** the
-    self-heal logic the ADR 0021 single-source-of-truth forbids. → **confirm temp `.cmd`**.
-  - [ ] **D-B — new ADR 0031** for Bug 1 (spawn Windows `.cmd`/`.bat` shims through a shell —
-    CVE-2024-27980)? **Recommended: yes**, short ADR — it's a durable cross-platform rule (ADR 0015)
-    every future `.cmd` spawn must follow, not a one-off. Bug 3 (floor → 22) and Bug 4 (preflight)
-    are **amendments to ADR 0020 in place** (memory `amend-adrs-in-place-not-new-ones`), not new ADRs.
-- [ ] **Capability A — A clean install no longer dies spawning `npm`/`npx` on Windows** 🧪 TDD *(Bug 1; depends on: —)*
-  - [ ] Pure seam `needsShell(cmd, platform)` (or inline guard) — `win32` + `/\.(cmd|bat)$/i` → `true`;
-    `node`/`git` `.exe` and all of POSIX → `false`. Unit test first (RED).
-  - [ ] Wire into `installer.mjs` `run()` (line ~146): `shell: true` for win32 `.cmd`/`.bat`, leaving
-    `.exe`/POSIX untouched. Covers the prereq check `run(NPM, ["--version"])` (line 185) and the
-    `local-mirror` install (line 753).
-  - [ ] Wire into `scripts/lib/mcp-smoke.mjs` `spawn()` (line 11) — `npx.cmd` post-flight + health check.
-  - [ ] Wire into `scripts/lib/mcp-search.mjs` `spawn()` (line 14) — `npx.cmd` used by `verify-rag.mjs`.
-  - [ ] **Audit** every other `spawn`/`execFile*` site for a `.cmd`/`.bat` target (grep) — fix or
-    document why N/A. (Hooks go through `run-node.cmd`/`run-node.sh`, an `.exe`/`/bin/sh` entry — N/A.)
-  - [ ] `node --test` green (harness suites).
+- [x] **🔸 DECIDE (pre-flight, Thomas) — two open sub-decisions** _(2026-06-22 — Thomas: follow both recos)_
+  - [x] **D-A — Bug 2 implementation = temp `.cmd` file** (keeps ADR 0021-A self-heal SSOT, executed
+    correctly on Windows). _(decided 2026-06-22)_
+  - [x] **D-B — new ADR 0031 = yes** (spawn Windows `.cmd`/`.bat` through a shell). Bug 3 + Bug 4 →
+    amend ADR 0020 in place. _(decided 2026-06-22)_
+- [x] **Capability A — A clean install no longer dies spawning `npm`/`npx` on Windows** 🧪 TDD *(Bug 1)* _(2026-06-22 · ed3da64)_
+  - [x] Pure seam `needsShell(cmd, platform)` — `win32` + `/\.(cmd|bat)$/i` → `true`; `.exe`/POSIX →
+    `false`; case-insensitive. 4 unit tests, fail-first. _(scripts/lib/spawn-shell.mjs)_
+  - [x] Wired into `installer.mjs` `run()` (prereq check + local-mirror install).
+  - [x] Wired into `scripts/lib/mcp-smoke.mjs` + `mcp-search.mjs` `spawn()`.
+  - [x] **Audit widened the scope** — the SAME EINVAL bug existed at **6 more npm/npx spawn sites**
+    (not flagged in the report): `engine-seams.mjs` (update-engine install/reindex — the *fleet
+    upgrade* path), `verify-rag.mjs` (CASE-B verify), `headless-health-check.mjs` +
+    `health-probe-run.mjs` (probes), `clear-example-notes.mjs` (purge), `run-eval.mjs` (dev). All
+    routed through `needsShell`. OS-command spawns (`explorer`/`osascript`/`tasklist`/`open`/`xdg-open`
+    — `.exe`/POSIX) are N/A. Recorded in ADR 0031.
+  - [x] `node --test` green (496/496).
 - [ ] **Capability B — The RAG dependencies actually get installed on Windows** 🧪 TDD *(Bug 2; depends on: D-A, A)*
   - [ ] Reproduce in a test: the current win32 `buildRagInstallInvocation` emits a **multi-line**
     `cmd /c` arg → assert the new shape runs `npm install` reliably (RED on the old shape).

@@ -742,8 +742,9 @@ const rag = join(TARGET, "rag");
 // i.e. the exact Node that rag/launch.sh will later resolve at runtime — so the
 // binary is moulded for the runtime Node, not the installer's shell Node (which
 // may differ on a multi-Node machine → ABI skew). See ADR 0020 / rag-launcher.mjs.
-const ragInstall = buildRagInstallInvocation(process.platform);
+const ragInstall = buildRagInstallInvocation(process.platform, rag);
 const install = run(ragInstall.command, ragInstall.args, { cwd: rag, stdio: "inherit" });
+ragInstall.cleanup(); // remove the temp win32 install script (no-op on POSIX), pass or fail
 if (install.ok) ok("RAG dependencies installed");
 else {
   err("npm install failed in rag/ — re-run: cd rag && npm install");

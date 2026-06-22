@@ -130,12 +130,51 @@ test("buildRagInstallInvocation posix: npm install runs UNDER the launcher's sel
   assert.match(args[1], /npm install/); // …then installs the rag deps
 });
 
-test("buildRagInstallInvocation win32: npm install runs under the cmd self-heal PATH", () => {
-  const { command, args } = buildRagInstallInvocation("win32");
+test("buildRagInstallInvocation win32: writes the self-heal block into rag/ and runs it by RELATIVE name", () => {
+  // Why not a multi-line `cmd /c` arg: cmd does not reliably run the lines after the
+  // first newline (the install was silently skipped, yet exit 0) — and a long PATH
+  // trips the line-length limit. So we materialise the self-heal block + npm install
+  // into a real .cmd file and execute that. Crucially the file goes INTO rag/ and is
+  // invoked by a SPACE-FREE relative name (`cmd /c sbg-rag-install.cmd`), with the
+  // caller setting cwd=rag/ — so a brain path containing spaces (C:\Users\John Doe\…)
+  // can't break cmd's argument splitting. The fs is injected so the seam stays pure.
+  let writtenDir, written;
+  const io = {
+    writeScript: (dir, content) => {
+      writtenDir = dir;
+      written = content;
+      return "sbg-rag-install.cmd";
+    },
+    removeScript: () => {},
+  };
+  const { command, args } = buildRagInstallInvocation("win32", "C:\\Users\\John Doe\\brain\\rag", io);
   assert.equal(command, "cmd");
-  assert.equal(args[0], "/c");
-  assert.match(args[1], /%ProgramFiles%\\nodejs/); // cmd self-heal block embedded
-  assert.match(args[1], /npm install/);
+  assert.deepEqual(args, ["/c", "sbg-rag-install.cmd"]); // relative, space-free
+  assert.equal(writtenDir, "C:\\Users\\John Doe\\brain\\rag"); // file lands inside rag/
+  // The materialised script still carries the SAME self-heal block as launch.cmd
+  // (ADR 0021-A single source of truth) followed by the install.
+  assert.match(written, /%ProgramFiles%\\nodejs/);
+  assert.match(written, /npm install/);
+});
+
+test("buildRagInstallInvocation win32: cleanup() removes the script from rag/", () => {
+  let removedDir, removedName;
+  const io = {
+    writeScript: () => "sbg-rag-install.cmd",
+    removeScript: (dir, name) => {
+      removedDir = dir;
+      removedName = name;
+    },
+  };
+  const { cleanup } = buildRagInstallInvocation("win32", "C:\\brain\\rag", io);
+  cleanup();
+  assert.equal(removedDir, "C:\\brain\\rag");
+  assert.equal(removedName, "sbg-rag-install.cmd");
+});
+
+test("buildRagInstallInvocation posix: cleanup is a no-op (nothing to remove)", () => {
+  const { cleanup } = buildRagInstallInvocation("darwin");
+  assert.doesNotThrow(() => cleanup());
 });
 
 test("applyRagLauncher: rewrites the vault-rag command per OS, preserves cwd/env", () => {
