@@ -108,19 +108,21 @@ path** (Capability E) — otherwise the next Windows regression slips the same w
     `rag/node_modules/better-sqlite3` populated — the exact check Bugs 1 & 2 would have failed.
   - [x] **No Node-20 cell** (dropped on purpose). Matrix stays 22/24/26; the Cap-C preflight tests
     prove "Node < 22 fails loud". e2e pinned to Node 22 (the floor; spawn EINVAL is version-insensitive).
-- [ ] **Capability F — The Windows CI is actually GREEN (fix 2 pre-existing path false-negatives)** 🧪 *(discovered 2026-06-22: the CI exists and runs, but has been RED on Windows for days — blocking the Ship gate)*
-  - [ ] **Root cause (confirmed from the CI logs, not guessed):** 2 harness tests fail **only on
+- [ ] **Capability F — The Windows CI is actually GREEN (fix 2 pre-existing path false-negatives)** 🧪 *(discovered 2026-06-22: the CI exists and runs, but has been RED on Windows for days — blocking the Ship gate)* _(local fix 2026-06-22 · 79c198b; Windows-green proof pending the PR run)_
+  - [x] **Root cause (confirmed from the CI logs, not guessed):** 2 harness tests fail **only on
     Windows** (macOS green) because their *expected* values compare against the **raw `brainDir`**
     (backslashes on Windows) while the production code correctly emits **posix-normalised** paths
     (`{{PROJECT_ROOT}}` is posix — the documented contract, twin of `installer.mjs` `toPosix`). So the
-    **code is right; the test expectations are not cross-OS**. Fix the tests, not the source.
-    - [ ] `reconcile-brain.test.mjs` (≈588–590): assert the **added** hook commands against
-      `toPosix(brainDir)` (no-op on macOS → no regression; matches the code on Windows).
-    - [ ] `update-engine.test.mjs` (≈899): assert the registered MCP server's `cwd` against
-      `toPosix(brainDir)` (CI log: actual `C:/…` vs expected `C:\…`).
-  - [ ] **Method note:** the backslash can't be reproduced on macOS, so the *red* proof is the Windows
+    **code is right; the test expectations are not cross-OS**. Fixed the tests, not the source.
+    - [x] `reconcile-brain.test.mjs` (588–590): assert the **added** hook commands against
+      the posix-normalised brainDir (no-op on macOS → no regression; matches the code on Windows).
+    - [x] `update-engine.test.mjs` (899): assert the registered MCP server's `cwd` against
+      the posix-normalised brainDir (CI log: actual `C:/…` vs expected `C:\…`).
+  - [x] **Method note:** the backslash can't be reproduced on macOS, so the *red* proof is the Windows
     CI run itself (logs captured); macOS stays green (non-regression); the green proof is the next CI run.
-  - [ ] Harness green on macOS locally; **CI green on Windows** (the real gate) on the PR.
+  - [x] Harness green on macOS locally (511/511). _(audited: only these 2 of 492 tests were red; the
+    `session-status … untouched` assertion compares a verbatim-preserved entry, consistent on either OS.)_
+  - [ ] **CI green on Windows** (the real gate) — pending the PR run.
 - [ ] **Ship** *(depends on: A–F)*
   - [ ] Full suite green (harness + `rag/`), `tsc` clean, CI green on macOS **and** Windows.
   - [ ] PR with a "The One Where…" codename (memory `release-naming-the-one-with`); body in English.
