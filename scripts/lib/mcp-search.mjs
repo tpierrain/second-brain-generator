@@ -6,6 +6,7 @@
 // whole set. Pure Node, cross-OS, same spirit as mcp-smoke.mjs.
 // ─────────────────────────────────────────────────────────────────────────────
 import { spawn } from "node:child_process";
+import { needsShell } from "./spawn-shell.mjs";
 
 const FIRST_CALL_ID = 100; // beyond initialize(1)/tools-list(2)
 
@@ -15,6 +16,9 @@ export function mcpSearch({ command, args = [], cwd, queries, timeoutMs = 60000,
       cwd,
       stdio: ["pipe", "pipe", "ignore"],
       env: env ? { ...process.env, ...env } : process.env,
+      // Windows `.cmd`/`.bat` (npx.cmd) need a shell since Node ≥ 18.20
+      // (CVE-2024-27980) or spawn throws EINVAL. No-op for .exe/POSIX. ADR 0031.
+      shell: needsShell(command, process.platform),
     });
     const texts = new Map(); // id → text
     let buf = "";

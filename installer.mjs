@@ -69,6 +69,7 @@ import { buildHandoff } from "./scripts/lib/install-handoff.mjs";
 import { recordSourceAndProvenance } from "./scripts/lib/engine-source.mjs";
 import { resolveLatestTag } from "./scripts/lib/engine-fetch.mjs";
 import { checkNode, NODE_WINDOW } from "./scripts/lib/node-compat.mjs";
+import { needsShell } from "./scripts/lib/spawn-shell.mjs";
 
 // ROOT = the LAUNCHER (this cloned repo). READ-ONLY, reusable source: the
 // installer NEVER writes to it. It CREATES a brain folder elsewhere (TARGET),
@@ -148,6 +149,9 @@ function run(cmd, args, opts = {}) {
     const out = execFileSync(cmd, args, {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
+      // Windows `.cmd`/`.bat` shims (npm.cmd) need a shell since Node ≥ 18.20
+      // (CVE-2024-27980) or spawnSync throws EINVAL. No-op for .exe/POSIX. ADR 0031.
+      ...(needsShell(cmd, process.platform) ? { shell: true } : {}),
       ...opts,
     });
     return { out: out ?? "", ok: true };

@@ -109,7 +109,7 @@ sections — Decision, Safety invariant, Consequences, Rejected alternatives) ra
 ADR. **Do NOT create a new ADR for each evolution.** An evolution that belongs to the **same topic** (e.g.
 "what the reconciler is allowed to write") lives in that topic's ADR, not a separate one — multiplying ADRs
 makes `decisions/` hard to navigate. A brand-new ADR stays the right choice only for a decision on a
-**genuinely new topic**. (Origin: decision B was first split into a separate ADR 0031 + back-pointer;
+**genuinely new topic**. (Origin: decision B was first split into a separate new ADR + back-pointer;
 corrected to fold it into ADR 0026 in place.) **How to write the amended result: see §6ter** — amending in
 place is about keeping **one ADR per topic**, NOT about leaving dated "AMENDED" scars in the prose.
 

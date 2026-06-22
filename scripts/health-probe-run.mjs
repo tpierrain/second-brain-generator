@@ -21,6 +21,7 @@ import { fileURLToPath } from "node:url";
 
 import { runActivatedHealthChecks } from "./lib/health-check-runner.mjs";
 import { buildHeadlessHealthCheckCaller } from "./lib/headless-health-check.mjs";
+import { needsShell } from "./lib/spawn-shell.mjs";
 
 export async function runProbeChild({ runProbes, readPriorVerdict, writeVerdict, notify }) {
   const verdict = await runProbes();
@@ -99,7 +100,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         const child = spawn(
           npxExe(platform),
           ["tsx", "rag/src/notify-cli.ts", "Second brain — health check", `${probe.capability} is broken: ${probe.detail}`],
-          { cwd: brainDir, detached: true, stdio: "ignore", windowsHide: true },
+          // npx.cmd needs a shell since Node ≥ 18.20 (CVE-2024-27980) or EINVAL; no-op POSIX (ADR 0031).
+          { cwd: brainDir, detached: true, stdio: "ignore", windowsHide: true, shell: needsShell(npxExe(platform), platform) },
         );
         child.unref();
       },

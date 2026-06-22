@@ -18,17 +18,25 @@ import {
   buildLocalMirrorShLauncher,
   buildLocalMirrorCmdLauncher,
 } from "./rag-launcher.mjs";
+import { needsShell } from "./spawn-shell.mjs";
 
 // npm is a shell-wrapped `.cmd` on Windows (unlike git, a real .exe) → platform switch.
 const npmExe = (platform) => (platform === "win32" ? "npm.cmd" : "npm");
 
+// A `.cmd` shim needs a shell since Node ≥ 18.20 (CVE-2024-27980) or it throws
+// EINVAL; no-op on POSIX (ADR 0031). Centralised here so every npm call below agrees.
+const npmSpawnOpts = (platform, extra = {}) => ({
+  shell: needsShell(npmExe(platform), platform),
+  ...extra,
+});
+
 export async function defaultRunInstall({ ragDir, brainDir, platform }) {
-  execFileSync(npmExe(platform), ["install"], { cwd: ragDir, stdio: "inherit" });
+  execFileSync(npmExe(platform), ["install"], npmSpawnOpts(platform, { cwd: ragDir, stdio: "inherit" }));
   // local-mirror deps too, when the brain carries that package (pure JS →
   // no native build, plain install; absent on pre-local-mirror brains → skip).
   const gssDir = join(brainDir, "local-mirror");
   if (existsSync(join(gssDir, "package.json"))) {
-    execFileSync(npmExe(platform), ["install"], { cwd: gssDir, stdio: "inherit" });
+    execFileSync(npmExe(platform), ["install"], npmSpawnOpts(platform, { cwd: gssDir, stdio: "inherit" }));
   }
 }
 
@@ -39,7 +47,7 @@ export async function defaultRunInstall({ ragDir, brainDir, platform }) {
 // is genuinely missing from the index — exactly the seeded-but-unindexed canary.
 export async function defaultRunReindex({ brainDir, platform, mode = "full" }) {
   const script = mode === "incremental" ? "index" : "reindex";
-  execFileSync(npmExe(platform), ["run", script], { cwd: join(brainDir, "rag"), stdio: "inherit" });
+  execFileSync(npmExe(platform), ["run", script], npmSpawnOpts(platform, { cwd: join(brainDir, "rag"), stdio: "inherit" }));
 }
 
 // How many notes the brain holds, for the user-facing recap (F2). The lightest
