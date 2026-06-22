@@ -60,17 +60,17 @@ path** (Capability E) — otherwise the next Windows regression slips the same w
     routed through `needsShell`. OS-command spawns (`explorer`/`osascript`/`tasklist`/`open`/`xdg-open`
     — `.exe`/POSIX) are N/A. Recorded in ADR 0031.
   - [x] `node --test` green (496/496).
-- [ ] **Capability B — The RAG dependencies actually get installed on Windows** 🧪 TDD *(Bug 2; depends on: D-A, A)*
-  - [ ] Reproduce in a test: the current win32 `buildRagInstallInvocation` emits a **multi-line**
-    `cmd /c` arg → assert the new shape runs `npm install` reliably (RED on the old shape).
-  - [ ] Implement D-A's choice (temp `.cmd`) in `scripts/lib/rag-launcher.mjs`
-    `buildRagInstallInvocation()` — **keep `pathPrependCmd()` as the single source of truth**
-    (ADR 0021-A), just stop passing it as a multi-line `cmd /c` argument. POSIX path unchanged
-    (`sh -c` handles `\n`).
-  - [ ] Update the caller `installer.mjs` (line ~741) if the seam now returns a temp-file handle to
-    clean up.
-  - [ ] Update `scripts/lib/rag-launcher.test.mjs` to lock the new contract.
-  - [ ] `npm ci` in `rag/` on Windows now populates `node_modules` (proven by Capability E).
+- [x] **Capability B — The RAG dependencies actually get installed on Windows** 🧪 TDD *(Bug 2)* _(2026-06-22 · aa6c40f)_
+  - [x] `buildRagInstallInvocation()` win32 → materialises the self-heal block + `npm install` into a
+    real `.cmd` written **into `rag/`**, invoked by a **space-free relative name** (`cmd /c
+    sbg-rag-install.cmd`, cwd=rag/) so a brain path with spaces can't break cmd arg-splitting.
+    Injected fs seam (pure, unit-tested); returns `cleanup()`. **Hardened beyond D-A**: an absolute
+    temp path could itself carry spaces (`C:\Users\John Doe\…`) — caught before shipping (memory
+    `validate-shipped-not-test-instance`).
+  - [x] `pathPrependCmd()` kept as single source of truth (ADR 0021-A). POSIX path unchanged.
+  - [x] Caller `installer.mjs` passes `ragDir` + calls `cleanup()` after run (pass or fail).
+  - [x] `rag-launcher.test.mjs` locks the new contract (3 win32/posix tests). Harness 498/498.
+  - [ ] Cross-check on real Windows that `rag/node_modules` is populated (proven by Capability E).
 - [ ] **Capability C — The supported Node window starts at 22 (Node 20 is dropped, on purpose)** 🧪 TDD *(Bug 3; depends on: —)*
   - [ ] `scripts/lib/node-compat.mjs`: `NODE_WINDOW.min 20 → 22`; update the actionable below-floor
     message ("install Node 22+ via nvm/volta — Node 20 is EOL and has no prebuilt binary"). Test the
