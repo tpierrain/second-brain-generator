@@ -6,6 +6,13 @@
 # across the supported Node window, on macOS AND Windows (parity — ADR 0015),
 # so a Node/native-dep conflict goes red HERE instead of at a colleague's
 # install (the Yann DANOT wall that motivated v3.0.1).
+#
+# The `install-e2e` job additionally runs `installer.mjs` END-TO-END on Windows —
+# the path where the spawn-correctness bugs (EINVAL on npm/npx `.cmd` shims, the
+# multi-line `cmd /c` rag-install) lived invisibly because no job ever executed the
+# installer itself (Daniel Martin wall, 2026-06-21 — ADR 0031, plan
+# windows-install-reliability). A clean exit + populated rag/node_modules is the
+# assertion those bugs would have failed.
 # ═══════════════════════════════════════════════════════════════════════════
 name: CI
 
@@ -48,3 +55,34 @@ jobs:
       - name: Type-check engine
         working-directory: rag
         run: npx tsc --noEmit
+
+  # The net for the INSTALLER path itself (Bugs 1 & 2): nothing here built a brain
+  # end-to-end before, so spawn-correctness bugs on Windows stayed invisible. We run
+  # the real non-interactive install on windows-latest with the no-key in-process
+  # embedder, then assert the RAG deps actually landed. Node 22 = the floor (ADR 0020);
+  # the spawn EINVAL is Node-version-insensitive across the window, so one cell suffices.
+  install-e2e:
+    name: Installer e2e · windows-latest
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node 22 (the supported floor)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configure a git identity (the brain runs `git init` + an auto-commit hook)
+        run: |
+          git config --global user.name "CI Bot"
+          git config --global user.email "ci@example.com"
+
+      - name: Run installer.mjs end-to-end (non-interactive, in-process embedder, no key)
+        run: node installer.mjs --non-interactive --name ci-brain --dest "${{ runner.temp }}" --owner "CI" --lang en --embedder in-process
+
+      - name: Assert the RAG dependencies were installed (Bugs 1 & 2 would leave this empty)
+        shell: pwsh
+        run: |
+          $dir = Join-Path "${{ runner.temp }}" "ci-brain\rag\node_modules\better-sqlite3"
+          if (-not (Test-Path $dir)) { Write-Error "rag/node_modules/better-sqlite3 missing — RAG deps not installed"; exit 1 }
+          Write-Host "rag/node_modules populated - install path is healthy"
