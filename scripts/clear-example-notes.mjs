@@ -16,6 +16,7 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { clearExampleNotes } from "./lib/example-notes.mjs";
+import { needsShell } from "./lib/spawn-shell.mjs";
 
 // Deletes the exemple-tagged notes under <rootDir>/vault. Returns deleted paths
 // (empty if there is no vault/ — nothing to do).
@@ -43,6 +44,8 @@ function main(argv) {
   const r = spawnSync(NPM, ["run", "--silent", "reindex"], {
     cwd: join(root, "rag"),
     stdio: "inherit",
+    // npm.cmd needs a shell since Node ≥ 18.20 (CVE-2024-27980) or EINVAL; no-op POSIX (ADR 0031).
+    shell: needsShell(NPM, process.platform),
   });
   if (r.status !== 0) {
     console.error("✗ re-index failed — run it by hand:  cd rag && npm run reindex");

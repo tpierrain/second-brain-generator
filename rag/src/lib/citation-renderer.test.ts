@@ -1,7 +1,20 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { formatSearchCitations } from "./citation-renderer.js";
 import type { SearchResult } from "./vector-store.js";
+
+// Cross-OS vault root: `resolve` makes it absolute on the *current* OS (a real
+// `C:\…` drive path on Windows, `/brain/vault` on POSIX), so the expected
+// `file://` URL — built the same way production does, via `pathToFileURL` — is
+// driver-correct on either platform. A hardcoded POSIX `/brain/vault` + a literal
+// `file:///brain/vault/…` was a Windows-only false-negative (resolve adds the
+// current drive there → `file:///D:/brain/vault/…`), not a prod bug.
+const VAULT = resolve("/brain/vault");
+function localFileUrl(relPath: string): string {
+  return pathToFileURL(resolve(VAULT, relPath)).href;
+}
 
 function result(over: Partial<SearchResult> = {}): SearchResult {
   return {
@@ -18,14 +31,14 @@ function result(over: Partial<SearchResult> = {}): SearchResult {
 test("a mirror note renders both a real-file local link and a Notion link", () => {
   const text = formatSearchCitations(
     [result({ sourceUrl: "https://www.notion.so/abc" })],
-    "/brain/vault"
+    VAULT
   );
 
   // 🧠 local copy: a real-file `file://<absolute>` link, NOT an Obsidian custom
   // scheme. A click (where the renderer routes it) opens the note in the user's
   // DEFAULT Markdown editor (Typora, Obsidian, …) — editor-agnostic, editable.
   assert.ok(
-    text.includes("file:///brain/vault/mirrors/facture/a.md"),
+    text.includes(localFileUrl("mirrors/facture/a.md")),
     text
   );
   // We must NOT emit the Obsidian-specific custom scheme anymore.
@@ -37,7 +50,7 @@ test("a mirror note renders both a real-file local link and a Notion link", () =
 test("the Notion link is angle-bracket wrapped so a ')' in the URL can't break the markdown", () => {
   const text = formatSearchCitations(
     [result({ sourceUrl: "https://www.notion.so/a(b)c" })],
-    "/brain/vault"
+    VAULT
   );
 
   // CommonMark: a <…> link destination may contain parentheses → the closing
@@ -52,16 +65,16 @@ test("a '>' or space in the Notion url is percent-encoded so it can't break the 
   // destination early, and a raw space is illegal inside it.
   const text = formatSearchCitations(
     [result({ sourceUrl: "https://www.notion.so/a>b c" })],
-    "/brain/vault"
+    VAULT
   );
 
   assert.ok(text.includes("(<https://www.notion.so/a%3Eb%20c>)"), text);
 });
 
 test("a non-mirror note renders only the local file link, no Notion link", () => {
-  const text = formatSearchCitations([result()], "/brain/vault");
+  const text = formatSearchCitations([result()], VAULT);
 
-  assert.ok(text.includes("file:///brain/vault/mirrors/facture/a.md"), text);
+  assert.ok(text.includes(localFileUrl("mirrors/facture/a.md")), text);
   assert.ok(!text.includes("🔗"), text);
 });
 
@@ -72,7 +85,7 @@ test("when a mirror note is present, the output carries an engine-owned relay di
   // it. Without it Claude paraphrases and the two emoji-links collapse into one.
   const text = formatSearchCitations(
     [result({ sourceUrl: "https://www.notion.so/abc" })],
-    "/brain/vault"
+    VAULT
   );
 
   // The directive must name BOTH emoji-links and tell Claude to relay them as-is.
@@ -84,7 +97,7 @@ test("when a mirror note is present, the output carries an engine-owned relay di
 test("a result set with NO mirror note carries no relay directive (no noise)", () => {
   // The belt fires ONLY when at least one cited note actually has a source link;
   // a plain vault search stays clean.
-  const text = formatSearchCitations([result()], "/brain/vault");
+  const text = formatSearchCitations([result()], VAULT);
   assert.ok(!/relay/i.test(text), text);
 });
 
@@ -96,7 +109,7 @@ test("each citation carries an 'ask me to open citation N' affordance, numbered 
   // The number matches the citation heading so "open citation 2" is unambiguous.
   const text = formatSearchCitations(
     [result(), result({ title: "Second" })],
-    "/brain/vault"
+    VAULT
   );
 
   assert.ok(text.includes('open citation 1'), text);

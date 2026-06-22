@@ -109,7 +109,7 @@ sections — Decision, Safety invariant, Consequences, Rejected alternatives) ra
 ADR. **Do NOT create a new ADR for each evolution.** An evolution that belongs to the **same topic** (e.g.
 "what the reconciler is allowed to write") lives in that topic's ADR, not a separate one — multiplying ADRs
 makes `decisions/` hard to navigate. A brand-new ADR stays the right choice only for a decision on a
-**genuinely new topic**. (Origin: decision B was first split into a separate ADR 0031 + back-pointer;
+**genuinely new topic**. (Origin: decision B was first split into a separate new ADR + back-pointer;
 corrected to fold it into ADR 0026 in place.) **How to write the amended result: see §6ter** — amending in
 place is about keeping **one ADR per topic**, NOT about leaving dated "AMENDED" scars in the prose.
 
@@ -163,6 +163,14 @@ SHAs / what was verified) **and `git mv` it into [`plans/archived/`](plans/archi
 shipped plan at the root; never delete it (the archive keeps the step detail). A plan whose core
 shipped but that still carries an open conditional/exploratory tail goes to `plans/prospective/`.
 Update the plans listing in [`README.md`](README.md). Full convention: [`README.md`](README.md).
+
+**Ship ⇒ also retire the working-memory pointer (anti-context-rot).** A maintainer's running
+working-memory (the agent's `MEMORY.md` index, loaded in full every session) must NOT accumulate
+"✅ SHIPPED" lines — a shipped chantier's trace already lives in git + the archived plan. So, **in the
+same change that archives the plan**, delete the chantier's thin memory pointer and its index line. Keep
+a memory only for a **durable lesson not derivable from the code** the work produced (saved as its own
+`feedback`/`reference` note), never as a delivery-status line. An active chantier keeps exactly **one
+thin pointer** to its repo plan — never a copy of the plan's state.
 
 ## 8. Terminology — `reconcile` (mechanism) vs `self-heal` (runtime/user)
 

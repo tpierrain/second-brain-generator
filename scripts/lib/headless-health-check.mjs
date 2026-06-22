@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { spawnSync } from "node:child_process";
+import { needsShell } from "./spawn-shell.mjs";
 
 // The real headless reader: run rag/src/health-check-cli.ts (read-only, no server, no
 // reindex, no watcher — ADR 0030 §4) from the brain folder and capture its JSON line.
@@ -17,6 +18,8 @@ function defaultRunCli({ brainDir, platform = process.platform, depth = "light" 
   const res = spawnSync(npx, ["tsx", "rag/src/health-check-cli.ts", "--depth", depth], {
     cwd: brainDir,
     encoding: "utf8",
+    // npx.cmd needs a shell since Node ≥ 18.20 (CVE-2024-27980) or EINVAL; no-op POSIX (ADR 0031).
+    shell: needsShell(npx, platform),
     // Light depth never loads ONNX, but keep parity with the loud gates: no startup toast.
     env: { ...process.env, SBG_NO_NOTIFY: "1" },
     windowsHide: true,

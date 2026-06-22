@@ -896,7 +896,9 @@ test("gate — registers a missing engine MCP server in .mcp.json (from the temp
     ["local-mirror"],
     "the report must name the MCP server(s) it registered (only the newly-added one)",
   );
-  assert.equal(mcp.mcpServers["local-mirror"].cwd, brainDir, "{{PROJECT_ROOT}} must resolve to the brain dir");
+  // {{PROJECT_ROOT}} is substituted POSIX-normalised (cf. reconcile-brain.mjs / installer
+  // toPosix), so on Windows the expectation must normalise too — a no-op on POSIX.
+  assert.equal(mcp.mcpServers["local-mirror"].cwd, brainDir.split("\\").join("/"), "{{PROJECT_ROOT}} must resolve to the brain dir");
   assert.deepEqual(
     mcp.mcpServers["local-mirror"].args,
     ["tsx", "local-mirror/src/server.ts"],

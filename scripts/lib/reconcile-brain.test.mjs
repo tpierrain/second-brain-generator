@@ -585,9 +585,13 @@ test("reconcileBrain — wires the missing engine SessionStart hooks into settin
   );
   const settings = JSON.parse(readFileSync(join(brainDir, ".claude/settings.json"), "utf8"));
   const cmds = settings.hooks.SessionStart.flatMap((g) => g.hooks.map((h) => h.command));
-  assert.ok(cmds.includes(`/usr/local/bin/node "${brainDir}/scripts/session-self-heal.mjs"`), "self-heal wired with the brain's node + dir");
-  assert.ok(cmds.includes(`/usr/local/bin/node "${brainDir}/scripts/session-health.mjs"`), "session-health wired");
-  assert.ok(cmds.includes(`/usr/local/bin/node "${brainDir}/scripts/session-obsidian-hint.mjs"`), "session-obsidian-hint wired");
+  // Appended hooks substitute {{PROJECT_ROOT}}, which the engine emits POSIX-normalised
+  // (cf. reconcile-brain.mjs / installer toPosix). On Windows brainDir has backslashes, so
+  // the expectation must normalise too — a no-op on POSIX, the real contract on win32.
+  const root = brainDir.split("\\").join("/");
+  assert.ok(cmds.includes(`/usr/local/bin/node "${root}/scripts/session-self-heal.mjs"`), "self-heal wired with the brain's node + dir");
+  assert.ok(cmds.includes(`/usr/local/bin/node "${root}/scripts/session-health.mjs"`), "session-health wired");
+  assert.ok(cmds.includes(`/usr/local/bin/node "${root}/scripts/session-obsidian-hint.mjs"`), "session-obsidian-hint wired");
   assert.equal(settings.mine, true, "a user-owned settings key must be preserved");
   assert.equal(settings.hooks.SessionStart[0].hooks[0].command, `/usr/local/bin/node "${brainDir}/scripts/session-status.mjs"`, "the existing session-status entry stays first, untouched");
 });

@@ -11,6 +11,8 @@
 // actually present (existence test). Tested source of truth, written as-is by
 // the installer to rag/launch.sh (POSIX) and rag/launch.cmd (Windows).
 // ─────────────────────────────────────────────────────────────────────────────
+import { writeFileSync, rmSync } from "node:fs";
+import { join } from "node:path";
 
 // Reusable POSIX self-heal PATH block (RAG as well as node hooks). Prepends the
 // usual node locations TO PATH, but only if they exist (`[ -d ]`) → portable, no
@@ -133,21 +135,45 @@ export function applyLocalMirrorLauncher(mcp, platform) {
   return mcp;
 }
 
+// Name of the transient win32 install script materialised inside rag/. Space-free
+// and invoked by RELATIVE name (with cwd=rag/) so a brain path containing spaces
+// (C:\Users\John Doe\…) can't break cmd's argument splitting.
+const WIN_INSTALL_SCRIPT = "sbg-rag-install.cmd";
+
+// Default fs seam for buildRagInstallInvocation: writes the win32 install script
+// into rag/ and returns its (relative) base name; removeScript deletes it.
+// Injected in tests so the seam stays pure (no implicit I/O).
+const realInstallIo = {
+  writeScript(ragDir, content) {
+    writeFileSync(join(ragDir, WIN_INSTALL_SCRIPT), content);
+    return WIN_INSTALL_SCRIPT;
+  },
+  removeScript(ragDir, name) {
+    rmSync(join(ragDir, name), { force: true });
+  },
+};
+
 // Builds the invocation that installs the rag/ deps THROUGH the same self-heal
 // PATH the launcher uses at runtime (pathPrependSh/Cmd) — so the native binary
 // (better-sqlite3) is moulded for exactly the Node that will later load it,
-// killing the install-node ≠ runtime-node ABI skew. Returns {command, args} for
-// child_process; run it with cwd = rag/.
-export function buildRagInstallInvocation(platform) {
+// killing the install-node ≠ runtime-node ABI skew (ADR 0021-A). Returns
+// {command, args, cleanup} for child_process; run it with cwd = ragDir, then call
+// cleanup() (a no-op on POSIX). On win32 the self-heal block + `npm install` are
+// written to a real .cmd inside rag/ and invoked by a space-free RELATIVE name
+// (NOT passed as a multi-line `cmd /c` argument, which cmd silently truncates
+// after the first newline — the install was skipped yet exited 0; and an absolute
+// temp path could carry spaces). `io` is injected for testability; reuses
+// pathPrependCmd() so the self-heal block stays the single source of truth.
+export function buildRagInstallInvocation(platform, ragDir, io = realInstallIo) {
   if (platform === "win32") {
-    return {
-      command: "cmd",
-      args: ["/c", `${pathPrependCmd()}\r\nnpm install --silent`],
-    };
+    const script = `@echo off\r\n${pathPrependCmd()}\r\nnpm install --silent\r\n`;
+    const name = io.writeScript(ragDir, script);
+    return { command: "cmd", args: ["/c", name], cleanup: () => io.removeScript(ragDir, name) };
   }
   return {
     command: "/bin/sh",
     args: ["-c", `${pathPrependSh()}\nexec npm install --silent`],
+    cleanup: () => {},
   };
 }
 

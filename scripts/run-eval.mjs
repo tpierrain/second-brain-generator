@@ -21,6 +21,7 @@ import { spawnSync } from "node:child_process";
 
 import { hasGeminiKey } from "./lib/gemini-key.mjs";
 import { mcpSearch } from "./lib/mcp-search.mjs";
+import { needsShell } from "./lib/spawn-shell.mjs";
 import { runEval } from "./lib/eval-run.mjs";
 import { EVAL_SET } from "./lib/eval-set.mjs";
 
@@ -49,7 +50,8 @@ if (!hasGeminiKey(envContent)) {
 
 // 2. Blocking indexing — the eval measures retrieval against a fresh index.
 step("Indexing the vault");
-const idx = spawnSync(NPM, ["run", "--silent", "index"], { cwd: rag, stdio: "inherit" });
+// npm.cmd needs a shell since Node ≥ 18.20 (CVE-2024-27980) or EINVAL; no-op POSIX (ADR 0031).
+const idx = spawnSync(NPM, ["run", "--silent", "index"], { cwd: rag, stdio: "inherit", shell: needsShell(NPM, process.platform) });
 if (idx.status !== 0) {
   err("Indexing failed (invalid key? quota? network?) — see SETUP.md §8/§9.");
   process.exit(1);

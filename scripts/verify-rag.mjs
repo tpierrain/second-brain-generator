@@ -20,6 +20,7 @@ import { DEMO_QUESTION } from "./lib/demo.mjs";
 import { runActivatedHealthChecks } from "./lib/health-check-runner.mjs";
 import { buildHeadlessHealthCheckCaller } from "./lib/headless-health-check.mjs";
 import { gateBlockers } from "./lib/health-check-gate.mjs";
+import { needsShell } from "./lib/spawn-shell.mjs";
 
 const tty = process.stdout.isTTY;
 const c = {
@@ -53,6 +54,8 @@ step("Indexing the vault");
 const idx = spawnSync(NPM, ["run", "--silent", "index"], {
   cwd: rag,
   stdio: "inherit",
+  // npm.cmd needs a shell since Node ≥ 18.20 (CVE-2024-27980) or EINVAL; no-op POSIX (ADR 0031).
+  shell: needsShell(NPM, process.platform),
   // No OS toast during deterministic verification (the notify seam honours this).
   env: { ...process.env, SBG_NO_NOTIFY: "1" },
 });
