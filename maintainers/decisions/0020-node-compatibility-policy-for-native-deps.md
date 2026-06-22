@@ -50,8 +50,15 @@ A four-part policy keeps the engine installable across the Node versions people 
    (`checkNode(version, window)` + the shared `NODE_WINDOW = {min:22, max:26}`) compares `process.version`
    to the window **before** `npm install` — the step that otherwise blows up cryptically. Below the floor →
    hard fail with an actionable message ("switch with nvm/volta"). Above the ceiling → **warn but allow**
-   (forward-friendly: never block a newer Node). Launcher-side only (excluded from the brain like
-   `install-handoff`), cross-platform (ADR 0015).
+   (forward-friendly: never block a newer Node). The version window is a *proxy* for the real question,
+   so the preflight also asks it **directly**: `checkNativePrebuild({platform, arch, abi})` consults an
+   **offline known-matrix** (`PREBUILT_ABIS` × `PREBUILT_PLATFORMS`, derived from the same window — no
+   network HEAD) to confirm a better-sqlite3 prebuilt binary actually ships for *this* `{platform, arch,
+   process.versions.modules}`. If none does, it requires a C++ toolchain (`detectCppToolchain`, a
+   best-effort injected probe — conservative: unknown → false, nudging the user to an in-window Node) and
+   **fails fast in step 1** otherwise — catching the above-ceiling / exotic-arch holes the version check
+   alone misses (Bug 4). Launcher-side only (excluded from the brain like `install-handoff`),
+   cross-platform (ADR 0015).
 4. **CI matrix = the net.** GitHub Actions runs the harness suites + `npm ci && npm test` (which **builds
    the native binding**) for the engine across **Node 22 / 24 / 26** on **macOS and Windows** (parity,
    ADR 0015). A native-dep/Node conflict now goes red in CI, not at a user's keyboard.
@@ -73,6 +80,10 @@ actually exercised. The bump touches `engines.node` (`>=20 → >=22`), the lockf
 `NODE_WINDOW.min` (`20 → 22`); it reaches the fleet through the same `update-engine` `replace` bucket
 described below. No Node-20 cell is added to CI — 20 is dropped on purpose. (Field report: Daniel Martin,
 2026-06-21, clean Windows + Node 20 + no Visual Studio toolchain.)
+
+The same change **deepens the preflight** (point 3): on top of the version-window compare it now verifies,
+**offline**, that a better-sqlite3 prebuilt binary exists for the running `{platform, arch, abi}` — or that
+a C++ toolchain can build one — failing fast in step 1 instead of ~2 min into `npm install` (Bug 4).
 
 ## Consequences
 

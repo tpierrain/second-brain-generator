@@ -68,7 +68,13 @@ import { formatObsidianHint } from "./scripts/lib/obsidian-health.mjs";
 import { buildHandoff } from "./scripts/lib/install-handoff.mjs";
 import { recordSourceAndProvenance } from "./scripts/lib/engine-source.mjs";
 import { resolveLatestTag } from "./scripts/lib/engine-fetch.mjs";
-import { checkNode, NODE_WINDOW } from "./scripts/lib/node-compat.mjs";
+import {
+  checkNode,
+  checkNativePrebuild,
+  detectCppToolchain,
+  hasPrebuiltBinary,
+  NODE_WINDOW,
+} from "./scripts/lib/node-compat.mjs";
 import { needsShell } from "./scripts/lib/spawn-shell.mjs";
 
 // ROOT = the LAUNCHER (this cloned repo). READ-ONLY, reusable source: the
@@ -177,6 +183,29 @@ if (!nodeVerdict.ok) {
   warn(nodeVerdict.message);
 } else {
   ok(`node found (v${process.versions.node})`);
+}
+
+// Even on an in-window Node, confirm a better-sqlite3 prebuilt binary actually
+// exists for THIS {platform, arch, abi} — otherwise `npm install` would fall through
+// to a from-source build and die cryptically ~2 min in (Bug 4). Fail fast here unless
+// a C++ toolchain can build it. Offline, deterministic known-matrix (ADR 0009/0020).
+if (nodeVerdict.ok) {
+  const target = {
+    platform: process.platform,
+    arch: process.arch,
+    abi: Number(process.versions.modules),
+  };
+  // Only hunt for a compiler when there's no prebuilt binary to fall back on.
+  const hasToolchain = hasPrebuiltBinary(target)
+    ? false
+    : detectCppToolchain((cmd, a) => run(cmd, a), process.platform);
+  const nativeVerdict = checkNativePrebuild(target, { hasToolchain });
+  if (!nativeVerdict.ok) {
+    err(nativeVerdict.message);
+    missing = true;
+  } else if (nativeVerdict.warn) {
+    warn(nativeVerdict.message);
+  }
 }
 
 const git = run("git", ["--version"]);
