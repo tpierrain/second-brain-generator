@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { spawn } from "node:child_process";
 import { needsShell } from "./spawn-shell.mjs";
+import { terminateChild } from "./child-cleanup.mjs";
 
 export function smokeTestMcp({ command, args = [], cwd, expectTools = [], timeoutMs = 15000, env, probe }) {
   return new Promise((resolve) => {
@@ -29,9 +30,10 @@ export function smokeTestMcp({ command, args = [], cwd, expectTools = [], timeou
       if (done) return;
       done = true;
       clearTimeout(timer);
-      try {
-        child.kill();
-      } catch {}
+      // Tree-kill + release handles: on Windows the `.cmd` shell child orphans the
+      // node grandchild, whose inherited stdout pipe would otherwise keep the
+      // installer alive forever after its success banner (ADR 0031). Cross-OS.
+      terminateChild(child, { platform: process.platform, spawn });
       resolve(result);
     }
 

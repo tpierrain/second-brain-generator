@@ -1,6 +1,7 @@
 # ADR 0031 — Spawn Windows `.cmd`/`.bat` shims through a shell
 
-- **STATUS:** ACCEPTED (2026-06-22).
+- **STATUS:** ACCEPTED (2026-06-22; amended 2026-06-22 — added *Cleanup: terminating a
+  shell-spawned child*, the Windows orphan-grandchild corollary of spawning through a shell).
 - **Scope:** Installer + Second brain (runtime) — the bug spans the installer's `npm`/`npx` spawns AND
   the brain-runtime spawns (`update-engine` install/reindex, `verify-rag`, the health probes, the
   example-notes purge). The runtime fixes propagate to the existing fleet (brains ≥ 3.0.0) via
@@ -62,10 +63,35 @@ NIH the other way: the fix is trivial and platform-guarded).
 quoting pitfalls); gating it to `.cmd`/`.bat` keeps the change a strict **no-op off Windows** and on
 `git`/`node`, so macOS/Linux behaviour is provably unchanged.
 
+## Cleanup — terminating a shell-spawned child
+
+Spawning through a shell has a **corollary at teardown** that the happy-path decision above does not
+cover. On Windows the long-lived stdio children (`mcp-smoke`, `mcp-search`) are launched as
+`cmd.exe /c npx.cmd …`, so the process the parent holds is the **shell**, and the real MCP server is a
+**grandchild**. `child.kill()` reaps only the shell; the grandchild is **orphaned and keeps the
+inherited stdout pipe open**, so the parent's read handle never EOFs and **the Node process never
+exits** — the installer prints its full success banner, then hangs until killed (field-observed: the
+CI `install-e2e` step ran to "✓ Installation complete" in ~1m45s, then sat idle until the 20-min
+job timeout; macOS reaps the whole tree and exits cleanly, so it never surfaced there).
+
+Teardown therefore uses a small tested seam `scripts/lib/child-cleanup.mjs`:
+
+```js
+terminateChild(child, { platform, spawn }); // in every finish()
+```
+
+which (1) `child.kill()`s, (2) on **win32 only** tree-kills the orphan via a detached
+`taskkill /pid <pid> /T /F` (`buildTreeKill` is the pure, unit-tested mapping — `null` off Windows,
+where `kill()` already reaps the group), and (3) **destroys the child's stdio streams + `unref()`s**
+so the parent's event loop can drain even if the tree-kill is slow or partial. It is strictly
+best-effort and **never throws** (it fires from `finish()`, which may run after the child already
+exited). This keeps the install/runtime spawn paths **exit-clean on Windows**, matching POSIX.
+
 ## Consequences
 
 - **A clean install and a working runtime on Windows** — the prereq check, the RAG install, the
-  post-flight, `update-engine`, `verify-rag` and the health probes all spawn successfully.
+  post-flight, `update-engine`, `verify-rag` and the health probes all spawn successfully **and the
+  process exits** instead of hanging on an orphaned MCP-server grandchild (see *Cleanup* above).
 - **Single source of truth for the decision** — a new `.cmd` spawn added later just calls `needsShell`;
   no scattered `process.platform` re-derivations to keep in sync.
 - **No-op elsewhere** — POSIX and `.exe` targets are untouched, so there is no risk to the (well-tested)

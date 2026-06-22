@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { spawn } from "node:child_process";
 import { needsShell } from "./spawn-shell.mjs";
+import { terminateChild } from "./child-cleanup.mjs";
 
 const FIRST_CALL_ID = 100; // beyond initialize(1)/tools-list(2)
 
@@ -29,9 +30,9 @@ export function mcpSearch({ command, args = [], cwd, queries, timeoutMs = 60000,
       if (done) return;
       done = true;
       clearTimeout(timer);
-      try {
-        child.kill();
-      } catch {}
+      // Tree-kill + release handles so the parent can exit even when the Windows
+      // `.cmd` shell orphans the node grandchild (ADR 0031). Cross-OS.
+      terminateChild(child, { platform: process.platform, spawn });
       if (err) return reject(err);
       resolve(queries.map((query, i) => ({ query, text: texts.get(FIRST_CALL_ID + i) ?? "" })));
     }
