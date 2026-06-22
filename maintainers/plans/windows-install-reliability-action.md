@@ -85,14 +85,18 @@ path** (Capability E) — otherwise the next Windows regression slips the same w
     `engine-manifest.json` `replace` bucket → brains ≥ 3.0.0 pick up the floor bump on their next
     engine update. **No extra wiring needed.**
   - [x] Harness (504/504) + engine (`rag/` 209/209, native binding builds) tests green.
-- [ ] **Capability D — An incompatible setup fails in ~5 s with an actionable message, not ~2 min** 🧪 TDD *(Bug 4; depends on: C)*
-  - [ ] Extend the step-1 preflight (`node-compat.mjs` / installer step `1/10`): after the
-    version-window check, **verify the native-dep story for the running Node ABI**
-    (`process.versions.modules`) — a `better-sqlite3` prebuilt exists for `{abi, platform, arch}`, or a
-    C++ toolchain is present. If neither → **hard fail in step 1** with "switch to Node 22+ (nvm/volta)".
-  - [ ] Keep it a **pure, unit-tested seam** (ADR 0009 deterministic preflight); decide offline-vs-HEAD
-    check (prefer an offline `node-abi`/known-matrix check over a network HEAD so install stays offline).
-  - [ ] Launcher-side only (excluded from the brain, like the rest of the preflight). Cross-platform.
+- [x] **Capability D — An incompatible setup fails in ~5 s with an actionable message, not ~2 min** 🧪 TDD *(Bug 4; depends on: C)* _(2026-06-22 · 04af194)_
+  - [x] Extended the step-1 preflight (`node-compat.mjs` + installer step `1/10`, right after the
+    version-window check): `checkNativePrebuild({platform, arch, abi})` (abi = `process.versions.modules`)
+    confirms a `better-sqlite3` prebuilt ships for this triple, else requires a C++ toolchain
+    (`detectCppToolchain`), else **hard fails in step 1** with an actionable message ("switch to Node 22–26
+    (nvm/volta) … or install a C++ build toolchain").
+  - [x] **Pure, unit-tested seam** (ADR 0009): **decided offline known-matrix** (`PREBUILT_ABIS` 22→26 ×
+    `PREBUILT_PLATFORMS`) over a network HEAD — install stays offline. `hasPrebuiltBinary` extracted as the
+    single matrix predicate so the installer only probes for a compiler when no prebuilt exists (no spawn
+    on the happy path). 10 new tests, fail-first.
+  - [x] Launcher-side only (`node-compat` already excluded from the brain). Cross-platform (`{platform,
+    arch}` matrix). ADR 0020 amended in place (point 3 + dated amendment).
 - [ ] **Capability E — CI actually exercises the Windows install path (close the blind spot)** *(depends on: A, B, C)*
   - [ ] `ci.yml`: the harness suites already run on `windows-latest` → the new `needsShell` /
     preflight / `rag-launcher` seams are covered there. **Confirm** they run and are meaningful.
