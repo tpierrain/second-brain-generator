@@ -1,13 +1,18 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 📝 DRAFT — awaiting Thomas's validation before any production code. -->
+<!-- STATUS: ✅ SHIPPED — v3.4.0, all of A–G done, CI green on macOS + Windows. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — Windows install reliability (Node ≥ 22, clean non-interactive install)
 
-> **STATUS: 📝 DRAFT — plan only, no production code yet** (created 2026-06-22, branch
-> `windows-install-reliability`). Thomas decided: **Bug 3 → raise the Node floor to 22+**, and
-> **review this plan before any code is written**. Two sub-decisions are still open below
-> (marked 🔸 DECIDE) — confirm them and I start the TDD baby-steps.
+> **STATUS: ✅ SHIPPED in v3.4.0 "The One Where Windows Installs Clean"** (2026-06-22, branch
+> `windows-install-reliability` → `main`). All capabilities A–G done; **CI fully green on macOS AND
+> Windows** (run 27983652044: every Node 22/24/26 cell + the Windows installer-e2e). The three
+> field-reported bugs (npm/npx `.cmd` EINVAL, multi-line `cmd /c` rag-install, no Node-20 prebuild)
+> are fixed, the Node floor is raised to 22, a ~5 s fail-fast preflight replaces the ~2-min late
+> failure, and the CI net now executes `installer.mjs` end-to-end on Windows. Two extra Windows-only
+> CI defects surfaced and were fixed on the way (G1 cross-OS `file://` test expectation; G3 the
+> installer hang-on-exit from an orphaned shell-spawned MCP grandchild → `child-cleanup` tree-kill,
+> ADR 0031).
 
 ## Crux
 
