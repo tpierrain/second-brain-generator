@@ -66,6 +66,27 @@ on it again.
 > Trap that motivated this: two desynced v3.3.0 plan files (0 vs 13 checkboxes), 2026-06-20. Always
 > resolve to the repo copy.
 
+## 3bis. Memory ⇄ plan: pointers, not copies (and the /clear resume)
+
+> Named principle behind §3 + §7: Thomas Pierrain, *"Des pointeurs, pas des copies, banane"*
+> (<https://medium.com/@tpierrain/des-pointeurs-pas-des-copies-banane-56c9d197b80b>).
+
+The agent's working-memory `MEMORY.md` is **reloaded in full every session** and is **size-bounded
+(~25 KB)**. Duplicating a plan's state there is not just redundant — past the bound it **silently
+overflows and buries the critical instructions** under stale text. So the memory holds **pointers,
+not copies**:
+
+- **State of a chantier lives in the repo plan** (§3, the single source of truth) — checkboxes,
+  commits, remains-to-do. The memory keeps **one thin pointer line**, never a copy of that state.
+- **On ship, prune it** — retire the SHIPPED pointer + its index line in the archiving change (§7).
+- **`/clear` resume ritual:** a `/clear` is *free* precisely because nothing is lost in memory —
+  the state is in the plan. To resume: **follow the pointer → open the repo plan → restart at the
+  first unticked `- [ ]` → announce it before writing any code.** (Ticking the plan as work
+  proceeds, §1, is what makes this pointer not lie.)
+
+This is the **all-projects** convention; the global rule
+`use-case-driven-harness/rules/plans.md` § "Mémoire & /clear" carries the same, machine-wide.
+
 ## 4. Artifacts in English (conversation may be in French)
 
 **Every durable artifact** I produce or modify is written in **English** — no hidden exception:
