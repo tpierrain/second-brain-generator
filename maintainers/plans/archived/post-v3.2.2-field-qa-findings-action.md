@@ -1,14 +1,28 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 💡 BACKLOG (created 2026-06-20) — field-QA findings, not committed work yet. -->
+<!-- STATUS: ✅ SHIPPED (closed 2026-06-23) — the three load-bearing findings      -->
+<!-- (F1/F2/F3) shipped in v3.3.0 via ADR 0026/0027/0029. Archived.                 -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Post-v3.2.2 field-QA findings — next-release backlog
 
-> **STATUS: 💡 BACKLOG** (created 2026-06-20). Captured from a real **v3.1.0 → v3.2.2 upgrader** field
-> QA on a throwaway "legacy" brain, plus a live end-to-end test of the `local-mirror` Notion
-> replication. **Not committed work** — promote an item to a full `*-action.md` (with TDD baby-steps)
-> when picked up. Discipline: **TDD** (`tdd-discipline`), **deterministic-first** (ADR 0009),
-> **Mac/Win/Linux parity** (ADR 0015), **green-only** commits.
+> **STATUS: ✅ SHIPPED** (created 2026-06-20 as a backlog, closed 2026-06-23). Captured from a real
+> **v3.1.0 → v3.2.2 upgrader** field QA on a throwaway "legacy" brain, plus a live end-to-end test of
+> the `local-mirror` Notion replication. The three load-bearing findings all shipped in **v3.3.0**:
+>
+> - [x] **F1 — auto-finalize the engine update + SessionStart self-heal** → **ADR 0026 ✅ ACCEPTED**,
+>   implemented v3.3.0 (`scripts/session-self-heal.mjs`, wired in `.claude/settings.json.template`).
+> - [x] **F2 — local 🧠 citations open via a Claude-invoked opener** → **ADR 0027 ✅ ACCEPTED**
+>   (`rag/src/lib/citation-renderer.ts`).
+> - [x] **F3 — auto-register the brain's vault in Obsidian at install** → **ADR 0029 ✅ ACCEPTED**
+>   (`scripts/lib/obsidian-register.mjs`).
+> - [ ] **F4 — doc note "a full app restart suffices to pick up a new skill+MCP"** — trivial doc/UX
+>   residue, not reflected in install copy yet; carry into the next UX pass if it ever bites (low).
+> - [x] **F5 — name the two Notion modes** — observed working in QA; kept as a guardrail, no code owed.
+> - [x] **F6 — QA hygiene: purge `legacy-brain` confidential mirror + drop the uncommitted diff** —
+>   disk hygiene (not a repo change); see also [[golden-source-sync-progress]] / `~/gss-qa*` purge.
+>
+> Only **F4** (a one-line doc nicety) is unshipped, and it does not justify keeping an open action
+> plan. Archived per "plan done = archived" — the full per-finding detail below is preserved verbatim.
 >
 > 🔒 **Confidentiality:** the QA used a **confidential ex-company Notion zone**. Its name/content/token
 > must **never** appear in this repo. The throwaway brain (`legacy-brain`) still holds that mirrored
