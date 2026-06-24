@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="260" viewBox="0 0 960 260" role="img" aria-label="How a question flows in four phases, the stale-while-revalidate pattern applied to memory: a question gets an immediate answer from your vault by semantic search, while external sources are synced in the background, the answer is amended if something new is found, and everything is persisted with an automatic git commit.">
+  <title>Ask once — answered in seconds (the 4-phase flow)</title>
+  <style>
+    .bg { fill: #ffffff; }
+    .card { fill: #f6f8fa; stroke: #d0d7de; stroke-width: 1.5; }
+    .card-now { fill: #efeaff; stroke: #7c4dff; stroke-width: 2; }
+    .card-bg { fill: #f0f6ff; stroke: #2979ff; stroke-width: 1.5; stroke-dasharray: 5 4; }
+    .emoji { font-size: 30px; text-anchor: middle; }
+    .label { font: 600 14px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #1f2328; text-anchor: middle; }
+    .sub { font: 400 11.5px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #57606a; text-anchor: middle; }
+    .step { font: 700 11px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #6e7781; text-anchor: middle; letter-spacing: 0.6px; }
+    .ask { font: 700 15px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #1f2328; text-anchor: middle; }
+    .arrow { font-size: 26px; fill: #57606a; text-anchor: middle; }
+    .pattern { font: 700 12px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #7c4dff; text-anchor: middle; letter-spacing: 0.3px; }
+  </style>
+
+  <rect class="bg" x="0" y="0" width="960" height="260"/>
+
+  <!-- Question -->
+  <text class="emoji" x="70" y="118">🧑</text>
+  <text class="ask" x="70" y="150">You ask</text>
+  <text class="sub" x="70" y="168">in plain words</text>
+  <text class="arrow" x="135" y="135">→</text>
+
+  <!-- Phase 1 -->
+  <rect class="card-now" x="168" y="58" width="180" height="120" rx="14"/>
+  <text class="step" x="258" y="82">PHASE 1 · NOW</text>
+  <text class="emoji" x="258" y="120">⚡</text>
+  <text class="label" x="258" y="146">Instant answer</text>
+  <text class="sub" x="258" y="164">from your vault — semantic</text>
+  <text class="sub" x="258" y="180">search, with sources</text>
+
+  <text class="arrow" x="368" y="123">→</text>
+
+  <!-- Phase 2 -->
+  <rect class="card-bg" x="392" y="58" width="180" height="120" rx="14"/>
+  <text class="step" x="482" y="82">PHASE 2 · BACKGROUND</text>
+  <text class="emoji" x="482" y="120">🔄</text>
+  <text class="label" x="482" y="146">Sync your sources</text>
+  <text class="sub" x="482" y="164">Slack · Drive · mail…</text>
+  <text class="sub" x="482" y="180">delta only, while you read</text>
+
+  <text class="arrow" x="592" y="123">→</text>
+
+  <!-- Phase 3 -->
+  <rect class="card" x="616" y="58" width="180" height="120" rx="14"/>
+  <text class="step" x="706" y="82">PHASE 3</text>
+  <text class="emoji" x="706" y="120">✏️</text>
+  <text class="label" x="706" y="146">Amend the answer</text>
+  <text class="sub" x="706" y="164">only if something new</text>
+  <text class="sub" x="706" y="180">was found</text>
+
+  <text class="arrow" x="816" y="123">→</text>
+
+  <!-- Phase 4 -->
+  <rect class="card" x="840" y="58" width="110" height="120" rx="14"/>
+  <text class="step" x="895" y="82">PHASE 4</text>
+  <text class="emoji" x="895" y="120">💾</text>
+  <text class="label" x="895" y="146">Persist</text>
+  <text class="sub" x="895" y="164">+ auto-commit</text>
+  <text class="sub" x="895" y="180">(git)</text>
+
+  <!-- Pattern footer -->
+  <text class="pattern" x="480" y="222">⟳ stale-while-revalidate — speed first, freshness follows</text>
+  <text class="sub" x="480" y="242">the web caching pattern, applied to your memory</text>
+</svg>

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="430" viewBox="0 0 960 430" role="img" aria-label="The hexagonal RAG architecture. At the center, a stable MCP API port exposes the tools search_vault, get_document, list_documents, vault_stats and reindex; the whole harness (skills, CLAUDE.md) depends only on this stable contract. Around it, interchangeable SPI adapters: the embedder (three options — local EmbeddingGemma, an API key such as Gemini or your company endpoint, or Ollama), the vector store (SQLite), and the chunking strategy. You can swap any adapter without breaking your notes or your skills.">
+  <title>Hexagonal RAG — stable MCP port, swappable adapters</title>
+  <style>
+    .bg { fill: #ffffff; }
+    .hex { fill: #efeaff; stroke: #7c4dff; stroke-width: 2.5; }
+    .port-title { font: 700 15px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #4F46E5; text-anchor: middle; }
+    .port-sub { font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #1f2328; text-anchor: middle; }
+    .adapter { fill: #f6f8fa; stroke: #d0d7de; stroke-width: 1.5; }
+    .adapter-swap { fill: #f0f6ff; stroke: #2979ff; stroke-width: 1.5; }
+    .a-title { font: 700 13px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #1f2328; text-anchor: middle; }
+    .a-sub { font: 400 11px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #57606a; text-anchor: middle; }
+    .a-tag { font: 700 10px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #2979ff; text-anchor: middle; letter-spacing: 0.4px; }
+    .harness { fill: #fff8e6; stroke: #d4a72c; stroke-width: 1.5; }
+    .h-title { font: 700 13px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #7a5c00; text-anchor: middle; }
+    .h-sub { font: 400 11px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #8a6d00; text-anchor: middle; }
+    .conn { stroke: #8c959f; stroke-width: 1.5; }
+    .conn-swap { stroke: #2979ff; stroke-width: 1.5; stroke-dasharray: 5 4; }
+    .caption { font: 600 12px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #57606a; text-anchor: middle; }
+  </style>
+
+  <rect class="bg" x="0" y="0" width="960" height="430"/>
+
+  <!-- connectors (drawn first, behind nodes) -->
+  <line class="conn" x1="480" y1="120" x2="480" y2="195"/>
+  <line class="conn-swap" x1="360" y1="240" x2="225" y2="300"/>
+  <line class="conn-swap" x1="480" y1="290" x2="480" y2="335"/>
+  <line class="conn-swap" x1="600" y1="240" x2="735" y2="300"/>
+
+  <!-- Harness (depends on the port) -->
+  <rect class="harness" x="330" y="30" width="300" height="64" rx="12"/>
+  <text class="h-title" x="480" y="58">Your harness — skills · CLAUDE.md · sync-sources</text>
+  <text class="h-sub" x="480" y="78">depends only on the stable contract below</text>
+
+  <!-- Central hexagon = API port -->
+  <polygon class="hex" points="480,150 615,193 615,267 480,310 345,267 345,193"/>
+  <text class="port-title" x="480" y="205">API PORT — stable, versioned (MCP)</text>
+  <text class="port-sub" x="480" y="232">search_vault · get_document</text>
+  <text class="port-sub" x="480" y="250">list_documents · vault_stats</text>
+  <text class="port-sub" x="480" y="268">reindex</text>
+
+  <!-- Adapter: Embedder (swappable, the big one) -->
+  <rect class="adapter-swap" x="40" y="300" width="370" height="100" rx="12"/>
+  <text class="a-tag" x="225" y="322">SPI ADAPTER · SWAPPABLE</text>
+  <text class="a-title" x="225" y="344">Embedder — pick yours at install</text>
+  <text class="a-sub" x="225" y="364">🟢 local EmbeddingGemma (nothing leaves)</text>
+  <text class="a-sub" x="225" y="380">🟡 API key (Gemini / your endpoint) · 🟢 Ollama</text>
+  <text class="a-sub" x="225" y="396">swap it → notes &amp; skills untouched</text>
+
+  <!-- Adapter: Vector store -->
+  <rect class="adapter-swap" x="395" y="335" width="170" height="74" rx="12"/>
+  <text class="a-tag" x="480" y="356">SWAPPABLE</text>
+  <text class="a-title" x="480" y="378">Vector store</text>
+  <text class="a-sub" x="480" y="396">SQLite (local)</text>
+
+  <!-- Adapter: Chunking -->
+  <rect class="adapter-swap" x="610" y="300" width="310" height="100" rx="12"/>
+  <text class="a-tag" x="765" y="322">REFACTORABLE</text>
+  <text class="a-title" x="765" y="344">Chunking strategy</text>
+  <text class="a-sub" x="765" y="364">how notes are split for retrieval</text>
+  <text class="a-sub" x="765" y="380">provider details stay behind the port —</text>
+  <text class="a-sub" x="765" y="396">no vendor leak into the contract</text>
+
+  <text class="caption" x="480" y="424">One stable port your harness trusts · adapters you can change freely (ADR 0006 / 0007)</text>
+</svg>

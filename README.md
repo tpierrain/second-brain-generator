@@ -21,7 +21,7 @@
 
 **🔄 Self-upgradable — new in v3.0.0.** Your brain keeps **its own engine** up to date: *ask in plain words, confirm,* and it pulls the latest search engine — **without ever touching a single one of your notes.** No terminal, no re-install. *([how it works](#keeping-your-brain-up-to-date-its-engine))*
 
-**[🧠 What's a second brain?](#what-is-a-second-brain) · [🚀 Install yours now](#ready-to-try-it) · [📖 View the articles](#the-article-series)**
+**[🧠 What's a second brain?](#what-is-a-second-brain) · [🚀 Install yours now](#ready-to-try-it) · [🎨 The one-pager](MARKETING.md) · [📖 View the articles](#the-article-series)**
 
 > 🧑 *"Where are we on the billing project — who owns what, and what's been decided?"*
 >
