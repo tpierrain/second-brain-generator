@@ -59,18 +59,45 @@ built-in `node --test`. Two realistic paths, in tension:
 
 ## Tracking
 
-- [ ] **Step 0 — Green baseline.** Run each package's suite, confirm all green (harness / rag /
+- [x] **Step 0 — Green baseline.** Run each package's suite, confirm all green (harness / rag /
   local-mirror) and record the counts. Mutation testing is meaningless on a red or flaky suite.
-- [ ] **Step 1 — Pick the path & wire Stryker (path A, command runner).**
-  - [ ] Add `@stryker-mutator/core` as a dev dependency (root or per-package — decide while wiring).
-  - [ ] Author `stryker.config.mjs` per package (or one root config with three runs): `testRunner:
-    "command"`, the package's `node --test …` command, `mutate` globs scoped to **prod** code only
-    (exclude `*.test.*`, `dist/**`, `node_modules/**`).
-  - [ ] Resolve the `scripts/**` no-`package.json` question (minimal `package.json` vs root config).
-  - [ ] Dry-run on a **small slice** first (e.g. one `rag/src/lib` module) to validate the harness and
-    measure per-mutant wall-clock before the full run.
-- [ ] **Step 2 — Run the global audit** across `scripts/**`, `rag/src/**`, `local-mirror/src/**`.
-  Capture the **mutation score** per package as the baseline test-quality signal.
+  _(2026-06-23 · uncommitted)_ — all green: `scripts/**` **513** pass, `rag/src/**` **209** pass,
+  `local-mirror/src/**` **87** pass = **809 tests**, 0 fail / 0 skip / 0 todo.
+- [x] **Step 1 — Pick the path & wire Stryker (path A, command runner).** _(2026-06-23 · uncommitted)_
+  - [x] Add `@stryker-mutator/core` as a dev dependency. **Decision: in a dedicated dev-only workspace
+    `maintainers/mutation/` — NOT in `rag/` or `local-mirror/` `package.json`.** Why: the brain runs a
+    plain `npm install` (not `--omit=dev`) in `rag/`+`local-mirror/`, so any devDep there would leak
+    ~128 packages into every generated brain. `maintainers/` is excluded from the brain copy
+    (`scripts/lib/tracked-files.mjs`) → nothing leaks.
+  - [x] Author `stryker.config.mjs` per package (3 configs under `maintainers/mutation/`): `testRunner:
+    "command"`, the package's exact `node --test …` command, `mutate` globs scoped to **prod** code only
+    (`!*.test.*`, and `!local-mirror/src/test/**` the Builder). **`inPlace: true`** — Stryker has no
+    native `node:test` runner *and* the command-runner sandbox-copy breaks on (a) cross-package reads
+    (e.g. `engine-version.test.ts` reads the repo-root `engine-manifest.json`) and (b) the `better-sqlite3`
+    native module. `inPlace` mutates the real files and **restores them after** (verified git-clean;
+    git-tracked → trivially recoverable even on SIGKILL).
+  - [x] Resolve the `scripts/**` no-`package.json` question. **Decision: run Stryker from the REPO ROOT**
+    (cwd) — Stryker only mutates files under its project root, so root-cwd covers all three packages with
+    root-relative `mutate` globs. The `scripts/**` command is the exact CI command; no `package.json`
+    needed there. Invocation lives in `maintainers/mutation/package.json` scripts (`cd ../..` then the
+    locally-installed Stryker bin) — `npm --prefix maintainers/mutation run mutate:{rag,local-mirror,scripts,all}`.
+  - [x] Dry-run on a small slice (`rag/src/lib/chunker.ts`). **Validated**: harness works, files restored.
+    **Cost finding (drove the scope decision):** full-package-suite per mutant is **~12× slower** than the
+    module's own test (chunker: 85 mutants in **33 s** full-suite vs **2.7 s** module-only) — but identical
+    score (27 %), so faithful scope chosen (Thomas, 2026-06-23). ⚠️ `scripts/**` re-runs **513 tests/mutant**
+    → expect the slowest run by far.
+- [x] **Step 2 — Run the global audit** across `scripts/**`, `rag/src/**`, `local-mirror/src/**`.
+  Capture the **mutation score** per package as the baseline test-quality signal. _(2026-06-23 ·
+  uncommitted; full breakdown + worst-files in [`RESULTS.md`](../../mutation/RESULTS.md))_
+  - **scripts 97.27 %** (102 survived / 3735) — `lib/**` 100 %; only `clear-example-notes` 28.6 %,
+    `auto-push` 41.4 %, `auto-commit` 47.5 % are weak.
+  - **local-mirror 67.63 %** (225 / 695) — `server.ts` 0 %, `index.ts` 2 %, `notion-gateway` 21 %.
+  - **rag 57.23 %** (606 / 1417) — `document-scanner`/`vault-watcher` 0 %, `frontmatter-parser` 12 %,
+    `chunker` 27 %.
+  - ⚠️ **Isolation matters**: `scripts` MUST run in a **disposable git worktree** — `inPlace` on the
+    real tree let a `clear-example-notes` mutant delete the real `vault/` demo notes. rag/local-mirror
+    run `inPlace` (non-destructive, files restored). Tune `concurrency`/timeout for big suites (the
+    513-test scripts suite faked a 99.97 % via mass timeouts at default concurrency 13).
 - [ ] **Step 3 — Triage & kill surviving mutants.** For each survivor, decide: add the missing
   assertion (the usual outcome), or mark it an accepted equivalent/ignored mutant with a reason. **TDD**
   the new assertions (`tdd-discipline`); green-only commits.

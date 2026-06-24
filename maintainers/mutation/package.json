@@ -1,0 +1,16 @@
+{
+  "name": "sbg-mutation-workspace",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only mutation-testing workspace (StrykerJS). Lives under maintainers/ so it is NEVER copied into a generated brain. See ../plans/prospective/mutation-testing-stryker.md.",
+  "comment": "Configs run from the REPO ROOT (Stryker only mutates files under its project root). The scripts cd ../.. then invoke the locally-installed Stryker bin against a maintainers/mutation/ config.",
+  "scripts": {
+    "mutate:rag": "cd ../.. && node maintainers/mutation/node_modules/@stryker-mutator/core/bin/stryker.js run maintainers/mutation/stryker.rag.config.mjs",
+    "mutate:local-mirror": "cd ../.. && node maintainers/mutation/node_modules/@stryker-mutator/core/bin/stryker.js run maintainers/mutation/stryker.local-mirror.config.mjs",
+    "mutate:scripts": "cd ../.. && node maintainers/mutation/node_modules/@stryker-mutator/core/bin/stryker.js run maintainers/mutation/stryker.scripts.config.mjs",
+    "mutate:all": "npm run mutate:rag && npm run mutate:local-mirror && npm run mutate:scripts"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "^9.6.1"
+  }
+}

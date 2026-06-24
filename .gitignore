@@ -56,6 +56,11 @@ local-mirror/dist/
 # Transient per-brain health-check verdict (ADR 0028) — regenerated each session.
 engine-health.json
 
+# ── Mutation testing (dev-only, maintainers/mutation) ───────────────
+# Stryker working dir + generated reports. The scores live in the plan, not git.
+maintainers/mutation/.stryker-tmp/
+maintainers/mutation/reports/
+
 # ── Misc ────────────────────────────────────────────────────────────
 *.log
 .cache/
