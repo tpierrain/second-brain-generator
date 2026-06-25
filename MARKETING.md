@@ -1,6 +1,8 @@
 <img src="docs/img/kenjaku.png" alt="Kenjaku — the Second Brain Generator's mascot" align="right" width="150">
 
-# Your work, remembered — and it cites its sources
+# All your work, remembered — always up-to-date, always sourced
+
+### 🧠 Just ask. Sit down and relax. &nbsp;<sub>*— your second brain handles the rest.*</sub>
 
 > **One page to *show* what this is.** A visual companion to the [README](README.md) and to
 > [“What makes it different”](EN-QUOI-C-EST-DIFFERENT.md). Skim the boards, steal the pitch, point
@@ -12,32 +14,54 @@ command line, your call.*
 
 ---
 
-## The pitch, three lengths
+## The pitch
 
-**One-liner.**
-> A second brain you **own**: your notes in plain Markdown, searched **by meaning**, answering in
-> seconds **with the sources** — private on your machine by default.
+> **Never miss what matters — and never drown in the rest.** Stay on top of everything moving around
+> you, at work and in life, without being buried by the flood you'd otherwise have to sift through
+> yourself. And **remember everything that counts** — your decisions, other people's, the things that
+> matter — recalled in seconds, **always with the source**. Just ask, in plain words; it **keeps itself
+> up to date** by pulling from every source you connect to it.
+>
+> It stays **personal and private**: your notes are plain Markdown in **your own** git repo, indexed
+> **on your machine by default — nothing leaves it** — even as your **work and operational** sources
+> get grafted on.
 
-**30 seconds.**
-> Instead of digging through Slack, mail, Drive and your meeting notes, you just **ask**. Your second
-> brain answers right away from your own notes — **by meaning, not keywords**, even across languages —
-> and **always shows where it got it**. It's **yours**: a folder of Markdown files in your private git
-> repo, indexed **on your machine by default** (nothing leaves it). After a one-time, guided setup,
-> there's **nothing left to do** — backup, freshness and recovery run on their own. You just talk to it.
+---
 
-**2 minutes (the talk intro).**
-> A bare LLM forgets everything between chats and answers from its training — so it can make things up.
-> A SaaS note app locks your data in one tool, in a closed format. This is the third way: the project
-> is a **generator**, not a product. It produces **your own** second brain — a vault of Markdown notes,
-> linked by `[[wikilinks]]`, **Obsidian-compatible**, versioned in **your** git repo. A local **RAG**
-> engine (an open **MCP** server) gives it **semantic search** that's **grounded**: every answer traces
-> back to the originating note or message, with its date. Privacy is a **conscious choice you make at
-> install** — fully on-device (a tiny Google model, *EmbeddingGemma*), an API key (Gemini, OpenAI, or
-> your **company's own endpoint**), or local Ollama. And it's **engineered, not cobbled together**:
-> auto-commit on every change, incremental re-indexing, deterministic checks that **prove** the answer
-> came from your vault and not the Internet, and an engine that **updates itself** without ever touching
-> your notes. The honest part: the **search** is local, but the LLM that **reasons** is still Claude
-> (cloud) — and it's **Claude-only for now**. Everything else is yours, in the open.
+<!-- ════════════════════════════════════════════════════════════════════════════════════════════ -->
+<!-- ACT 1 — WHY → WHAT (non-tech first). P0 establishes the slots; P1 fills the content (R7–R10).  -->
+<!-- ════════════════════════════════════════════════════════════════════════════════════════════ -->
+
+## Why you need it
+
+> *"Wait — you hadn't heard?"* · *"That was decided last week."* · *"You didn't see Sarah's email?"* ·
+> *"It's in the #product Slack thread…"*
+
+We've all been on the receiving end of that — **behind**, never having had the chance to catch up, to
+read it all, to digest it all. The faster the world moves, the more sources you plug into (Slack, mail,
+Drive, meeting transcripts, your own notes) and the more the signal drowns in the noise. Staying on top
+of it is a second full-time job — **unless your memory does it for you.**
+
+---
+
+## What it does for you
+
+Three everyday scenes:
+
+- **🛟 Back from a week off — *"what moved while I was out?"*** One question across Slack, mail and your
+  notes: the decisions taken, the blockers, what now needs *you* — instead of 400-unread archaeology.
+- **🗣️ Live with a customer — *"is this available? in progress? when?"*** Plugged into the roadmap, the
+  commitments and what's shipping, your brain hands you a **fresh, reliable** answer to relay on the spot.
+- **🔎 *"What are customers actually asking for?"*** Wire in the CRM and the call transcripts — then,
+  instead of drowning in them, ask: it **filters to what concerns you**, with the source and the date.
+
+> **Whoever you are** — Head of Engineering, PM, Customer Success, sales, consultant, researcher — it
+> keeps *your* thread: your teams and 1-1s, the *why* behind a product decision, a client's whole context.
+
+> **No need to be a geek — or to know how it works underneath.** If you can *chat* with Claude, you can
+> use it. You never manage anything: no *"did it refresh before I asked?"*, no upkeep — freshness,
+> backup and recovery are all handled for you. **Just ask. Sit down and relax.** *(Only the one-time
+> install is technical, and it's guided end-to-end.)*
 
 ---
 
@@ -65,6 +89,9 @@ there's genuinely something new. *([details in EN-QUOI §2](EN-QUOI-C-EST-DIFFER
 
 ---
 
+<!-- P1/R6 note: the three comparatives should read in this order — 1) bare LLM, 2) LLM-wiki à la
+     Karpathy (TO ADD), 3) other second brains. The Karpathy axis (R6) is still P3 (needs scoping). -->
+
 ## vs a bare LLM (ChatGPT / Claude alone)
 
 <!-- Illustrated board: drop docs/img/board-vs-llm.png (prompt in docs/marketing-image-prompts.md), then uncomment:
@@ -79,18 +106,22 @@ there's genuinely something new. *([details in EN-QUOI §2](EN-QUOI-C-EST-DIFFER
 | **Scope** | A single walled conversation | **Cross-cutting** across all your tools |
 | **Ownership** | Hosted, ephemeral | **Yours**, in Markdown, in your git repo |
 
+<!-- P3/R6: insert "## vs an LLM-wiki (à la Karpathy)" board + table HERE, between bare-LLM and other second brains. -->
+
 ---
 
-## vs other "second brains" — a generator, not a product
+## vs other "second brains" — a living, personal product (that begins with a generator)
 
 <!-- Illustrated board: drop docs/img/board-generator.png (prompt in docs/marketing-image-prompts.md), then uncomment:
-<img src="docs/img/board-generator.png" alt="A generator, not a product: one launcher produces many independent, owned brains" width="100%"> -->
+<img src="docs/img/board-generator.png" alt="A living, personal product that begins with a generator: one launcher produces many independent, owned brains" width="100%"> -->
 > 🎨 *Illustrated board coming — generate `board-generator.png` from
 > [`docs/marketing-image-prompts.md`](docs/marketing-image-prompts.md) and drop it in `docs/img/`.*
 
 A useful second brain is **personal** — what serves a Head of Engineering, a PM or a researcher has
-little in common. So this repo ships **the machinery + a method**, not a one-size-fits-all app. Everyone
-**generates their own**; you share the **generator**, never the brain.
+little in common. So it isn't a *finished*, one-size-fits-all app: it's a **living, personal product**
+that **begins with a generator**. The generator installs and tailors *your own* brain to your goals and
+line of work; from there it **keeps living** — the engine **self-upgrades**, while your **content** and
+your **skills / competences** grow right alongside it. You share the **generator**, never the brain.
 
 | | Classic "second brain" tools | This approach |
 |---|---|---|
@@ -124,21 +155,25 @@ adapter** you pick at install — without breaking your notes or skills.
 > **reasons and answers is still Claude**. Changing option re-encodes in a few minutes — no note lost.
 > *([the “à la carte RAG”, EN-QUOI §6](EN-QUOI-C-EST-DIFFERENT.md#6-the-à-la-carte-rag-you-pick-your-engine-according-to-your-constraints))*
 
----
-
-## Under the hood — one stable port, swappable adapters
-
-<img src="docs/img/board-hexagon.svg" alt="A hexagonal RAG: at the center a stable MCP API port (search_vault, get_document, list_documents, vault_stats, reindex) that the whole harness depends on; around it, swappable SPI adapters — the embedder (local EmbeddingGemma, an API key, or Ollama), the SQLite vector store, and the chunking strategy." width="100%">
-
-The engine is a **hexagon** (*The Hive* pattern): the **MCP surface is a stable contract** the whole
-harness trusts, while the **embedder, vector store and chunking are interchangeable adapters**. That's
-what makes "pick your privacy at install" **safe** — you swap the adapter, your notes and skills don't
-move. *([ADR 0006](maintainers/decisions/0006-rag-mcp-is-stable-contract.md) ·
-[ADR 0007](maintainers/decisions/0007-three-embedder-adapters-privacy-scale.md))*
+<!-- ════════════════════════════════════════════════════════════════════════════════════════════ -->
+<!-- ACT 2 — THE VISION (B2B / connected teams). DEFERRED to P2 (R11/R12/R13). Slot reserved here.  -->
+<!-- ════════════════════════════════════════════════════════════════════════════════════════════ -->
 
 ---
 
-## Qualities & engineering — *battle-tested, not cobbled together*
+<!-- ════════════════════════════════════════════════════════════════════════════════════════════ -->
+<!-- THE HINGE → ACT 3 (for the technically curious). Everything below is the engineering deep-dive. -->
+<!-- ════════════════════════════════════════════════════════════════════════════════════════════ -->
+
+## Battle-tested — and packed with engineering 🔧 &nbsp;<sub>*for the technically curious*</sub>
+
+**Under the surface it's full of real software engineering and battle-tested robustness patterns** —
+self-healing, deterministic, fail-loud — built to keep *working*, not merely to *seem* to. The rest of
+this page is the deep-dive — skip it freely; everything above is all you need to *use* it.
+
+---
+
+## What's in the box — reliability, determinism, robustness
 
 The reason it keeps working instead of merely *seeming* to: every load-bearing step is **deterministic,
 tested and fail-loud**. The through-line — **fail loudly rather than pretend**.
@@ -157,6 +192,12 @@ tested and fail-loud**. The through-line — **fail loudly rather than pretend**
 - **Index identity stamp + confirm-gate** — swapping embedders never silently corrupts the index. *(ADR 0006)*
 
 **B · Determinism over guesswork.** *(the ladder of [ADR 0009](maintainers/decisions/0009-prefer-deterministic-mechanisms.md))*
+
+> **One of the big traps with AI is non-determinism.** The brain **contains it on purpose**: it frames
+> every load-bearing step with **fully deterministic** mechanisms wherever it can — and, where it can't,
+> with mechanisms that **lean toward** more determinism (e.g. **Claude hooks** firing on real events
+> rather than trusting the model to remember). The ladder, from most to least deterministic:
+
 - **Pure functions** with injected dependencies, unit-tested with fakes.
 - **Binary exit-code tools** — a *verdict* (0/1), not a vibe.
 - **Real event triggers, not timers** — auto-commit fires on a file edit; auto-push on the Stop event.
@@ -165,6 +206,9 @@ tested and fail-loud**. The through-line — **fail loudly rather than pretend**
 - **LLM only where judgment is the point** (onboarding chat, wording) — never on a load-bearing step.
 
 **C · Self-healing, desired-state.** *(SRE / GitOps prior art)*
+- **Always catches up — whatever happened.** A crash, a burst of edits, days away, an interrupted
+  session: the brain **reconciles on its own** — re-indexes the delta, auto-saves, auto-commits,
+  restores freshness. Nothing to replay or repair by hand.
 - **Idempotent reconciler** converges the brain to its desired state — the pattern behind Kubernetes,
   GitOps, Terraform, Chef/Puppet, DSC. *(ADR 0026)*
 - **Structural write-allowlist** — the reconciler can only *add* engine-delivered things when absent;
@@ -179,8 +223,8 @@ tested and fail-loud**. The through-line — **fail loudly rather than pretend**
 - **Incremental reindex** — only the delta is re-embedded, within seconds of an edit.
 - **On-device embeddings** — *EmbeddingGemma* runs locally (it's designed to run even on a phone).
 
-**E · Architecture — The Hive (hexagonal).**
-- **Ports & adapters** — a **stable MCP API port** the whole harness depends on, behind which the
+**E · Hexagonal architecture (ports & adapters).** 	 	
+- **Ports & adapters** — a **stable, local MCP API port** the whole harness depends on, behind which the
   **embedder, vector store and chunking are swappable adapters**. *(ADR 0006 / 0007)*
 - **Open by construction** — open **protocol** (MCP) + open **format** (Markdown + `[[wikilinks]]`) +
   open **license** (Apache-2.0) → **zero lock-in**.
@@ -189,7 +233,7 @@ tested and fail-loud**. The through-line — **fail loudly rather than pretend**
 - **TDD baby-steps**, **green-only commits** (never commit red); **outside-in diamond TDD** for the harness.
 - **Eval-set** — retrieval quality is *measured*, not asserted (see below).
 - **ADR-governed** — 31 architectural decisions, each with an explicit `Scope:` and a `Crux`.
-- **[Coming] Mutation testing** (Stryker) — a reliability score for the test suite itself *(in progress)*.
+- **Mutation testing** (Stryker) — a reliability score for the test suite itself, **already underway** *(results not published yet)*.
 
 ---
 
@@ -198,19 +242,37 @@ tested and fail-loud**. The through-line — **fail loudly rather than pretend**
 - **Retrieval quality**: the local **"Gemma inside"** embedder scores **90%** on the project's
   [eval-set](maintainers/eval-set.md) — equal to Ollama, above the Gemini baseline (80%) — measured on
   real notes, not English leaderboards.
-- **Test-suite strength**: a **mutation-testing** score (Stryker) is on its way — *this section will be
-  filled with the number once it lands.*
+- **Test-suite strength**: a **mutation-testing** run (Stryker) is **already underway** — *this section
+  will carry the score as soon as the results are published.*
 
 ---
 
-## Who it's for
+## And how it's built — one stable port, swappable adapters
 
-- **Managers, Heads of Engineering** — track your teams, your 1-1s, what's expected of you.
-- **Product managers & designers** — keep the thread of product decisions and the *why we settled on it*.
-- **Consultants, researchers, freelancers** — consolidate a domain, never lose a client's context.
+<img src="docs/img/board-hexagon.svg" alt="A hexagonal RAG: at the center a stable MCP API port (search_vault, get_document, list_documents, vault_stats, reindex) that the whole harness depends on; around it, swappable SPI adapters — the embedder (local EmbeddingGemma, an API key, or Ollama), the SQLite vector store, and the chunking strategy." width="100%">
 
-> **No need to be a geek.** If you can *chat* with Claude, you can use it. Daily use is pure
-> conversation; only the one-time install is technical, and it's guided end-to-end.
+The engine is a **hexagon** (**hexagonal architecture** — ports & adapters): the **local MCP surface is a
+stable contract** the whole harness trusts, while the **embedder, vector store and chunking are
+interchangeable adapters**. That's
+what makes "pick your privacy at install" **safe** — you swap the adapter, your notes and skills don't
+move. *([ADR 0006](maintainers/decisions/0006-rag-mcp-is-stable-contract.md) ·
+[ADR 0007](maintainers/decisions/0007-three-embedder-adapters-privacy-scale.md))*
+
+---
+
+## Engineering & SRE principles, at a glance
+
+- **Grounded, with proof** — every answer comes *from your vault*, with sources; a synthetic canary + a fail-loud `verify-rag` (exit `0`/`1`) **prove** it. *(ADR 0006 / 0028)*
+- **Fail loud, never pretend** — when something is wrong it **says so**, rather than answering wrong.
+- **Determinism over guesswork** — a ladder from pure functions and binary exit-code tools to real event triggers; the **LLM only where judgment is the point**. *(ADR 0009)*
+- **Self-healing, desired-state** — an **idempotent reconciler** converges to the intended state (the Kubernetes / GitOps / Terraform pattern). *(ADR 0026)*
+- **Always catches up** — whatever happened, it re-indexes the delta, auto-saves and auto-commits; nothing to replay by hand.
+- **Never overwrites you** — a structural **write-allowlist**; your notes, keys, constitution and skills are **never touched**. *(ADR 0012 / 0014 / 0025)*
+- **No hidden, driftable state** — short-lived hooks re-derive what they need on each run.
+- **Stale-while-revalidate** — an instant answer first, freshness reconciled **in parallel**.
+- **Incremental & on-device** — only the delta is re-embedded, locally (*EmbeddingGemma* / ONNX).
+- **Hexagonal, open, zero lock-in** — a stable **local MCP port** + swappable adapters; open **protocol** + open **format** + Apache-2.0. *(ADR 0006 / 0007)*
+- **Test-driven, green-only** — TDD baby-steps, **outside-in diamond TDD**, never commit red; quality **measured** by an eval-set; mutation testing **in progress**.
 
 ---
 

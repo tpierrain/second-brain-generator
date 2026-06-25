@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="430" viewBox="0 0 960 430" role="img" aria-label="The hexagonal RAG architecture. At the center, a stable MCP API port exposes the tools search_vault, get_document, list_documents, vault_stats and reindex; the whole harness (skills, CLAUDE.md) depends only on this stable contract. Around it, interchangeable SPI adapters: the embedder (three options — local EmbeddingGemma, an API key such as Gemini or your company endpoint, or Ollama), the vector store (SQLite), and the chunking strategy. You can swap any adapter without breaking your notes or your skills.">
-  <title>Hexagonal RAG — stable MCP port, swappable adapters</title>
+  <title>Hexagonal RAG — stable local MCP port, swappable adapters</title>
   <style>
     .bg { fill: #ffffff; }
     .hex { fill: #efeaff; stroke: #7c4dff; stroke-width: 2.5; }
@@ -33,7 +33,7 @@
 
   <!-- Central hexagon = API port -->
   <polygon class="hex" points="480,150 615,193 615,267 480,310 345,267 345,193"/>
-  <text class="port-title" x="480" y="205">API PORT — stable, versioned (MCP)</text>
+  <text class="port-title" x="480" y="205">API PORT — stable, versioned (local MCP)</text>
   <text class="port-sub" x="480" y="232">search_vault · get_document</text>
   <text class="port-sub" x="480" y="250">list_documents · vault_stats</text>
   <text class="port-sub" x="480" y="268">reindex</text>

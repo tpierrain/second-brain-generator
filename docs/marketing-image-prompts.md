@@ -57,10 +57,10 @@ reasons."** Clean infographic, ByteByteGo style, exact labels.
 
 ---
 
-## `board-generator.png` — "A generator, not a product"
+## `board-generator.png` — "A living, personal product — that begins with a generator"
 
-**Prompt:** A board titled **"A generator, not a product"**. On the left, a single sturdy machine /
-press labelled **"The launcher (read-only, reusable)"**. From it, an arrow produces several distinct,
+**Prompt:** A board titled **"A living, personal product — it begins with a generator"**. On the left, a
+single sturdy machine / press labelled **"The launcher (read-only, reusable)"**. From it, an arrow produces several distinct,
 independent brain folders on the right, each a rounded card with a brain glyph and a tiny git icon,
 labelled **"Your brain"**, **"Her brain"**, **"His brain"** — each with its own little padlock and the
 note **"your notes · your CLAUDE.md constitution · your git repo"**. A dotted line between the launcher
@@ -75,7 +75,7 @@ and ownership. ByteByteGo explainer style, exact legible text.
 *(SVG fallback shipped: `docs/img/board-hexagon.svg`.)*
 
 **Prompt:** A clean architecture board titled **"Hexagonal RAG — one stable port, swappable adapters"**.
-Center: a violet **hexagon** labelled **"API PORT — stable, versioned (MCP)"** with a monospace list
+Center: a violet **hexagon** labelled **"API PORT — stable, versioned (local MCP)"** with a monospace list
 inside: **"search_vault · get_document · list_documents · vault_stats · reindex"**. Above it, an amber
 box **"Your harness — skills · CLAUDE.md"** with a downward arrow labelled **"depends only on the stable
 contract"**. Around the hexagon, three blue dashed **"swappable"** adapter cards connected by short
@@ -99,7 +99,7 @@ stack / pyramid of labelled bands, each with a small icon, from foundation to to
   timers · locks & debounced reindex"*.
 - **"Self-healing, desired-state"** — *idempotent reconciler (à la Kubernetes / GitOps / Terraform) ·
   never overwrites your notes · self-upgradable engine"*.
-- **"Hexagonal architecture"** — *stable MCP port · swappable adapters · open format, open license, zero
+- **"Hexagonal architecture"** — *stable local MCP port · swappable adapters · open format, open license, zero
   lock-in"*.
 - **"Proven engineering"** — *TDD baby-steps · green-only commits · eval-set 90% · 31 ADRs · mutation
   testing (coming)"*.
