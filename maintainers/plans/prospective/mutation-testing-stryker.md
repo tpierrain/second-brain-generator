@@ -111,13 +111,27 @@ built-in `node --test`. Two realistic paths, in tension:
       integration test, dropped the unreachable `.gitkeep` exclusion. _(2026-06-25 · `861fa89`)_
     - [x] `vault-watcher.ts` **0 % → 100 %** (26/26) — extracted pure `isIgnoredPath`, injected the
       watch factory, deterministic real-chokidar adapter test. _(2026-06-25 · `fd290c9`)_
-    - [ ] `frontmatter-parser.ts` (11.9 %) — next.
+    - [x] `frontmatter-parser.ts` **11.9 % → 97.6 %** (82/84) — full prefix→type table, title
+      precedence, tag coercion; 2 documented equivalent mutants (heading-regex anchors masked by
+      greedy `.+` + `.trim()`). _(2026-06-25 · `384e6f7`)_
     - [ ] `chunker.ts` (27.1 %), then `vector-store` / `embedder` / `index-manager` / `config`.
   - [ ] **3-local-mirror** — harden `local-mirror/src/**` survivors (start `server.ts` @ 0 %).
   - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
-- [ ] **Step 4 — Decide a sustainable cadence.** No per-commit gate today; likely a **periodic local
-  audit** (and/or an opt-in, non-blocking CI job — *not* a merge gate, given command-runner cost).
-  Record the chosen cadence + the baseline score here so it survives `/clear`s.
+- [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question
+  "how do we stop badly-written tests from recurring?" — three layers, cheapest/most-deterministic first:
+  - [x] **Floor guard (runs every CI test pass, free): a sibling test is mandatory.** `rag/src/lib/lib-coverage-guard.test.ts`
+    fails loud if any `src/lib/*.ts` lacks its `*.test.ts` (`EXEMPT` empty by design). Catches the
+    "no test at all" gap (the document-scanner/vault-watcher 0 %) instantly, no mutation run needed. _(`9d33204`)_
+  - [x] **Per-change non-regression check (on demand, fast): `npm --prefix maintainers/mutation run mutate:changed [baseRef]`**
+    (`mutate-changed.mjs`) mutates only the changed prod files vs `main`, grouped by package; `scripts/**`
+    reported-but-skipped (needs the disposable worktree). Run it on a branch that touches `rag`/`local-mirror` logic.
+  - [x] **Convention (the root cause): "test the glue too".** "Pure I/O glue, no test" is the exact
+    dismissal that produced the 0 %; extract the logic behind a port and TDD it. Engraved in
+    `maintainers/CONVENTIONS.md`.
+  - **No per-commit blocking gate** (command-runner cost) and **no merge gate**. Periodic full audit =
+    re-run `mutate:all` before a release / when test quality is in doubt, refresh [`RESULTS.md`](../../mutation/RESULTS.md).
+  - **Baseline (2026-06-23, see RESULTS.md):** scripts **97.27 %**, local-mirror **67.63 %**, rag **57.23 %**
+    (rag/src/lib hardening in progress under Step 3-rag).
 - [ ] **Step 5 (conditional) — Escalate to Vitest (path B)** *only if* the command-runner audit is too
   slow to run regularly. Spin it off as its own migration plan; do not scope-creep it here.
 

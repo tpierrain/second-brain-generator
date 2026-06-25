@@ -115,6 +115,24 @@ language** → respect the locale. A PR or comment left in French is a **defect 
   the suite stays green at `exit 0`; the flag is removed at the apply step. No history rewriting —
   green-only from here on.
 
+## 5bis. Test the glue too — "pure I/O" is not an exemption
+
+The 2026-06-23 mutation audit found `document-scanner` and `vault-watcher` at a **0 % mutation score**:
+they had **no test at all**, waved off in their own comments as *"pure I/O glue, not unit-tested"*. That
+dismissal is the bug. I/O glue still hides logic — a `.md` filter, a `.obsidian` exclusion, an
+`isIgnoredPath` predicate, event wiring — and untested logic is where silent regressions live.
+
+- **No "it's just glue" pass.** Anything with a branch, a filter, a mapping or a wiring gets a test.
+  When the obstacle is a real boundary (filesystem, chokidar, network), **extract the logic behind a
+  small port / DI seam** and unit-test that; cover the thin adapter itself with one deterministic test
+  (e.g. "the default factory builds a live, closeable watcher" — no event-timing).
+- **Coverage ≠ verification.** A suite can show high line coverage and still kill ~0 % of mutants. The
+  objective signal is the **mutation score**, not coverage. See the plan
+  [`plans/prospective/mutation-testing-stryker.md`](plans/prospective/mutation-testing-stryker.md).
+- **Two durable guardrails back this up** (Step 4 of that plan): a deterministic **sibling-test guard**
+  (`rag/src/lib/lib-coverage-guard.test.ts` fails loud if a `src/lib` module has no `*.test.ts`), and a
+  targeted **non-regression re-run** (`npm --prefix maintainers/mutation run mutate:changed`).
+
 ## 6. ADRs carry a `Scope:` field
 
 Every ADR carries a `- **Scope:**` line right under `STATUS`, with an **explicit** value (never the
