@@ -114,7 +114,12 @@ built-in `node --test`. Two realistic paths, in tension:
     - [x] `frontmatter-parser.ts` **11.9 % → 97.6 %** (82/84) — full prefix→type table, title
       precedence, tag coercion; 2 documented equivalent mutants (heading-regex anchors masked by
       greedy `.+` + `.trim()`). _(2026-06-25 · `384e6f7`)_
-    - [ ] `chunker.ts` (27.1 %), then `vector-store` / `embedder` / `index-manager` / `config`.
+    - [x] `chunker.ts` **27.1 % → 85.9 %** (73/85) — section/heading structure, `(intro)`
+      default, empty-section drop, long-content `splitAtParagraphs` (blank-line collapse +
+      piece trims), title trim + index order, exact packing boundary. The 12 residual
+      survivors are documented equivalent mutants (effective 73/73 = 100 % on non-equivalents).
+      _(2026-06-25 · `f7f5a6a`)_
+    - [ ] then `vector-store` / `embedder` / `index-manager` / `config`.
   - [ ] **3-local-mirror** — harden `local-mirror/src/**` survivors (start `server.ts` @ 0 %).
   - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
 - [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question
