@@ -101,6 +101,20 @@ built-in `node --test`. Two realistic paths, in tension:
 - [ ] **Step 3 — Triage & kill surviving mutants.** For each survivor, decide: add the missing
   assertion (the usual outcome), or mark it an accepted equivalent/ignored mutant with a reason. **TDD**
   the new assertions (`tdd-discipline`); green-only commits.
+  - **Attack order (Thomas, 2026-06-25): worst-first → `rag` → `local-mirror` → `scripts`.** Start with
+    `rag` (lowest global score 57 %), 0 %-files first: `document-scanner`, `vault-watcher`, then
+    `frontmatter-parser` (12 %), `chunker` (27 %). `rag`/`local-mirror` run `inPlace` (non-destructive);
+    ⚠️ `scripts` **only** in a disposable git worktree (a `clear-example-notes` mutant deleted the real
+    `vault/` during the audit).
+  - [ ] **3-rag** — harden `rag/src/**` survivors.
+    - [x] `document-scanner.ts` **0 % → 100 %** (24/24) — DI `readDir` port + `rootDir`, real-fs
+      integration test, dropped the unreachable `.gitkeep` exclusion. _(2026-06-25 · `861fa89`)_
+    - [x] `vault-watcher.ts` **0 % → 100 %** (26/26) — extracted pure `isIgnoredPath`, injected the
+      watch factory, deterministic real-chokidar adapter test. _(2026-06-25 · `fd290c9`)_
+    - [ ] `frontmatter-parser.ts` (11.9 %) — next.
+    - [ ] `chunker.ts` (27.1 %), then `vector-store` / `embedder` / `index-manager` / `config`.
+  - [ ] **3-local-mirror** — harden `local-mirror/src/**` survivors (start `server.ts` @ 0 %).
+  - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
 - [ ] **Step 4 — Decide a sustainable cadence.** No per-commit gate today; likely a **periodic local
   audit** (and/or an opt-in, non-blocking CI job — *not* a merge gate, given command-runner cost).
   Record the chosen cadence + the baseline score here so it survives `/clear`s.

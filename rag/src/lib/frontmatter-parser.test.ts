@@ -28,3 +28,103 @@ test("sourceUrl is null when the note has no source_url (non-mirror note)", () =
 
   assert.equal(parsed.sourceUrl, null);
 });
+
+// --- type detection ---------------------------------------------------------
+
+const PREFIX_TYPES: [string, string][] = [
+  ["daily/", "daily"],
+  ["people/", "person"],
+  ["topics/", "topic"],
+  ["decisions/", "decision"],
+  ["meetings/", "meeting"],
+  ["prep-1-1/", "prep-1-1"],
+  ["prep-day/", "prep-day"],
+  ["backlog/", "backlog"],
+  ["coaching/", "coaching"],
+  ["initiatives/", "initiative"],
+  ["raw-sources/", "raw-source"],
+  ["briefings/", "briefing"],
+  ["domains/", "domain"],
+  ["drafts/", "draft"],
+  ["articles/", "article"],
+];
+
+for (const [prefix, expectedType] of PREFIX_TYPES) {
+  test(`maps the "${prefix}" folder to type "${expectedType}"`, () => {
+    const parsed = parseDocument("body", `${prefix}note.md`);
+    assert.equal(parsed.type, expectedType);
+  });
+}
+
+test("an explicit frontmatter type overrides the folder prefix", () => {
+  const parsed = parseDocument("---\ntype: custom\n---\n", "topics/x.md");
+  assert.equal(parsed.type, "custom");
+});
+
+test("falls back to type \"other\" for an unknown folder", () => {
+  const parsed = parseDocument("body", "unknown-folder/x.md");
+  assert.equal(parsed.type, "other");
+});
+
+// --- title extraction -------------------------------------------------------
+
+test("trims surrounding whitespace from the frontmatter title", () => {
+  const parsed = parseDocument("---\ntitle: '  Naxos  '\n---\n", "topics/x.md");
+  assert.equal(parsed.title, "Naxos");
+});
+
+test("a blank frontmatter title does not win (falls through to the heading)", () => {
+  const parsed = parseDocument("---\ntitle: '   '\n---\n# Real Heading\n", "topics/x.md");
+  assert.equal(parsed.title, "Real Heading");
+});
+
+test("uses the first Markdown H1 heading when there is no frontmatter title", () => {
+  const parsed = parseDocument("intro\n\n# The Heading\n\nbody", "topics/x.md");
+  assert.equal(parsed.title, "The Heading");
+});
+
+test("falls back to the filename (without .md) when there is no title nor heading", () => {
+  const parsed = parseDocument("just a body, no heading", "topics/sub/my-note.md");
+  assert.equal(parsed.title, "my-note");
+});
+
+test("only treats a '#' at the start of a line as a heading", () => {
+  // "C# is great" has a mid-line '# ' that must NOT be read as an H1 heading,
+  // otherwise the title would become "is great" instead of the filename.
+  const parsed = parseDocument("C# is great here\n", "topics/csharp.md");
+  assert.equal(parsed.title, "csharp");
+});
+
+test("trims the extracted heading title", () => {
+  const parsed = parseDocument("# Heading with trailing spaces   \nbody", "topics/x.md");
+  assert.equal(parsed.title, "Heading with trailing spaces");
+});
+
+test("strips only the trailing .md extension from the filename", () => {
+  // The '$' anchor matters: a literal '.md' earlier in the name must survive.
+  const parsed = parseDocument("body", "topics/v2.md-notes.md");
+  assert.equal(parsed.title, "v2.md-notes");
+});
+
+// --- tags -------------------------------------------------------------------
+
+test("coerces every frontmatter tag to a string", () => {
+  const parsed = parseDocument("---\ntags: [alpha, 42]\n---\n", "topics/x.md");
+  assert.deepEqual(parsed.tags, ["alpha", "42"]);
+});
+
+test("yields an empty tag list when tags is absent or not an array", () => {
+  assert.deepEqual(parseDocument("body", "topics/x.md").tags, []);
+  assert.deepEqual(
+    parseDocument("---\ntags: not-a-list\n---\n", "topics/x.md").tags,
+    []
+  );
+});
+
+// --- passthrough ------------------------------------------------------------
+
+test("returns the body content with the frontmatter stripped", () => {
+  const parsed = parseDocument("---\ntitle: T\n---\nhello world\n", "topics/x.md");
+  assert.equal(parsed.content.trim(), "hello world");
+  assert.equal(parsed.frontmatter.title, "T");
+});
