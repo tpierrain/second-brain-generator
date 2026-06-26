@@ -119,7 +119,17 @@ built-in `node --test`. Two realistic paths, in tension:
       piece trims), title trim + index order, exact packing boundary. The 12 residual
       survivors are documented equivalent mutants (effective 73/73 = 100 % on non-equivalents).
       _(2026-06-25 · `f7f5a6a`)_
-    - [ ] then `vector-store` / `embedder` / `index-manager` / `config`.
+    - [x] `vector-store.ts` **33.8 % → 92.47 %** (134 killed + 1 timeout / 146) — DB-injectable
+      `*In` cores tested in-memory (search ranking/limit/filters, stats, list, hash, remove,
+      source_url round-trip), `cosineSimilarity` pinned by an identical-vector (=1) and an
+      asymmetric pair (=0.8) case, `applySchema` idempotency + out-of-band column migrations, and
+      a real-fs `getDb()` singleton test (`vector-store.singleton.test.ts`) for the thin wrappers.
+      The 11 residual survivors are documented equivalents: 6 in the native-ABI rebuild path
+      (`ragRoot`/`rebuildBetterSqlite`, only on an ABI mismatch — invocation covered by
+      `native-deps.test.ts`), `getDb`'s `if(!db)→if(true)` (harmless on a file-backed DB), and 4
+      in `closeDb` (shutdown cleanup, no unit-observable contract) → effective 100 % on
+      non-equivalents. _(2026-06-26)_
+    - [ ] then `embedder` / `index-manager` / `config`.
   - [ ] **3-local-mirror** — harden `local-mirror/src/**` survivors (start `server.ts` @ 0 %).
   - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
 - [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question

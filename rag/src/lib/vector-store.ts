@@ -185,7 +185,15 @@ export function currentIndexSchemaVersion(): number | null {
 }
 
 export function getDocumentHash(path: string): string | null {
-  const row = getDb()
+  return getDocumentHashIn(getDb(), path);
+}
+
+/** DB-injectable core of {@link getDocumentHash} — testable in-memory. */
+export function getDocumentHashIn(
+  d: Database.Database,
+  path: string
+): string | null {
+  const row = d
     .prepare("SELECT hash FROM documents WHERE path = ?")
     .get(path) as { hash: string } | undefined;
   return row?.hash ?? null;
@@ -353,7 +361,15 @@ export function searchSimilarIn(
 }
 
 export function listDocuments(typeFilter?: string, tagFilter?: string) {
-  const d = getDb();
+  return listDocumentsIn(getDb(), typeFilter, tagFilter);
+}
+
+/** DB-injectable core of {@link listDocuments} — testable in-memory. */
+export function listDocumentsIn(
+  d: Database.Database,
+  typeFilter?: string,
+  tagFilter?: string
+) {
   let sql = "SELECT path, title, type, tags, updated_at FROM documents";
   const conditions: string[] = [];
   const params: unknown[] = [];
@@ -381,7 +397,11 @@ export function listDocuments(typeFilter?: string, tagFilter?: string) {
 }
 
 export function getStats() {
-  const d = getDb();
+  return getStatsIn(getDb());
+}
+
+/** DB-injectable core of {@link getStats} — testable in-memory. */
+export function getStatsIn(d: Database.Database) {
   const docCount = (
     d.prepare("SELECT COUNT(*) as n FROM documents").get() as { n: number }
   ).n;
@@ -395,7 +415,14 @@ export function getStats() {
 }
 
 export function removeDeletedDocs(existingPaths: Set<string>): number {
-  const d = getDb();
+  return removeDeletedDocsIn(getDb(), existingPaths);
+}
+
+/** DB-injectable core of {@link removeDeletedDocs} — testable in-memory. */
+export function removeDeletedDocsIn(
+  d: Database.Database,
+  existingPaths: Set<string>
+): number {
   const allDocs = d.prepare("SELECT path FROM documents").all() as Array<{ path: string }>;
   let removed = 0;
   for (const doc of allDocs) {
