@@ -212,7 +212,13 @@ built-in `node --test`. Two realistic paths, in tension:
         array (`.map(...).join('')` → '' either way) + the redundant `.filter(type !== 'title')`
         (title's propertyToText is '' → dropped downstream anyway) → effective 100 % on
         non-equivalents. _(2026-07-15)_
-      - [ ] `notion-url.ts` **74 %** (12 survivors).
+      - [x] `notion-url.ts` **74.47 % → 97.87 %** (46 killed / 1 survived) — leaf URL lib:
+        killed the relative-mention regex anchors (`foo/<id32>` + `/<id32>/child` untouched,
+        dashed `/<uuid>` absolutized with dashes stripped), the app.notion.com guard (embedded
+        fragment untouched via `^`, `http://` rewritten via `https?`), and the `extractPageId`
+        throw cluster by pinning the error message. The 1 residual survivor is a documented
+        equivalent (line 33 `canonical === url ? whole : …` rebuilds the identical string) →
+        effective 46/46 = 100 % on non-equivalents. _(2026-07-15)_
       - [ ] `local-mirror.ts` **77 %** (61 survivors) — the big Domain Service.
   - [x] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory —
     a `clear-example-notes` mutant deletes the real `vault/`; never reuse a worktree, its vault
