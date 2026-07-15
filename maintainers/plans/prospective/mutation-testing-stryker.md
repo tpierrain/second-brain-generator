@@ -138,25 +138,24 @@ built-in `node --test`. Two realistic paths, in tension:
       landing in a private field observed only through an injected fetch it does not wire) → effective
       91/91 = 100 % on non-equivalents. Also tuned `stryker.rag.config.mjs` (concurrency 4 / timeout)
       to kill the false-timeout bogus-100 % trap — see RESULTS.md. _(2026-07-15 · `5502322`)_
-    - [ ] `index-manager.ts` — **baseline re-measured 2026-07-15: 39.44 %** (28 killed / 0 timeout /
-      **43 survived**, tuned rag config). Diagnosis: the whole `runReindex` orchestration + most of
-      `reindex` is unmutated — the 4 existing tests only cover the locked no-op + `runIndexingPhase`.
-      Env redirection is a dead end (`VAULT_DIR`/`DB_PATH` are `const` frozen at import). **Agreed
-      approach = Option B: minimal extraction + injection (the "test the glue too" discipline), TDD
-      baby-steps.** Sub-steps:
-      - [ ] Extract + export pure `shouldSkip(force, existingHash, hash)` (= `!force && existingHash
-        === hash`); truth-table test → kills the L121 cluster (7 mutants).
-      - [ ] Export `classifyWall(errors)`; test the local-cap-over-429 **priority** (both walls
-        present) + a non-matching error → `null` → kills L34 (`.includes("")` always-true).
-      - [ ] Export `sha256(content)`; pin with a known SHA-256 vector → kills L23/L24.
-      - [ ] Add injectable `ReindexStorePorts` (scan, readFile, getDocumentHash, removeDeletedDocs,
+    - [x] `index-manager.ts` **39.44 % → 94.87 %** (74 killed / 0 timeout / 4 survived) — Option B
+      (minimal extraction + injection, "test the glue too"), TDD baby-steps. The 4 residual survivors
+      are documented equivalents: the `defaultStorePorts` default wiring to the real fs/DB (only
+      exercised in a real reindex) — effective 74/74 = 100 % on non-equivalents. _(2026-07-15 · `b950d6b`)_
+      - [x] Extract + export pure `shouldSkip(force, existingHash, hash)` (= `!force && existingHash
+        === hash`); truth-table test → killed the L121 incremental cluster.
+      - [x] Export `classifyWall(errors)`; tested the local-cap-over-429 **priority** (both walls
+        present) + a non-matching / empty error → `null`.
+      - [x] Export `sha256(content)`; pinned with the NIST `"abc"` SHA-256 vector.
+      - [x] Added injectable `ReindexStorePorts` (scan, readFile, getDocumentHash, removeDeletedDocs,
         currentIndexSchemaVersion, currentIndexIdentity, stampIndexIdentity, indexDocument) on
         `runReindex`, threaded from `reindex` via `ReindexOptions.ports`, defaulted to the real module
-        fns. Then TDD the **unlocked path** with fakes: happy path (scanned/indexed/removed, stamp
-        called, `lock.release()` called, INJECTED embedder used), incremental skip, read-error push,
-        `shouldStamp` gating (stamp vs no-stamp). Kills L58/62/63/67/73/78/80/89/101/106…/155/161-183.
-      - [ ] Re-run `mutate:rag -- --mutate rag/src/lib/index-manager.ts`, document residual equivalents
-        in the test header, commit green, tick this box _(date · commit)_.
+        fns. TDD'd the **unlocked path** with fakes: happy path (scan/index/prune, identity stamp,
+        `lock.release()`, INJECTED embedder used, chunk materialisation, reporter meta), incremental
+        skip, read-error push, `shouldStamp` gating (stamp vs no-stamp on force), source_url wiring,
+        default-force omitted.
+      - [x] Re-ran `mutate:rag -- --mutate rag/src/lib/index-manager.ts`, documented residual
+        equivalents in the test header, committed green. _(2026-07-15 · `b950d6b`)_
     - [ ] then `config`.
   - [ ] **3-local-mirror** — harden `local-mirror/src/**` survivors (start `server.ts` @ 0 %).
   - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
