@@ -1,9 +1,9 @@
 import { readFile } from "fs/promises";
 import { createHash } from "crypto";
-import { scanVault } from "./document-scanner.js";
+import { scanVault, type ScannedFile } from "./document-scanner.js";
 import { parseDocument } from "./frontmatter-parser.js";
 import { chunkMarkdown } from "./chunker.js";
-import { createEmbedder, type Embedder } from "./embedder.js";
+import { createEmbedder, type Embedder, type EmbedderIdentity } from "./embedder.js";
 import {
   getDocumentHash,
   indexDocument,
@@ -20,8 +20,20 @@ import { ReindexLock } from "./reindex-lock.js";
 import { ReindexReporter } from "./reindex-reporter.js";
 import type { WallReason } from "./progress-report.js";
 
-function sha256(content: string): string {
+export function sha256(content: string): string {
   return createHash("sha256").update(content).digest("hex");
+}
+
+/**
+ * Incremental-diff decision: skip a doc only on a non-forced run whose stored hash
+ * matches the freshly-computed one (content unchanged). Pure → unit-testable.
+ */
+export function shouldSkip(
+  force: boolean,
+  existingHash: string | null,
+  hash: string
+): boolean {
+  return !force && existingHash === hash;
 }
 
 /**
@@ -29,7 +41,7 @@ function sha256(content: string): string {
  * The LOCAL guardrail takes priority: it throws BEFORE the network call, so if it fired,
  * it is the one that cut off first (even if a 429 lingers in an earlier error).
  */
-function classifyWall(errors: string[]): WallReason {
+export function classifyWall(errors: string[]): WallReason {
   if (errors.some((e) => e.includes("DailyCapExceededError"))) return "local-cap";
   if (errors.some((e) => e.includes("429"))) return "google-rate-limit";
   return null;
@@ -45,6 +57,47 @@ export interface IndexResult {
   skippedLocked?: boolean;
 }
 
+/**
+ * Store-side effectful seams of a reindex run (scan, per-doc read/hash, deleted-doc
+ * pruning, index-identity stamp, persistence). Injectable so the whole `runReindex`
+ * orchestration is unit-testable with in-memory fakes — cf. "test the glue too".
+ * Defaults wire the real modules (see {@link defaultStorePorts}).
+ */
+export interface ReindexStorePorts {
+  scan: () => Promise<ScannedFile[]>;
+  readFile: (absolutePath: string) => Promise<string>;
+  getDocumentHash: (relativePath: string) => string | null;
+  removeDeletedDocs: (existingPaths: Set<string>) => number;
+  currentIndexSchemaVersion: () => number | null;
+  currentIndexIdentity: () => EmbedderIdentity | null;
+  stampIndexIdentity: (identity: EmbedderIdentity) => void;
+  indexDocument: (
+    relativePath: string,
+    title: string,
+    type: string,
+    tags: string[],
+    hash: string,
+    chunks: Array<{
+      section: string;
+      content: string;
+      chunkIndex: number;
+      embedding: number[];
+    }>,
+    sourceUrl: string | null
+  ) => void;
+}
+
+const defaultStorePorts: ReindexStorePorts = {
+  scan: () => scanVault(),
+  readFile: (absolutePath) => readFile(absolutePath, "utf-8"),
+  getDocumentHash,
+  removeDeletedDocs,
+  currentIndexSchemaVersion,
+  currentIndexIdentity,
+  stampIndexIdentity,
+  indexDocument,
+};
+
 export interface ReindexOptions {
   /** Single-writer lock (default: file lock in CACHE_DIR). */
   lock?: ReindexLock;
@@ -52,6 +105,8 @@ export interface ReindexOptions {
   embedder?: Embedder;
   /** Progress reporter (default: file persistence in CACHE_DIR). */
   reporter?: ReindexReporter;
+  /** Store-side effect ports — injectable for tests; default the real modules. */
+  ports?: ReindexStorePorts;
 }
 
 export async function reindex(
@@ -61,6 +116,7 @@ export async function reindex(
   const lock = opts.lock ?? new ReindexLock();
   const embedder = opts.embedder ?? createEmbedder();
   const reporter = opts.reporter ?? new ReindexReporter();
+  const ports = opts.ports ?? defaultStorePorts;
 
   // Single-writer: if another process is already indexing, we step aside (no-op) so as
   // not to double the quota consumption. Acquired up front → no pointless scan or DB.
@@ -76,7 +132,7 @@ export async function reindex(
   }
 
   try {
-    return await runReindex(force, embedder, reporter);
+    return await runReindex(force, embedder, reporter, ports);
   } finally {
     lock.release();
   }
@@ -85,7 +141,8 @@ export async function reindex(
 async function runReindex(
   requestedForce: boolean,
   embedder: Embedder,
-  reporter: ReindexReporter
+  reporter: ReindexReporter,
+  ports: ReindexStorePorts
 ): Promise<IndexResult> {
   // A stale index SCHEMA can only be repaired by a full re-encode: an incremental
   // run skips unchanged docs (old format left in place) AND never re-stamps the
@@ -94,10 +151,10 @@ async function runReindex(
   // forces a full reindex — which also restamps the schema via stampIndexIdentity.
   const force = reindexForce(
     requestedForce,
-    currentIndexSchemaVersion(),
+    ports.currentIndexSchemaVersion(),
     INDEX_SCHEMA_VERSION
   );
-  const files = await scanVault();
+  const files = await ports.scan();
   const result: IndexResult = {
     scanned: files.length,
     indexed: 0,
@@ -107,18 +164,18 @@ async function runReindex(
   };
 
   const existingPaths = new Set(files.map((f) => f.relativePath));
-  result.removed = removeDeletedDocs(existingPaths);
+  result.removed = ports.removeDeletedDocs(existingPaths);
 
   // Phase 1 — scan + incremental diff + chunking (no network). We prepare the
   // docs to (re)index; unchanged ones (identical hash) are skipped.
   const toIndex: PreparedDoc[] = [];
   for (const file of files) {
     try {
-      const raw = await readFile(file.absolutePath, "utf-8");
+      const raw = await ports.readFile(file.absolutePath);
       const hash = sha256(raw);
-      const existingHash = getDocumentHash(file.relativePath);
+      const existingHash = ports.getDocumentHash(file.relativePath);
 
-      if (!force && existingHash === hash) {
+      if (shouldSkip(force, existingHash, hash)) {
         result.skipped++;
         continue;
       }
@@ -152,8 +209,8 @@ async function runReindex(
   // Incrementally on an already-stamped index, we don't touch it (we never
   // dress up a mixed index as "fresh"). Stamped BEFORE the phase: even a run cut off
   // by the quota wall leaves an index consistent in identity (everything = current embedder).
-  if (shouldStamp(force, currentIndexIdentity())) {
-    stampIndexIdentity(embedder.identity);
+  if (shouldStamp(force, ports.currentIndexIdentity())) {
+    ports.stampIndexIdentity(embedder.identity);
   }
 
   const runResult = await runIndexingPhase(
@@ -161,7 +218,7 @@ async function runReindex(
     {
       embed: (texts) => embedder.embedDocuments(texts),
       persist: (doc, embeddings) =>
-        indexDocument(
+        ports.indexDocument(
           doc.relativePath,
           doc.title,
           doc.type,
