@@ -178,7 +178,13 @@ built-in `node --test`. Two realistic paths, in tension:
       pre-refactor). The 2 residual survivors are documented equivalents: the entry-point guard +
       its `boot(realBootDeps).catch(fatal)` body (run only when server.ts IS the process) → effective
       12/12 = 100 % on non-equivalents. _(2026-07-15)_
-    - [ ] Next local-mirror survivors: `index.ts` (2.2 %), `notion-gateway` (21 %).
+    - [x] `index.ts` **2.2 % → 100 %** (45/45, no equivalents) — the MCP tool surface: drove the
+      REAL registered tools through an in-memory `Client`/`InMemoryTransport` pair (`mcp-tools.test.ts`),
+      asserting server name/version, the 7 tool names, every tool + input-field description is non-empty,
+      and each `callTool` maps its (snake_case) args to the right port method and returns the exact
+      `asText` envelope. End-to-end kills names, descriptions, zod schemas, handlers and `asText`.
+      _(2026-07-15)_
+    - [ ] Next local-mirror survivor: `notion-gateway` (21 %).
   - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
 - [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question
   "how do we stop badly-written tests from recurring?" — three layers, cheapest/most-deterministic first:
