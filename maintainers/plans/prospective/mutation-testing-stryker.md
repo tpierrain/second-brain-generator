@@ -156,7 +156,17 @@ built-in `node --test`. Two realistic paths, in tension:
         default-force omitted.
       - [x] Re-ran `mutate:rag -- --mutate rag/src/lib/index-manager.ts`, documented residual
         equivalents in the test header, committed green. _(2026-07-15 · `b950d6b`)_
-    - [ ] then `config`.
+    - [x] `config.ts` **43.33 % → 86.67 %** (26 killed / 4 survived) — composition root:
+      extracted injectable `loadEnvFile(path, override, deps)` (reused by the import-time load
+      + `readGeminiKey` reload), pinned the frozen path/number constants + a `resolvePath`
+      truth-table + a `GEMINI_API_KEY` empty-string-safe invariant. The 4 residual survivors are
+      documented equivalents (real-dotenv default dep, the unreachable key fallback when a key is
+      present, the `.env` re-read closure exercised only on empty-startup onboarding) → effective
+      26/26 = 100 % on non-equivalents. _(2026-07-15 · `42bda19`)_
+    - **3-rag enumerated worst-files DONE** (document-scanner, vault-watcher, frontmatter-parser,
+      chunker, vector-store, embedder, index-manager, config). The other `rag/src/lib/*.ts` were
+      not flagged weak by the Step 2 audit; a full-`rag` re-audit (refresh RESULTS.md) is the
+      natural closer before moving on.
   - [ ] **3-local-mirror** — harden `local-mirror/src/**` survivors (start `server.ts` @ 0 %).
   - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
 - [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question
