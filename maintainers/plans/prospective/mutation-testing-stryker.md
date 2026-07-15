@@ -199,9 +199,21 @@ built-in `node --test`. Two realistic paths, in tension:
       704 covered). Confirms the three hardened files (index 100 %, server 85.71 %, notion-gateway
       97.44 %) lifted the package. RESULTS.md refreshed with the per-file table. _(2026-07-15)_
     - **3-local-mirror enumerated worst-files DONE** (`server.ts`, `index.ts`, `notion-gateway.ts` —
-      the three the Step 2 audit flagged weak). Remaining weak tier (NOT in the Step-2 worst-first
-      list, optional follow-up): `notion-transformers.ts` 57 % (50 survivors), `local-mirror.ts` 77 %
-      (61 survivors), `notion-url.ts` 74 %.
+      the three the Step 2 audit flagged weak).
+    - [ ] **3-local-mirror OPTIONAL weak tier** (NOT in the Step-2 worst-first list — a follow-up
+      Thomas green-lit 2026-07-15). `local-mirror` runs `inPlace` (non-destructive, files restored),
+      no worktree needed; config bridled (concurrency 4). Worst-first:
+      - [x] `notion-transformers.ts` **57.26 % → 94.87 %** (111/117, 6 documented equivalents) —
+        exported the pure helpers (`notionPageUrl`, `rowTitle`, `propertyToText`, `rowFields`) and
+        unit-tested each `propertyToText` switch case (rich_text/select/status/multi_select/number
+        incl. 0/date with→end/url/email/phone/unsupported + empties), `rowTitle` join + fallbacks,
+        `rowFields` title/empty dropping, and `linkToPageToMarkdown`'s `?? ''` id fallback + page_id
+        precedence. The 6 equivalents: the three `?? []` fallbacks mutated to a string-sentinel
+        array (`.map(...).join('')` → '' either way) + the redundant `.filter(type !== 'title')`
+        (title's propertyToText is '' → dropped downstream anyway) → effective 100 % on
+        non-equivalents. _(2026-07-15)_
+      - [ ] `notion-url.ts` **74 %** (12 survivors).
+      - [ ] `local-mirror.ts` **77 %** (61 survivors) — the big Domain Service.
   - [x] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory —
     a `clear-example-notes` mutant deletes the real `vault/`; never reuse a worktree, its vault
     gets corrupted by run-1 mutants)*. Worst-first: `clear-example-notes` 28.6 %, `auto-push`

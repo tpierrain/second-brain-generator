@@ -64,7 +64,7 @@ from 67.63 % → 78.69 %** (550 killed + 4 timeout / 704 covered, 150 survived).
 | adapters | `notion-connector.ts` | — | 85.29 % | already decent |
 | adapters | (fs-*, system-clock) | — | 81–100 % | already decent |
 | domain | `local-mirror.ts` | — | **77.41 %** | 61 survivors — the big Domain Service, next tier |
-| lib | `notion-transformers.ts` | 57.3 % | **57.26 %** | 50 survivors — now the weakest, next tier |
+| lib | `notion-transformers.ts` | 57.3 % | **94.87 %** | hardened 2026-07-15 (helpers exported + case-tested; 6 equiv.) |
 | lib | `notion-url.ts` | — | 74.47 % | 12 survivors |
 | lib | `fresh-env.ts` / `config.ts` | — | 62.5 % / 71.4 % | small |
 

@@ -5,7 +5,7 @@
 // Links use the stable `www.notion.so/<id32>` form (same canonical shape as the F6 citation URL).
 
 /** A Notion page id (dashed or bare) → the stable clickable `www.notion.so/<id32>` URL. */
-function notionPageUrl(id: string): string {
+export function notionPageUrl(id: string): string {
   return `https://www.notion.so/${id.replace(/-/g, '')}`;
 }
 
@@ -49,7 +49,7 @@ interface NotionPropertyValue {
   phone_number?: string | null;
 }
 
-interface DatabaseRow {
+export interface DatabaseRow {
   id: string;
   properties: Record<string, NotionPropertyValue>;
 }
@@ -60,14 +60,14 @@ interface ChildDatabaseBlock {
 }
 
 /** The (single) `title`-typed property holds a row's name in a Notion database. */
-function rowTitle(row: DatabaseRow): string {
+export function rowTitle(row: DatabaseRow): string {
   const titleProp = Object.values(row.properties).find((p) => p.type === 'title');
   const text = (titleProp?.title ?? []).map((t) => t.plain_text).join('');
   return text || 'Untitled';
 }
 
 /** A single Notion property → a readable scalar string ('' when empty / unsupported). */
-function propertyToText(prop: NotionPropertyValue): string {
+export function propertyToText(prop: NotionPropertyValue): string {
   switch (prop.type) {
     case 'rich_text':
       return (prop.rich_text ?? []).map((t) => t.plain_text).join('');
@@ -93,7 +93,7 @@ function propertyToText(prop: NotionPropertyValue): string {
 }
 
 /** Non-title, non-empty properties of a row, rendered as `key: value` and joined by ` · `. */
-function rowFields(row: DatabaseRow): string {
+export function rowFields(row: DatabaseRow): string {
   return Object.entries(row.properties)
     .filter(([, prop]) => prop.type !== 'title')
     .map(([key, prop]) => [key, propertyToText(prop)] as const)
