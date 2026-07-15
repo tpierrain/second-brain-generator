@@ -138,7 +138,26 @@ built-in `node --test`. Two realistic paths, in tension:
       landing in a private field observed only through an injected fetch it does not wire) → effective
       91/91 = 100 % on non-equivalents. Also tuned `stryker.rag.config.mjs` (concurrency 4 / timeout)
       to kill the false-timeout bogus-100 % trap — see RESULTS.md. _(2026-07-15 · `5502322`)_
-    - [ ] then `index-manager` / `config`.
+    - [ ] `index-manager.ts` — **baseline re-measured 2026-07-15: 39.44 %** (28 killed / 0 timeout /
+      **43 survived**, tuned rag config). Diagnosis: the whole `runReindex` orchestration + most of
+      `reindex` is unmutated — the 4 existing tests only cover the locked no-op + `runIndexingPhase`.
+      Env redirection is a dead end (`VAULT_DIR`/`DB_PATH` are `const` frozen at import). **Agreed
+      approach = Option B: minimal extraction + injection (the "test the glue too" discipline), TDD
+      baby-steps.** Sub-steps:
+      - [ ] Extract + export pure `shouldSkip(force, existingHash, hash)` (= `!force && existingHash
+        === hash`); truth-table test → kills the L121 cluster (7 mutants).
+      - [ ] Export `classifyWall(errors)`; test the local-cap-over-429 **priority** (both walls
+        present) + a non-matching error → `null` → kills L34 (`.includes("")` always-true).
+      - [ ] Export `sha256(content)`; pin with a known SHA-256 vector → kills L23/L24.
+      - [ ] Add injectable `ReindexStorePorts` (scan, readFile, getDocumentHash, removeDeletedDocs,
+        currentIndexSchemaVersion, currentIndexIdentity, stampIndexIdentity, indexDocument) on
+        `runReindex`, threaded from `reindex` via `ReindexOptions.ports`, defaulted to the real module
+        fns. Then TDD the **unlocked path** with fakes: happy path (scanned/indexed/removed, stamp
+        called, `lock.release()` called, INJECTED embedder used), incremental skip, read-error push,
+        `shouldStamp` gating (stamp vs no-stamp). Kills L58/62/63/67/73/78/80/89/101/106…/155/161-183.
+      - [ ] Re-run `mutate:rag -- --mutate rag/src/lib/index-manager.ts`, document residual equivalents
+        in the test header, commit green, tick this box _(date · commit)_.
+    - [ ] then `config`.
   - [ ] **3-local-mirror** — harden `local-mirror/src/**` survivors (start `server.ts` @ 0 %).
   - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
 - [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question
