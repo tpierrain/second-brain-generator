@@ -280,6 +280,32 @@ Use the cloud-native 2020s vocabulary consistently, so code and prose name the s
 > Origin (2026-06-21): code said `reconcile`, prose said "converge"/"the converger" — the industry's two
 > names for one thing. Locked one term per usage to keep the desired-state-reconciliation design legible.
 
+## 9. Cross-platform parity — local green ≠ green (the CI matrix is the arbiter)
+
+Development happens on macOS, so a **local green is a POSIX green**: Windows-only defects are invisible
+locally and TDD's fail-first can't fire for them. They are logically-correct-but-environmentally-wrong
+bugs — a class mutation testing and unit runs won't catch. The net is the **CI matrix** (`ci.yml` runs
+Node 22/24/26 × macOS + Windows). Use it as the source of truth.
+
+- **Never declare "done" or merge on a local green alone.** Wait for the **full CI matrix (Windows
+  included) to be green.** (Origin, 2026-07-15: the mutation PR was proposed for merge on local green while
+  Windows CI was red — `document-scanner` emitted vault-relative paths with `\`, silently breaking
+  `frontmatter-parser`'s `startsWith("topics/")` type table and its `split("/")` filename extraction.)
+- **Path reflexes, every time you touch paths / `spawn` / `fs`:**
+  - No hard-coded `/` in a path or in a path assertion — build via `path.join`/`resolve`.
+  - Any path that becomes an **identifier / key / URL** → normalise to **POSIX at the single source**
+    (`p.split(sep).join("/")`), as `document-scanner` now does; keep the *absolute* path native (it must
+    stay openable by `fs`).
+  - **A fake must key exactly the way production computes its key** (`resolve(...)`), never a hard-coded
+    POSIX literal — a POSIX-keyed fake silently misses subdirs on Windows (the cousin of the mutation
+    finding "a fake keyed on a partial command lies"). Assert on `sep`-agnostic / normalised values.
+  - Usual Windows suspects: `resolve` of a POSIX-absolute (`/x` → `D:\x`), `.cmd`/`.exe` + shell,
+    `realpathSync` both sides (`/var`→`/private/var`), CRLF, drive letters, case-insensitive FS.
+- **No lint for this** — legitimate `/` are everywhere (URLs, regex, comments), so a path-separator lint
+  is all false positives. The **CI matrix is the deterministic net**; this section is the written reflex.
+
+Full rationale: ADR [`0015`](decisions/0015-cross-platform-parity.md) (cross-platform parity).
+
 ## See also (operative rules already homed in the repo)
 
 - [`../DEVELOPING.md`](../DEVELOPING.md) — manual commits, neutrality (+ the Thomas-Pierrain
