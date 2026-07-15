@@ -128,6 +128,15 @@ function unlockedLock() {
   return { lock, storage };
 }
 
+// A reporter backed by in-memory storage → reindex tests never touch the real
+// CACHE_DIR (no leaked last-run.json on disk).
+function memReporter(): ReindexReporter {
+  return new ReindexReporter({
+    storage: memProgressStorage(),
+    now: () => new Date("2026-05-31T18:00:00Z"),
+  });
+}
+
 // Embedder spy — records how many document batches it embedded.
 function spyEmbedder(): { embedder: Embedder; calls: () => number } {
   let n = 0;
@@ -240,7 +249,7 @@ test("reindex materialises a mirror doc's source_url onto the indexed document",
       "---\nsource_url: https://notion.so/page\n---\n# M\n\nmirror body.",
   });
 
-  await reindex(false, { lock, embedder, ports });
+  await reindex(false, { lock, embedder, reporter: memReporter(), ports });
 
   assert.equal(calls.docs[0].sourceUrl, "https://notion.so/page");
 });
@@ -253,7 +262,7 @@ test("reindex without a source_url passes null (never undefined) to indexDocumen
     readFile: async () => "# A\n\nplain body, no frontmatter source.",
   });
 
-  await reindex(false, { lock, embedder, ports });
+  await reindex(false, { lock, embedder, reporter: memReporter(), ports });
 
   assert.strictEqual(calls.docs[0].sourceUrl, null);
 });
@@ -268,7 +277,7 @@ test("reindex called without a force argument defaults to an incremental (non-fo
     getDocumentHash: () => sha256(content), // matches → skipped ONLY if not forced
   });
 
-  const result = await reindex(undefined, { lock, embedder, ports });
+  const result = await reindex(undefined, { lock, embedder, reporter: memReporter(), ports });
 
   assert.equal(result.skipped, 1); // default force=false honoured the incremental skip
   assert.equal(result.indexed, 0);
@@ -284,7 +293,7 @@ test("reindex incremental: unchanged doc (stored hash matches) is skipped, not r
     getDocumentHash: () => sha256(content), // stored hash == fresh hash → skip
   });
 
-  const result = await reindex(false, { lock, embedder, ports });
+  const result = await reindex(false, { lock, embedder, reporter: memReporter(), ports });
 
   assert.equal(result.scanned, 1);
   assert.equal(result.skipped, 1);
@@ -307,7 +316,7 @@ test("reindex: a doc that fails to read is recorded as an error, others proceed"
     },
   });
 
-  const result = await reindex(false, { lock, embedder, ports });
+  const result = await reindex(false, { lock, embedder, reporter: memReporter(), ports });
 
   assert.equal(result.scanned, 2);
   assert.equal(result.indexed, 1);
@@ -326,7 +335,7 @@ test("reindex on an already-stamped index (incremental): does NOT re-stamp ident
     currentIndexIdentity: () => alreadyStamped, // stamped + not forced → keep it
   });
 
-  await reindex(false, { lock, embedder, ports });
+  await reindex(false, { lock, embedder, reporter: memReporter(), ports });
 
   assert.equal(calls.stamped.length, 0);
 });
@@ -341,7 +350,7 @@ test("reindex forced on a stamped index: re-stamps with the current embedder", a
     currentIndexIdentity: () => alreadyStamped,
   });
 
-  await reindex(true, { lock, embedder, ports }); // force → re-encode → re-stamp
+  await reindex(true, { lock, embedder, reporter: memReporter(), ports }); // force → re-encode → re-stamp
 
   assert.equal(calls.stamped.length, 1);
   assert.deepEqual(calls.stamped[0], embedder.identity);
@@ -359,7 +368,7 @@ test("reindex prunes deleted docs using the set of currently-scanned paths", asy
     },
   });
 
-  const result = await reindex(false, { lock, embedder, ports });
+  const result = await reindex(false, { lock, embedder, reporter: memReporter(), ports });
 
   assert.equal(result.removed, 3);
   assert.equal(calls.removedWith.length, 1);
