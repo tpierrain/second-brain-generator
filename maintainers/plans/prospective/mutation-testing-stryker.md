@@ -286,6 +286,49 @@ built-in `node --test`. Two realistic paths, in tension:
     (rag/src/lib hardening in progress under Step 3-rag).
 - [ ] **Step 5 (conditional) — Escalate to Vitest (path B)** *only if* the command-runner audit is too
   slow to run regularly. Spin it off as its own migration plan; do not scope-creep it here.
+- [ ] **Step 6 — Retrospective: what the surviving mutants reveal about our TDD practice → durable
+  rules.** _(requested by Thomas 2026-07-15; do NOT start before the current `/clear`.)_ The point of
+  the whole exercise is not the score — it's to name **what was systematically weak in the tests /
+  the TDD discipline** so the same gaps stop recurring. Read across every hardening commit on
+  `test/rag-mutation-hardening` (Step 3 rag/local-mirror/scripts + the local-mirror weak tier), find
+  the RECURRING shapes of survivor, root-cause each to a test-writing / TDD habit, then turn each into
+  a durable rule and engrave it where it belongs.
+  - [ ] **Gather the evidence.** `git log --oneline main..test/rag-mutation-hardening` → for each
+    `test(...)` commit, diff the test files and classify what assertion/seam was ADDED to kill the
+    survivors (the commit bodies already summarise the "before → after" and the residual equivalents).
+  - [ ] **Cluster the survivor patterns** (candidate recurring root causes to CONFIRM or refute — not
+    conclusions yet):
+    - [ ] **Loose outcome assertions** — asserting `throws` without a message matcher, or `ok === true`
+      without the message body → StringLiteral/`throw ''` mutants survive. (Seen in `notion-url`
+      `extractPageId`, `setupSource`/`healthCheck` messages.)
+    - [ ] **Partial return-shape assertions** — checking one field, not the whole object → ObjectLiteral
+      `{}` / `status: ""` mutants survive. (Seen in `sync` failed report, `failedReport`.)
+    - [ ] **No triangulation on boundaries/operators** — a single example value leaves `>` vs `>=`,
+      `> 0` vs `>= 0`, `===` vs `!==` alive. (Seen in `maxLastEditedTime`, the vanish guard.)
+    - [ ] **Untested pure "glue" / logic behind unexported functions** — whole branches unreachable
+      through the public API (the original 0 % root cause + `aggregateHealth`/`aggregateStatus`
+      unknown/mixed verdicts). Cross-check against the existing "test the glue too" convention: is it
+      too narrow (only "extract I/O", not "unreachable pure branches")?
+    - [ ] **Membership/lookup tested only on empty or single-element collections** — `some`/`every`,
+      `find` first-vs-right survive until a 2+ element case exists. (Seen in `removeSource`,
+      `configOrThrow`.)
+    - [ ] **Optional-chaining / default-argument / `??`-vs-`&&` branches never exercised** with the
+      null/absent input. (Seen in null-state cleanup, the frozen-watermark `?? null`.)
+  - [ ] **Root-cause each cluster to a TDD habit** — e.g. "green on the first happy-path assertion,
+    no fail-first on the boundary", "asserted the value I expected, not the contract", "dismissed pure
+    helpers as trivial". Tie back to [[degraded-quality-root-causes-context-loss-and-test-quality]].
+  - [ ] **Draft durable rules** (one per confirmed cluster), each with a *why* and a *how to apply*,
+    phrased so they'd have PREVENTED the survivor. Candidate homes, decide per rule:
+    - [ ] repo-local `maintainers/CONVENTIONS.md` (project-specific testing conventions), and/or
+    - [ ] global `use-case-driven-harness/rules/testing.md` / the `tdd-discipline` skill (if the habit
+      is language-agnostic and applies to every project) — mirror the belt-and-suspenders split used
+      for `language.md`.
+  - [ ] **Engrave + record** the chosen rules in their homes; add a memory pointer only if a rule is a
+    durable cross-session convention (pointer, not a copy — cf. [[checkbox-plans-convention]] style).
+  - [ ] **Consider a lightweight guardrail** beyond convention (in the ADR 0009 deterministic spirit):
+    would a fast lint/property check catch any cluster mechanically (e.g. flag `assert.throws` with no
+    2nd arg, or `deepEqual`-vs-single-field in return-shape tests)? Only if cheap; otherwise leave it
+    as a written rule and say so.
 
 ## Why deferred (not gating)
 
