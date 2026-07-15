@@ -38,9 +38,12 @@ test("exposes both absolute and vault-relative paths", async () => {
 });
 
 test("recurses into subdirectories and keeps the subdir in the relative path", async () => {
+  // Production recurses via `resolve(dir, name)`, so the subdir key must be the
+  // resolved path (native on Windows: `D:\vault\topics`) — a hard-coded POSIX key
+  // would never match there. `resolve` makes the fake tree OS-portable.
   const readDir = fakeReadDir({
     "/vault": [dir("topics"), file("root.md")],
-    "/vault/topics": [file("deep.md")],
+    [resolve("/vault", "topics")]: [file("deep.md")],
   });
   const files = await scanVault("/vault", readDir);
   assert.deepEqual(
