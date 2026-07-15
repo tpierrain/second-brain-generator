@@ -167,7 +167,8 @@ built-in `node --test`. Two realistic paths, in tension:
       chunker, vector-store, embedder, index-manager, config). The other `rag/src/lib/*.ts` were
       not flagged weak by the Step 2 audit; a full-`rag` re-audit (refresh RESULTS.md) is the
       natural closer before moving on.
-  - [ ] **3-local-mirror** — harden `local-mirror/src/**` survivors (start `server.ts` @ 0 %).
+  - [x] **3-local-mirror** — harden `local-mirror/src/**` survivors. Enumerated worst-files done +
+    re-audit closer (67.63 % → 78.69 %). _(2026-07-15)_
     - [x] `server.ts` **0 % → 85.71 %** (10 killed + 2 timeout / 14) — composition root: extracted
       + exported the boot seams (`buildDeps`, `buildApi`, `boot(BootDeps)`, `fatal`) and named the
       real wiring (`createRealServer`, `createRealTransport`, `realBootDeps`) so no inline arrows
@@ -192,9 +193,13 @@ built-in `node --test`. Two realistic paths, in tension:
       `?? ''` fallback are all unit-testable. The 1 residual survivor is the `new Client({auth})`
       real-SDK construction (live-network-only) → effective 38/38 = 100 % on non-equivalents.
       _(2026-07-15)_
+    - [x] **Full `local-mirror` re-audit (closer)** — **67.63 % → 78.69 %** (550 killed + 4 timeout /
+      704 covered). Confirms the three hardened files (index 100 %, server 85.71 %, notion-gateway
+      97.44 %) lifted the package. RESULTS.md refreshed with the per-file table. _(2026-07-15)_
     - **3-local-mirror enumerated worst-files DONE** (`server.ts`, `index.ts`, `notion-gateway.ts` —
-      the three the Step 2 audit flagged weak). A full-`local-mirror` re-audit (refresh RESULTS.md)
-      is the natural closer before moving to 3-scripts.
+      the three the Step 2 audit flagged weak). Remaining weak tier (NOT in the Step-2 worst-first
+      list, optional follow-up): `notion-transformers.ts` 57 % (50 survivors), `local-mirror.ts` 77 %
+      (61 survivors), `notion-url.ts` 74 %.
   - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
 - [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question
   "how do we stop badly-written tests from recurring?" — three layers, cheapest/most-deterministic first:

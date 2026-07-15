@@ -35,6 +35,27 @@ StrykerJS `node:test` runner). Scores are the durable test-quality signal the pr
 - `auto-commit.mjs` **47.5 %** (21 survivors)
 - → all three are the git/vault **side-effect** scripts, hard to unit-test.
 
+## Step 3 hardening — local-mirror re-audit — 2026-07-15
+
+After hardening the three Step-2 worst-files, a full-package re-audit lifts **local-mirror
+from 67.63 % → 78.69 %** (550 killed + 4 timeout / 704 covered, 150 survived). Per-file:
+
+| Area | File | Before | After | Note |
+|---|---|---|---|---|
+| entry | `index.ts` | 2.2 % | **100 %** | in-memory Client drives the 7 tools end-to-end |
+| entry | `server.ts` | 0 % | **85.71 %** | boot seams extracted; 2 equiv. = the entry-point guard |
+| adapters | `notion-gateway.ts` | 21.1 % | **97.44 %** | seams injected; 1 equiv. = `new Client({auth})` |
+| adapters | `notion-connector.ts` | — | 85.29 % | already decent |
+| adapters | (fs-*, system-clock) | — | 81–100 % | already decent |
+| domain | `local-mirror.ts` | — | **77.41 %** | 61 survivors — the big Domain Service, next tier |
+| lib | `notion-transformers.ts` | 57.3 % | **57.26 %** | 50 survivors — now the weakest, next tier |
+| lib | `notion-url.ts` | — | 74.47 % | 12 survivors |
+| lib | `fresh-env.ts` / `config.ts` | — | 62.5 % / 71.4 % | small |
+
+Enumerated Step-2 worst-files (`server.ts`, `index.ts`, `notion-gateway.ts`) are **done**.
+The remaining weak tier (`notion-transformers.ts` 57 %, `local-mirror.ts` 77 %, `notion-url.ts`
+74 %) was not flagged in the Step-2 worst-first list; hardening it is optional follow-up.
+
 ## How each package is run (and why)
 
 | Package | Isolation | Why |
