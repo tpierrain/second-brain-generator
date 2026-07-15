@@ -1,6 +1,14 @@
 import { readdir } from "fs/promises";
-import { resolve, relative } from "path";
+import { resolve, relative, sep } from "path";
 import { VAULT_DIR } from "./config.js";
+
+// The vault-relative path is a canonical document identifier: downstream consumers
+// (frontmatter-parser's folder→type table via `startsWith("topics/")`, its
+// `split("/")` filename extraction) all assume POSIX `/`. On Windows `path.relative`
+// yields `\`, which would silently break type detection and titles — so normalise to
+// forward slashes here, at the single source. `absolutePath` stays native (it must
+// remain openable by the filesystem).
+const toPosix = (p: string): string => p.split(sep).join("/");
 
 export interface ScannedFile {
   absolutePath: string;
@@ -39,7 +47,7 @@ async function walkDir(
     } else if (entry.name.endsWith(".md") && !EXCLUDE_NAMES.has(entry.name)) {
       files.push({
         absolutePath: fullPath,
-        relativePath: relative(rootDir, fullPath),
+        relativePath: toPosix(relative(rootDir, fullPath)),
       });
     }
   }

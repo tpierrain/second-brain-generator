@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile, rm } from "fs/promises";
 import { tmpdir } from "os";
-import { join } from "path";
+import { join, resolve } from "path";
 import { scanVault, type DirEntry } from "./document-scanner.js";
 
 function file(name: string): DirEntry {
@@ -29,8 +29,10 @@ test("returns the .md files found at the root", async () => {
 test("exposes both absolute and vault-relative paths", async () => {
   const readDir = fakeReadDir({ "/vault": [file("note.md")] });
   const [scanned] = await scanVault("/vault", readDir);
+  // absolutePath is the native resolved path (openable by fs) — computed the same way
+  // on any OS; relativePath is the POSIX-normalised vault-relative id.
   assert.deepEqual(scanned, {
-    absolutePath: "/vault/note.md",
+    absolutePath: resolve("/vault", "note.md"),
     relativePath: "note.md",
   });
 });
