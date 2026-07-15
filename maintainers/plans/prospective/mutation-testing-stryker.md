@@ -129,7 +129,16 @@ built-in `node --test`. Two realistic paths, in tension:
       `native-deps.test.ts`), `getDb`'s `if(!db)→if(true)` (harmless on a file-backed DB), and 4
       in `closeDb` (shutdown cleanup, no unit-observable contract) → effective 100 % on
       non-equivalents. _(2026-06-26)_
-    - [ ] then `embedder` / `index-manager` / `config`.
+    - [x] `embedder.ts` **34.6 % → 81.98 %** (89 killed + 2 timeout / 111) — extracted/exported the
+      pure network seams (`embedWithRetry`, `buildGeminiClient`, `shouldLogProgress`) + injectable
+      `sleep` on `EmbedDeps`; pinned request shape, empty-response → `[]`, the 429 backoff cadence
+      (20 s→40 s) and the once-per-50 heartbeat. The 20 survivors are all documented equivalents /
+      integration-only glue (real Gemini/quota wiring, real-timer `sleep`, cosmetic `console.error`
+      text, the unreachable post-loop `return []`, and `selectEmbedder`'s baseURL/apiKey defaults
+      landing in a private field observed only through an injected fetch it does not wire) → effective
+      91/91 = 100 % on non-equivalents. Also tuned `stryker.rag.config.mjs` (concurrency 4 / timeout)
+      to kill the false-timeout bogus-100 % trap — see RESULTS.md. _(2026-07-15 · `5502322`)_
+    - [ ] then `index-manager` / `config`.
   - [ ] **3-local-mirror** — harden `local-mirror/src/**` survivors (start `server.ts` @ 0 %).
   - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory)*.
 - [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question
