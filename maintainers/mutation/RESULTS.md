@@ -47,6 +47,10 @@ StrykerJS `node:test` runner). Scores are the durable test-quality signal the pr
 - **Concurrency must be tuned for big suites.** The 513-test `scripts` suite at Stryker's default
   13 concurrent runners → CPU oversubscription → **mass FALSE timeouts** (a bogus 99.97 % score).
   Fixed with `concurrency: 5`, `timeoutMS: 30000`, `timeoutFactor: 4` → genuine 97.27 %.
+  **`rag` hits the same trap** (the command runner re-runs the whole rag suite per mutant): hardening
+  `embedder` scored a bogus **100 %** at defaults (98/111 FALSE timeouts) vs an honest **81.98 %**
+  once tuned. `stryker.rag.config.mjs` now carries `concurrency: 4` / `timeoutMS: 30000` /
+  `timeoutFactor: 4` — a timeout there now means a real infinite loop, not a starved runner.
 - **Orphaned children.** Mutants that broke `child-cleanup` left `stub-mcp-server.mjs` fixtures
   spinning at 100 % CPU after the run. Kill leftovers: `pkill -f stub-mcp-server.mjs`.
 - **Stryker only mutates files under its project root** → all configs run from the **repo root**
