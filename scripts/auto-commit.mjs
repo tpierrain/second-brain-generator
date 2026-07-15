@@ -10,29 +10,64 @@
 // script location (not the hook's cwd).
 // ─────────────────────────────────────────────────────────────────────────────
 import { execFileSync } from "node:child_process";
+import { realpathSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+// Builds the real git runner bound to `repo`. `execFile` is injected (default:
+// execFileSync) so the ok/failure mapping is unit-testable without a real git.
+export function buildGit(repo, execFile = execFileSync) {
+  return (args) => {
+    try {
+      const out = execFile("git", args, {
+        cwd: repo,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      return { out: out ?? "", ok: true };
+    } catch (e) {
+      return { out: `${e.stdout ?? ""}${e.stderr ?? ""}`, ok: false };
+    }
+  };
+}
 
-function git(args) {
+export const COMMIT_MESSAGE = "auto: vault/claude sync";
+
+// Commit-only vault persistence: if the tree is dirty, stage everything and
+// commit (never pushes — the Stop hook does that once per turn). Returns
+// "committed" | "clean". `git` is the injected runner. NEVER throws for a clean
+// tree; a failing git runner is best-effort (the local commit is the safety net).
+export function attemptCommit({ git }) {
+  const dirty = git(["status", "--porcelain"]).out.trim().length > 0;
+  if (!dirty) return "clean";
+  git(["add", "."]);
+  git(["commit", "-m", COMMIT_MESSAGE]);
+  return "committed";
+}
+
+// Repo root derived from THIS module's location (one level up from scripts/),
+// not the hook's cwd. `metaUrl` is injected so it is testable.
+export function repoRoot(metaUrl) {
+  return resolve(dirname(fileURLToPath(metaUrl)), "..");
+}
+
+// Is THIS module the process entry point (invoked as the hook), vs merely
+// imported by a test? Compare REAL paths — import.meta.url is already symlink-
+// resolved by Node, so we realpath argv[1] too (macOS /var → /private/var).
+export function isEntryPoint(argv1, metaUrl) {
   try {
-    const out = execFileSync("git", args, {
-      cwd: REPO,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    return { out: out ?? "", ok: true };
-  } catch (e) {
-    return { out: `${e.stdout ?? ""}${e.stderr ?? ""}`, ok: false };
+    // A falsy/absent argv1 makes realpathSync throw → caught → false (imported case).
+    return realpathSync(argv1) === fileURLToPath(metaUrl);
+  } catch {
+    return false;
   }
 }
 
-const dirty = git(["status", "--porcelain"]).out.trim().length > 0;
-if (!dirty) process.exit(0);
-
-git(["add", "."]);
-git(["commit", "-m", "auto: vault/claude sync"]);
-// No push here — the Stop hook (auto-push.mjs) pushes pending commits once per
-// turn. The opt-in gate (secondbrain.autopush) + inherited-remote safety now
-// live there.
+// ── CLI entry (the actual PostToolUse hook) ──────────────────────────────────
+// Guarded so importing this module in tests does NOT run it. Commit-only; the
+// push moved to the Stop hook (auto-push.mjs). No explicit process.exit: the
+// work is fully synchronous (execFileSync), so Node exits 0 on its own — and
+// NOT exiting at import time keeps the module unit-testable under mutation.
+if (isEntryPoint(process.argv[1], import.meta.url)) {
+  attemptCommit({ git: buildGit(repoRoot(import.meta.url)) });
+}

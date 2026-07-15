@@ -98,9 +98,11 @@ built-in `node --test`. Two realistic paths, in tension:
     real tree let a `clear-example-notes` mutant delete the real `vault/` demo notes. rag/local-mirror
     run `inPlace` (non-destructive, files restored). Tune `concurrency`/timeout for big suites (the
     513-test scripts suite faked a 99.97 % via mass timeouts at default concurrency 13).
-- [ ] **Step 3 — Triage & kill surviving mutants.** For each survivor, decide: add the missing
-  assertion (the usual outcome), or mark it an accepted equivalent/ignored mutant with a reason. **TDD**
-  the new assertions (`tdd-discipline`); green-only commits.
+- [x] **Step 3 — Triage & kill surviving mutants.** _(2026-07-15)_ For each survivor, decide: add the
+  missing assertion (the usual outcome), or mark it an accepted equivalent/ignored mutant with a reason.
+  **TDD** the new assertions (`tdd-discipline`); green-only commits. **All three packages' enumerated
+  worst-files are now hardened** (3-rag, 3-local-mirror, 3-scripts done); the optional weak-tier
+  follow-ups (local-mirror `notion-transformers`/`local-mirror.ts`/`notion-url`) remain non-blocking.
   - **Attack order (Thomas, 2026-06-25): worst-first → `rag` → `local-mirror` → `scripts`.** Start with
     `rag` (lowest global score 57 %), 0 %-files first: `document-scanner`, `vault-watcher`, then
     `frontmatter-parser` (12 %), `chunker` (27 %). `rag`/`local-mirror` run `inPlace` (non-destructive);
@@ -200,7 +202,7 @@ built-in `node --test`. Two realistic paths, in tension:
       the three the Step 2 audit flagged weak). Remaining weak tier (NOT in the Step-2 worst-first
       list, optional follow-up): `notion-transformers.ts` 57 % (50 survivors), `local-mirror.ts` 77 %
       (61 survivors), `notion-url.ts` 74 %.
-  - [ ] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory —
+  - [x] **3-scripts** — harden `scripts/**` survivors *(disposable worktree mandatory —
     a `clear-example-notes` mutant deletes the real `vault/`; never reuse a worktree, its vault
     gets corrupted by run-1 mutants)*. Worst-first: `clear-example-notes` 28.6 %, `auto-push`
     41.4 %, `auto-commit` 47.5 % (the git/vault side-effect scripts).
@@ -222,7 +224,21 @@ built-in `node --test`. Two realistic paths, in tension:
       redundant `.trim()` under `Number()` (Number() already trims) + the 6 mutants inside the
       `import.meta.url` entry-point guard (only run when the file IS the process) → effective
       100 % on non-equivalents. _(2026-07-15)_
-    - [ ] `auto-commit.mjs` **47.5 %** (21 survivors).
+    - [x] `auto-commit.mjs` **47.5 % → 98.21 %** (55/56, 1 documented equivalent) —
+      extracted the top-level side-effect script into an injectable core (`buildGit`,
+      `attemptCommit({git})`, `repoRoot`, `isEntryPoint`, `COMMIT_MESSAGE`); unit-tested the
+      dirty/clean branches, the exact stage+commit commands (message included), the git-runner
+      mapping, and `isEntryPoint`. Fixed a latent macOS symlink bug in the entry guard
+      (`realpathSync` both sides — the tmpdir `/var`→`/private/var` symlink) and dropped the
+      redundant `process.exit(0)` (work is synchronous → Node exits 0 on its own; NOT exiting at
+      import keeps the module unit-testable under mutation, which is what kills the `isEntryPoint`
+      condition mutants). Kept the subprocess integration tests — they kill the entry-body
+      mutants a pure import cannot. The 1 survivor is the `if (isEntryPoint(...))→if(true)` guard
+      (only matters when the file IS the process) → effective 100 % on non-equivalents.
+      _(2026-07-15)_
+    - **3-scripts enumerated worst-files DONE** (`clear-example-notes` 100 %, `auto-push` 92.39 %,
+      `auto-commit` 98.21 %) — the only three files the Step-2 audit flagged weak. All of
+      `scripts/lib/**` was already 100 %, so `scripts/**` is now fully hardened.
 - [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question
   "how do we stop badly-written tests from recurring?" — three layers, cheapest/most-deterministic first:
   - [x] **Floor guard (runs every CI test pass, free): a sibling test is mandatory.** `rag/src/lib/lib-coverage-guard.test.ts`

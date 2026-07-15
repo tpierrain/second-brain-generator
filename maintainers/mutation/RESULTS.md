@@ -35,6 +35,22 @@ StrykerJS `node:test` runner). Scores are the durable test-quality signal the pr
 - `auto-commit.mjs` **47.5 %** (21 survivors)
 - → all three are the git/vault **side-effect** scripts, hard to unit-test.
 
+## Step 3 hardening — scripts worst-files — 2026-07-15
+
+The three git/vault side-effect scripts, hardened by extracting an injectable core
+(git runner / cwd / spawn behind a port) and TDD-ing the glue. Measured per file in a
+**fresh disposable worktree** (`--inPlace`) — never reused (a `clear-example-notes`
+mutant deletes the worktree's `vault/`, so run-1 corrupts run-2's baseline).
+
+| File | Before | After | Note |
+|---|---|---|---|
+| `clear-example-notes.mjs` | 28.6 % | **100 %** | 46/46, no equivalents — `runClear(argv, deps)` + `realClearDeps` |
+| `auto-push.mjs` | 41.4 % | **92.39 %** | 85/92, 7 equiv. (redundant `.trim()` under `Number()` + the `import.meta.url` guard) |
+| `auto-commit.mjs` | 47.5 % | **98.21 %** | 55/56, 1 equiv. (the `if (isEntryPoint(...))→if(true)` guard) |
+
+`scripts/lib/**` was already 100 % → **`scripts/**` is now fully hardened**. Enumerated
+Step-2 worst-files across all three packages are done (see the plan's Step 3).
+
 ## Step 3 hardening — local-mirror re-audit — 2026-07-15
 
 After hardening the three Step-2 worst-files, a full-package re-audit lifts **local-mirror
