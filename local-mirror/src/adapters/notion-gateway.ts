@@ -18,9 +18,21 @@ import {
 } from '../lib/notion-transformers.js';
 
 /** A row as the child-database transformer consumes it (raw Notion page slice). */
-interface NotionDatabaseRow {
+export interface NotionDatabaseRow {
   id: string;
   properties: Record<string, { type: string }>;
+}
+
+/** The slice of the Notion SDK client the database-row query depends on (injected for tests). */
+export interface NotionDbClient {
+  databases: { retrieve(args: { database_id: string }): Promise<unknown> };
+  dataSources: {
+    query(args: {
+      data_source_id: string;
+      start_cursor?: string;
+      page_size: number;
+    }): Promise<unknown>;
+  };
 }
 
 // B2 (R2-7a): resolve a `child_database` block id to its rows. Notion API 2025-09-03 split a
@@ -28,7 +40,10 @@ interface NotionDatabaseRow {
 // page through each data source. Falls back to querying the block id directly as a data source if
 // the retrieve response carries no `data_sources` (older shapes). Errors bubble to the transformer,
 // which degrades to a link rather than failing the page.
-async function queryNotionDatabaseRows(client: Client, databaseId: string): Promise<NotionDatabaseRow[]> {
+export async function queryNotionDatabaseRows(
+  client: NotionDbClient,
+  databaseId: string,
+): Promise<NotionDatabaseRow[]> {
   const db = (await client.databases.retrieve({ database_id: databaseId })) as unknown as {
     data_sources?: { id: string }[];
   };
