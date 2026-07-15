@@ -46,16 +46,14 @@ export function attemptPush({ git, sleep }) {
   }
 }
 
-// ── CLI entry (the actual Stop hook) ─────────────────────────────────────────
-// Guarded so importing this module in tests does NOT run it. Wires the real git
-// runner + a real blocking pause, then ALWAYS exits 0 (best-effort, ignores the
-// hook stdin). A failed push only prints a non-blocking warning.
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-  const git = (args) => {
+// ── CLI wiring (the real Stop hook seams, extracted so they are testable) ────
+// Builds the real git runner bound to `repo`. `execFile` is injected (default:
+// execFileSync) so the ok/failure mapping is unit-testable without a real git.
+export function buildGit(repo, execFile = execFileSync) {
+  return (args) => {
     try {
-      const out = execFileSync("git", args, {
-        cwd: REPO,
+      const out = execFile("git", args, {
+        cwd: repo,
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
       });
@@ -64,15 +62,41 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       return { out: `${e.stdout ?? ""}${e.stderr ?? ""}`, ok: false };
     }
   };
-  // Blocking pause (the hook runs synchronously, under a Claude Code timeout).
-  const sleep = (ms) =>
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
 
-  if (attemptPush({ git, sleep }) === "failed") {
-    process.stdout.write(
-      "\n⚠️  PUSH FAILED — local commits OK but not pushed. Check your network; " +
-        "the next turn will retry automatically (or run: git push).\n",
-    );
-  }
-  process.exit(0);
+// Blocking pause (the hook runs synchronously, under a Claude Code timeout).
+export const realSleep = (ms) =>
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+export const PUSH_FAILED_WARNING =
+  "\n⚠️  PUSH FAILED — local commits OK but not pushed. Check your network; " +
+  "the next turn will retry automatically (or run: git push).\n";
+
+// Runs the hook: attempt the push, print a non-blocking warning on failure.
+// ALWAYS returns 0 (best-effort). `write` is injected for testing.
+export function runHook({ git, sleep, write }) {
+  if (attemptPush({ git, sleep }) === "failed") write(PUSH_FAILED_WARNING);
+  return 0;
+}
+
+// Repo root derived from THIS module's location (one level up from scripts/),
+// not the hook's cwd. `metaUrl` is injected so it is testable.
+export function repoRoot(metaUrl) {
+  return resolve(dirname(fileURLToPath(metaUrl)), "..");
+}
+
+// Real stdout writer (forwards to process.stdout).
+export const realWrite = (s) => process.stdout.write(s);
+
+// The real hook wiring: a git runner bound to the repo root, the blocking sleep
+// and the real writer. Injected as one object into runHook at the entry point.
+export function realHookDeps(metaUrl) {
+  return { git: buildGit(repoRoot(metaUrl)), sleep: realSleep, write: realWrite };
+}
+
+// ── CLI entry (the actual Stop hook) ─────────────────────────────────────────
+// Guarded so importing this module in tests does NOT run it. Wires the real
+// git/sleep/write, then ALWAYS exits 0 (ignores the hook stdin).
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  process.exit(runHook(realHookDeps(import.meta.url)));
 }

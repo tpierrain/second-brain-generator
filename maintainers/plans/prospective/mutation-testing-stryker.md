@@ -211,7 +211,17 @@ built-in `node --test`. Two realistic paths, in tension:
       spawn arg shape, reindex-failure → 1, `--no-reindex` skip) + a vault-scope test (an
       exemple-tagged note OUTSIDE `vault/` is left untouched) + direct `realClearDeps` tests
       (console forwarding, real fn identity). _(2026-07-15)_
-    - [ ] `auto-push.mjs` **41.4 %** (51 survivors).
+    - [x] `auto-push.mjs` **41.4 % → 92.39 %** (85/92, 7 documented equivalents) —
+      extracted the untested Stop-hook CLI seams (`buildGit(repo, execFile)`, `realSleep`,
+      `runHook({git,sleep,write})`, `repoRoot(metaUrl)`, `realWrite`, `realHookDeps`) so the
+      real git-runner mapping (ok / stdout+stderr on failure / null→''), the warning glue and
+      the repo-root derivation are all unit-tested; rewrote the fake git to key on the FULL
+      command (`args.join(" ")`) so mutating any arg string (`--get`, `@{u}..HEAD`, …) is caught,
+      and mirrored real trailing-newline output to pin the `.trim()`s; added the retry-success
+      path (pause is exactly 3000ms) + the autopush-gating case. The 7 equivalents are the
+      redundant `.trim()` under `Number()` (Number() already trims) + the 6 mutants inside the
+      `import.meta.url` entry-point guard (only run when the file IS the process) → effective
+      100 % on non-equivalents. _(2026-07-15)_
     - [ ] `auto-commit.mjs` **47.5 %** (21 survivors).
 - [x] **Step 4 — Sustainable cadence + durable guardrails.** _(2026-06-25)_ Decided after the question
   "how do we stop badly-written tests from recurring?" — three layers, cheapest/most-deterministic first:
