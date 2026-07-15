@@ -18,10 +18,38 @@ export function resolvePath(
   return envValue && envValue.trim() ? resolve(envValue) : fallback;
 }
 
-const envPath = resolvePath(process.env.SBG_ENV_PATH, resolve(projectRoot, ".env"));
-if (existsSync(envPath)) {
-  config({ path: envPath });
+/** Injected I/O for {@link loadEnvFile} — real fs + dotenv by default, faked in tests. */
+export interface EnvLoadDeps {
+  existsSync: (path: string) => boolean;
+  loadConfig: (opts: { path: string; override: boolean }) => void;
 }
+
+const defaultEnvLoadDeps: EnvLoadDeps = {
+  existsSync,
+  loadConfig: (opts) => {
+    config(opts);
+  },
+};
+
+/**
+ * Loads a `.env` file into `process.env` — but ONLY if it exists (a missing file
+ * is a no-op, never a crash). `override` re-reads a key that was empty at startup
+ * (onboarding: key pasted after the MCP launched). Pure decision + injected I/O so
+ * the "load only if present, with the right path/override" glue is unit-testable.
+ */
+export function loadEnvFile(
+  path: string,
+  override = false,
+  deps: EnvLoadDeps = defaultEnvLoadDeps
+): void {
+  if (deps.existsSync(path)) deps.loadConfig({ path, override });
+}
+
+export const ENV_PATH = resolvePath(
+  process.env.SBG_ENV_PATH,
+  resolve(projectRoot, ".env")
+);
+loadEnvFile(ENV_PATH);
 
 export const VAULT_DIR = resolvePath(process.env.VAULT_DIR, resolve(projectRoot, "vault"));
 export const CACHE_DIR = resolvePath(
@@ -49,7 +77,7 @@ export function resolveKey(
 // (the case of the `.env` shipped with `GOOGLE_GEMINI_API_KEY=` empty → process.env freezes "").
 export function readGeminiKey(): string {
   return resolveKey(process.env.GOOGLE_GEMINI_API_KEY, () => {
-    if (existsSync(envPath)) config({ path: envPath, override: true });
+    loadEnvFile(ENV_PATH, true);
     return process.env.GOOGLE_GEMINI_API_KEY;
   });
 }
