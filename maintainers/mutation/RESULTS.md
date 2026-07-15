@@ -4,6 +4,8 @@
 > brain copy** (`scripts/lib/tracked-files.mjs` → `DEV_ONLY_PREFIXES` has `maintainers/`),
 > so neither the tooling nor these results are ever deployed into a generated brain.
 > See the plan: [`../plans/prospective/mutation-testing-stryker.md`](../plans/prospective/mutation-testing-stryker.md).
+> For **what the survivors taught us** (recurring shapes → durable rules), see the
+> retrospective: [`RETROSPECTIVE.md`](RETROSPECTIVE.md).
 
 ## Baseline run — 2026-06-23 (engine at v3.4.0, commit `49e46a9`)
 
@@ -35,6 +37,43 @@ StrykerJS `node:test` runner). Scores are the durable test-quality signal the pr
 - `auto-commit.mjs` **47.5 %** (21 survivors)
 - → all three are the git/vault **side-effect** scripts, hard to unit-test.
 
+## Step 3 hardening — scripts worst-files — 2026-07-15
+
+The three git/vault side-effect scripts, hardened by extracting an injectable core
+(git runner / cwd / spawn behind a port) and TDD-ing the glue. Measured per file in a
+**fresh disposable worktree** (`--inPlace`) — never reused (a `clear-example-notes`
+mutant deletes the worktree's `vault/`, so run-1 corrupts run-2's baseline).
+
+| File | Before | After | Note |
+|---|---|---|---|
+| `clear-example-notes.mjs` | 28.6 % | **100 %** | 46/46, no equivalents — `runClear(argv, deps)` + `realClearDeps` |
+| `auto-push.mjs` | 41.4 % | **92.39 %** | 85/92, 7 equiv. (redundant `.trim()` under `Number()` + the `import.meta.url` guard) |
+| `auto-commit.mjs` | 47.5 % | **98.21 %** | 55/56, 1 equiv. (the `if (isEntryPoint(...))→if(true)` guard) |
+
+`scripts/lib/**` was already 100 % → **`scripts/**` is now fully hardened**. Enumerated
+Step-2 worst-files across all three packages are done (see the plan's Step 3).
+
+## Step 3 hardening — local-mirror re-audit — 2026-07-15
+
+After hardening the three Step-2 worst-files, a full-package re-audit lifts **local-mirror
+from 67.63 % → 78.69 %** (550 killed + 4 timeout / 704 covered, 150 survived). Per-file:
+
+| Area | File | Before | After | Note |
+|---|---|---|---|---|
+| entry | `index.ts` | 2.2 % | **100 %** | in-memory Client drives the 7 tools end-to-end |
+| entry | `server.ts` | 0 % | **85.71 %** | boot seams extracted; 2 equiv. = the entry-point guard |
+| adapters | `notion-gateway.ts` | 21.1 % | **97.44 %** | seams injected; 1 equiv. = `new Client({auth})` |
+| adapters | `notion-connector.ts` | — | 85.29 % | already decent |
+| adapters | (fs-*, system-clock) | — | 81–100 % | already decent |
+| domain | `local-mirror.ts` | — | **77.41 %** | 61 survivors — the big Domain Service, next tier |
+| lib | `notion-transformers.ts` | 57.3 % | **94.87 %** | hardened 2026-07-15 (helpers exported + case-tested; 6 equiv.) |
+| lib | `notion-url.ts` | — | 74.47 % | 12 survivors |
+| lib | `fresh-env.ts` / `config.ts` | — | 62.5 % / 71.4 % | small |
+
+Enumerated Step-2 worst-files (`server.ts`, `index.ts`, `notion-gateway.ts`) are **done**.
+The remaining weak tier (`notion-transformers.ts` 57 %, `local-mirror.ts` 77 %, `notion-url.ts`
+74 %) was not flagged in the Step-2 worst-first list; hardening it is optional follow-up.
+
 ## How each package is run (and why)
 
 | Package | Isolation | Why |
@@ -47,6 +86,10 @@ StrykerJS `node:test` runner). Scores are the durable test-quality signal the pr
 - **Concurrency must be tuned for big suites.** The 513-test `scripts` suite at Stryker's default
   13 concurrent runners → CPU oversubscription → **mass FALSE timeouts** (a bogus 99.97 % score).
   Fixed with `concurrency: 5`, `timeoutMS: 30000`, `timeoutFactor: 4` → genuine 97.27 %.
+  **`rag` hits the same trap** (the command runner re-runs the whole rag suite per mutant): hardening
+  `embedder` scored a bogus **100 %** at defaults (98/111 FALSE timeouts) vs an honest **81.98 %**
+  once tuned. `stryker.rag.config.mjs` now carries `concurrency: 4` / `timeoutMS: 30000` /
+  `timeoutFactor: 4` — a timeout there now means a real infinite loop, not a starved runner.
 - **Orphaned children.** Mutants that broke `child-cleanup` left `stub-mcp-server.mjs` fixtures
   spinning at 100 % CPU after the run. Kill leftovers: `pkill -f stub-mcp-server.mjs`.
 - **Stryker only mutates files under its project root** → all configs run from the **repo root**

@@ -1,9 +1,25 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { aLocalMirror, aNotionPage } from './builder.js';
+import { aLocalMirror, aNotionPage, aNotionLocalMirror } from './builder.js';
 
 // Acceptance tests at the API port (ILocalMirror). `status` (PRD §9) reports a single
 // source's state — last sync, watermark, item count, lateness — without pulling anything.
+
+test('status resolves the RIGHT source by name when several are declared', async () => {
+  // With two declared sources, the lookup must match on the requested name — not just return
+  // the first declared source regardless.
+  const gss = aLocalMirror()
+    .withDeclaredSources(
+      aNotionLocalMirror({ name: 'team-a', title: 'Team A' }),
+      aNotionLocalMirror({ name: 'team-b', title: 'Team B' }),
+    )
+    .build();
+
+  const status = await gss.status('team-b');
+
+  assert.equal(status.name, 'team-b');
+  assert.equal(status.title, 'Team B');
+});
 
 test('status of a synced source reports watermark, item count and last sync status', async () => {
   const harness = aLocalMirror().withNotionPages(

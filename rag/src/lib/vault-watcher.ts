@@ -1,4 +1,4 @@
-import { watch, type FSWatcher } from "chokidar";
+import { watch, type FSWatcher, type ChokidarOptions } from "chokidar";
 import { VAULT_DIR } from "./config.js";
 
 export interface VaultWatcherOptions {
@@ -16,20 +16,35 @@ export interface VaultWatcherOptions {
 const IGNORED_SEGMENTS = [".cache", ".git", "node_modules"];
 
 /**
+ * True when `p` sits inside (or terminates on) an ignored segment — matched on
+ * full `/segment/` boundaries so a note like `.gitignore` is NOT mistaken for `.git`.
+ * Pure + unit-tested.
+ */
+export function isIgnoredPath(p: string): boolean {
+  return IGNORED_SEGMENTS.some(
+    (seg) => p.includes(`/${seg}/`) || p.endsWith(`/${seg}`)
+  );
+}
+
+/** Creates the underlying filesystem watcher — injectable so wiring is unit-testable. */
+export type WatchFactory = (dir: string, options: ChokidarOptions) => FSWatcher;
+
+const defaultWatch: WatchFactory = (dir, options) => watch(dir, options);
+
+/**
  * Thin I/O layer: a filesystem watcher (chokidar) on the vault that notifies on
  * every write. All the debounce/coalescing logic lives in `ReindexScheduler`
- * (tested separately) — here we just relay the event. Not unit-tested: pure I/O
- * glue on top of chokidar.
+ * (tested separately) — here we just relay the event.
  */
-export function startVaultWatcher(opts: VaultWatcherOptions): FSWatcher {
+export function startVaultWatcher(
+  opts: VaultWatcherOptions,
+  watchFactory: WatchFactory = defaultWatch
+): FSWatcher {
   const dir = opts.vaultDir ?? VAULT_DIR;
-  const watcher = watch(dir, {
+  const watcher = watchFactory(dir, {
     // The startup reindex already covers existing files → we only react to writes.
     ignoreInitial: true,
-    ignored: (p: string) =>
-      IGNORED_SEGMENTS.some(
-        (seg) => p.includes(`/${seg}/`) || p.endsWith(`/${seg}`)
-      ),
+    ignored: (p: string) => isIgnoredPath(p),
     persistent: true,
   });
   watcher.on("add", (p) => opts.onChange(p));

@@ -27,8 +27,13 @@ test('accepts an already-dashed id and leaves it canonical', () => {
   assert.equal(id, '0123abc0-b1c2-4d6e-8f0a-1b2c3d4e5f60');
 });
 
-test('throws when no page id can be found', () => {
-  assert.throws(() => extractPageId('https://www.notion.so/acme/no-id-here'));
+// A descriptive throw is the contract: a bare TypeError from a null-deref (or an empty
+// message) would leave the caller blind to WHICH url failed, so pin the wording.
+test('throws a descriptive error naming the offending url when no page id can be found', () => {
+  assert.throws(
+    () => extractPageId('https://www.notion.so/acme/no-id-here'),
+    /Cannot extract a Notion page id from:/,
+  );
 });
 
 // F6: the Notion API returns share URLs of the form `app.notion.com/p/<slug>-<id32>` that
@@ -74,6 +79,51 @@ test('absolutizes a relative Notion page-mention link `/<id32>` to www.notion.so
   );
 });
 
+// The relative match is anchored at BOTH ends (`^\/…$`): only a bare `/<id>` target is a
+// Notion mention. A hex run that merely appears after some other prefix, or a `/<id>/child`
+// deeper path, is a real site route and must be left alone.
+test('leaves a non-relative `foo/<id32>` path untouched (relative match anchored at start)', () => {
+  const url = 'foo/0123abc0b1c24d6e8f0a1b2c3d4e5f60';
+
+  assert.equal(canonicalizeNotionUrl(url), url);
+});
+
+test('leaves a deeper `/<id32>/child` path untouched (relative match anchored at end)', () => {
+  const url = '/0123abc0b1c24d6e8f0a1b2c3d4e5f60/child';
+
+  assert.equal(canonicalizeNotionUrl(url), url);
+});
+
+// The relative form also accepts the 36-char DASHED uuid; the output strips the dashes to the
+// canonical 32-hex slug notion.so expects.
+test('absolutizes a DASHED relative page-mention `/<uuid>` and strips its dashes', () => {
+  const url = '/0123abc0-b1c2-4d6e-8f0a-1b2c3d4e5f60';
+
+  assert.equal(canonicalizeNotionUrl(url), 'https://www.notion.so/0123abc0b1c24d6e8f0a1b2c3d4e5f60');
+});
+
+// The app.notion.com guard is anchored (`^https?://app.notion.com/`): a foreign URL that merely
+// EMBEDS an app.notion.com fragment is not a Notion share link and stays untouched. And the
+// scheme is optional-s (`https?`), so an http:// share URL is rewritten just like https://.
+test('leaves a non-Notion URL that merely embeds app.notion.com untouched (anchored at start)', () => {
+  const url = 'https://example.com/https://app.notion.com/p/Page-0123abc0b1c24d6e8f0a1b2c3d4e5f60';
+
+  assert.equal(canonicalizeNotionUrl(url), url);
+});
+
+test('canonicalizes an http:// (not https) app.notion.com share URL too', () => {
+  const url = canonicalizeNotionUrl(
+    'http://app.notion.com/p/Some-Page-0123abc0b1c24d6e8f0a1b2c3d4e5f60',
+  );
+
+  assert.equal(url, 'https://www.notion.so/0123abc0b1c24d6e8f0a1b2c3d4e5f60');
+});
+
+// Documented EQUIVALENT mutant (notion-url.ts:33 `canonical === url ? whole : …` → `false ? …`):
+// the `=== url` branch only returns the original matched slice `whole` as a micro-optimisation.
+// When `canonical === url`, the else branch rebuilds `](${canonical})`, which is byte-for-byte the
+// same string as `whole` — so no assertion can distinguish the two. Effective 46/46 on the
+// non-equivalent mutants.
 test('rewrites broken app.notion.com inline links in the body, preserving stable ones', () => {
   const md =
     'See [Spec](https://app.notion.com/p/Spec-0123abc0b1c24d6e8f0a1b2c3d4e5f60) ' +

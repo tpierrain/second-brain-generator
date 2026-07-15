@@ -49,15 +49,23 @@ const usage = new UsageTracker({
   reserveForPriority: QUERY_RESERVE,
 });
 
+/**
+ * Builds the Gemini client from a key, or throws the named, .env-pointing error
+ * the install flow relies on when the key is missing. Pure (no memoization, no
+ * env read) → testable; the construction is offline (no request until embed time).
+ */
+export function buildGeminiClient(key: string | undefined): GoogleGenAI {
+  if (!key) {
+    throw new Error("GOOGLE_GEMINI_API_KEY is not set in .env");
+  }
+  return new GoogleGenAI({ apiKey: key });
+}
+
 function getClient(): GoogleGenAI {
   if (!client) {
     // Re-reads .env on the fly: if the key was pasted after Claude Code's first
     // launch, the next request picks it up without reconnecting the MCP.
-    const key = readGeminiKey();
-    if (!key) {
-      throw new Error("GOOGLE_GEMINI_API_KEY is not set in .env");
-    }
-    client = new GoogleGenAI({ apiKey: key });
+    client = buildGeminiClient(readGeminiKey());
   }
   return client;
 }
@@ -66,10 +74,21 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function embedWithRetry(
+/** A progress heartbeat fires once every 50 embedded chunks (i is 0-based). */
+export function shouldLogProgress(i: number): boolean {
+  return (i + 1) % 50 === 0;
+}
+
+/**
+ * Embeds one text with a bounded 429-retry/backoff loop. `sleepFn` is injectable
+ * so the backoff is testable without real wall-clock delays. Non-rate-limit errors
+ * (and a rate-limit that outlasts the retries) propagate; an empty response → [].
+ */
+export async function embedWithRetry(
   ai: GoogleGenAI,
   text: string,
-  maxRetries = 3
+  maxRetries = 3,
+  sleepFn: (ms: number) => Promise<void> = sleep
 ): Promise<number[]> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -86,7 +105,7 @@ async function embedWithRetry(
         console.error(
           `[embedder] Rate limit hit, waiting ${delay / 1000}s (attempt ${attempt + 1}/${maxRetries})...`
         );
-        await sleep(delay);
+        await sleepFn(delay);
         continue;
       }
       throw err;
@@ -103,14 +122,20 @@ export interface QuotaGuard {
   consumePriority(n?: number): void;
 }
 
-/** Injectable embedder dependencies (network + quota), stubbable in tests. */
+/** Injectable embedder dependencies (network + quota + pacing), stubbable in tests. */
 export interface EmbedDeps {
   usage: QuotaGuard;
   embedOne: (text: string) => Promise<number[]>;
+  /** Inter-document pause (the 80-calls/min throttle); injectable to avoid real waits. */
+  sleep: (ms: number) => Promise<void>;
 }
 
 function defaultDeps(): EmbedDeps {
-  return { usage, embedOne: (text) => embedWithRetry(getClient(), text) };
+  return {
+    usage,
+    embedOne: (text) => embedWithRetry(getClient(), text),
+    sleep,
+  };
 }
 
 /**
@@ -141,10 +166,10 @@ export class GeminiEmbedder implements Embedder {
       allEmbeddings.push(embedding);
 
       if (i < texts.length - 1) {
-        await sleep(DELAY_MS);
+        await this.deps.sleep(DELAY_MS);
       }
 
-      if ((i + 1) % 50 === 0) {
+      if (shouldLogProgress(i)) {
         console.error(`[embedder] ${i + 1}/${texts.length} chunks embedded...`);
       }
     }

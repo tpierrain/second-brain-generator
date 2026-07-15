@@ -26,35 +26,48 @@ export function clearExamples(rootDir) {
   return clearExampleNotes(vaultDir);
 }
 
-function main(argv) {
-  const root = process.cwd();
+// Real wiring for runClear — the actual side effects, injected so the glue is
+// unit-testable (spawnSync/console/cwd/platform behind a port).
+export const realClearDeps = {
+  cwd: () => process.cwd(),
+  clear: clearExamples,
+  spawnSync,
+  platform: process.platform,
+  log: (...a) => console.log(...a),
+  error: (...a) => console.error(...a),
+};
+
+// Deletes the example notes and re-indexes the RAG (unless --no-reindex).
+// Returns the process exit code. All side effects come through `deps`.
+export function runClear(argv, deps = realClearDeps) {
+  const root = deps.cwd();
   const noReindex = argv.includes("--no-reindex");
 
-  const deleted = clearExamples(root);
+  const deleted = deps.clear(root);
   if (deleted.length === 0) {
-    console.log("Nothing to do: no example notes found (already removed).");
+    deps.log("Nothing to do: no example notes found (already removed).");
     return 0;
   }
-  for (const f of deleted) console.log(`  🗑️  removed ${f}`);
-  console.log(`✓ ${deleted.length} example note(s) removed.`);
+  for (const f of deleted) deps.log(`  🗑️  removed ${f}`);
+  deps.log(`✓ ${deleted.length} example note(s) removed.`);
 
   if (noReindex) return 0;
 
-  const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
-  const r = spawnSync(NPM, ["run", "--silent", "reindex"], {
+  const NPM = deps.platform === "win32" ? "npm.cmd" : "npm";
+  const r = deps.spawnSync(NPM, ["run", "--silent", "reindex"], {
     cwd: join(root, "rag"),
     stdio: "inherit",
     // npm.cmd needs a shell since Node ≥ 18.20 (CVE-2024-27980) or EINVAL; no-op POSIX (ADR 0031).
-    shell: needsShell(NPM, process.platform),
+    shell: needsShell(NPM, deps.platform),
   });
   if (r.status !== 0) {
-    console.error("✗ re-index failed — run it by hand:  cd rag && npm run reindex");
+    deps.error("✗ re-index failed — run it by hand:  cd rag && npm run reindex");
     return 1;
   }
-  console.log("✓ RAG re-indexed — your brain has forgotten the example notes.");
+  deps.log("✓ RAG re-indexed — your brain has forgotten the example notes.");
   return 0;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  process.exit(main(process.argv.slice(2)));
+  process.exit(runClear(process.argv.slice(2)));
 }

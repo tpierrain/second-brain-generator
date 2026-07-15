@@ -23,6 +23,11 @@ test('setting up a connectable source declares it and runs a first sync', async 
   const result = await gss.setupSource(aSetupRequest());
 
   assert.equal(result.ok, true);
+  // The success message walks the user through what happened, step by step.
+  assert.match(result.message, /Source "team-a" set up: scope confirmed \(1 page\(s\) in the zone\)/);
+  assert.match(result.message, /first sync ok — 1 written, 0 unchanged/);
+  assert.match(result.message, /Files live under mirrors\/team-a\//);
+  assert.match(result.message, /clickable citations/);
   const declared = await harness.declaredSources();
   assert.equal(declared.length, 1, 'the source must be written to the config file');
   assert.equal(declared[0].name, 'team-a');
@@ -39,6 +44,10 @@ test('setting up a zone whose root is not connected returns a clear message and 
 
   assert.equal(result.ok, false);
   assert.match(result.message, /not connected/i);
+  // The message tells the user exactly how to fix it: connect the root, then re-run setup.
+  assert.match(result.message, /Connections → add your\s+integration/);
+  assert.match(result.message, /run setup again/);
+  assert.match(result.message, /Access cascades over the whole sub-tree/);
   assert.equal((await harness.declaredSources()).length, 0, 'a failed scope test declares nothing');
   assert.equal(harness.vaultFiles().size, 0, 'no .md written when the scope test fails');
 });
@@ -52,7 +61,10 @@ test('setting up a zone whose token is invalid distinguishes auth error from "0 
   const result = await gss.setupSource(aSetupRequest());
 
   assert.equal(result.ok, false);
-  assert.match(result.message, /401|valid .*token/i);
+  // The error surfaces the connector's own message AND names the token env var + fix.
+  assert.match(result.message, /Could not reach the "team-a" zone: notion: 401 unauthorized/);
+  assert.match(result.message, /"GOLDEN_TEAM_A_NOTION_TOKEN" holds a valid Read-content token/);
+  assert.match(result.message, /connected to the integration in Notion \(••• → Connections\)/);
   assert.doesNotMatch(result.message, /returned 0 pages/, 'an auth error is not "root not connected"');
   assert.equal((await harness.declaredSources()).length, 0, 'a failed scope test declares nothing');
 });

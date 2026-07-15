@@ -42,6 +42,10 @@ const DEV_ONLY_PREFIXES = [
   // (checkNode). Pure launcher-side, like installer.mjs — useless in a brain.
   // Covers the .mjs AND its .test.mjs via the prefix.
   "scripts/lib/node-compat",
+  // assert-matcher-lint: a maintainer-side test-quality guard (flags loose
+  // assert.throws/rejects). Pure dev tooling, useless in a brain. Covers the .mjs
+  // AND its .test.mjs via the prefix.
+  "scripts/lib/assert-matcher-lint",
   "rag/scripts/",
   // Localized artefact sources (constitution, skills, demo vault) live under
   // templates/<locale>/. They are NOT bulk-copied: the installer overlays only

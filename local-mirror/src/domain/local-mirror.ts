@@ -359,19 +359,19 @@ function unknownReport(checkName: string, detail: string): HealthReport {
 }
 
 /** Aggregate verdict: any broken → broken; else any unknown → unknown; else ok (ADR 0030). */
-function aggregateHealth(checks: HealthCheckEntry[]): HealthReport['status'] {
+export function aggregateHealth(checks: HealthCheckEntry[]): HealthReport['status'] {
   if (checks.some((c) => c.status === 'broken')) return 'broken';
   if (checks.some((c) => c.status === 'unknown')) return 'unknown';
   return 'ok';
 }
 
 /** A source that threw during the fan-out — reported failed, never aborting the batch. */
-function failedReport(name: string): SyncReport {
+export function failedReport(name: string): SyncReport {
   return { name, status: 'failed', written: 0, deleted: 0, unchanged: 0 };
 }
 
 /** Aggregate the per-source reports into the `sync("all")` summary (sums + worst-of status). */
-function aggregateReports(sources: SyncReport[]): SyncReport {
+export function aggregateReports(sources: SyncReport[]): SyncReport {
   const sum = (pick: (r: SyncReport) => number) => sources.reduce((acc, r) => acc + pick(r), 0);
   return {
     name: 'all',
@@ -384,7 +384,7 @@ function aggregateReports(sources: SyncReport[]): SyncReport {
 }
 
 /** `ok` iff every source is ok; `failed` iff every source failed; otherwise `partial`. */
-function aggregateStatus(sources: SyncReport[]): SyncStatus {
+export function aggregateStatus(sources: SyncReport[]): SyncStatus {
   if (sources.length === 0) return 'ok';
   if (sources.every((r) => r.status === 'ok')) return 'ok';
   if (sources.every((r) => r.status === 'failed')) return 'failed';
@@ -392,7 +392,7 @@ function aggregateStatus(sources: SyncReport[]): SyncStatus {
 }
 
 /** The max `last_edited_time` over a perimeter (the watermark), or null if it is empty (PRD §16). */
-function maxLastEditedTime(items: readonly { lastEditedTime: string }[]): string | null {
+export function maxLastEditedTime(items: readonly { lastEditedTime: string }[]): string | null {
   let max: string | null = null;
   for (const item of items) {
     if (max === null || item.lastEditedTime > max) max = item.lastEditedTime;
@@ -417,12 +417,12 @@ export function toSourceState(
 }
 
 /** The source's stable Notion root page id — from prior state, else extracted from the URL. */
-function rootPageIdOf(config: LocalMirrorConfig, previous: PersistedState | null): string {
+export function rootPageIdOf(config: LocalMirrorConfig, previous: PersistedState | null): string {
   return previous?.rootPageId ?? extractPageId(config.connector.config.root_page_url);
 }
 
 /** Assembles a declared config from the onboarding request — the token's env-var name only (§11). */
-function configFromRequest(req: SetupRequest): LocalMirrorConfig {
+export function configFromRequest(req: SetupRequest): LocalMirrorConfig {
   return {
     name: req.name,
     title: req.title,
@@ -436,6 +436,6 @@ function configFromRequest(req: SetupRequest): LocalMirrorConfig {
 }
 
 /** A readable message from a thrown value, never leaking a token (connectors name the env var). */
-function errorMessage(error: unknown): string {
+export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }

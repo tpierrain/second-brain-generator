@@ -15,6 +15,14 @@ export default {
   mutate: ['rag/src/lib/*.ts', '!rag/src/lib/*.test.ts'],
   inPlace: true,
   coverageAnalysis: 'off',
+  // Tuned like the scripts config: the command runner re-runs the WHOLE rag suite per
+  // mutant, so Stryker's default 13 runners over-subscribe the CPU and inflate genuine
+  // kills into FALSE timeouts (embedder scored a bogus 100% at defaults — 98/111 timed
+  // out — vs an honest 81.98% here). Fewer runners + a generous timeout keep timeouts
+  // meaning "real infinite loop", not "starved runner". See RESULTS.md gotchas.
+  concurrency: 4,
+  timeoutMS: 30000,
+  timeoutFactor: 4,
   tempDirName: 'maintainers/mutation/.stryker-tmp',
   reporters: ['clear-text', 'progress', 'html'],
   htmlReporter: { fileName: 'maintainers/mutation/reports/mutation-rag.html' },

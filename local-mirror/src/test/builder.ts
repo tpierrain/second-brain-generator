@@ -29,10 +29,12 @@ class LocalMirrorBuilder {
   private enumerationError: string | undefined;
   /** When true, the sidecar state store cannot be read (a corrupt/unreachable store). */
   private unreachableStore = false;
+  /** When true, the config store itself cannot be read (health-check "config unreadable"). */
+  private unreadableConfig = false;
   /** Stable reference so tests can inspect the vault after build()/sync(). */
   private readonly vault = new RecordingVaultWriter();
   /** Stable reference so tests can inspect what `setup_source` declared. */
-  private readonly configs = new InMemoryConfigStore(this.declared);
+  private readonly configs = new InMemoryConfigStore(this.declared, () => this.unreadableConfig);
 
   /** Declare local mirrors, as if already written to the config file. */
   withDeclaredSources(...configs: LocalMirrorConfig[]): this {
@@ -95,6 +97,12 @@ class LocalMirrorBuilder {
   /** Make the sidecar state store unreadable — a corrupt/unreachable mirror store. */
   withUnreachableStore(): this {
     this.unreachableStore = true;
+    return this;
+  }
+
+  /** Make the config store itself throw on read — the health-check "config unreadable" path. */
+  withUnreadableConfig(): this {
+    this.unreadableConfig = true;
     return this;
   }
 
@@ -178,8 +186,12 @@ export function aNotionLocalMirror(
 }
 
 class InMemoryConfigStore implements IConfigStore {
-  constructor(private readonly configs: LocalMirrorConfig[]) {}
+  constructor(
+    private readonly configs: LocalMirrorConfig[],
+    private readonly unreadable: () => boolean = () => false,
+  ) {}
   async loadAll(): Promise<LocalMirrorConfig[]> {
+    if (this.unreadable()) throw new Error('config file unreadable (EACCES)');
     return [...this.configs];
   }
   async upsert(config: LocalMirrorConfig): Promise<void> {
