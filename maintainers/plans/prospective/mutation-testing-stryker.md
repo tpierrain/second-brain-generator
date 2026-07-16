@@ -59,7 +59,10 @@ unchecked box below.
   TDD baby-steps, 6 engraved reflexes (+ reflex #6 = extract a pure seam when I/O glue resists):
   - [ ] `health-check.ts` 63.25 % (43 survivors — most in the package)
   - [ ] `usage-tracker.ts` 55.88 % (30)
-  - [ ] `citation-renderer.ts` 45.45 % (18 — lowest score)
+  - [x] `citation-renderer.ts` 45.45 % → **100 %** (33/33 killed, 0 survived) _(2026-07-16 · uncommitted)_
+    — 7 hardening tests (reflexes #2/#3/#4/#5): verbatim relay banner + `some`/`every` on a mixed set,
+    exact 1./2. numbering + `---` join separator, no-noise no-mirror prefix, the 500-char slice/ellipsis
+    boundary (500 vs 501), a byte-for-byte single-block assertion, and a tab (`%09`) pinning the hex zero-pad.
   - [ ] `reindex-lock.ts` 75.34 % (18)
   - [ ] `status-report.ts` 78.87 % (15)
   - Ceiling ~96 % (documented equivalents can't be killed — do NOT chase 100 %).
