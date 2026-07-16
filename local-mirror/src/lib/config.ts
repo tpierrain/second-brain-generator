@@ -29,8 +29,26 @@ export function resolveEnvPath(): string {
   return resolvePath(process.env.SBG_ENV_PATH, resolve(projectRoot, '.env'));
 }
 
-const envPath = resolveEnvPath();
-if (existsSync(envPath)) loadDotenv({ path: envPath });
+/** DI seam for the boot-time `.env` load, so the composition-root glue is unit-testable. */
+export interface EnvLoadDeps {
+  existsSync: (p: string) => boolean;
+  loadDotenv: (opts: { path: string }) => void;
+}
+const defaultEnvLoadDeps: EnvLoadDeps = { existsSync, loadDotenv: (opts) => loadDotenv(opts) };
+
+/**
+ * Loads the `.env` at `path` into `process.env` iff it exists. Returns whether it loaded.
+ * Extracted so the "test the glue too" convention applies to this side-effecting boot line.
+ */
+export function loadEnvIfPresent(path: string, deps: EnvLoadDeps = defaultEnvLoadDeps): boolean {
+  if (deps.existsSync(path)) {
+    deps.loadDotenv({ path });
+    return true;
+  }
+  return false;
+}
+
+loadEnvIfPresent(resolveEnvPath());
 
 /** Vault root — same default as the RAG (`<root>/vault`), overridable via VAULT_DIR. */
 export const VAULT_DIR = resolvePath(process.env.VAULT_DIR, resolve(projectRoot, 'vault'));

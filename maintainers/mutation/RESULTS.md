@@ -16,11 +16,48 @@
 |---|---|---|---|
 | **rag** | **90.42 %** | 2026-07-16 (post-B2/B3) | [re-audit #2](#full-rag-re-audit-2--2026-07-16-post-b2b3-hardening) — production-only |
 | **scripts** (harness) | **97.27 %** | 2026-06-23 baseline | 3 weak files since hardened to 92–100 % (no full re-audit; `lib/**` already 100 %) |
-| **local-mirror** | **78.69 %** | 2026-07-15 | [re-audit](#step-3-hardening--local-mirror-re-audit--2026-07-15) |
+| **local-mirror** | **95.63 %** | 2026-07-16 (post-B4) | [re-audit](#full-local-mirror-re-audit--2026-07-16-post-b4) — the 78.69 % closer below is superseded |
 
-Pinned to the release that ships the hardened tests: **v3.4.2**.
+Pinned to the release that ships the hardened tests: **v3.4.2** (local-mirror pinned at 78.69 % there —
+its tag-time snapshot; the B4 + optional-weak-tier gains below land in `main` after v3.4.2).
 
 ---
+
+## Full `local-mirror` re-audit — 2026-07-16 (post-B4)
+
+**Current `local-mirror` score: 95.63 %** (675 killed + 4 timeout / 710 covered, 31 survived,
+0 no-coverage). Run at `concurrency: 4` (honest timeouts). This closes the package: two effects
+lifted it from the 78.69 % closer below, which was measured *before* both hardening waves had landed
+as an aggregate:
+
+- **the optional weak tier** (`local-mirror.ts` → 98.52 %, `notion-transformers.ts` → 94.87 %,
+  `notion-url.ts` → 97.87 %), hardened 2026-07-15 but never re-aggregated;
+- **B4** — the last two small files: `config.ts` **71.43 % → 100 %** and `fresh-env.ts`
+  **62.5 % → 100 %** (see the plan's B4 for the seams/tests).
+
+Per-file, worst-first on the remaining survivors:
+
+| File | Score | Survived | Note |
+|---|---|---|---|
+| `fs-state-store.ts` | 81.82 % | 4 | never hardened (small fs adapter) |
+| `notion-connector.ts` | 85.29 % | 5 | already decent |
+| `server.ts` | 85.71 % | 2 (+2 t/o) | **hardened** — the entry-point guard equivalents |
+| `fs-vault-writer.ts` | 87.50 % | 1 | never hardened |
+| `strip-volatile-urls.ts` | 89.19 % | 4 | never hardened |
+| `content-hash.ts` | 80.00 % | 1 | leaf, 5 mutants |
+| `fs-config-store.ts` | 93.75 % | 2 | already decent |
+| `notion-transformers.ts` | 94.87 % | 6 | **hardened** — documented equivalents |
+| `notion-gateway.ts` | 97.44 % | 1 | **hardened** — `new Client({auth})` equivalent |
+| `notion-url.ts` | 97.87 % | 1 | **hardened** — documented equivalent |
+| `local-mirror.ts` | 98.52 % | 4 (+2 t/o) | **hardened** — documented equivalents |
+| `config.ts` | **100.00 %** | 0 | **hardened B4** |
+| `fresh-env.ts` | **100.00 %** | 0 | **hardened B4** |
+| `index.ts` | 100.00 % | 0 | **hardened** |
+| `reconcile.ts` / `markdown.ts` / `system-clock.ts` | 100.00 % | 0 | full |
+
+The residual survivors are small never-hardened leaves (`fs-state-store`, `strip-volatile-urls`,
+`content-hash`, `fs-vault-writer`) plus documented equivalents in the hardened files — all above the
+80 % `high` threshold. No further tier planned.
 
 ## Full `rag` re-audit #2 — 2026-07-16 (post-B2/B3 hardening)
 
@@ -118,6 +155,10 @@ chasing equivalents). *(Done — see re-audit #2 above: 90.42 %.)*
 
 ## Step 3 hardening — local-mirror re-audit — 2026-07-15
 
+> ⚠️ **SUPERSEDED** by [Full `local-mirror` re-audit — 2026-07-16 (post-B4)](#full-local-mirror-re-audit--2026-07-16-post-b4)
+> (**95.63 %**). This 78.69 % snapshot predates the optional weak tier + B4 landing as an aggregate;
+> it stays as the v3.4.2 tag-time record.
+
 After hardening the three Step-2 worst-files, a full-package re-audit lifts **local-mirror
 from 67.63 % → 78.69 %** (550 killed + 4 timeout / 704 covered, 150 survived). Per-file:
 
@@ -159,8 +200,8 @@ Step-2 worst-files across all three packages are done (see the plan's Step 3).
 > `rag` score after the weak-tier hardening (B3), read **[Full `rag` re-audit #2 — 2026-07-16
 > (post-B2/B3)](#full-rag-re-audit-2--2026-07-16-post-b2b3-hardening)** (**82.59 % → 90.42 %**,
 > production-only). The earlier 57.23 % → 82.59 % closer is itself superseded (it still mutated the
-> `fake-embedder` test double). For local-mirror see the re-audit above (67.63 % → 78.69 %). Do not
-> quote the baseline numbers as the current state.
+> `fake-embedder` test double). For local-mirror see the re-audit above (67.63 % → 78.69 % → **95.63 %**
+> post-B4). Do not quote the baseline numbers as the current state.
 
 Faithful scope: every mutant re-runs the **whole package suite** (command runner, no
 StrykerJS `node:test` runner). Scores are the durable test-quality signal the project lacked.
