@@ -135,9 +135,11 @@ test("buildRagInstallInvocation win32: writes the self-heal block into rag/ and 
   // first newline (the install was silently skipped, yet exit 0) — and a long PATH
   // trips the line-length limit. So we materialise the self-heal block + npm install
   // into a real .cmd file and execute that. Crucially the file goes INTO rag/ and is
-  // invoked by a SPACE-FREE relative name (`cmd /c sbg-rag-install.cmd`), with the
-  // caller setting cwd=rag/ — so a brain path containing spaces (C:\Users\John Doe\…)
-  // can't break cmd's argument splitting. The fs is injected so the seam stays pure.
+  // invoked by a SPACE-FREE, PATH-QUALIFIED relative name (`cmd /c .\sbg-rag-install.cmd`),
+  // with the caller setting cwd=rag/ — so a brain path containing spaces (C:\Users\John
+  // Doe\…) can't break cmd's argument splitting, AND a hardened box with
+  // NoDefaultCurrentDirectoryInExePath set still resolves it (a BARE name is not searched
+  // in cwd there → bug B1). The fs is injected so the seam stays pure.
   let writtenDir, written;
   const io = {
     writeScript: (dir, content) => {
@@ -149,7 +151,7 @@ test("buildRagInstallInvocation win32: writes the self-heal block into rag/ and 
   };
   const { command, args } = buildRagInstallInvocation("win32", "C:\\Users\\John Doe\\brain\\rag", io);
   assert.equal(command, "cmd");
-  assert.deepEqual(args, ["/c", "sbg-rag-install.cmd"]); // relative, space-free
+  assert.deepEqual(args, ["/c", ".\\sbg-rag-install.cmd"]); // relative, space-free, cwd-qualified
   assert.equal(writtenDir, "C:\\Users\\John Doe\\brain\\rag"); // file lands inside rag/
   // The materialised script still carries the SAME self-heal block as launch.cmd
   // (ADR 0021-A single source of truth) followed by the install.

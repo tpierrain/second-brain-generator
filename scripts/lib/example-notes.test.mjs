@@ -24,6 +24,13 @@ test("isExampleNote — false without frontmatter", () => {
   assert.equal(isExampleNote(noFm), false);
 });
 
+test("isExampleNote — true with CRLF frontmatter (Windows line endings)", () => {
+  // A real Windows checkout carries CRLF, so the frontmatter delimiters are
+  // `---\r\n` — the LF-only `^---\n` regex missed them → the purge was a silent
+  // no-op on Windows (bug B3). Fixtures above are LF, so they never caught it.
+  assert.equal(isExampleNote(fmExemple.replace(/\n/g, "\r\n")), true);
+});
+
 function makeVault() {
   const dir = mkdtempSync(join(tmpdir(), "vault-ex-"));
   mkdirSync(join(dir, "topics"), { recursive: true });

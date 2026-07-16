@@ -11,7 +11,7 @@ import { join } from "node:path";
 
 // True if the Markdown frontmatter contains an `exemple` tag.
 export function isExampleNote(content) {
-  const fm = content.match(/^---\n([\s\S]*?)\n---/);
+  const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!fm) return false;
   const tags = fm[1].match(/^tags:\s*\[([^\]]*)\]/m);
   if (!tags) return false;

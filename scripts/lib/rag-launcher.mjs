@@ -159,8 +159,10 @@ const realInstallIo = {
 // killing the install-node ≠ runtime-node ABI skew (ADR 0021-A). Returns
 // {command, args, cleanup} for child_process; run it with cwd = ragDir, then call
 // cleanup() (a no-op on POSIX). On win32 the self-heal block + `npm install` are
-// written to a real .cmd inside rag/ and invoked by a space-free RELATIVE name
-// (NOT passed as a multi-line `cmd /c` argument, which cmd silently truncates
+// written to a real .cmd inside rag/ and invoked by a space-free, cwd-qualified
+// relative name (`.\sbg-rag-install.cmd`, NOT a bare name — a hardened box with
+// NoDefaultCurrentDirectoryInExePath set won't search cwd for a bare name; NOT
+// passed as a multi-line `cmd /c` argument either, which cmd silently truncates
 // after the first newline — the install was skipped yet exited 0; and an absolute
 // temp path could carry spaces). `io` is injected for testability; reuses
 // pathPrependCmd() so the self-heal block stays the single source of truth.
@@ -168,7 +170,11 @@ export function buildRagInstallInvocation(platform, ragDir, io = realInstallIo) 
   if (platform === "win32") {
     const script = `@echo off\r\n${pathPrependCmd()}\r\nnpm install --silent\r\n`;
     const name = io.writeScript(ragDir, script);
-    return { command: "cmd", args: ["/c", name], cleanup: () => io.removeScript(ragDir, name) };
+    // Qualify with `.\` (not a bare name): on a hardened box where
+    // NoDefaultCurrentDirectoryInExePath is set, cmd does NOT search cwd for a bare
+    // name → the install would fail. An explicit relative path is always resolved
+    // against cwd (=rag/). Still space-free, so `John Doe` paths stay safe (B1).
+    return { command: "cmd", args: ["/c", `.\\${name}`], cleanup: () => io.removeScript(ragDir, name) };
   }
   return {
     command: "/bin/sh",
