@@ -40,17 +40,17 @@
         `sync()` acquires → skips (`status: 'skipped'`) if held by another live process; releases in
         `finally`. 6 unit tests (`fs-sync-lock.test.ts`) + 1 acceptance. Lockfiles gitignored. _(2026-07-16)_
   - [x] 1c — Suite green (**177 pass**) + `tsc` clean. _(2026-07-16)_
-- [ ] **Step 2 — Scheduler (Outside-in TDD, injectable clock)**
-  - [ ] 2a — Introduce an injectable **timer/clock SPI port** so ticks fire synchronously in tests (no
-        real 5-min waits) — keep the deterministic test seam (ADR 0009).
-  - [ ] 2b — RED acceptance (Builder → domain): given an interval and a fake clock, when K ticks elapse,
-        then `check_freshness` is called each tick and `sync` is called **only** for `behind` sources.
-  - [ ] 2c — GREEN: an `AutoSyncScheduler` orchestrating the existing `checkFreshness` + `sync` (no new
-        Notion logic — reuse the engine).
-  - [ ] 2d — Behind-only assertion: a non-behind source triggers **no** `sync`, **no** write, **no** toast.
-  - [ ] 2e — Fail-loud: a tick that throws (401/429/network) logs to stderr and leaves state `partial`;
-        the scheduler **keeps ticking** (one bad tick doesn't kill the loop).
-  - [ ] 2f — Suite green + `tsc`.
+- [x] **Step 2 — Scheduler (Outside-in TDD, injectable clock)** _(2026-07-16)_
+  - [x] 2a — Injectable `setTimer`/`clearTimer` seam on `AutoSyncScheduler` → ticks fire synchronously
+        in tests via a `fakeTimer()` (no real 5-min waits), deterministic (ADR 0009). _(2026-07-16)_
+  - [x] 2b — RED→GREEN acceptance (Builder → domain, recording proxy): a tick calls `checkFreshness`
+        for every source and `sync` **only** for the `behind` one. _(2026-07-16)_
+  - [x] 2c — GREEN: `src/auto-sync-scheduler.ts` orchestrates the existing `checkFreshness` + `sync`,
+        no new Notion logic. _(2026-07-16)_
+  - [x] 2d — Behind-only assertion: an up-to-date source is checked but **not** synced (no write). _(2026-07-16)_
+  - [x] 2e — Fail-soft: a source that throws (and even a `listSources` failure) is logged to stderr and
+        skipped; the scheduler **keeps ticking** (re-arm in `finally`). _(2026-07-16)_
+  - [x] 2f — Suite green (**181 pass**) + `tsc` clean. _(2026-07-16)_
 - [ ] **Step 3 — Config & lifecycle (wire into the server)**
   - [ ] 3a — Config: `GOLDEN_SOURCE_SYNC_INTERVAL` (seconds, **default 300**, `0` = disabled). Read at
         server boot (env-first, like `token_env`). Validate (positive int or 0).
