@@ -25,8 +25,7 @@ import { FsSyncLock } from './adapters/fs-sync-lock.js';
 import { notionConnectorFactory } from './adapters/notion-gateway.js';
 import { VAULT_DIR, SIDECAR_DIR, CONFIG_PATH } from './lib/config.js';
 import { resolveSyncIntervalSeconds } from './lib/sync-interval.js';
-import { startAutoSync } from './auto-sync-boot.js';
-import type { AutoSyncScheduler } from './auto-sync-scheduler.js';
+import { AutoSyncSupervisor } from './auto-sync-supervisor.js';
 
 /** Wire the real driven adapters — the ONE place bound to the concrete fs/Notion SPI. */
 export function buildDeps(): LocalMirrorDeps {
@@ -92,32 +91,43 @@ export const realBootDeps: BootDeps = {
 };
 
 /**
- * The real entry path: build ONE shared Domain Service, connect the tool surface, then start the
- * background auto-refresh over that SAME instance (so its single-flight lock coordinates the timer
- * with the interactive tools), and stop it cleanly on shutdown so no orphan timer outlives the
- * session. Integration-only, like the guard below — it drives real stdio and process signals, so it
- * runs when server.ts IS the process, not under the unit suite. Its parts (buildApi, boot,
- * startAutoSync, resolveSyncIntervalSeconds) are each unit-tested.
+ * The real entry path: build ONE shared Domain Service, wire the auto-sync supervisor over that SAME
+ * instance (so its single-flight lock coordinates the timer with the interactive tools), connect the
+ * tool surface with a `setup_source` hook that lets a first mirror declared mid-session arm the
+ * supervisor (Step 4 finding #1), attempt the boot-time arm, then stop it cleanly on shutdown so no
+ * orphan timer outlives the session. Integration-only, like the guard below — it drives real stdio
+ * and process signals, so it runs when server.ts IS the process, not under the unit suite. Its parts
+ * (buildApi, boot, AutoSyncSupervisor, resolveSyncIntervalSeconds) are each unit-tested.
  */
 export async function bootReal(): Promise<void> {
   const api = buildApi();
-  await boot({
-    createServer: () => createMcpServer(api),
-    createTransport: createRealTransport,
-    log: console.error,
-  });
-  const scheduler = await startAutoSync({
+  const supervisor = new AutoSyncSupervisor({
     api,
     intervalSeconds: resolveSyncIntervalSeconds(process.env.LOCAL_MIRROR_SYNC_INTERVAL),
     log: console.error,
   });
-  installShutdown(scheduler);
+  await boot({
+    createServer: () =>
+      createMcpServer(api, { onSourceDeclared: () => armAfterSetup(supervisor) }),
+    createTransport: createRealTransport,
+    log: console.error,
+  });
+  await supervisor.ensureRunning();
+  installShutdown(supervisor);
 }
 
-/** Stop the scheduler cleanly when the session ends (SIGINT/SIGTERM/stdin close) — no orphan timer. */
-function installShutdown(scheduler: AutoSyncScheduler | null): void {
-  if (scheduler === null) return;
-  const stop = () => scheduler.stop();
+/** Fail-soft arm after a setup_source: a supervisor hiccup must never break the tool response. */
+async function armAfterSetup(supervisor: AutoSyncSupervisor): Promise<void> {
+  try {
+    await supervisor.ensureRunning();
+  } catch (error) {
+    console.error(`[local-mirror] auto-sync could not arm after setup: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/** Stop the supervisor cleanly when the session ends (SIGINT/SIGTERM/stdin close) — no orphan timer. */
+function installShutdown(supervisor: AutoSyncSupervisor): void {
+  const stop = () => supervisor.stop();
   process.once('SIGINT', stop);
   process.once('SIGTERM', stop);
   process.stdin.once('end', stop);

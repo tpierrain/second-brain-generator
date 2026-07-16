@@ -83,16 +83,24 @@
         a single window); the single-flight lock stays covered by Step 1 (6 unit + 1 acceptance). Decide:
         run the 2-window integration test, or accept unit coverage. · `interval=0` disables cleanly —
         **PROVEN** live _(2026-07-16)_: `[local-mirror] auto-sync disabled (LOCAL_MIRROR_SYNC_INTERVAL=0)`.
+  - [x] 4d — **Auto-arm on first mirror (fixes finding #1 below, option (a))** _(2026-07-16)_: a re-triggerable,
+        idempotent `AutoSyncSupervisor` (`src/auto-sync-supervisor.ts`) wraps the boot decision so it can be
+        (re-)attempted; `createMcpServer` gained an optional `onSourceDeclared` hook fired after every
+        `setup_source`; `bootReal` wires the hook to `supervisor.ensureRunning()` (fail-soft) so declaring the
+        FIRST mirror mid-session arms the scheduler with **no restart**. TDD: 4 supervisor unit tests
+        (idempotent arm · idle-then-arm · stop+re-arm · stop no-op) + 2 acceptance at the tool surface
+        (hook fires after `setup_source`, not for other tools). **Suite 198 green, `tsc` clean.**
 
-> **🔴 Step 4 finding — boot-time gating hides the feature in the session that declares the first mirror.**
-> The scheduler decides ONCE at boot (`auto-sync-boot.ts`): if no mirror is declared **at that moment**,
-> it logs `auto-sync idle: no mirror declared yet` and never arms for the session. So a user who declares
-> their FIRST mirror mid-session gets **no background refresh until they restart the brain** — exactly the
+> **🔴 Step 4 finding — boot-time gating hides the feature in the session that declares the first mirror.
+> FIXED via option (a), see 4d _(2026-07-16)_.**
+> The scheduler decided ONCE at boot (`auto-sync-boot.ts`): if no mirror was declared **at that moment**,
+> it logged `auto-sync idle: no mirror declared yet` and never armed for the session. So a user who declared
+> their FIRST mirror mid-session got **no background refresh until they restarted the brain** — exactly the
 > session in which they'd test it and (wrongly) conclude "it doesn't work". Observed live: the real Desktop
 > QA session stayed `idle` the whole time; the refreshes Thomas saw were the **question-time** path
-> (his own relances), not the timer. **Action (Step 5 / follow-up): either (a) auto-arm the scheduler after
-> a successful `setup_source` when it was previously idle, or (b) at minimum document + nudge "restart your
-> brain after declaring your first mirror".** Prefer (a) — the silent no-op is a real UX trap.
+> (his own relances), not the timer. **Resolved (4d):** the `AutoSyncSupervisor` makes the boot decision
+> re-triggerable + idempotent, and a `setup_source` → `onSourceDeclared` hook arms it the moment the first
+> mirror is declared — no restart. Option (b) (doc + nudge) is subsumed; the silent no-op is gone.
 
 > **🔴 Step 4 finding #2 — same-minute edits were silently lost by the background path (FIXED).**
 > Notion stamps page `last_edited_time` at **minute granularity** (`…T16:51:00.000Z`). `checkFreshness`
@@ -106,7 +114,7 @@
 > its later `lastSyncAt` clears the flag → no loop, ≤1 extra sync per active minute). Deterministic via the
 > injected clock (ADR 0009). New: `epochMinute()` + `LocalMirror.watermarkMayHideSameMinuteEdit()`; builder
 > gained an advanceable `MutableClock` + `advanceClockTo()`. 3 acceptance tests at the `ILocalMirror` port
-> (reproduce · no mid-minute churn · no re-sync loop). **Suite 192 green, `tsc` clean.** _(2026-07-16)_
+> (reproduce · no mid-minute churn · no re-sync loop). **Suite 192 green, `tsc` clean.** _(2026-07-16 · `bdfa87c`)_
 - [ ] **Step 5 — Docs**
   - [ ] 5a — SKILL.md: state that freshness is **also** kept by a background scheduler (default 5 min,
         configurable), while the local-first question-time path stays the immediate one

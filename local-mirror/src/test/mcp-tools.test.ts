@@ -42,8 +42,8 @@ function spyApi() {
 }
 
 /** Wire a client to the server over an in-memory transport pair. */
-async function connect(api: ILocalMirror) {
-  const server = createMcpServer(api);
+async function connect(api: ILocalMirror, hooks?: Parameters<typeof createMcpServer>[1]) {
+  const server = createMcpServer(api, hooks);
   const client = new Client({ name: 'test', version: '0.0.0' });
   const [clientT, serverT] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(serverT), client.connect(clientT)]);
@@ -121,6 +121,44 @@ test('setup_source maps snake_case args to the port request and returns the asTe
     },
   ]);
   assert.deepEqual(res.content, envelope(results.setupSource));
+
+  await close();
+});
+
+test('setup_source fires the onSourceDeclared hook after the port call (arm auto-sync, finding #1)', async () => {
+  const { api, calls } = spyApi();
+  const declared: string[] = [];
+  // The hook records the ordering marker so we can assert it ran AFTER setupSource, not before.
+  const { client, close } = await connect(api, {
+    onSourceDeclared: async () => void declared.push(`hook@${calls.length}`),
+  });
+
+  await client.callTool({
+    name: 'setup_source',
+    arguments: {
+      name: 'team-a',
+      title: 'Team A',
+      description: 'roadmap + specs',
+      root_page_url: 'https://notion.so/root',
+      token_env: 'TEAM_A_TOKEN',
+    },
+  });
+
+  assert.deepEqual(declared, ['hook@1']); // fired exactly once, after setupSource had already run
+
+  await close();
+});
+
+test('the onSourceDeclared hook does NOT fire for other tools', async () => {
+  const { api } = spyApi();
+  let hookCalls = 0;
+  const { client, close } = await connect(api, { onSourceDeclared: async () => void (hookCalls += 1) });
+
+  await client.callTool({ name: 'list_sources', arguments: {} });
+  await client.callTool({ name: 'sync', arguments: { name: 'team-a' } });
+  await client.callTool({ name: 'check_freshness', arguments: { name: 'team-a' } });
+
+  assert.equal(hookCalls, 0); // only setup_source declares a source
 
   await close();
 });
