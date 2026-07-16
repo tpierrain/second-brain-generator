@@ -71,3 +71,6 @@ tmp/
 
 # QA feedback dumps that may contain confidential source data — never commit
 maintainers/qa/_private/
+
+# Generated engine health-check report (like engine-health.json above)
+vault/engine-health/

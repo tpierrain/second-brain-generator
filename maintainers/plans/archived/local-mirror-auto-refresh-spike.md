@@ -1,8 +1,9 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🔭 PROSPECTIVE / STUDY — design + risk analysis only, no code yet.  -->
-<!-- Direction DECIDED by Thomas (2026-06-21). Implementation = the existing     -->
-<!-- plan golden-source-scheduled-sync-action.md (to be enriched, not redone).   -->
-<!-- This is the LAST topic of the v3.3.0 version (ship it at the very end).      -->
+<!-- STATUS: ✅ SUPERSEDED / SHIPPED (2026-07-16) — this study drove the feature -->
+<!-- delivered in v3.5.0 « The One Where the Mirror Refreshes Itself ». The      -->
+<!-- implementation + concurrency QA live in the archived plan                   -->
+<!-- golden-source-scheduled-sync-action.md. Kept for the design/risk analysis.  -->
+<!-- Direction DECIDED by Thomas (2026-06-21).                                    -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Study — auto-refresh of Notion local mirrors (consequences & what to harden)
