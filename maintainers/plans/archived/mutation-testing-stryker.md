@@ -1,12 +1,20 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🔭 PROSPECTIVE (created 2026-06-21, refreshed 2026-06-23) — a          -->
-<!-- test-quality investment, not a release blocker. Scope re-pointed at the        -->
-<!-- post-v3.4.0 engine; global audit across the three packages (Thomas, 2026-06-23).-->
+<!-- STATUS: ✅ DELIVERED & ARCHIVED (2026-07-16). Global mutation audit + hardening of all three     -->
+<!-- engine packages done: rag 90.42 %, scripts 97.27 %, local-mirror 95.63 % (post-B4). Retrospective -->
+<!-- (Step 6), durable rules, the floor guard + assert-matcher lint, and the anti-rot nightly (B1)     -->
+<!-- all shipped; scores pinned in the v3.4.2 release notes. Remaining boxes are OPTIONAL/deferred:    -->
+<!-- capturing one pristine nightly artifact is left to the LIVE cron (03:00 daily, overlap-free — no  -->
+<!-- more manual dispatches, they kept getting overlap-cancelled); the dashboard LIVE badge (B1        -->
+<!-- stretch) and the Vitest escalation (Step 5) are not pursued. See RESULTS.md + RETROSPECTIVE.md.   -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Mutation testing (Stryker) — global audit of the engine's three packages
 
 ## ▶ Resume after /clear — Backlog: what to fix next (2026-07-16)
+
+> ✅ **ARCHIVED 2026-07-16 — nothing left to resume.** All non-optional work is done (see the STATUS
+> header). The only open boxes are optional/deferred (pristine nightly artifact → live cron; dashboard
+> badge; Vitest). This banner is kept as historical context.
 
 State: the three-package audit + hardening is done; the **rag full re-audit closed at 57.23 % → 82.59 %**
 (RESULTS.md refreshed, baseline marked superseded). Goal added 2026-07-16: **make the numbers sellable on
@@ -138,6 +146,10 @@ unchecked box below.
     `process.env` (kills the `(opts) => loadDotenv(opts)`→`() => undefined` default-wiring mutant), and
     a structural test asserts `projectRoot` climbs to the real repo root (sibling `rag/`+`local-mirror/`
     present) to kill the `'../../..'`→`''` mutant. _(2026-07-16)_
+  - [x] **Full local-mirror re-audit (post-B4 closer): → 95.63 %** (675 killed + 4 timeout / 710
+    covered, 31 survived). Captures both B4 and the optional weak tier that was never re-aggregated;
+    residual survivors are small never-hardened leaves + documented equivalents, all above the 80 %
+    `high` threshold. RESULTS.md refreshed (the 78.69 % closer marked superseded). _(2026-07-16)_
 
 ## Why (the WHAT)
 
