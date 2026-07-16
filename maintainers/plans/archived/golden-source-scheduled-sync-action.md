@@ -1,5 +1,10 @@
 # Golden-source scheduled sync — action plan (fast-follow after the QA ship)
 
+> ✅ **SHIPPED — v3.5.0 « The One Where the Mirror Refreshes Itself »** _(2026-07-16 · merge commit
+> `5598e50`, tag `v3.5.0`, PR #28)._ Session-scoped background auto-refresh + atomic cross-process
+> single-flight lock (O_EXCL). Concurrency QA (Step 4c) **conclusive** — see harnesses under
+> `maintainers/qa/local-mirror-concurrency/`. Suite 205 green, `tsc` clean.
+
 > **Goal.** Make a golden source refresh **regularly on its own**, driven **from the MCP code** — not
 > only lazily at question-time. A timer inside the `golden-source-sync` server ticks every N seconds
 > (**default 300 s = 5 min, configurable**); each tick runs a **cheap `check_freshness`** and triggers a
@@ -182,8 +187,8 @@
         **ADR 0032** written (session-scoped refresh timer + single-flight lock, rung 4 of ADR 0009); 0009 gains a
         back-reference to it.
   - [x] 5e — Commit (docs) _(2026-07-16 · `a57d11f`)_
-- [ ] **Step 6 — Ship** (Thomas's green light given 2026-07-16: *"si la QA est concluante, tu peux pousser
-      la PR et la release"*).
+- [x] **Step 6 — Ship** (Thomas's green light given 2026-07-16: *"si la QA est concluante, tu peux pousser
+      la PR et la release"*) _(2026-07-16 · `5598e50`, `v3.5.0`)_.
   - [x] 6a — Push branch + PR #28 « The One Where the Mirror Refreshes Itself » _(2026-07-16)_
   - [x] 6b — `/code-review` (high effort, 7 finder angles + verify) → **2 accepted findings fixed in TDD**
         _(2026-07-16 · `bb01798`)_: (1) `aggregateStatus` had no `'skipped'` case → `sync('all')` reported a
@@ -191,7 +196,8 @@
         (2) `installShutdown` SIGINT/SIGTERM listeners suppressed Node's default terminate-on-signal → the MCP
         server no longer died on Ctrl-C/SIGTERM; now stops the timer AND exits (128+sig), stdin EOF still only
         stops; exported + unit-tested via a hooks seam. **Suite 205 green, tsc clean.**
-  - [ ] 6c — Final QA (suites green) → merge + tag → archive this plan → purge throwaway brains.
+  - [x] 6c — Final QA (205 green on `main`) → merge (`5598e50`) + tag `v3.5.0` + GitHub release →
+        archive this plan → purge throwaway brains _(2026-07-16)_.
 
 > **🔎 Code-review residuals (2026-07-16) — logged, NOT blocking this ship (pre-existing bounds / narrow
 > edges, none a regression from the auto-refresh work).** Follow-ups for a later pass:
