@@ -21,6 +21,116 @@
 Pinned to the release that ships the hardened tests: **v3.4.2** (local-mirror pinned at 78.69 % there —
 its tag-time snapshot; the B4 + optional-weak-tier gains below land in `main` after v3.4.2).
 
+## Visual overview (scores at a glance)
+
+> Bars use a **zoomed 70 → 100 % axis** (everything is already ≥ 71 %, so a full 0–100 axis would
+> flatten the differences). The exact number carries the precision; the bar carries the gestalt.
+
+**The three engine packages:**
+
+```
+scripts       97.27 %  ██████████████████░░
+local-mirror  95.63 %  █████████████████░░░
+rag           90.42 %  ██████████████░░░░░░
+                       └──────────────────┘  70 ──────────► 100 %
+```
+
+**Distribution of the 41 re-audited production files** (rag 24 + local-mirror 17; scripts counted
+separately — 97.27 %, `lib/**` all 100 %, 3 side-effect scripts at 92–100 %):
+
+```
+🟢 100 %      ███████████  11 files   (perfect — 0 survivor)
+🟢 95–99 %    ████          4 files
+🟡 90–95 %    █████████     9 files
+🟠 80–90 %    ███████████████  15 files
+🔴 < 80 %     ██            2 files   (rag: search-degradation, reindex-scheduler)
+```
+
+### rag — by subject
+
+```
+Indexing & chunking
+  document-scanner       100.00 %  ████████████████████
+  vault-watcher          100.00 %  ████████████████████
+  frontmatter-parser      97.62 %  ██████████████████░░
+  index-manager           94.87 %  █████████████████░░░
+  indexer                 94.44 %  ████████████████░░░░
+  chunker                 85.88 %  ███████████░░░░░░░░░
+
+Embedders  (⚠️ lowest tier)
+  openai-compatible        84.00 %  █████████░░░░░░░░░░░
+  in-process-embedder      82.61 %  ████████░░░░░░░░░░░░
+  embedder                 81.98 %  ████████░░░░░░░░░░░░
+
+Vector store & search
+  vector-store            92.47 %  ███████████████░░░░░
+  search-degradation      71.43 %  █░░░░░░░░░░░░░░░░░░░  🔴
+
+Reindex & freshness
+  reindex-lock            94.52 %  ████████████████░░░░
+  reindex-reporter        83.64 %  █████████░░░░░░░░░░░
+  index-freshness         81.13 %  ███████░░░░░░░░░░░░░
+  reindex-scheduler       74.19 %  ███░░░░░░░░░░░░░░░░░  🔴
+
+Health, status & usage
+  status-report          100.00 %  ████████████████████
+  usage-tracker           92.65 %  ███████████████░░░░░
+  health-check            92.31 %  ███████████████░░░░░
+  notify                  90.91 %  ██████████████░░░░░░
+  progress-report         88.52 %  ████████████░░░░░░░░
+
+Citations / config / version / deps
+  citation-renderer      100.00 %  ████████████████████
+  native-deps            100.00 %  ████████████████████
+  config                  86.67 %  ███████████░░░░░░░░░
+  engine-version          84.44 %  ██████████░░░░░░░░░░
+```
+
+### local-mirror — by Hive layer
+
+```
+Domain
+  reconcile              100.00 %  ████████████████████
+  local-mirror            98.52 %  ███████████████████░
+
+Adapters
+  system-clock           100.00 %  ████████████████████
+  notion-gateway          97.44 %  ██████████████████░░
+  fs-config-store         93.75 %  ████████████████░░░░
+  fs-vault-writer         87.50 %  ████████████░░░░░░░░
+  notion-connector        85.29 %  ██████████░░░░░░░░░░
+  fs-state-store          81.82 %  ████████░░░░░░░░░░░░
+
+Lib
+  markdown               100.00 %  ████████████████████
+  config      (B4)       100.00 %  ████████████████████ ⭐
+  fresh-env   (B4)       100.00 %  ████████████████████ ⭐
+  notion-url              97.87 %  ███████████████████░
+  notion-transformers     94.87 %  █████████████████░░░
+  strip-volatile-urls     89.19 %  █████████████░░░░░░░
+  content-hash            80.00 %  ███████░░░░░░░░░░░░░
+
+Entry / MCP
+  index                  100.00 %  ████████████████████
+  server                  85.71 %  ██████████░░░░░░░░░░
+```
+
+### scripts (harness)
+
+```
+  scripts/lib/**         100.00 %  ████████████████████
+  clear-example-notes    100.00 %  ████████████████████
+  auto-commit             98.21 %  ███████████████████░
+  auto-push               92.39 %  ███████████████░░░░░
+```
+
+**Reading it.** ⭐ B4 took local-mirror's `config.ts` + `fresh-env.ts` to 100 %, lifting the package
+aggregate from 78.69 % to 95.63 %. The realistic ceiling on hardened files is **~96 %**: the remaining
+survivors there are **documented equivalent mutants** (unkillable without touching prod for nothing) →
+"effective 100 %" on non-equivalents. The lowest never-hardened tiers, the natural next "B5" targets,
+are rag's **embedders** (~82 %) and `search-degradation` / `reindex-scheduler` / `index-freshness`, plus
+local-mirror's `fs-state-store` and `content-hash`.
+
 ---
 
 ## Full `local-mirror` re-audit — 2026-07-16 (post-B4)
