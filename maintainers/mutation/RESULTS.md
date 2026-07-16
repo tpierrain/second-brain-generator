@@ -9,6 +9,11 @@
 
 ## Baseline run — 2026-06-23 (engine at v3.4.0, commit `49e46a9`)
 
+> ⚠️ **SUPERSEDED for `rag` and `local-mirror`.** This is the *pre-hardening* photo. For the current
+> package scores after Step 3, read **[Full `rag` re-audit — 2026-07-16](#full-rag-re-audit-closer--2026-07-16)**
+> (**57.23 % → 82.59 %**) and the local-mirror re-audit below (67.63 % → 78.69 %). Do not quote the
+> baseline numbers as the current state.
+
 Faithful scope: every mutant re-runs the **whole package suite** (command runner, no
 StrykerJS `node:test` runner). Scores are the durable test-quality signal the project lacked.
 
@@ -73,6 +78,49 @@ from 67.63 % → 78.69 %** (550 killed + 4 timeout / 704 covered, 150 survived).
 Enumerated Step-2 worst-files (`server.ts`, `index.ts`, `notion-gateway.ts`) are **done**.
 The remaining weak tier (`notion-transformers.ts` 57 %, `local-mirror.ts` 77 %, `notion-url.ts`
 74 %) was not flagged in the Step-2 worst-first list; hardening it is optional follow-up.
+
+## Full `rag` re-audit (closer) — 2026-07-16
+
+After hardening all enumerated Step-2 worst-files, a full-package re-audit lifts **`rag` from
+57.23 % → 82.59 %** (1177 killed + 9 timeout / 1436 covered, 250 survived, 0 no-coverage). Run at
+`concurrency: 4` (honest timeouts). Per-file, worst-first on the **remaining** survivors:
+
+| File | Score | Survived | Tier |
+|---|---|---|---|
+| `citation-renderer.ts` | 45.45 % | 18 | never hardened — real gaps |
+| `usage-tracker.ts` | 55.88 % | 30 | never hardened — real gaps |
+| `fake-embedder.ts` | 62.50 % | 6 | test helper (arguably should be excluded from mutation) |
+| `health-check.ts` | 63.25 % | 43 | never hardened — **most survivors in the package** |
+| `search-degradation.ts` | 71.43 % | 2 | small |
+| `reindex-scheduler.ts` | 74.19 % | 8 | never hardened |
+| `reindex-lock.ts` | 75.34 % | 18 | never hardened |
+| `status-report.ts` | 78.87 % | 15 | never hardened |
+| `index-freshness.ts` | 81.13 % | 10 | never hardened |
+| `embedder.ts` | 81.98 % | 20 | **hardened — residual are documented equivalents** |
+| `in-process-embedder.ts` | 82.61 % | 8 | never hardened |
+| `reindex-reporter.ts` | 83.64 % | 9 | never hardened |
+| `openai-compatible-embedder.ts` | 84.00 % | 4 | never hardened |
+| `engine-version.ts` | 84.44 % | 7 | never hardened |
+| `progress-report.ts` | 85.25 % | 9 | never hardened |
+| `chunker.ts` | 85.88 % | 12 | **hardened — documented equivalents** |
+| `config.ts` | 86.67 % | 4 | **hardened — documented equivalents** |
+| `notify.ts` | 90.91 % | 9 | already decent |
+| `vector-store.ts` | 92.47 % | 11 | **hardened — documented equivalents** |
+| `indexer.ts` | 94.44 % | 1 | already decent |
+| `index-manager.ts` | 94.87 % | 4 | **hardened — documented equivalents** |
+| `frontmatter-parser.ts` | 97.62 % | 2 | **hardened — documented equivalents** |
+| `document-scanner.ts` | 100.00 % | 0 | hardened |
+| `native-deps.ts` | 100.00 % | 0 | already 100 % |
+| `vault-watcher.ts` | 100.00 % | 0 | hardened |
+
+**Reading it.** Of the 250 survivors, ~53 are the **documented equivalent mutants** in the already-hardened
+files (chunker 12, embedder 20, vector-store 11, index-manager 4, config 4, frontmatter-parser 2) — those
+are unkillable by definition. The remaining ~197 sit in files the Step-2 worst-first list never flagged
+(they were dwarfed by the near-0 % files at baseline). Highest-leverage next targets, worst-first:
+**`health-check.ts` (43), `usage-tracker.ts` (30), `citation-renderer.ts` (18), `reindex-lock.ts` (18),
+`status-report.ts` (15)** — ~124 survivors across 5 files. Hardening those alone would move the package
+toward ~90-93 %; the practical ceiling is ~96 % (the equivalents can't be killed, so chasing 100 % is
+chasing equivalents).
 
 ## How each package is run (and why)
 
