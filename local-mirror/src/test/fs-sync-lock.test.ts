@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readdir } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { FsSyncLock } from '../adapters/fs-sync-lock.js';
@@ -60,6 +60,31 @@ test('the SAME process re-acquires its own lock (re-entrant, never self-blocks)'
 
   assert.equal(lock.acquire('team-a'), true);
   assert.equal(lock.acquire('team-a'), true);
+});
+
+test('a competing holder that lands between the freshness check and the create is NOT clobbered (atomic acquire across processes)', async () => {
+  const sidecar = await aTempSidecar();
+  const alive = new Set([4242, 777]);
+  const isAlive = (pid: number) => alive.has(pid);
+
+  // Process A (777) finds the source free, then — in the gap before its own write — process
+  // B (4242) sneaks in and fully acquires. A's create must be EXCLUSIVE (O_EXCL / `wx`), so it
+  // fails, A re-reads, sees B live and backs off (returns false). Without the exclusive create,
+  // A would blindly overwrite B's record and BOTH would believe they hold the lock — the
+  // cross-process TOCTOU (Step 4c). This proves mutual exclusion survives the read→write gap.
+  const competitor = new FsSyncLock({ sidecarDir: sidecar, pid: 4242, isAlive });
+  const a = new FsSyncLock({
+    sidecarDir: sidecar,
+    pid: 777,
+    isAlive,
+    _interleaveBeforeCreate: () => {
+      competitor.acquire('team-a');
+    },
+  });
+
+  assert.equal(a.acquire('team-a'), false);
+  const rec = JSON.parse(await readFile(join(sidecar, 'team-a.sync.lock'), 'utf-8'));
+  assert.equal(rec.pid, 4242); // B still holds; A did not clobber it.
 });
 
 test('release removes the lockfile and is idempotent', async () => {
