@@ -21,12 +21,14 @@ unchecked box below.
 
 ### Do-first (the "sellable numbers" ask)
 
-- [ ] **A0 — Merge PR #22** → `main`'s RESULTS.md shows **82.59 %** (baseline superseded), so the repo page
-  linked from the badge stops surfacing the stale 57 %.
-- [ ] **A1 — Pin the aggregate scores into the GitHub release notes.**
-  - [ ] Edit the **v3.4.1** note's "Hardened (test quality)" section to state the package aggregates:
+- [x] **A0 — Merge PR #22** → `main`'s RESULTS.md shows **82.59 %** (baseline superseded), so the repo page
+  linked from the badge stops surfacing the stale 57 %. _(2026-07-16 · merge 89a7fa0)_
+- [x] **A1 — Pin the aggregate scores into the GitHub release notes.** _(2026-07-16)_
+  - [x] Edit the **v3.4.1** note's "Hardened (test quality)" section to state the package aggregates:
     **rag 82.59 %, scripts 97.27 %, local-mirror 78.69 %** (honest — the release is frozen).
-  - [ ] Adopt the convention: every future release note carries a mutation-score snapshot pinned to its tag.
+    _(prod code identical between tag v3.4.1 and HEAD → the pinned number is the tag's real score)_
+  - [x] Adopt the convention: every future release note carries a mutation-score snapshot pinned to its
+    tag. _(engraved in `CONVENTIONS.md` §5ter)_
 - [ ] **A2 — After B2+B3 raise the score, cut the improved numbers as the NEXT release** so the *latest*
   release shows the *improved* scores (e.g. rag ~90-93 %). This is what actually satisfies "associate the
   better numbers with the latest release".
@@ -44,9 +46,15 @@ unchecked box below.
   - [ ] Ship it via `workflow_dispatch` FIRST (run once, confirm honest scores), THEN enable the cron.
   - [ ] (stretch) Add the Stryker **dashboard reporter** → unlocks the LIVE badge we deferred (replace the
     static capability badge in README + release notes).
-- [ ] **B2 — Config hygiene: stop mutating test doubles.** `rag/src/lib/fake-embedder.ts` (62.5 %) is a
+- [x] **B2 — Config hygiene: stop mutating test doubles.** `rag/src/lib/fake-embedder.ts` (62.5 %) is a
   **test helper**, not production code — mutating it measures the wrong thing. Exclude it from the rag
   mutate glob (and sweep for other `fake-*`/stub files across the three configs). Improves signal, not just score.
+  _(2026-07-16 · uncommitted)_ Swept all three packages: only two real test doubles in a mutate scope —
+  `rag/src/lib/fake-embedder.ts` (imported solely by its own test) and `scripts/lib/__fixtures__/stub-mcp-server.mjs`
+  (spawned only by `mcp-search`/`mcp-smoke` tests). Excluded both via negation globs (`!…fake-embedder.ts`,
+  `!scripts/lib/__fixtures__/**`); local-mirror already excludes `src/test/**`. All three configs re-parse
+  clean. Note: v3.4.1's pinned 82.59 % *included* fake-embedder — the NEXT rag re-audit (production-only)
+  is expected to tick up, which is exactly the improved number A2 will cut as the next release.
 - [ ] **B3 — Harden the newly-surfaced rag weak tier** (optional; lifts ~82.6 % → ~90-93 %). Worst-first,
   TDD baby-steps, 6 engraved reflexes (+ reflex #6 = extract a pure seam when I/O glue resists):
   - [ ] `health-check.ts` 63.25 % (43 survivors — most in the package)

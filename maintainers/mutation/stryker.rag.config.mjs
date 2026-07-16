@@ -12,7 +12,10 @@ export default {
   commandRunner: {
     command: 'cd rag && node --import tsx --test src/lib/*.test.ts',
   },
-  mutate: ['rag/src/lib/*.ts', '!rag/src/lib/*.test.ts'],
+  // Exclude fake-embedder.ts: a deterministic test double for the Embedder port
+  // (imported only by its own test, never wired into a production path). Mutating a
+  // test helper measures the wrong thing — it drags the honest signal, not the score.
+  mutate: ['rag/src/lib/*.ts', '!rag/src/lib/*.test.ts', '!rag/src/lib/fake-embedder.ts'],
   inPlace: true,
   coverageAnalysis: 'off',
   // Tuned like the scripts config: the command runner re-runs the WHOLE rag suite per

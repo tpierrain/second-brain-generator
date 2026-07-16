@@ -9,8 +9,10 @@ export default {
   commandRunner: {
     command: 'node --test "scripts/*.test.mjs" "scripts/lib/*.test.mjs"',
   },
-  // Prod harness code only; exclude the *.test.mjs siblings.
-  mutate: ['scripts/*.mjs', 'scripts/lib/**/*.mjs', '!scripts/**/*.test.mjs'],
+  // Prod harness code only; exclude the *.test.mjs siblings AND __fixtures__/** (test
+  // doubles like stub-mcp-server.mjs, spawned only by *.test.mjs). Mutating a fixture
+  // measures the wrong thing — same rationale as rag's fake-embedder exclusion.
+  mutate: ['scripts/*.mjs', 'scripts/lib/**/*.mjs', '!scripts/**/*.test.mjs', '!scripts/lib/__fixtures__/**'],
   // ⚠️ NOT inPlace for the harness: the suite exercises vault-MUTATING code
   // (clear-example-notes). Under inPlace, a mutant that redirects the delete target
   // ran against the REAL tree and wiped vault/ demo notes (run #2). Stryker's default

@@ -183,6 +183,14 @@ with no matcher/2nd argument (dev-only, excluded from the brain copy via `DEV_ON
 other clusters stay **written rules** (no cheap reliable check) — the on-demand net is
 `npm --prefix maintainers/mutation run mutate:changed`.
 
+**Publishing the score — pin it to a frozen release, not to moving `main`.** A published GitHub release
+is **frozen**, so a pinned number ("rag 82.59 % at v3.4.1") stays true for that tag forever. Convention:
+**every release note carries a mutation-score snapshot pinned to its tag** (the per-package aggregates
+from [`maintainers/mutation/RESULTS.md`](mutation/RESULTS.md), measured against that tag's production
+code). The **README** tracks moving `main`, so a static number there would rot: keep the README on a
+**capability** badge (or a live dashboard badge). Cadence going forward: harden, re-measure, cut a
+release, pin that release's snapshot in its notes.
+
 ## 6. ADRs carry a `Scope:` field
 
 Every ADR carries a `- **Scope:**` line right under `STATUS`, with an **explicit** value (never the
