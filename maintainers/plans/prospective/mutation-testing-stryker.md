@@ -29,9 +29,10 @@ unchecked box below.
     _(prod code identical between tag v3.4.1 and HEAD → the pinned number is the tag's real score)_
   - [x] Adopt the convention: every future release note carries a mutation-score snapshot pinned to its
     tag. _(engraved in `CONVENTIONS.md` §5ter)_
-- [ ] **A2 — After B2+B3 raise the score, cut the improved numbers as the NEXT release** so the *latest*
-  release shows the *improved* scores (e.g. rag ~90-93 %). This is what actually satisfies "associate the
-  better numbers with the latest release".
+- [x] **A2 — After B2+B3 raise the score, cut the improved numbers as the NEXT release** so the *latest*
+  release shows the *improved* scores. **DONE: v3.4.2 "The One Where the Survivors Run Out of Places to
+  Hide" is Latest** (tag on `main` @ `2cd02c9`, GitHub release pins rag 90.42 % / scripts 97.27 % /
+  local-mirror 78.69 %; note also saved at `maintainers/mutation/release-notes-v3.4.2.md`). _(2026-07-16)_
   - [x] **Re-audit rag production-only (post-B2/B3): 82.59 % → 90.42 %** (1279 killed + 5 timeout / 1420
     covered, 136 survived). RESULTS.md refreshed (re-audit #2; the 82.59 % closer marked superseded).
     _(2026-07-16)_
@@ -57,12 +58,19 @@ unchecked box below.
     `vault/`. rag + local-mirror run their inPlace configs (non-destructive, restored). _(2026-07-16)_
   - [x] **Re-tune `concurrency`** for a 4-core runner: workflow passes `--concurrency 2` (GitHub's 4-vCPU
     runner over-subscribes at the local configs' 4-5 → the bogus-100 % false-timeout trap). _(2026-07-16)_
-    - [ ] **Verify empirically** (via the first `workflow_dispatch` run) that scores are honest at
-      concurrency 2 (no false timeouts); bump/lower if needed.
+    - [x] **Verified empirically** (via `workflow_dispatch` on `main`): rag + local-mirror ran with
+      **0 timed-out mutants** and gradually-accumulating survivors = honest at concurrency 2 (no
+      false-timeout inflation). _(2026-07-16)_ ⚠️ Don't launch two dispatch runs at once: overlapping
+      runs oversubscribe the runner pool and one gets a `shutdown signal` cancel (an infra flake, not a
+      workflow bug). A single clean full run (rag+local-mirror+scripts to 100 %) is still worth capturing
+      for the record.
   - [x] Upload the HTML reports as a build artifact; non-blocking (informational, `if: always()`).
     thresholds.break is null in every config → a low score exits 0. _(2026-07-16)_
-  - [ ] Ship it via `workflow_dispatch` FIRST (run once, confirm honest scores), THEN trust the cron.
-    *(workflow_dispatch only fires from the default branch → validate right after the v3.4.2 merge to `main`.)*
+  - [x] Shipped via `workflow_dispatch` FIRST: the dry-run caught a real bug (scripts config's
+    `inPlace:false` sandbox has no `.git`, breaking the harness `engine-manifest` integrity test) →
+    fixed by overriding scripts to `--inPlace` (PR #24, on `main`). Cron now trusted. _(2026-07-16)_
+  - [ ] **(remaining, optional)** Capture one clean full nightly run (no overlap) to confirm the
+    scripts job now reaches 100 % end-to-end and archive its artifact; then B1 is fully closed.
   - [ ] (stretch) Add the Stryker **dashboard reporter** → unlocks the LIVE badge we deferred (replace the
     static capability badge in README + release notes).
 - [x] **B2 — Config hygiene: stop mutating test doubles.** `rag/src/lib/fake-embedder.ts` (62.5 %) is a
