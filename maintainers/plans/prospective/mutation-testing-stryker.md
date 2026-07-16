@@ -9,8 +9,29 @@
 ## ▶ Resume after /clear — Backlog: what to fix next (2026-07-16)
 
 State: the three-package audit + hardening is done; the **rag full re-audit closed at 57.23 % → 82.59 %**
-(RESULTS.md refreshed, baseline marked superseded). Agreed next build = **the anti-rot nightly**.
-Resume at the first unchecked box below.
+(RESULTS.md refreshed, baseline marked superseded). Goal added 2026-07-16: **make the numbers sellable on
+the GitHub release page** (today the badge link still surfaces the stale 57 %). Resume at the first
+unchecked box below.
+
+> **Insight — where a static score is honest.** A published GitHub release is **frozen**, so a pinned
+> number ("rag 82.59 % at v3.4.1") stays true forever → put real scores in **release notes**. The
+> **README** tracks moving `main`, so a static number there would rot → keep the README on a **capability**
+> badge (or a **live** dashboard badge via the nightly). Cadence going forward: harden → re-measure → cut a
+> release → pin that release's score snapshot in its notes.
+
+### Do-first (the "sellable numbers" ask)
+
+- [ ] **A0 — Merge PR #22** → `main`'s RESULTS.md shows **82.59 %** (baseline superseded), so the repo page
+  linked from the badge stops surfacing the stale 57 %.
+- [ ] **A1 — Pin the aggregate scores into the GitHub release notes.**
+  - [ ] Edit the **v3.4.1** note's "Hardened (test quality)" section to state the package aggregates:
+    **rag 82.59 %, scripts 97.27 %, local-mirror 78.69 %** (honest — the release is frozen).
+  - [ ] Adopt the convention: every future release note carries a mutation-score snapshot pinned to its tag.
+- [ ] **A2 — After B2+B3 raise the score, cut the improved numbers as the NEXT release** so the *latest*
+  release shows the *improved* scores (e.g. rag ~90-93 %). This is what actually satisfies "associate the
+  better numbers with the latest release".
+
+### Improve + keep-fresh
 
 - [ ] **B1 — Anti-rot NIGHTLY workflow** *(agreed next build; latency analysis done — nightly wins over a PR gate)*
   - [ ] New `.github/workflows/mutation-nightly.yml` on **`ubuntu-latest`** (NOT macOS/Windows: mutation
