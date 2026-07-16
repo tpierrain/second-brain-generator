@@ -40,9 +40,10 @@ unchecked box below.
     a **new patch release v3.4.2** that actually contains the hardened tests and pin 90.42 % there;
     v3.4.1's note stays the honest tag-time snapshot. Codename: **"The One Where the Survivors Run Out of
     Places to Hide"**.
-  - [ ] Build **B1 (nightly)** first, then cut **v3.4.2** bundling the hardening + the nightly (Thomas,
+  - [x] Build **B1 (nightly)** first, then cut **v3.4.2** bundling the hardening + the nightly (Thomas,
     2026-07-16). Merge branch → `main`, tag `v3.4.2` on `main`, GitHub release with the codename + the
-    pinned `rag 90.42 %, scripts 97.27 %, local-mirror 78.69 %` snapshot.
+    pinned `rag 90.42 %, scripts 97.27 %, local-mirror 78.69 %` snapshot. _(2026-07-16 · tag `v3.4.2` @
+    `2cd02c9` on `main`, GitHub release Latest — verified)_
 
 ### Improve + keep-fresh
 
@@ -121,8 +122,22 @@ unchecked box below.
     `mistral-embed`) asserted verbatim; and the running progress line proving `now` (not startedAt)
     drives rate/ETA + a now-omitted case pinning the `?? startedAt` fallback.
   - Ceiling ~96 % (documented equivalents can't be killed — do NOT chase 100 %).
-- [ ] **B4 — (optional) local-mirror weak tier** (from the local-mirror re-audit, never worst-listed):
-  `local-mirror.ts` 77.41 %, `notion-url.ts` 74.47 %, `config.ts`/`fresh-env.ts` 62.5 %/71.4 %.
+- [x] **B4 — (optional) local-mirror weak tier** (from the local-mirror re-audit, never worst-listed).
+  **DONE** _(2026-07-16)_. `local-mirror.ts` (77 % → **98.52 %**) and `notion-url.ts` (74.47 % →
+  **97.87 %**) were already hardened under the 3-local-mirror OPTIONAL section above; the genuinely
+  remaining two were closed here:
+  - [x] `fresh-env.ts` **62.5 % → 100 %** (8/8 killed, 0 survivors) — new dedicated `fresh-env.test.ts`
+    driving `readEnvVarFresh` against a real temp `.env` via `SBG_ENV_PATH`: absent file → undefined
+    (no throw), key-absent → undefined, empty value → undefined, and a **double-quoted whitespace**
+    value → undefined (dotenv preserves the inner spaces so the runtime `.trim()` is what reduces it —
+    kills the `value.trim()`→`value` and `?:`→`true` mutants). _(2026-07-16)_
+  - [x] `config.ts` **71.43 % → 100 %** (20/20 killed, 0 survivors, no equivalents) — extracted the
+    boot-time `.env` side-effect into an injectable `loadEnvIfPresent(path, deps)` seam (mirrors
+    `rag/config.ts`, "test the glue too" §5bis): fake-deps tests pin the exact `{ path }` + the
+    present/absent branches, a **default-deps** integration test loads a real temp `.env` into
+    `process.env` (kills the `(opts) => loadDotenv(opts)`→`() => undefined` default-wiring mutant), and
+    a structural test asserts `projectRoot` climbs to the real repo root (sibling `rag/`+`local-mirror/`
+    present) to kill the `'../../..'`→`''` mutant. _(2026-07-16)_
 
 ## Why (the WHAT)
 
