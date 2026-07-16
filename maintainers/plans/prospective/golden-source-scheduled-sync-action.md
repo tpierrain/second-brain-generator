@@ -51,13 +51,17 @@
   - [x] 2e — Fail-soft: a source that throws (and even a `listSources` failure) is logged to stderr and
         skipped; the scheduler **keeps ticking** (re-arm in `finally`). _(2026-07-16)_
   - [x] 2f — Suite green (**181 pass**) + `tsc` clean. _(2026-07-16)_
-- [ ] **Step 3 — Config & lifecycle (wire into the server)**
-  - [ ] 3a — Config: `GOLDEN_SOURCE_SYNC_INTERVAL` (seconds, **default 300**, `0` = disabled). Read at
-        server boot (env-first, like `token_env`). Validate (positive int or 0).
-  - [ ] 3b — Lifecycle: start the scheduler on server init when interval > 0; **stop cleanly** on
-        shutdown (SIGINT/SIGTERM/stdin close) so no orphan timer.
-  - [ ] 3c — Startup log line (stderr): `auto-sync every <N>s (sources: …)` or `auto-sync disabled`.
-  - [ ] 3d — Suite green + `tsc`; commit.
+- [x] **Step 3 — Config & lifecycle (wire into the server)** _(2026-07-16)_
+  - [x] 3a — Config: **`LOCAL_MIRROR_SYNC_INTERVAL`** (renamed per S6 delta; seconds, **default 300**,
+        `0` = disabled). Pure `resolveSyncIntervalSeconds()` (`src/lib/sync-interval.ts`): non-negative
+        integer, malformed/negative/fractional → safe default. 4 TDD tests. _(2026-07-16)_
+  - [x] 3b — Lifecycle: `startAutoSync()` (`src/auto-sync-boot.ts`) starts the scheduler on boot only
+        when interval > 0 **and** ≥1 mirror declared; fail-soft on a config read error. `bootReal()`
+        shares ONE api instance between the tools and the scheduler; `installShutdown()` stops it on
+        SIGINT/SIGTERM/stdin end+close (no orphan timer). 4 TDD tests. _(2026-07-16)_
+  - [x] 3c — Startup log (stderr): `auto-sync every <N>s (sources: …)`, or `auto-sync disabled`, or
+        `auto-sync idle: no mirror declared yet`. _(2026-07-16)_
+  - [x] 3d — Suite green (**189 pass**) + `tsc` clean; committed. _(2026-07-16)_
 - [ ] **Step 4 — Fresh end-to-end validation** (throwaway brain from the branch)
   - [ ] 4a — Install a fresh throwaway brain; declare a source; leave the window open
   - [ ] 4b — Observe an autonomous refresh on a Notion edit **without asking a question** (truthful toast,

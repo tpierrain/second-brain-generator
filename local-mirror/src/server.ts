@@ -24,6 +24,9 @@ import { SystemClock } from './adapters/system-clock.js';
 import { FsSyncLock } from './adapters/fs-sync-lock.js';
 import { notionConnectorFactory } from './adapters/notion-gateway.js';
 import { VAULT_DIR, SIDECAR_DIR, CONFIG_PATH } from './lib/config.js';
+import { resolveSyncIntervalSeconds } from './lib/sync-interval.js';
+import { startAutoSync } from './auto-sync-boot.js';
+import type { AutoSyncScheduler } from './auto-sync-scheduler.js';
 
 /** Wire the real driven adapters — the ONE place bound to the concrete fs/Notion SPI. */
 export function buildDeps(): LocalMirrorDeps {
@@ -88,9 +91,42 @@ export const realBootDeps: BootDeps = {
   log: console.error,
 };
 
+/**
+ * The real entry path: build ONE shared Domain Service, connect the tool surface, then start the
+ * background auto-refresh over that SAME instance (so its single-flight lock coordinates the timer
+ * with the interactive tools), and stop it cleanly on shutdown so no orphan timer outlives the
+ * session. Integration-only, like the guard below — it drives real stdio and process signals, so it
+ * runs when server.ts IS the process, not under the unit suite. Its parts (buildApi, boot,
+ * startAutoSync, resolveSyncIntervalSeconds) are each unit-tested.
+ */
+export async function bootReal(): Promise<void> {
+  const api = buildApi();
+  await boot({
+    createServer: () => createMcpServer(api),
+    createTransport: createRealTransport,
+    log: console.error,
+  });
+  const scheduler = await startAutoSync({
+    api,
+    intervalSeconds: resolveSyncIntervalSeconds(process.env.LOCAL_MIRROR_SYNC_INTERVAL),
+    log: console.error,
+  });
+  installShutdown(scheduler);
+}
+
+/** Stop the scheduler cleanly when the session ends (SIGINT/SIGTERM/stdin close) — no orphan timer. */
+function installShutdown(scheduler: AutoSyncScheduler | null): void {
+  if (scheduler === null) return;
+  const stop = () => scheduler.stop();
+  process.once('SIGINT', stop);
+  process.once('SIGTERM', stop);
+  process.stdin.once('end', stop);
+  process.stdin.once('close', stop);
+}
+
 // Boot only when run as the entry point — importing for tests stays side-effect-free.
 // This guard (and the boot invocation it wraps) is the sole integration-only line: it is
 // exercised when server.ts IS the process, not under the unit suite.
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  boot(realBootDeps).catch(fatal);
+  bootReal().catch(fatal);
 }
