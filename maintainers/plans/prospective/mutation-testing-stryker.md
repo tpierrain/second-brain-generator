@@ -46,14 +46,23 @@ unchecked box below.
 ### Improve + keep-fresh
 
 - [ ] **B1 — Anti-rot NIGHTLY workflow** *(agreed next build; latency analysis done — nightly wins over a PR gate)*
-  - [ ] New `.github/workflows/mutation-nightly.yml` on **`ubuntu-latest`** (NOT macOS/Windows: mutation
-    is OS-agnostic, and macOS billing is ×10). `schedule:` cron + `workflow_dispatch` for manual test.
-  - [ ] Run `mutate:all` — but `scripts/**` must run in a **disposable git worktree** (destructive inPlace,
-    see RESULTS.md § How each package is run). rag + local-mirror run inPlace.
-  - [ ] **Re-tune `concurrency`** for a 4-core runner (start at 2-3; verify no FALSE timeouts before
-    trusting the score — the documented bogus-100 % trap).
-  - [ ] Upload the HTML reports (`maintainers/mutation/reports/`) as a build artifact; non-blocking (informational).
-  - [ ] Ship it via `workflow_dispatch` FIRST (run once, confirm honest scores), THEN enable the cron.
+  - [x] New `.github/workflows/mutation-nightly.yml` on **`ubuntu-latest`** (NOT macOS/Windows: mutation
+    is OS-agnostic, and macOS billing is ×10). `schedule:` cron (`0 3 * * *`) + `workflow_dispatch`.
+    _(2026-07-16 · uncommitted)_
+  - [x] Run the three packages. **Divergence from the original note (justified):** they fan out as a
+    **parallel matrix** (`package: [rag, local-mirror, scripts]`), not a serial `mutate:all`, so the slow
+    `scripts` run doesn't block the others. **No worktree needed for `scripts` in CI**: the committed
+    `stryker.scripts.config.mjs` runs `inPlace: false` (Stryker sandbox), and the runner is itself
+    ephemeral — the worktree guidance in RESULTS.md is for LOCAL inPlace runs that would wipe the real
+    `vault/`. rag + local-mirror run their inPlace configs (non-destructive, restored). _(2026-07-16)_
+  - [x] **Re-tune `concurrency`** for a 4-core runner: workflow passes `--concurrency 2` (GitHub's 4-vCPU
+    runner over-subscribes at the local configs' 4-5 → the bogus-100 % false-timeout trap). _(2026-07-16)_
+    - [ ] **Verify empirically** (via the first `workflow_dispatch` run) that scores are honest at
+      concurrency 2 (no false timeouts); bump/lower if needed.
+  - [x] Upload the HTML reports as a build artifact; non-blocking (informational, `if: always()`).
+    thresholds.break is null in every config → a low score exits 0. _(2026-07-16)_
+  - [ ] Ship it via `workflow_dispatch` FIRST (run once, confirm honest scores), THEN trust the cron.
+    *(workflow_dispatch only fires from the default branch → validate right after the v3.4.2 merge to `main`.)*
   - [ ] (stretch) Add the Stryker **dashboard reporter** → unlocks the LIVE badge we deferred (replace the
     static capability badge in README + release notes).
 - [x] **B2 — Config hygiene: stop mutating test doubles.** `rag/src/lib/fake-embedder.ts` (62.5 %) is a

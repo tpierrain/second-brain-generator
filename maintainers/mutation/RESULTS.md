@@ -7,79 +7,20 @@
 > For **what the survivors taught us** (recurring shapes → durable rules), see the
 > retrospective: [`RETROSPECTIVE.md`](RETROSPECTIVE.md).
 
-## Baseline run — 2026-06-23 (engine at v3.4.0, commit `49e46a9`)
+> 📈 **Sections are ordered newest-first (anti-chronological).** The top block is the current
+> state; scroll down for the history back to the 2026-06-23 baseline.
 
-> ⚠️ **SUPERSEDED for `rag` and `local-mirror`.** This is the *pre-hardening* photo. For the current
-> `rag` score after the weak-tier hardening (B3), read **[Full `rag` re-audit #2 — 2026-07-16
-> (post-B2/B3)](#full-rag-re-audit-2--2026-07-16-post-b2b3-hardening)** (**82.59 % → 90.42 %**,
-> production-only). The earlier 57.23 % → 82.59 % closer is itself superseded (it still mutated the
-> `fake-embedder` test double). For local-mirror see the re-audit below (67.63 % → 78.69 %). Do not
-> quote the baseline numbers as the current state.
+## Current scores (latest)
 
-Faithful scope: every mutant re-runs the **whole package suite** (command runner, no
-StrykerJS `node:test` runner). Scores are the durable test-quality signal the project lacked.
-
-| Package | Mutation score | Killed | Timeout | **Survived** | Mutants | Read |
-|---|---|---|---|---|---|---|
-| **scripts** (harness) | **97.27 %** | 3612 | 21 | 102 | 3735 | excellent — `scripts/lib/**` is 100 % across the board |
-| **local-mirror** | **67.63 %** | 458 | 12 | 225 | 695 | moderate |
-| **rag** | **57.23 %** | 804 | 7 | 606 | 1417 | weakest — real gaps |
-
-### Worst files (Step 3 hardening targets, worst-first)
-
-**rag/src/lib**
-- `document-scanner.ts` **0 %**, `vault-watcher.ts` **0 %** (I/O wirings, no unit test)
-- `frontmatter-parser.ts` 11.9 %, `chunker.ts` 27.1 %
-- `vector-store.ts` 33.8 %, `embedder.ts` 34.6 %, `index-manager.ts` 39.4 %, `config.ts` 40.0 %
-- well covered (≥90 %): `indexer.ts`, `notify.ts`, `native-deps.ts`
-
-**local-mirror/src**
-- `server.ts` **0 %**, `index.ts` **2.2 %** (entry points, no unit test)
-- `notion-gateway.ts` 21.1 %, `notion-transformers.ts` 57.3 %
-- 100 %: `markdown.ts`, `reconcile.ts`, `system-clock.ts`
-
-**scripts** — only 3 weak files (everything else, incl. all of `lib/**`, is 100 %):
-- `clear-example-notes.mjs` **28.6 %** (30 survivors)
-- `auto-push.mjs` **41.4 %** (51 survivors)
-- `auto-commit.mjs` **47.5 %** (21 survivors)
-- → all three are the git/vault **side-effect** scripts, hard to unit-test.
-
-## Step 3 hardening — scripts worst-files — 2026-07-15
-
-The three git/vault side-effect scripts, hardened by extracting an injectable core
-(git runner / cwd / spawn behind a port) and TDD-ing the glue. Measured per file in a
-**fresh disposable worktree** (`--inPlace`) — never reused (a `clear-example-notes`
-mutant deletes the worktree's `vault/`, so run-1 corrupts run-2's baseline).
-
-| File | Before | After | Note |
+| Package | Mutation score | As of | Detail |
 |---|---|---|---|
-| `clear-example-notes.mjs` | 28.6 % | **100 %** | 46/46, no equivalents — `runClear(argv, deps)` + `realClearDeps` |
-| `auto-push.mjs` | 41.4 % | **92.39 %** | 85/92, 7 equiv. (redundant `.trim()` under `Number()` + the `import.meta.url` guard) |
-| `auto-commit.mjs` | 47.5 % | **98.21 %** | 55/56, 1 equiv. (the `if (isEntryPoint(...))→if(true)` guard) |
+| **rag** | **90.42 %** | 2026-07-16 (post-B2/B3) | [re-audit #2](#full-rag-re-audit-2--2026-07-16-post-b2b3-hardening) — production-only |
+| **scripts** (harness) | **97.27 %** | 2026-06-23 baseline | 3 weak files since hardened to 92–100 % (no full re-audit; `lib/**` already 100 %) |
+| **local-mirror** | **78.69 %** | 2026-07-15 | [re-audit](#step-3-hardening--local-mirror-re-audit--2026-07-15) |
 
-`scripts/lib/**` was already 100 % → **`scripts/**` is now fully hardened**. Enumerated
-Step-2 worst-files across all three packages are done (see the plan's Step 3).
+Pinned to the release that ships the hardened tests: **v3.4.2**.
 
-## Step 3 hardening — local-mirror re-audit — 2026-07-15
-
-After hardening the three Step-2 worst-files, a full-package re-audit lifts **local-mirror
-from 67.63 % → 78.69 %** (550 killed + 4 timeout / 704 covered, 150 survived). Per-file:
-
-| Area | File | Before | After | Note |
-|---|---|---|---|---|
-| entry | `index.ts` | 2.2 % | **100 %** | in-memory Client drives the 7 tools end-to-end |
-| entry | `server.ts` | 0 % | **85.71 %** | boot seams extracted; 2 equiv. = the entry-point guard |
-| adapters | `notion-gateway.ts` | 21.1 % | **97.44 %** | seams injected; 1 equiv. = `new Client({auth})` |
-| adapters | `notion-connector.ts` | — | 85.29 % | already decent |
-| adapters | (fs-*, system-clock) | — | 81–100 % | already decent |
-| domain | `local-mirror.ts` | — | **77.41 %** | 61 survivors — the big Domain Service, next tier |
-| lib | `notion-transformers.ts` | 57.3 % | **94.87 %** | hardened 2026-07-15 (helpers exported + case-tested; 6 equiv.) |
-| lib | `notion-url.ts` | — | 74.47 % | 12 survivors |
-| lib | `fresh-env.ts` / `config.ts` | — | 62.5 % / 71.4 % | small |
-
-Enumerated Step-2 worst-files (`server.ts`, `index.ts`, `notion-gateway.ts`) are **done**.
-The remaining weak tier (`notion-transformers.ts` 57 %, `local-mirror.ts` 77 %, `notion-url.ts`
-74 %) was not flagged in the Step-2 worst-first list; hardening it is optional follow-up.
+---
 
 ## Full `rag` re-audit #2 — 2026-07-16 (post-B2/B3 hardening)
 
@@ -128,8 +69,6 @@ usage-tracker 4, frontmatter-parser 2 → ~70). The rest sit in files never wors
 `index-freshness`, the embedder adapters, `reindex-reporter`, `engine-version`, `progress-report`, `notify`) —
 a possible future **B4-style** follow-up, non-blocking. Ceiling ~96 % (documented equivalents can't be killed).
 
-Pinned to the release that ships these hardened tests: **v3.4.2** (see the plan's A2).
-
 ## Full `rag` re-audit (closer) — 2026-07-16 [SUPERSEDED by re-audit #2 above]
 
 > ⚠️ **SUPERSEDED** by [re-audit #2](#full-rag-re-audit-2--2026-07-16-post-b2b3-hardening). This closer
@@ -175,7 +114,81 @@ are unkillable by definition. The remaining ~197 sit in files the Step-2 worst-f
 **`health-check.ts` (43), `usage-tracker.ts` (30), `citation-renderer.ts` (18), `reindex-lock.ts` (18),
 `status-report.ts` (15)** — ~124 survivors across 5 files. Hardening those alone would move the package
 toward ~90-93 %; the practical ceiling is ~96 % (the equivalents can't be killed, so chasing 100 % is
-chasing equivalents).
+chasing equivalents). *(Done — see re-audit #2 above: 90.42 %.)*
+
+## Step 3 hardening — local-mirror re-audit — 2026-07-15
+
+After hardening the three Step-2 worst-files, a full-package re-audit lifts **local-mirror
+from 67.63 % → 78.69 %** (550 killed + 4 timeout / 704 covered, 150 survived). Per-file:
+
+| Area | File | Before | After | Note |
+|---|---|---|---|---|
+| entry | `index.ts` | 2.2 % | **100 %** | in-memory Client drives the 7 tools end-to-end |
+| entry | `server.ts` | 0 % | **85.71 %** | boot seams extracted; 2 equiv. = the entry-point guard |
+| adapters | `notion-gateway.ts` | 21.1 % | **97.44 %** | seams injected; 1 equiv. = `new Client({auth})` |
+| adapters | `notion-connector.ts` | — | 85.29 % | already decent |
+| adapters | (fs-*, system-clock) | — | 81–100 % | already decent |
+| domain | `local-mirror.ts` | — | **77.41 %** | 61 survivors — the big Domain Service, next tier |
+| lib | `notion-transformers.ts` | 57.3 % | **94.87 %** | hardened 2026-07-15 (helpers exported + case-tested; 6 equiv.) |
+| lib | `notion-url.ts` | — | 74.47 % | 12 survivors |
+| lib | `fresh-env.ts` / `config.ts` | — | 62.5 % / 71.4 % | small |
+
+Enumerated Step-2 worst-files (`server.ts`, `index.ts`, `notion-gateway.ts`) are **done**.
+The remaining weak tier (`notion-transformers.ts` 57 %, `local-mirror.ts` 77 %, `notion-url.ts`
+74 %) was not flagged in the Step-2 worst-first list; hardening it is optional follow-up.
+
+## Step 3 hardening — scripts worst-files — 2026-07-15
+
+The three git/vault side-effect scripts, hardened by extracting an injectable core
+(git runner / cwd / spawn behind a port) and TDD-ing the glue. Measured per file in a
+**fresh disposable worktree** (`--inPlace`) — never reused (a `clear-example-notes`
+mutant deletes the worktree's `vault/`, so run-1 corrupts run-2's baseline).
+
+| File | Before | After | Note |
+|---|---|---|---|
+| `clear-example-notes.mjs` | 28.6 % | **100 %** | 46/46, no equivalents — `runClear(argv, deps)` + `realClearDeps` |
+| `auto-push.mjs` | 41.4 % | **92.39 %** | 85/92, 7 equiv. (redundant `.trim()` under `Number()` + the `import.meta.url` guard) |
+| `auto-commit.mjs` | 47.5 % | **98.21 %** | 55/56, 1 equiv. (the `if (isEntryPoint(...))→if(true)` guard) |
+
+`scripts/lib/**` was already 100 % → **`scripts/**` is now fully hardened**. Enumerated
+Step-2 worst-files across all three packages are done (see the plan's Step 3).
+
+## Baseline run — 2026-06-23 (engine at v3.4.0, commit `49e46a9`) [OLDEST]
+
+> ⚠️ **SUPERSEDED for `rag` and `local-mirror`.** This is the *pre-hardening* photo. For the current
+> `rag` score after the weak-tier hardening (B3), read **[Full `rag` re-audit #2 — 2026-07-16
+> (post-B2/B3)](#full-rag-re-audit-2--2026-07-16-post-b2b3-hardening)** (**82.59 % → 90.42 %**,
+> production-only). The earlier 57.23 % → 82.59 % closer is itself superseded (it still mutated the
+> `fake-embedder` test double). For local-mirror see the re-audit above (67.63 % → 78.69 %). Do not
+> quote the baseline numbers as the current state.
+
+Faithful scope: every mutant re-runs the **whole package suite** (command runner, no
+StrykerJS `node:test` runner). Scores are the durable test-quality signal the project lacked.
+
+| Package | Mutation score | Killed | Timeout | **Survived** | Mutants | Read |
+|---|---|---|---|---|---|---|
+| **scripts** (harness) | **97.27 %** | 3612 | 21 | 102 | 3735 | excellent — `scripts/lib/**` is 100 % across the board |
+| **local-mirror** | **67.63 %** | 458 | 12 | 225 | 695 | moderate |
+| **rag** | **57.23 %** | 804 | 7 | 606 | 1417 | weakest — real gaps |
+
+### Worst files (Step 3 hardening targets, worst-first)
+
+**rag/src/lib**
+- `document-scanner.ts` **0 %**, `vault-watcher.ts` **0 %** (I/O wirings, no unit test)
+- `frontmatter-parser.ts` 11.9 %, `chunker.ts` 27.1 %
+- `vector-store.ts` 33.8 %, `embedder.ts` 34.6 %, `index-manager.ts` 39.4 %, `config.ts` 40.0 %
+- well covered (≥90 %): `indexer.ts`, `notify.ts`, `native-deps.ts`
+
+**local-mirror/src**
+- `server.ts` **0 %**, `index.ts` **2.2 %** (entry points, no unit test)
+- `notion-gateway.ts` 21.1 %, `notion-transformers.ts` 57.3 %
+- 100 %: `markdown.ts`, `reconcile.ts`, `system-clock.ts`
+
+**scripts** — only 3 weak files (everything else, incl. all of `lib/**`, is 100 %):
+- `clear-example-notes.mjs` **28.6 %** (30 survivors)
+- `auto-push.mjs` **41.4 %** (51 survivors)
+- `auto-commit.mjs` **47.5 %** (21 survivors)
+- → all three are the git/vault **side-effect** scripts, hard to unit-test.
 
 ## How each package is run (and why)
 

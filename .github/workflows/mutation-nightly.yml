@@ -1,0 +1,90 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Mutation testing (nightly): the anti-rot net for TEST QUALITY (plan B1).
+#
+# Mutation score is the durable test-quality signal the project lacked (see
+# maintainers/plans/prospective/mutation-testing-stryker.md). The per-change
+# on-demand check (`mutate:changed`) covers a branch; this nightly re-measures
+# the WHOLE engine so a slow drift in test quality surfaces on its own instead
+# of only when someone remembers to run a full audit before a release.
+#
+# INFORMATIONAL ONLY, never a gate:
+#   - it runs on a schedule + manual dispatch, never as a required PR check;
+#   - every stryker config has `thresholds.break: null`, so a low score still
+#     exits 0 (a red job here means a crash, not a weak score).
+#
+# Cost: mutation is OS-agnostic, so this runs ONLY on ubuntu-latest (macOS
+# Actions minutes bill x10 for zero extra signal). The three packages fan out
+# as parallel matrix jobs so the slow one (scripts, 513 tests re-run per mutant)
+# does not serialize behind the others.
+#
+# Rollout (per the plan): validated first via `workflow_dispatch` to confirm the
+# scores are HONEST (no false-timeout inflation) BEFORE trusting the cron.
+# ═══════════════════════════════════════════════════════════════════════════
+name: Mutation (nightly)
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # 03:00 UTC, nightly
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  mutate:
+    name: mutate · ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [rag, local-mirror, scripts]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # The harness suite asserts against a real git tree (engine-manifest
+      # integrity, auto-commit/auto-push seams), so give the runner an identity.
+      - name: Configure a git identity
+        run: |
+          git config --global user.name "CI Bot"
+          git config --global user.email "ci@example.com"
+
+      # rag mutates the TS engine: its suite needs the native binding built.
+      - name: Install engine deps (rag) builds better-sqlite3
+        if: matrix.package == 'rag'
+        working-directory: rag
+        run: npm ci
+
+      - name: Install local-mirror deps
+        if: matrix.package == 'local-mirror'
+        working-directory: local-mirror
+        run: npm ci
+
+      # scripts needs no package deps (pure .mjs seams, like the CI harness job);
+      # only the Stryker workspace is required.
+      - name: Install the Stryker workspace
+        working-directory: maintainers/mutation
+        run: npm ci
+
+      # --concurrency 2: GitHub's 4-vCPU runner over-subscribes at the local
+      # configs' 4-5 concurrent runners (each re-runs the WHOLE package suite per
+      # mutant), which inflates genuine kills into FALSE timeouts and a bogus high
+      # score (the documented trap, see RESULTS.md § Gotchas). Start low so a
+      # timeout means a REAL infinite loop, not a starved runner. scripts runs its
+      # committed `inPlace: false` sandbox config, so no worktree is needed here
+      # (the ephemeral runner is itself disposable).
+      - name: Mutate ${{ matrix.package }}
+        run: npm --prefix maintainers/mutation run mutate:${{ matrix.package }} -- --concurrency 2
+
+      - name: Upload the HTML report (informational)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report-${{ matrix.package }}
+          path: maintainers/mutation/reports/mutation-${{ matrix.package }}.html
+          if-no-files-found: warn
