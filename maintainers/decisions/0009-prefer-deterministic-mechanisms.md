@@ -10,6 +10,9 @@
 - **Reference instance:** [`0010-debounce-auto-push-to-stop-hook.md`](0010-debounce-auto-push-to-stop-hook.md)
   / [`../plans/archived/debounce-auto-push.md`](../plans/archived/debounce-auto-push.md)
   (the `Stop` event **is** the debounce — no timer, no state file).
+- **Reference instance (rung 4):** [`0032-local-mirror-session-scoped-refresh-timer.md`](0032-local-mirror-session-scoped-refresh-timer.md)
+  (the local-mirror auto-refresh — bounded scheduler with an injected clock + a single-flight lock, the twin
+  of the `ReindexScheduler`/`reindex-lock` pair named in rung 4 below).
 - **Names a split this principle implies:** [`0011-distinct-triggers-indexing-vs-git.md`](0011-distinct-triggers-indexing-vs-git.md)
   (the `chokidar` indexer and the git hooks stay on **distinct triggers** — rungs 3 and 4 below are
   not unified into one watcher).

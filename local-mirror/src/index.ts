@@ -12,13 +12,23 @@ import type { ILocalMirror } from './domain/local-mirror.js';
 
 const SERVER_NAME = 'local-mirror';
 
+/** Optional lifecycle hooks the boot wires in — kept out of the port so the tool surface stays 1:1. */
+export interface McpServerHooks {
+  /**
+   * Fired after a `setup_source` call resolves, so the composition root can arm the background
+   * auto-refresh that boot left idle when no mirror was declared yet (Step 4 finding #1). Fail-soft:
+   * a throw here must not break the tool response, so the boot's hook swallows its own errors.
+   */
+  onSourceDeclared?: () => void | Promise<void>;
+}
+
 /** Serialize any port result into the MCP text-content envelope. */
 function asText(result: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
 }
 
 /** Declare the 7 tools (PRD §9), each a thin 1:1 wrapper over the API port. */
-export function createMcpServer(api: ILocalMirror): McpServer {
+export function createMcpServer(api: ILocalMirror, hooks: McpServerHooks = {}): McpServer {
   const server = new McpServer({ name: SERVER_NAME, version: '0.2.0' });
 
   server.tool(
@@ -31,10 +41,14 @@ export function createMcpServer(api: ILocalMirror): McpServer {
       root_page_url: z.string().describe('Root Notion page URL of the zone'),
       token_env: z.string().describe('Name of the env var holding the integration token'),
     },
-    async ({ name, title, description, root_page_url, token_env }) =>
-      asText(
-        await api.setupSource({ name, title, description, rootPageUrl: root_page_url, tokenEnv: token_env }),
-      ),
+    async ({ name, title, description, root_page_url, token_env }) => {
+      const result = await api.setupSource({ name, title, description, rootPageUrl: root_page_url, tokenEnv: token_env });
+      // A source may now be declared → let the boot (re-)arm auto-sync if it was idle. After the
+      // port call so listSources sees the upserted config; unconditional because setupSource can
+      // persist a source even on a first-sync failure (ok:false), and the boot re-checks anyway.
+      await hooks.onSourceDeclared?.();
+      return asText(result);
+    },
   );
 
   server.tool('list_sources', 'Lists the declared local mirrors and their state.', {}, async () =>

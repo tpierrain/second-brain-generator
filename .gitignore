@@ -53,6 +53,9 @@ node_modules/
 rag/.cache/
 rag/dist/
 local-mirror/dist/
+# Local-mirror single-flight lockfiles — per-process, per-machine, ephemeral (never commit).
+# The sidecar state.json alongside them IS committed on purpose; only the locks are transient.
+.local-mirror/*.sync.lock
 # Transient per-brain health-check verdict (ADR 0028) — regenerated each session.
 engine-health.json
 

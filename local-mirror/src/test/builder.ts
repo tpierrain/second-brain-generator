@@ -10,6 +10,7 @@ import type {
   IConfigStore,
   ISourceConnector,
   IStateStore,
+  ISyncLock,
   IVaultWriter,
   PersistedState,
   SourceItem,
@@ -31,8 +32,12 @@ class LocalMirrorBuilder {
   private unreachableStore = false;
   /** When true, the config store itself cannot be read (health-check "config unreadable"). */
   private unreadableConfig = false;
+  /** Sources another live MCP window is already syncing — their single-flight lock is held. */
+  private readonly lockedByOthers = new Set<string>();
   /** Stable reference so tests can inspect the vault after build()/sync(). */
   private readonly vault = new RecordingVaultWriter();
+  /** Advanceable test clock so a test can sync in one minute and check freshness in a later one. */
+  private readonly clock = new MutableClock(new Date('2026-06-17T00:00:00.000Z'));
   /** Stable reference so tests can inspect what `setup_source` declared. */
   private readonly configs = new InMemoryConfigStore(this.declared, () => this.unreadableConfig);
 
@@ -107,12 +112,31 @@ class LocalMirrorBuilder {
   }
 
   /**
+   * Simulate another live brain window already syncing this source: its cross-process
+   * single-flight lock is held, so a sync here must skip rather than race on the state.json.
+   */
+  withSourceBeingSyncedByAnotherWindow(name: string): this {
+    this.lockedByOthers.add(name);
+    return this;
+  }
+
+  /**
    * Make the vault refuse to delete a given file (I/O error, permission, transient FS
    * failure). A failing deletion must not abort the whole sync after the page writes
    * already landed — it freezes the run as `partial` and keeps the page tracked for retry.
    */
   withFailingDeletionOf(vaultPath: string): this {
     this.vault.failDeleteOf(vaultPath);
+    return this;
+  }
+
+  /**
+   * Move the test clock forward — e.g. to let the wall-clock minute elapse between a sync and a
+   * later `check_freshness`. Notion stamps `last_edited_time` at minute granularity, so a sync
+   * landing in that same minute may have snapshotted a page mid-edit.
+   */
+  advanceClockTo(iso: string): this {
+    this.clock.set(new Date(iso));
     return this;
   }
 
@@ -134,8 +158,9 @@ class LocalMirrorBuilder {
       configStore: this.configs,
       stateStore: new InMemoryStateStore(this.unreachableStore),
       vaultWriter: this.vault,
-      clock: new FixedClock(new Date('2026-06-17T00:00:00.000Z')),
+      clock: this.clock,
       connectorFor: () => new StubConnector(() => this.pages, () => this.enumerationError),
+      syncLock: new FakeSyncLock(this.lockedByOthers),
     });
   }
 }
@@ -255,9 +280,25 @@ class StubConnector implements ISourceConnector {
   }
 }
 
-class FixedClock implements IClock {
-  constructor(private readonly fixed: Date) {}
+class MutableClock implements IClock {
+  constructor(private current: Date) {}
   now(): Date {
-    return this.fixed;
+    return this.current;
   }
+  set(value: Date): void {
+    this.current = value;
+  }
+}
+
+/**
+ * In-memory single-flight lock. A source in `heldByOthers` is owned by another live window
+ * (acquire fails → the caller skips); everything else is free to acquire. Release is a no-op:
+ * a source held by another window stays held for the whole test.
+ */
+class FakeSyncLock implements ISyncLock {
+  constructor(private readonly heldByOthers: Set<string>) {}
+  acquire(name: string): boolean {
+    return !this.heldByOthers.has(name);
+  }
+  release(): void {}
 }

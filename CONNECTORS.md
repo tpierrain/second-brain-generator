@@ -49,6 +49,10 @@ citable notes** — *the central RAG you don't have yet, but local and right now
 - **How:** the **`/local-mirror` skill** drives it (onboard, sync, check freshness, status, remove);
   the work runs in the built-in **`local-mirror`** MCP server. The Notion integration **token
   lives only in `.env`**, never in the chat.
+- **Stays fresh on its own.** While a brain window is open, the mirror server re-checks freshness on a
+  timer and re-syncs only what fell behind — no question needed. Tune the cadence with
+  **`LOCAL_MIRROR_SYNC_INTERVAL`** in `.env` (seconds, **default 300**; **`0` = off**, keeping only the
+  refresh-when-you-ask path). It is session-scoped, not a 24/7 daemon.
 - **When to prefer it over a Notion search connector:** when a body of reference docs is **a reliable
   reference** for recurring questions and you want it **always fresh, framed and cited** inside the
   brain — not searched ad hoc, side by side.

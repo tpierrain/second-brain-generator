@@ -47,8 +47,8 @@
 - [x] **S2 — Consequences + what to harden, written** _(2026-06-21)_
 - [x] **S3 — In-interval-question behaviour, analysed + recommended** _(2026-06-21)_
 - [x] **S4 — Open questions surfaced (incl. the 5-vs-10-min wording)** _(2026-06-21)_
-- [ ] **S5 — 🧭 Thomas answers the few remaining open questions** _(awaiting)_
-- [ ] **S6 — (last topic of v3.3.0) implement via `golden-source-scheduled-sync-action.md`** _(deferred to end of PR)_
+- [x] **S5 — 🧭 Thomas answers the few remaining open questions** _(2026-07-16 — Q1..Q5 all settled; see S4)_
+- [ ] **S6 — (last topic of v3.3.0) implement via `golden-source-scheduled-sync-action.md`** _(ready to start — deltas folded in below)_
 
 ---
 
@@ -141,15 +141,16 @@ change but before the next 5-min tick → the brain answers from a copy that's a
 
 **Recommendation — mirror the vault heuristic, then reset the timer:**
 
-- [ ] **Answer immediately from the local mirror** (it's already indexed) — never make the user wait on
+- [x] **Answer immediately from the local mirror** (it's already indexed) — never make the user wait on
   a network round-trip. This keeps mirrors consistent with the rest of the brain ("local-first, amend
-  in parallel").
-- [ ] **In parallel, trigger an on-demand `check_freshness` (→ `sync` if behind) for that source**, so
+  in parallel"). _(adopted 2026-07-16, Q3)_
+- [x] **In parallel, trigger an on-demand `check_freshness` (→ `sync` if behind) for that source**, so
   that if the local copy was stale, the brain can **amend / append** its answer ("⟳ I just refreshed
   *<source>* — one page changed, here's the update"). Same single-flight lock as the timer (if a tick
-  is already syncing, just await/skip — don't double-sync).
-- [ ] **Reset the poll timer for that source after this on-demand refresh** — we just verified it, so
+  is already syncing, just await/skip — don't double-sync). _(adopted 2026-07-16, Q3)_
+- [x] **Reset the poll timer for that source after this on-demand refresh** — we just verified it, so
   there's no point re-polling it 30 s later. The next automatic tick is rescheduled to "now + interval".
+  _(adopted 2026-07-16, Q3)_
 
 **Two design points to nail when implementing this:**
 
@@ -168,20 +169,21 @@ change but before the next 5-min tick → the brain answers from a copy that's a
 
 ## S4 — Open questions for Thomas (small; the direction is settled)
 
-- [ ] **Q1 — One interval or two?** Thomas's note says "polling every **5 min**" but also "reset the
-  timer of **10 min**". Did you mean (a) a single ~5-min interval (the existing plan's default 300 s),
-  or (b) two cadences — a cheap **check** every 5 min and a heavier full **sync** less often? Proposal:
-  **one interval (5 min) of cheap check → sync-if-behind**, and "reset the timer after an on-demand
-  refresh" (S3). If you really want a longer floor between *full* syncs, we add a second number.
-- [ ] **Q2 — Default interval & configurability.** Keep **300 s default, env-configurable**
-  (`LOCAL_MIRROR_SYNC_INTERVAL`, `0` = off)? Per-mirror override, or one global value for v1?
-- [ ] **Q3 — On-demand refresh: amend-after or answer-stale-silently?** Confirm the S3 recommendation
-  (answer local-first **and** refresh in parallel to amend) vs. just answering from the local copy with
-  no amend.
-- [ ] **Q4 — Toast policy on a background change.** One settled toast per change is fine? Any minimum
-  quiet interval so a fast-moving source doesn't toast every few minutes?
-- [ ] **Q5 — Localize the user-facing lines** (toast / amend message) or English-only for now (like the
-  other runtime hooks today)?
+- [x] **Q1 — One interval or two?** → **ANSWERED (2026-07-16): one interval.** A single ~5-min interval
+  of cheap `check_freshness` → `sync`-if-`behind` (option a), plus "reset the timer after an on-demand
+  refresh" (S3). No separate slower full-sync cadence for v1.
+- [x] **Q2 — Default interval & configurability.** → **ANSWERED (2026-07-16): 300 s default,
+  env-configurable** (`LOCAL_MIRROR_SYNC_INTERVAL`, `0` = off). Auto-refresh is **on by default**
+  whenever ≥1 mirror is declared (no extra opt-in beyond having a mirror). Per-mirror override deferred
+  (one global value for v1 unless a need appears).
+- [x] **Q3 — On-demand refresh: amend-after or answer-stale-silently?** → **ANSWERED (2026-07-16):
+  answer local-first AND refresh in parallel to amend** (the S3 recommendation). Consistent with the
+  rest of the brain ("local-first, amend in parallel").
+- [x] **Q4 — Toast policy on a background change.** → **ANSWERED (2026-07-16): one settled toast per
+  real change, plus a minimum quiet interval** (anti-nag) so a fast-moving source doesn't toast every
+  few minutes. A no-change tick stays silent; commits can stay silent (local history only).
+- [x] **Q5 — Localize the user-facing lines** → **ANSWERED (2026-07-16): English-only for v1**, like
+  the other runtime hooks today. Localization can come later if needed.
 
 ---
 

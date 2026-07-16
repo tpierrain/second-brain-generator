@@ -32,6 +32,13 @@ export interface LocalMirrorConfig {
 
 export type SyncStatus = 'ok' | 'partial' | 'failed' | 'never';
 
+/**
+ * A sync outcome adds `skipped` to the persisted statuses: another live process already holds
+ * the source's single-flight lock, so this caller did nothing (no write, no state change). It is
+ * transient — never persisted as a source's `lastSyncStatus` (auto-refresh study, S2 item 1).
+ */
+export type SyncOutcome = SyncStatus | 'skipped';
+
 /** A declared source + its synced state — returned by `listSources()`/`status()`. */
 export interface SourceState {
   name: string;
@@ -64,7 +71,7 @@ export interface SetupResult {
 /** What a `sync` changed (PRD §9). */
 export interface SyncReport {
   name: string;
-  status: SyncStatus;
+  status: SyncOutcome;
   written: number;
   deleted: number;
   unchanged: number;

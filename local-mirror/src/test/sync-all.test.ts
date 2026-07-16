@@ -60,8 +60,10 @@ function buildSyncOver(specs: SourceSpec[]): {
     return new SpecConnector(spec);
   };
 
+  const syncLock = { acquire: () => true, release: () => {} };
+
   return {
-    api: new LocalMirror({ configStore, stateStore, vaultWriter, clock, connectorFor }),
+    api: new LocalMirror({ configStore, stateStore, vaultWriter, clock, connectorFor, syncLock }),
     written,
     deleted,
   };

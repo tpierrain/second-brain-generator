@@ -53,6 +53,20 @@ test('aggregateStatus: a partial anywhere → partial', () => {
   assert.equal(aggregateStatus([{ status: 'partial' }, { status: 'ok' }]), 'partial');
 });
 
+// A 'skipped' source (its lock was held by another live window) is BENIGN, not a failure — it must
+// not drag a healthy fan-out to 'partial'. It is excluded from the verdict; the real attempts decide.
+test('aggregateStatus: a skipped source among ok ones → ok (skipped is benign, excluded)', () => {
+  assert.equal(aggregateStatus([{ status: 'ok' }, { status: 'skipped' }]), 'ok');
+});
+
+test('aggregateStatus: every source skipped → ok (nothing failed; another window has them)', () => {
+  assert.equal(aggregateStatus([{ status: 'skipped' }, { status: 'skipped' }]), 'ok');
+});
+
+test('aggregateStatus: skipped alongside a real failure → failed (the failure still counts)', () => {
+  assert.equal(aggregateStatus([{ status: 'failed' }, { status: 'skipped' }]), 'failed');
+});
+
 // aggregateReports: name 'all', worst-of status, and per-count SUMS (not just written).
 test('aggregateReports sums every count and reports the per-source breakdown', () => {
   const a = { name: 'a', status: 'ok', written: 2, deleted: 1, unchanged: 3 };

@@ -75,5 +75,17 @@ export interface IClock {
   now(): Date;
 }
 
+/**
+ * Single-flight lock per source, ACROSS processes (two MCP windows on the same brain).
+ * `acquire` returns false when another LIVE process holds the source's lock → the caller
+ * must skip that source rather than racing on its `state.json` (auto-refresh study, S2 item 1).
+ * A crashed holder (dead pid) or a stale lock is reclaimable.
+ */
+export interface ISyncLock {
+  acquire(name: string): boolean;
+  /** Release the source's lock — idempotent. */
+  release(name: string): void;
+}
+
 /** Builds the right connector for a declared source (one token/scope per source). */
 export type ConnectorFactory = (config: LocalMirrorConfig) => ISourceConnector;
