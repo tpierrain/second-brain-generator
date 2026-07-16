@@ -32,6 +32,16 @@ unchecked box below.
 - [ ] **A2 — After B2+B3 raise the score, cut the improved numbers as the NEXT release** so the *latest*
   release shows the *improved* scores (e.g. rag ~90-93 %). This is what actually satisfies "associate the
   better numbers with the latest release".
+  - [x] **Re-audit rag production-only (post-B2/B3): 82.59 % → 90.42 %** (1279 killed + 5 timeout / 1420
+    covered, 136 survived). RESULTS.md refreshed (re-audit #2; the 82.59 % closer marked superseded).
+    _(2026-07-16)_
+  - [x] **Decision (Thomas, 2026-07-16): v3.4.1 predates the B3 tests → do NOT retro-edit its note.** Cut
+    a **new patch release v3.4.2** that actually contains the hardened tests and pin 90.42 % there;
+    v3.4.1's note stays the honest tag-time snapshot. Codename: **"The One Where the Survivors Run Out of
+    Places to Hide"**.
+  - [ ] Build **B1 (nightly)** first, then cut **v3.4.2** bundling the hardening + the nightly (Thomas,
+    2026-07-16). Merge branch → `main`, tag `v3.4.2` on `main`, GitHub release with the codename + the
+    pinned `rag 90.42 %, scripts 97.27 %, local-mirror 78.69 %` snapshot.
 
 ### Improve + keep-fresh
 

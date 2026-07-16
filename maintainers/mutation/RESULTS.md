@@ -10,9 +10,11 @@
 ## Baseline run — 2026-06-23 (engine at v3.4.0, commit `49e46a9`)
 
 > ⚠️ **SUPERSEDED for `rag` and `local-mirror`.** This is the *pre-hardening* photo. For the current
-> package scores after Step 3, read **[Full `rag` re-audit — 2026-07-16](#full-rag-re-audit-closer--2026-07-16)**
-> (**57.23 % → 82.59 %**) and the local-mirror re-audit below (67.63 % → 78.69 %). Do not quote the
-> baseline numbers as the current state.
+> `rag` score after the weak-tier hardening (B3), read **[Full `rag` re-audit #2 — 2026-07-16
+> (post-B2/B3)](#full-rag-re-audit-2--2026-07-16-post-b2b3-hardening)** (**82.59 % → 90.42 %**,
+> production-only). The earlier 57.23 % → 82.59 % closer is itself superseded (it still mutated the
+> `fake-embedder` test double). For local-mirror see the re-audit below (67.63 % → 78.69 %). Do not
+> quote the baseline numbers as the current state.
 
 Faithful scope: every mutant re-runs the **whole package suite** (command runner, no
 StrykerJS `node:test` runner). Scores are the durable test-quality signal the project lacked.
@@ -79,7 +81,60 @@ Enumerated Step-2 worst-files (`server.ts`, `index.ts`, `notion-gateway.ts`) are
 The remaining weak tier (`notion-transformers.ts` 57 %, `local-mirror.ts` 77 %, `notion-url.ts`
 74 %) was not flagged in the Step-2 worst-first list; hardening it is optional follow-up.
 
-## Full `rag` re-audit (closer) — 2026-07-16
+## Full `rag` re-audit #2 — 2026-07-16 (post-B2/B3 hardening)
+
+**Current `rag` score: 90.42 %** (1279 killed + 5 timeout / 1420 covered, 136 survived, 0 no-coverage).
+Run at `concurrency: 4` (honest timeouts). Two changes lifted it from the 82.59 % closer below:
+
+- **B2 — stopped mutating the `fake-embedder.ts` test double** (a test helper, not production code):
+  the mutate set drops from 25 → 24 files (1420 vs 1436 mutants). This is a *measurement-correctness*
+  fix — the 82.59 % was scoring the wrong thing for those 6 mutants.
+- **B3 — hardened the 5 weak-tier files** the earlier closer flagged: `health-check` 63.25 % → 92.31 %,
+  `usage-tracker` 55.88 % → 92.65 %, `citation-renderer` 45.45 % → 100 %, `reindex-lock` 75.34 % →
+  94.52 %, `status-report` 78.87 % → 100 %.
+
+Per-file, worst-first on the **remaining** survivors (24 files, `fake-embedder` excluded):
+
+| File | Score | Survived | Tier |
+|---|---|---|---|
+| `search-degradation.ts` | 71.43 % | 2 | small, never hardened |
+| `reindex-scheduler.ts` | 74.19 % | 8 | never hardened |
+| `index-freshness.ts` | 81.13 % | 10 | never hardened |
+| `embedder.ts` | 81.98 % | 20 | **hardened — residual are documented equivalents** |
+| `in-process-embedder.ts` | 82.61 % | 8 | never hardened |
+| `reindex-reporter.ts` | 83.64 % | 9 | never hardened |
+| `openai-compatible-embedder.ts` | 84.00 % | 4 | never hardened |
+| `engine-version.ts` | 84.44 % | 7 | never hardened |
+| `chunker.ts` | 85.88 % | 12 | **hardened — documented equivalents** |
+| `config.ts` | 86.67 % | 4 | **hardened — documented equivalents** |
+| `progress-report.ts` | 88.52 % | 7 | never hardened |
+| `notify.ts` | 90.91 % | 9 | already decent |
+| `health-check.ts` | 92.31 % | 9 | **hardened B3 — effective 100 % (9 documented equivalents)** |
+| `vector-store.ts` | 92.47 % | 11 | **hardened — documented equivalents** |
+| `usage-tracker.ts` | 92.65 % | 5 | **hardened B3 — 4 equivalents + 1 accepted gap** |
+| `indexer.ts` | 94.44 % | 1 | already decent |
+| `reindex-lock.ts` | 94.52 % | 4 | **hardened B3 — documented equivalents** |
+| `index-manager.ts` | 94.87 % | 4 | **hardened — documented equivalents** |
+| `frontmatter-parser.ts` | 97.62 % | 2 | **hardened — documented equivalents** |
+| `citation-renderer.ts` | 100.00 % | 0 | **hardened B3** |
+| `document-scanner.ts` | 100.00 % | 0 | hardened |
+| `native-deps.ts` | 100.00 % | 0 | already 100 % |
+| `status-report.ts` | 100.00 % | 0 | **hardened B3** |
+| `vault-watcher.ts` | 100.00 % | 0 | hardened |
+
+**Reading it.** Of the 136 survivors, the bulk are **documented equivalent mutants** in the already-hardened
+files (embedder 20, chunker 12, vector-store 11, health-check 9, index-manager 4, config 4, reindex-lock 4,
+usage-tracker 4, frontmatter-parser 2 → ~70). The rest sit in files never worst-listed (`reindex-scheduler`,
+`index-freshness`, the embedder adapters, `reindex-reporter`, `engine-version`, `progress-report`, `notify`) —
+a possible future **B4-style** follow-up, non-blocking. Ceiling ~96 % (documented equivalents can't be killed).
+
+Pinned to the release that ships these hardened tests: **v3.4.2** (see the plan's A2).
+
+## Full `rag` re-audit (closer) — 2026-07-16 [SUPERSEDED by re-audit #2 above]
+
+> ⚠️ **SUPERSEDED** by [re-audit #2](#full-rag-re-audit-2--2026-07-16-post-b2b3-hardening). This closer
+> still mutated the `fake-embedder.ts` test double and predated the B3 weak-tier hardening. Kept for
+> history — do not quote 82.59 % as the current `rag` score.
 
 After hardening all enumerated Step-2 worst-files, a full-package re-audit lifts **`rag` from
 57.23 % → 82.59 %** (1177 killed + 9 timeout / 1436 covered, 250 survived, 0 no-coverage). Run at
