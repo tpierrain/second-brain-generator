@@ -56,6 +56,20 @@ jobs:
         working-directory: rag
         run: npx tsc --noEmit
 
+      # Local-mirror — TS/ESM via tsx, no native binding. `npm ci` then the suite,
+      # so the MCP mirror package is covered cross-platform like the engine is.
+      - name: Install local-mirror deps
+        working-directory: local-mirror
+        run: npm ci
+
+      - name: Local-mirror tests
+        working-directory: local-mirror
+        run: npm test
+
+      - name: Type-check local-mirror
+        working-directory: local-mirror
+        run: npx tsc --noEmit
+
   # The net for the INSTALLER path itself (Bugs 1 & 2): nothing here built a brain
   # end-to-end before, so spawn-correctness bugs on Windows stayed invisible. We run
   # the real non-interactive install on windows-latest, then assert the RAG deps
