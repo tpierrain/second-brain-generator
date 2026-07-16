@@ -17,6 +17,7 @@ import { spawnSync } from "node:child_process";
 
 import { clearExampleNotes } from "./lib/example-notes.mjs";
 import { needsShell } from "./lib/spawn-shell.mjs";
+import { isEntrypoint } from "./lib/entrypoint.mjs";
 
 // Deletes the exemple-tagged notes under <rootDir>/vault. Returns deleted paths
 // (empty if there is no vault/ — nothing to do).
@@ -68,6 +69,6 @@ export function runClear(argv, deps = realClearDeps) {
   return 0;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isEntrypoint(import.meta.url, process.argv[1])) {
   process.exit(runClear(process.argv.slice(2)));
 }
