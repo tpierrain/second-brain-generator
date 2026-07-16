@@ -81,24 +81,38 @@
         (scheduler lives in the server event loop, independent of Claude turns).
   - [ ] 4c — **Concurrent-access validation across windows — REQUIRED before release (Thomas, 2026-07-16).**
         Decision **reversed** from the earlier "accept unit coverage": Thomas wants a real concurrent test,
-        proposing **3 windows at a ~5 s polling cadence**. Chosen approach (his pick): an **automated
-        multi-process** harness (offline, no token). · `interval=0` disables cleanly — **PROVEN** live
-        _(2026-07-16)_: `[local-mirror] auto-sync disabled (LOCAL_MIRROR_SYNC_INTERVAL=0)`.
-    - [ ] 4c-i — **Test-only worker entry.** Build a `LocalMirror` with the REAL fs adapters
-          (`FsConfigStore`/`FsStateStore`/`FsVaultWriter`/`FsSyncLock`/`SystemClock`) pointing at a **shared
-          dir**, but an **injected stub connector** that reads the "remote" from a `remote.json` in that dir
-          (so the orchestrator mutates the remote and all 3 processes observe it). No real Notion, offline.
-          The domain accepts injected `connectorFor` (see `src/test/builder.ts`), so no `server.ts` needed.
-    - [ ] 4c-ii — **Orchestrator** (maintainers QA script, binary verdict à la `verify-rag.mjs` — ADR 0009
-          rung 2). Seed one `team-a` config + initial `remote.json`; spawn **3 real node processes**, each
-          looping `check_freshness` + `sync` at an aggressive cadence (~5 s, or tighter to force tick
-          collisions) for N cycles; mutate `remote.json` a few times mid-run; stop them; then **assert**:
-          `state.json` always valid JSON, **watermark monotonic** (never regresses; equals the max remote
-          `last_edited_time` at the end), vault files match the final remote, no crash. `exit 0`/`exit 1`.
+        proposing **3 windows at a ~5 s polling cadence**. **Run against REAL Notion** (Thomas, 2026-07-16):
+        reuse the throwaway QA brain **`~/lm-qa-autorefresh`** and its **existing (compromised, throwaway)**
+        key `NOTION_TOKEN_PERSONAL_HOME` already in that brain's `.env`, on its declared **`personal-home`**
+        mirror. Key stays in the brain's `.env` (never repo, never chat); it is regenerated at ship anyway.
+        · `interval=0` disables cleanly — **PROVEN** live _(2026-07-16)_: `auto-sync disabled (…=0)`.
+    - [ ] 4c-i — **Worker.** A small runner that builds the REAL `LocalMirror` (real fs adapters
+          `FsConfigStore`/`FsStateStore`/`FsVaultWriter`/`FsSyncLock`/`SystemClock` + the **real**
+          `notionConnectorFactory`) rooted at `~/lm-qa-autorefresh` (its `CONFIG_PATH`/`SIDECAR_DIR`/
+          `VAULT_DIR`, `.env` loaded for the token), then loops `check_freshness` + `sync('personal-home')`
+          at an aggressive cadence (~5 s, or tighter to force tick collisions). Simplest: run the real
+          `server.ts` boot with `LOCAL_MIRROR_SYNC_INTERVAL=5` — 3 instances = 3 windows — OR a thin loop
+          script if finer control is needed. Confidential: never print/commit the real page content.
+    - [ ] 4c-ii — **Orchestrator** (maintainers QA harness, binary verdict à la `verify-rag.mjs`, ADR 0009
+          rung 2). Spawn **3 real node processes** (3 windows) against the shared brain, let them poll for N
+          cycles; **edit the real Notion `personal-home` page a few times mid-run** (by hand, or via the
+          native Notion connector) to create deltas; stop them; then **assert**: `state.json` always valid
+          JSON, **watermark monotonic** (never regresses; equals the max Notion `last_edited_time` at the
+          end), the vault `.md` matches the final Notion content, no crash / no lost update. `exit 0`/`1`.
     - [ ] 4c-iii — **If it reproduces the `acquire()` race** (finding below) → harden `FsSyncLock.acquire`
           to an **atomic create** (`O_EXCL`, i.e. `writeFileSync(path, …, { flag: 'wx' })`) in TDD; re-run
           the harness until clean.
-    - [ ] 4c-iv — Record the verdict in this plan + tick.
+    - [ ] 4c-iv — Record the verdict in this plan + tick. (At ship: purge `~/lm-qa-autorefresh` + regenerate
+          the `NOTION_TOKEN_PERSONAL_HOME` token — it appeared in a transcript.)
+
+> **🤖 4c autonomy mandate (Thomas, 2026-07-16, before dinner).** Thomas delegated this whole QA campaign
+> and is AWAY — **do NOT wait for him**. Drive the Notion deltas **yourself** via the **native Notion
+> connector** (`mcp__claude_ai_Notion__*`) on a **dedicated QA page** inside the `personal-home` zone (create
+> `QA — local-mirror concurrency` if none fits; never mutate arbitrary personal content). Run the full 4c
+> campaign solo: build the harness, spawn 3 processes, force deltas, assert, and — **if the TOCTOU
+> reproduces — harden `acquire()` with `O_EXCL` in TDD** and re-run until clean, committing only on green.
+> Keep the compromised throwaway key in the brain's `.env` (never repo/chat). Report findings + verdict at
+> the end for his return. Do NOT push/merge/tag (Step 6 still needs his explicit green light).
 
 > **🔎 Step 4c pre-work finding (2026-07-16) — the cross-process single-flight has a TOCTOU window.**
 > `FsSyncLock.acquire()` (`src/adapters/fs-sync-lock.ts`) does read → check → `writeFileSync` **without an
