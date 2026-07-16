@@ -1,10 +1,20 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🚧 ACTIVE — Steps 0–8 done. Step 9 IN PROGRESS: live-Notion QA started against a throwaway personal test zone (10 pages). PROVEN against the real API: setup_source (scope OK), first sync (1 .md/page + correct frontmatter, token only via token_env), delta no-op, watermark, check_freshness. BLOCKING FINDING B1: pages embedding Notion-hosted files/images churn on every sync (notion-to-md emits rotating S3 pre-signed URLs with X-Amz-* params → hash differs → rewrite) → violates "no-change sync rewrites nothing"; fix = normalize/strip X-Amz-* before hashing (TDD) + ADR. STILL NEEDS THOMAS: real rename/delete reconciliation in Notion, installed-brain demo (FileWatcher index + bounded answer + citation). Branch: golden-source-sync. -->
+<!-- STATUS: ✅ SHIPPED / SUPERSEDED (archived 2026-07-17). This engine was renamed
+     `golden-source-sync` → `local-mirror` (archived plan `local-mirror-rename-action.md`)
+     and SHIPPED as the `local-mirror/` package + `local-mirror` skill. The scheduled
+     self-refresh landed in v3.5.0 ("The One Where the Mirror Refreshes Itself", PR #28;
+     archived plan `golden-source-scheduled-sync-action.md`). Finding B1 (X-Amz-* pre-signed
+     URL churn) was fixed during the ship. Proof: `local-mirror/` package present, skill
+     available, tag v3.5.0. Kept for history only — do NOT resume from this file. -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — `golden-source-sync`: synchronize golden-source content into the second brain's vault
 
-> **STATUS: 🚧 ACTIVE — not started** (created 2026-06-17). Implements the frozen design in
+> **STATUS: ✅ SHIPPED / SUPERSEDED** (created 2026-06-17, archived 2026-07-17). Renamed to
+> `local-mirror` and shipped (package + skill); scheduled self-refresh shipped in **v3.5.0**.
+> Superseded by the archived `local-mirror-rename-action.md` and
+> `golden-source-scheduled-sync-action.md`. Kept for history only. Implements the frozen design in
 > [`prd-golden-source-sync.md`](./prd-golden-source-sync.md) (the PRD — copy it next to this plan
 > for reference). A **new MCP server** that declares *golden sources* and **synchronizes their
 > content** into the local vault as plain Markdown. It **writes/deletes files, full stop**: the
