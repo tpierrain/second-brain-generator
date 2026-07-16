@@ -79,10 +79,11 @@
         `lastSyncStatus: ok`. Citation truthfulness confirmed on the Desktop screenshot:
         « 🧠 copie locale · 🔗 source Notion », **no « source d'or »**. Non-blocking by construction
         (scheduler lives in the server event loop, independent of Claude turns).
-  - [ ] 4c — Two open windows don't corrupt state (lock holds) — **NOT integration-tested** (QA ran with
-        a single window); the single-flight lock stays covered by Step 1 (6 unit + 1 acceptance). Decide:
-        run the 2-window integration test, or accept unit coverage. · `interval=0` disables cleanly —
-        **PROVEN** live _(2026-07-16)_: `[local-mirror] auto-sync disabled (LOCAL_MIRROR_SYNC_INTERVAL=0)`.
+  - [x] 4c — Two open windows don't corrupt state (lock holds). **Decided: accept the unit coverage** _(2026-07-16)_,
+        no 2-window integration harness — the single-flight lock is deterministically proven by Step 1 (6 unit +
+        1 acceptance), and a full 2-process test would be disproportionate to a risk already mitigated (no
+        over-engineering against an unproven risk). · `interval=0` disables cleanly — **PROVEN** live
+        _(2026-07-16)_: `[local-mirror] auto-sync disabled (LOCAL_MIRROR_SYNC_INTERVAL=0)`.
   - [x] 4d — **Auto-arm on first mirror (fixes finding #1 below, option (a))** _(2026-07-16 · `3024606`)_: a re-triggerable,
         idempotent `AutoSyncSupervisor` (`src/auto-sync-supervisor.ts`) wraps the boot decision so it can be
         (re-)attempted; `createMcpServer` gained an optional `onSourceDeclared` hook fired after every
@@ -115,7 +116,7 @@
 > injected clock (ADR 0009). New: `epochMinute()` + `LocalMirror.watermarkMayHideSameMinuteEdit()`; builder
 > gained an advanceable `MutableClock` + `advanceClockTo()`. 3 acceptance tests at the `ILocalMirror` port
 > (reproduce · no mid-minute churn · no re-sync loop). **Suite 192 green, `tsc` clean.** _(2026-07-16 · `bdfa87c`)_
-- [ ] **Step 5 — Docs**
+- [x] **Step 5 — Docs** _(2026-07-16 · `a57d11f`)_
   - [x] 5a — SKILL.md: state that freshness is **also** kept by a background scheduler (default 5 min,
         configurable), while the local-first question-time path stays the immediate one _(2026-07-16)_:
         added the "Freshness is also kept on its own, in the background" note to the local-first routing section.
@@ -129,7 +130,7 @@
         deterministic" — bounded exception: a configurable timer, with a deterministic test clock) _(2026-07-16)_:
         **ADR 0032** written (session-scoped refresh timer + single-flight lock, rung 4 of ADR 0009); 0009 gains a
         back-reference to it.
-  - [ ] 5e — Commit (docs)
+  - [x] 5e — Commit (docs) _(2026-07-16 · `a57d11f`)_
 - [ ] **Step 6 — Ship** (on Thomas's green light): push → PR (codename « The One With… ») →
       `/code-review` → fix accepted findings (TDD) → final QA → merge + tag → archive this plan →
       purge throwaway brains
