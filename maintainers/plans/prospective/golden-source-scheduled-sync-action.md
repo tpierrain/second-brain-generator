@@ -83,7 +83,7 @@
         a single window); the single-flight lock stays covered by Step 1 (6 unit + 1 acceptance). Decide:
         run the 2-window integration test, or accept unit coverage. · `interval=0` disables cleanly —
         **PROVEN** live _(2026-07-16)_: `[local-mirror] auto-sync disabled (LOCAL_MIRROR_SYNC_INTERVAL=0)`.
-  - [x] 4d — **Auto-arm on first mirror (fixes finding #1 below, option (a))** _(2026-07-16)_: a re-triggerable,
+  - [x] 4d — **Auto-arm on first mirror (fixes finding #1 below, option (a))** _(2026-07-16 · `3024606`)_: a re-triggerable,
         idempotent `AutoSyncSupervisor` (`src/auto-sync-supervisor.ts`) wraps the boot decision so it can be
         (re-)attempted; `createMcpServer` gained an optional `onSourceDeclared` hook fired after every
         `setup_source`; `bootReal` wires the hook to `supervisor.ensureRunning()` (fail-soft) so declaring the
