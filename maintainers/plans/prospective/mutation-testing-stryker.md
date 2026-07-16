@@ -6,6 +6,58 @@
 
 # Mutation testing (Stryker) — global audit of the engine's three packages
 
+## ▶ Resume after /clear — Backlog: what to fix next (2026-07-16)
+
+State: the three-package audit + hardening is done; the **rag full re-audit closed at 57.23 % → 82.59 %**
+(RESULTS.md refreshed, baseline marked superseded). Goal added 2026-07-16: **make the numbers sellable on
+the GitHub release page** (today the badge link still surfaces the stale 57 %). Resume at the first
+unchecked box below.
+
+> **Insight — where a static score is honest.** A published GitHub release is **frozen**, so a pinned
+> number ("rag 82.59 % at v3.4.1") stays true forever → put real scores in **release notes**. The
+> **README** tracks moving `main`, so a static number there would rot → keep the README on a **capability**
+> badge (or a **live** dashboard badge via the nightly). Cadence going forward: harden → re-measure → cut a
+> release → pin that release's score snapshot in its notes.
+
+### Do-first (the "sellable numbers" ask)
+
+- [ ] **A0 — Merge PR #22** → `main`'s RESULTS.md shows **82.59 %** (baseline superseded), so the repo page
+  linked from the badge stops surfacing the stale 57 %.
+- [ ] **A1 — Pin the aggregate scores into the GitHub release notes.**
+  - [ ] Edit the **v3.4.1** note's "Hardened (test quality)" section to state the package aggregates:
+    **rag 82.59 %, scripts 97.27 %, local-mirror 78.69 %** (honest — the release is frozen).
+  - [ ] Adopt the convention: every future release note carries a mutation-score snapshot pinned to its tag.
+- [ ] **A2 — After B2+B3 raise the score, cut the improved numbers as the NEXT release** so the *latest*
+  release shows the *improved* scores (e.g. rag ~90-93 %). This is what actually satisfies "associate the
+  better numbers with the latest release".
+
+### Improve + keep-fresh
+
+- [ ] **B1 — Anti-rot NIGHTLY workflow** *(agreed next build; latency analysis done — nightly wins over a PR gate)*
+  - [ ] New `.github/workflows/mutation-nightly.yml` on **`ubuntu-latest`** (NOT macOS/Windows: mutation
+    is OS-agnostic, and macOS billing is ×10). `schedule:` cron + `workflow_dispatch` for manual test.
+  - [ ] Run `mutate:all` — but `scripts/**` must run in a **disposable git worktree** (destructive inPlace,
+    see RESULTS.md § How each package is run). rag + local-mirror run inPlace.
+  - [ ] **Re-tune `concurrency`** for a 4-core runner (start at 2-3; verify no FALSE timeouts before
+    trusting the score — the documented bogus-100 % trap).
+  - [ ] Upload the HTML reports (`maintainers/mutation/reports/`) as a build artifact; non-blocking (informational).
+  - [ ] Ship it via `workflow_dispatch` FIRST (run once, confirm honest scores), THEN enable the cron.
+  - [ ] (stretch) Add the Stryker **dashboard reporter** → unlocks the LIVE badge we deferred (replace the
+    static capability badge in README + release notes).
+- [ ] **B2 — Config hygiene: stop mutating test doubles.** `rag/src/lib/fake-embedder.ts` (62.5 %) is a
+  **test helper**, not production code — mutating it measures the wrong thing. Exclude it from the rag
+  mutate glob (and sweep for other `fake-*`/stub files across the three configs). Improves signal, not just score.
+- [ ] **B3 — Harden the newly-surfaced rag weak tier** (optional; lifts ~82.6 % → ~90-93 %). Worst-first,
+  TDD baby-steps, 6 engraved reflexes (+ reflex #6 = extract a pure seam when I/O glue resists):
+  - [ ] `health-check.ts` 63.25 % (43 survivors — most in the package)
+  - [ ] `usage-tracker.ts` 55.88 % (30)
+  - [ ] `citation-renderer.ts` 45.45 % (18 — lowest score)
+  - [ ] `reindex-lock.ts` 75.34 % (18)
+  - [ ] `status-report.ts` 78.87 % (15)
+  - Ceiling ~96 % (documented equivalents can't be killed — do NOT chase 100 %).
+- [ ] **B4 — (optional) local-mirror weak tier** (from the local-mirror re-audit, never worst-listed):
+  `local-mirror.ts` 77.41 %, `notion-url.ts` 74.47 %, `config.ts`/`fresh-env.ts` 62.5 %/71.4 %.
+
 ## Why (the WHAT)
 
 One root cause of the "everything you ship feels degraded" episode was that **test quality was never
@@ -166,9 +218,17 @@ built-in `node --test`. Two realistic paths, in tension:
       present, the `.env` re-read closure exercised only on empty-startup onboarding) → effective
       26/26 = 100 % on non-equivalents. _(2026-07-15 · `42bda19`)_
     - **3-rag enumerated worst-files DONE** (document-scanner, vault-watcher, frontmatter-parser,
-      chunker, vector-store, embedder, index-manager, config). The other `rag/src/lib/*.ts` were
-      not flagged weak by the Step 2 audit; a full-`rag` re-audit (refresh RESULTS.md) is the
-      natural closer before moving on.
+      chunker, vector-store, embedder, index-manager, config).
+    - [x] **Full `rag` re-audit (closer)** — **57.23 % → 82.59 %** (1177 killed + 9 timeout / 1436
+      covered, 250 survived). RESULTS.md refreshed with the per-file table. _(2026-07-16)_
+    - [ ] **Optional follow-up — newly-surfaced weak tier** (not in the Step-2 worst-first list; they
+      were dwarfed by the near-0 % files at baseline). Worst-first, ~124 survivors across 5 files:
+      - [ ] `health-check.ts` 63.25 % (43 survivors — most in the package)
+      - [ ] `usage-tracker.ts` 55.88 % (30)
+      - [ ] `citation-renderer.ts` 45.45 % (18 — lowest score)
+      - [ ] `reindex-lock.ts` 75.34 % (18)
+      - [ ] `status-report.ts` 78.87 % (15)
+      - Target ~90-93 %; ceiling ~96 % (documented equivalents can't be killed — do not chase 100 %).
   - [x] **3-local-mirror** — harden `local-mirror/src/**` survivors. Enumerated worst-files done +
     re-audit closer (67.63 % → 78.69 %). _(2026-07-15)_
     - [x] `server.ts` **0 % → 85.71 %** (10 killed + 2 timeout / 14) — composition root: extracted
