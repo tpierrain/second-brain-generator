@@ -249,6 +249,14 @@ The pattern, in order:
 > synced earlier in this same session** — if it was just `setup_source`'d or synced, treat it as fresh
 > and skip even the background check unless the user signals otherwise.
 
+> **Freshness is also kept on its own, in the background.** Beyond this question-time path, the mirror
+> server runs a **background scheduler** (default every 5 min, set by `LOCAL_MIRROR_SYNC_INTERVAL`, `0`
+> disables it): it periodically does the same cheap `check_freshness` and syncs **only** the mirrors that
+> are `behind`, with no question asked — so a mirror keeps catching up on its own while a brain window is
+> open. It ticks **only while a window is open** (it lives in the server's own event loop, not a 24/7
+> daemon), and a first mirror declared mid-session arms it immediately (no restart). The question-time,
+> local-first move above stays the **immediate** one; the scheduler is the quiet safety net underneath it.
+
 **Cap the RAG passes.** On a precise question, do **one targeted** local search (by title/keywords) and
 answer. Don't stack 3–4 sequential searches "to be sure" by default — widen to extra/parallel passes
 **only** if that first pass comes back thin. Over-searching is the second latency sink after blocking sync.

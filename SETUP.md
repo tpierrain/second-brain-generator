@@ -299,6 +299,12 @@ skill** (*"set up a local mirror of a Notion zone"*). Create a Notion integratio
 to the skill — **the token never travels through the chat**. The skill tests the scope, does the first
 sync, and explains each step.
 
+Once a mirror is declared, it also **refreshes itself in the background** while a brain window is open:
+the `local-mirror` server checks freshness on a timer and re-syncs only the mirrors that fell behind, no
+question needed. The cadence is set by **`LOCAL_MIRROR_SYNC_INTERVAL`** in `.env` (seconds, **default 300**
+= 5 min; **`0` disables** the background timer and falls back to the question-time refresh only). It ticks
+only while a window is open (it is not a 24/7 daemon).
+
 ## 7. Backup & multi-machine portability (remote repo)
 
 Set up a private git remote, **then enable push** (without it, auto-commit stays local — it's

@@ -262,6 +262,13 @@ question ──► immediate answer from the already-indexed vault              
   token. ⚠️ editing a **sub-page** does not bubble up the **parent's** `last_edited_time` → watermark =
   **max of the perimeter**.
 - **No cron** → it only refreshes while a session is open (24/7 = the central target).
+- **Session-scoped background scheduler** _(added 2026-07-16, `feat/local-mirror-auto-refresh`)_: on top of
+  the question-time path above, the MCP server now runs its OWN timer (default 300 s, configurable via
+  `LOCAL_MIRROR_SYNC_INTERVAL`, `0` = off). Each tick does a cheap `check_freshness` for every source and a
+  `sync` **only** for the ones reported `behind` — so a source stays fresh even with no question asked. It is
+  still bounded by "while a window is open" (per-session stdio process); true 24/7 with the brain closed
+  remains the central target (§19), needing an OS daemon on top. A first mirror declared mid-session arms the
+  scheduler immediately (no restart).
 
 ## 9. MCP surface — exposed tools (no `search`)
 
@@ -472,7 +479,7 @@ multi-sources, **not the `golden-source-sync` code** (cf. positioning §1):
 | Form | a second brain syncing its golden sources | central service for everyone |
 | For whom | knowers (have a second brain) | everyone, even without a second brain |
 | Connectors | Notion | Notion + Drive + Slack + … |
-| Freshness | at the question (Phase 2, routed sync) | push webhooks (real time) |
+| Freshness | at the question (Phase 2, routed sync) **+ a session-scoped background timer** (2026-07-16) | push webhooks (real time) |
 | Index | local, N copies | 1 single hosted index |
 | Infra | zero (local MCP) | central service to host/operate |
 

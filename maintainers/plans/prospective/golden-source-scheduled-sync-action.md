@@ -108,7 +108,7 @@
 > the timestamp unchanged → `behind = false` → the tick never re-synced → the `.md` stayed frozen on a
 > mid-typing snapshot **indefinitely** (until an edit in a later minute). Reproduced live in QA (vault stuck
 > on "J'e" while Notion showed the full "Je rajoute une ligne ici pour la QA."; a manual `sync()` — content
-> hash — fixed it, proving the gap is watermark-only). **Fix (TDD, on the branch — commit pending):** a
+> hash — fixed it, proving the gap is watermark-only). **Fix (TDD, on the branch, `bdfa87c`):** a
 > watermark is "provisional" when the last sync landed in its own minute; once that minute has **elapsed**,
 > `checkFreshness` reports `behind` for **one** corrective sync (its content hash catches the missed edit,
 > its later `lastSyncAt` clears the flag → no loop, ≤1 extra sync per active minute). Deterministic via the
@@ -116,14 +116,19 @@
 > gained an advanceable `MutableClock` + `advanceClockTo()`. 3 acceptance tests at the `ILocalMirror` port
 > (reproduce · no mid-minute churn · no re-sync loop). **Suite 192 green, `tsc` clean.** _(2026-07-16 · `bdfa87c`)_
 - [ ] **Step 5 — Docs**
-  - [ ] 5a — SKILL.md: state that freshness is **also** kept by a background scheduler (default 5 min,
-        configurable), while the local-first question-time path stays the immediate one
-  - [ ] 5b — PRD §8/§19: record the scheduled path (MVP gains a session-scoped timer; 24/7 daemon still
-        the target) — keep CONNECTORS "why/when" in sync
-  - [ ] 5c — SETUP/CONNECTORS: document `LOCAL_MIRROR_SYNC_INTERVAL` (the actual shipped var; the old
-        `GOLDEN_SOURCE_SYNC_INTERVAL` name never shipped — S6 rename)
-  - [ ] 5d — ADR: timer-in-MCP vs OS daemon, and the single-flight lock (revisits ADR 0009 "prefer
-        deterministic" — bounded exception: a configurable timer, with a deterministic test clock)
+  - [x] 5a — SKILL.md: state that freshness is **also** kept by a background scheduler (default 5 min,
+        configurable), while the local-first question-time path stays the immediate one _(2026-07-16)_:
+        added the "Freshness is also kept on its own, in the background" note to the local-first routing section.
+  - [x] 5b — PRD §8/§19: record the scheduled path (MVP gains a session-scoped timer; 24/7 daemon still
+        the target) — keep CONNECTORS "why/when" in sync _(2026-07-16)_: §8 gained a "session-scoped background
+        scheduler" bullet, §19 freshness row updated; CONNECTORS "Stays fresh on its own" bullet added.
+  - [x] 5c — SETUP/CONNECTORS: document `LOCAL_MIRROR_SYNC_INTERVAL` (the actual shipped var; the old
+        `GOLDEN_SOURCE_SYNC_INTERVAL` name never shipped — S6 rename) _(2026-07-16)_: documented in SETUP.md (d),
+        CONNECTORS.md (Local mirrors) and `.env.example` (ADVANCED/OPTIONAL block).
+  - [x] 5d — ADR: timer-in-MCP vs OS daemon, and the single-flight lock (revisits ADR 0009 "prefer
+        deterministic" — bounded exception: a configurable timer, with a deterministic test clock) _(2026-07-16)_:
+        **ADR 0032** written (session-scoped refresh timer + single-flight lock, rung 4 of ADR 0009); 0009 gains a
+        back-reference to it.
   - [ ] 5e — Commit (docs)
 - [ ] **Step 6 — Ship** (on Thomas's green light): push → PR (codename « The One With… ») →
       `/code-review` → fix accepted findings (TDD) → final QA → merge + tag → archive this plan →
