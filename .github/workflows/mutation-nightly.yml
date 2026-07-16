@@ -38,7 +38,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [rag, local-mirror, scripts]
+        include:
+          # rag + local-mirror use their configs' inPlace (mutate the checked-out
+          # tree, restored after). scripts overrides to --inPlace too: its committed
+          # config is inPlace:false (a Stryker SANDBOX), but the sandbox copy has NO
+          # .git, and the harness suite's `engine-manifest` integrity test asserts on
+          # `git ls-files` (tracked files) — with no .git every glob matches nothing
+          # and the dry-run fails. inPlace runs against the checkout (git present), and
+          # the vault-mutating clear-example-notes tests are hermetic (temp dirs +
+          # injected deps, never the real vault/), so the ephemeral runner is safe.
+          - package: rag
+            extra: ""
+          - package: local-mirror
+            extra: ""
+          - package: scripts
+            extra: "--inPlace"
     steps:
       - uses: actions/checkout@v4
 
@@ -75,11 +89,10 @@ jobs:
       # configs' 4-5 concurrent runners (each re-runs the WHOLE package suite per
       # mutant), which inflates genuine kills into FALSE timeouts and a bogus high
       # score (the documented trap, see RESULTS.md § Gotchas). Start low so a
-      # timeout means a REAL infinite loop, not a starved runner. scripts runs its
-      # committed `inPlace: false` sandbox config, so no worktree is needed here
-      # (the ephemeral runner is itself disposable).
+      # timeout means a REAL infinite loop, not a starved runner. `extra` carries
+      # per-package overrides (scripts: --inPlace, see the matrix comment).
       - name: Mutate ${{ matrix.package }}
-        run: npm --prefix maintainers/mutation run mutate:${{ matrix.package }} -- --concurrency 2
+        run: npm --prefix maintainers/mutation run mutate:${{ matrix.package }} -- --concurrency 2 ${{ matrix.extra }}
 
       - name: Upload the HTML report (informational)
         if: always()
