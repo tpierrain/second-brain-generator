@@ -30,8 +30,13 @@
 - [x] **Step 0 — Pre-flight & branching** _(2026-07-16)_
   - [x] 0a — Branch `feat/local-mirror-auto-refresh` created off `main` _(2026-07-16)_
   - [x] 0b — Baseline green: **170 tests pass, `tsc --noEmit` exit 0** in `local-mirror/` _(2026-07-16)_
-  - [ ] 0c — Re-read PRD §8 (freshness/routing) — this feature **adds** a scheduled path alongside the
-        question-time path; note the doc deltas to do at Step 5
+  - [x] 0c — Re-read PRD §8 (freshness/routing) — this feature **adds** a scheduled path alongside the
+        question-time path; doc deltas captured for Step 5 _(2026-07-16)_:
+        - **§8 ln 264** currently states *"No cron → it only refreshes while a session is open"*; must
+          now record the **session-scoped scheduled path** (autonomous refresh, no question needed)
+          alongside the question-time Phase 1/2/3 flow → feeds **5b**.
+        - **Naming drift**: PRD/plan write `GOLDEN_SOURCE_SYNC_INTERVAL`, but the shipped env var
+          (Step 3a, S6 delta) is **`LOCAL_MIRROR_SYNC_INTERVAL`** → fixed in **5c** below.
 - [x] **Step 1 — Concurrency lock (PREREQUISITE — subsumes a deferred `/code-review` finding)** _(2026-07-16)_
   - [x] 1a — RED: acceptance at the API port — a source already synced by another window must not
         race on `state.json`. `src/test/sync-single-flight.test.ts` _(2026-07-16)_
@@ -63,16 +68,52 @@
         `auto-sync idle: no mirror declared yet`. _(2026-07-16)_
   - [x] 3d — Suite green (**189 pass**) + `tsc` clean; committed. _(2026-07-16)_
 - [ ] **Step 4 — Fresh end-to-end validation** (throwaway brain from the branch)
-  - [ ] 4a — Install a fresh throwaway brain; declare a source; leave the window open
-  - [ ] 4b — Observe an autonomous refresh on a Notion edit **without asking a question** (truthful toast,
-        `www.notion.so` citations, no « source d'or »); confirm it does **not** block typing/answers
-  - [ ] 4c — Confirm two open windows don't corrupt state (lock holds); `interval=0` disables cleanly
+  - [x] 4a — Install a fresh throwaway brain; declare a source; leave the window open _(2026-07-16)_:
+        `~/lm-qa-autorefresh` installed from the branch (in-process, post-flight green); mirror
+        `personal-home` declared via `setup_source`; window left open.
+  - [x] 4b — Autonomous refresh on a Notion edit **without asking a question** — PROVEN _(2026-07-16)_:
+        with a standalone rig booted against the brain (`LOCAL_MIRROR_SYNC_INTERVAL=30`, real token in
+        `.env`), the boot log armed `auto-sync every 30s (sources: personal-home)`; a Notion edit to
+        "Page funky" (`last_edited_time` 16:51:00Z) was picked up by a background tick with **zero
+        question and zero explicit `sync` call** → `.md` rewritten, `watermark` advanced to 16:51:00Z,
+        `lastSyncStatus: ok`. Citation truthfulness confirmed on the Desktop screenshot:
+        « 🧠 copie locale · 🔗 source Notion », **no « source d'or »**. Non-blocking by construction
+        (scheduler lives in the server event loop, independent of Claude turns).
+  - [ ] 4c — Two open windows don't corrupt state (lock holds) — **NOT integration-tested** (QA ran with
+        a single window); the single-flight lock stays covered by Step 1 (6 unit + 1 acceptance). Decide:
+        run the 2-window integration test, or accept unit coverage. · `interval=0` disables cleanly —
+        **PROVEN** live _(2026-07-16)_: `[local-mirror] auto-sync disabled (LOCAL_MIRROR_SYNC_INTERVAL=0)`.
+
+> **🔴 Step 4 finding — boot-time gating hides the feature in the session that declares the first mirror.**
+> The scheduler decides ONCE at boot (`auto-sync-boot.ts`): if no mirror is declared **at that moment**,
+> it logs `auto-sync idle: no mirror declared yet` and never arms for the session. So a user who declares
+> their FIRST mirror mid-session gets **no background refresh until they restart the brain** — exactly the
+> session in which they'd test it and (wrongly) conclude "it doesn't work". Observed live: the real Desktop
+> QA session stayed `idle` the whole time; the refreshes Thomas saw were the **question-time** path
+> (his own relances), not the timer. **Action (Step 5 / follow-up): either (a) auto-arm the scheduler after
+> a successful `setup_source` when it was previously idle, or (b) at minimum document + nudge "restart your
+> brain after declaring your first mirror".** Prefer (a) — the silent no-op is a real UX trap.
+
+> **🔴 Step 4 finding #2 — same-minute edits were silently lost by the background path (FIXED).**
+> Notion stamps page `last_edited_time` at **minute granularity** (`…T16:51:00.000Z`). `checkFreshness`
+> compared watermarks with strict `>`, so any edit made in the **same minute** as (but after) a sync left
+> the timestamp unchanged → `behind = false` → the tick never re-synced → the `.md` stayed frozen on a
+> mid-typing snapshot **indefinitely** (until an edit in a later minute). Reproduced live in QA (vault stuck
+> on "J'e" while Notion showed the full "Je rajoute une ligne ici pour la QA."; a manual `sync()` — content
+> hash — fixed it, proving the gap is watermark-only). **Fix (TDD, on the branch — commit pending):** a
+> watermark is "provisional" when the last sync landed in its own minute; once that minute has **elapsed**,
+> `checkFreshness` reports `behind` for **one** corrective sync (its content hash catches the missed edit,
+> its later `lastSyncAt` clears the flag → no loop, ≤1 extra sync per active minute). Deterministic via the
+> injected clock (ADR 0009). New: `epochMinute()` + `LocalMirror.watermarkMayHideSameMinuteEdit()`; builder
+> gained an advanceable `MutableClock` + `advanceClockTo()`. 3 acceptance tests at the `ILocalMirror` port
+> (reproduce · no mid-minute churn · no re-sync loop). **Suite 192 green, `tsc` clean.** _(2026-07-16)_
 - [ ] **Step 5 — Docs**
   - [ ] 5a — SKILL.md: state that freshness is **also** kept by a background scheduler (default 5 min,
         configurable), while the local-first question-time path stays the immediate one
   - [ ] 5b — PRD §8/§19: record the scheduled path (MVP gains a session-scoped timer; 24/7 daemon still
         the target) — keep CONNECTORS "why/when" in sync
-  - [ ] 5c — SETUP/CONNECTORS: document `GOLDEN_SOURCE_SYNC_INTERVAL`
+  - [ ] 5c — SETUP/CONNECTORS: document `LOCAL_MIRROR_SYNC_INTERVAL` (the actual shipped var; the old
+        `GOLDEN_SOURCE_SYNC_INTERVAL` name never shipped — S6 rename)
   - [ ] 5d — ADR: timer-in-MCP vs OS daemon, and the single-flight lock (revisits ADR 0009 "prefer
         deterministic" — bounded exception: a configurable timer, with a deterministic test clock)
   - [ ] 5e — Commit (docs)

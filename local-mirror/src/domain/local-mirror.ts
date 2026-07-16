@@ -291,6 +291,12 @@ export class LocalMirror implements ILocalMirror {
    * content fetched, nothing written), take the remote max `last_edited_time`, and compare it
    * to the local watermark. A source is `behind` when the remote perimeter holds an edit the
    * local watermark hasn't caught yet — including a brand-new, never-synced source.
+   *
+   * Notion caveat: `last_edited_time` has MINUTE granularity. A sync that lands in the same minute
+   * as the latest edit may have snapshotted a page mid-edit; a further edit within that same minute
+   * leaves the timestamp unchanged, so a strict `>` would miss it forever. Once that minute has
+   * elapsed we report `behind` ONCE so the tick runs a corrective sync (its content hash catches the
+   * missed edit, and its later `lastSyncAt` clears the provisional flag — no re-sync loop).
    */
   async checkFreshness(name: string): Promise<FreshnessReport> {
     const config = await this.configOrThrow(name);
@@ -298,8 +304,30 @@ export class LocalMirror implements ILocalMirror {
     const items = await this.deps.connectorFor(config).listItems();
     const remoteWatermark = maxLastEditedTime(items);
     const localWatermark = persisted?.watermark ?? null;
-    const behind = remoteWatermark !== null && (localWatermark === null || remoteWatermark > localWatermark);
+    const newerEdit = localWatermark === null || (remoteWatermark !== null && remoteWatermark > localWatermark);
+    const behind =
+      remoteWatermark !== null &&
+      (newerEdit || this.watermarkMayHideSameMinuteEdit(remoteWatermark, localWatermark, persisted));
     return { name, behind, localWatermark, remoteWatermark };
+  }
+
+  /**
+   * True when the watermark is "provisional": the last sync landed in the SAME minute as the
+   * watermark (so a same-minute edit could have slipped past Notion's minute-granular timestamp)
+   * AND that minute has now elapsed (so one corrective sync is due). Bounded to a single extra
+   * sync per active minute — the corrective sync's `lastSyncAt` falls in a later minute, clearing
+   * this flag.
+   */
+  private watermarkMayHideSameMinuteEdit(
+    remoteWatermark: string | null,
+    localWatermark: string | null,
+    persisted: PersistedState | null,
+  ): boolean {
+    if (localWatermark === null || persisted?.lastSyncAt == null || remoteWatermark !== localWatermark) return false;
+    const watermarkMinute = epochMinute(localWatermark);
+    const syncedInWatermarkMinute = epochMinute(persisted.lastSyncAt) === watermarkMinute;
+    const minuteHasElapsed = epochMinute(this.deps.clock.now().toISOString()) > watermarkMinute;
+    return syncedInWatermarkMinute && minuteHasElapsed;
   }
 
   /** A single source's state — last sync, watermark, item count, lateness (PRD §9). No pull. */
@@ -415,6 +443,11 @@ export function maxLastEditedTime(items: readonly { lastEditedTime: string }[]):
     if (max === null || item.lastEditedTime > max) max = item.lastEditedTime;
   }
   return max;
+}
+
+/** Epoch minute of an ISO timestamp — the granularity at which Notion stamps `last_edited_time`. */
+export function epochMinute(iso: string): number {
+  return Math.floor(new Date(iso).getTime() / 60_000);
 }
 
 /** Maps a declared config + its persisted state into the API-facing SourceState. */

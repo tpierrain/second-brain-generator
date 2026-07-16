@@ -36,6 +36,8 @@ class LocalMirrorBuilder {
   private readonly lockedByOthers = new Set<string>();
   /** Stable reference so tests can inspect the vault after build()/sync(). */
   private readonly vault = new RecordingVaultWriter();
+  /** Advanceable test clock so a test can sync in one minute and check freshness in a later one. */
+  private readonly clock = new MutableClock(new Date('2026-06-17T00:00:00.000Z'));
   /** Stable reference so tests can inspect what `setup_source` declared. */
   private readonly configs = new InMemoryConfigStore(this.declared, () => this.unreadableConfig);
 
@@ -128,6 +130,16 @@ class LocalMirrorBuilder {
     return this;
   }
 
+  /**
+   * Move the test clock forward — e.g. to let the wall-clock minute elapse between a sync and a
+   * later `check_freshness`. Notion stamps `last_edited_time` at minute granularity, so a sync
+   * landing in that same minute may have snapshotted a page mid-edit.
+   */
+  advanceClockTo(iso: string): this {
+    this.clock.set(new Date(iso));
+    return this;
+  }
+
   /** The Markdown files written into the vault, by path — the sync outcome to assert. */
   vaultFiles(): Map<string, string> {
     return this.vault.written;
@@ -146,7 +158,7 @@ class LocalMirrorBuilder {
       configStore: this.configs,
       stateStore: new InMemoryStateStore(this.unreachableStore),
       vaultWriter: this.vault,
-      clock: new FixedClock(new Date('2026-06-17T00:00:00.000Z')),
+      clock: this.clock,
       connectorFor: () => new StubConnector(() => this.pages, () => this.enumerationError),
       syncLock: new FakeSyncLock(this.lockedByOthers),
     });
@@ -268,10 +280,13 @@ class StubConnector implements ISourceConnector {
   }
 }
 
-class FixedClock implements IClock {
-  constructor(private readonly fixed: Date) {}
+class MutableClock implements IClock {
+  constructor(private current: Date) {}
   now(): Date {
-    return this.fixed;
+    return this.current;
+  }
+  set(value: Date): void {
+    this.current = value;
   }
 }
 
