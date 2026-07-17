@@ -30,6 +30,18 @@ test("extractWikiLinks — resolves the target, dropping |alias and #heading", (
   );
 });
 
+test("extractWikiLinks — ignores [[links]] inside an inline `code` span (Obsidian doesn't linkify code)", () => {
+  assert.deepEqual(
+    extractWikiLinks("a real [[Foo]] but `[[Bar]]` is just syntax"),
+    ["Foo"],
+  );
+});
+
+test("extractWikiLinks — ignores [[links]] inside a fenced ``` code block, keeps links after it", () => {
+  const body = "before [[Keep]]\n```\nexample: [[InCode]]\n```\nafter [[AlsoKeep]]";
+  assert.deepEqual(extractWikiLinks(body), ["Keep", "AlsoKeep"]);
+});
+
 // ── dangling links: a [[link]] whose target basename matches no note ──────────
 
 test("lintVault — flags a link whose target note is absent, keeps resolved ones", () => {

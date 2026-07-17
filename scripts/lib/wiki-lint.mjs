@@ -6,10 +6,23 @@
 // 2) reads the vault into the parsed-note shape this core consumes.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Blank out fenced code blocks (```…```) and inline code spans (`…`) so their
+// contents can't be mistaken for prose. Obsidian does not linkify `[[…]]` written
+// inside code, so neither do we — a link example in a code span is documentation,
+// not a real link. Replacing with spaces preserves offsets (nothing else needs them,
+// but it keeps the transform trivially non-reordering).
+function stripCode(body) {
+  return body
+    .replace(/```[\s\S]*?```/g, (m) => " ".repeat(m.length))
+    .replace(/`[^`\n]*`/g, (m) => " ".repeat(m.length));
+}
+
 // Every `[[Target]]` wikilink found in `body`, in order of appearance. Obsidian's
 // `[[Target|alias]]` and `[[Target#heading]]` forms resolve to the bare target.
+// Links inside code (fenced blocks or inline spans) are ignored — Obsidian doesn't
+// linkify code, so a `[[link]]` example there is syntax documentation, not a link.
 export function extractWikiLinks(body) {
-  return [...body.matchAll(/\[\[([^\]]+)\]\]/g)].map((m) =>
+  return [...stripCode(body).matchAll(/\[\[([^\]]+)\]\]/g)].map((m) =>
     m[1].split(/[|#]/)[0].trim(),
   );
 }
