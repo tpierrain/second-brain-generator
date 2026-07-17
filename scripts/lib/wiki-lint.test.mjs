@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { extractWikiLinks, lintVault } from "./wiki-lint.mjs";
+import { extractWikiLinks, lintVault, hasFindings, reportLines } from "./wiki-lint.mjs";
+
+const CLEAN = { danglingLinks: [], orphans: [], staleEntityPages: [], frontmatterViolations: [] };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // wiki-lint — the pure, I/O-free core of the Axis-1 `/lint` wiki-health scanner
@@ -121,5 +123,71 @@ test("lintVault — an empty string or empty array counts as a missing required 
   ]);
   assert.deepEqual(report.frontmatterViolations, [
     { path: "empties.md", missing: ["updated", "tags"] },
+  ]);
+});
+
+// ── hasFindings: drives the CLI's binary exit code ────────────────────────────
+
+test("hasFindings — false when every category is empty", () => {
+  assert.equal(hasFindings(CLEAN), false);
+});
+
+test("hasFindings — true when any single category is non-empty", () => {
+  assert.equal(hasFindings({ ...CLEAN, danglingLinks: [{ from: "a", target: "b" }] }), true);
+  assert.equal(hasFindings({ ...CLEAN, orphans: ["a.md"] }), true);
+  assert.equal(hasFindings({ ...CLEAN, staleEntityPages: [{ path: "e.md" }] }), true);
+  assert.equal(hasFindings({ ...CLEAN, frontmatterViolations: [{ path: "f.md", missing: ["type"] }] }), true);
+});
+
+// ── reportLines: the human-readable, honest health report ─────────────────────
+
+test("reportLines — a clean vault reports a single reassuring line", () => {
+  assert.deepEqual(reportLines(CLEAN), ["✓ Wiki health: clean"]);
+});
+
+test("reportLines — a dangling-only report shows just the dangling section", () => {
+  const report = { ...CLEAN, danglingLinks: [{ from: "notes/a.md", target: "Missing" }] };
+  assert.deepEqual(reportLines(report), [
+    "✗ Wiki health: issues found",
+    "",
+    "Dangling links (1):",
+    "  notes/a.md → [[Missing]]",
+  ]);
+});
+
+test("reportLines — orphans render one path per line", () => {
+  const report = { ...CLEAN, orphans: ["c.md", "d.md"] };
+  assert.deepEqual(reportLines(report), [
+    "✗ Wiki health: issues found",
+    "",
+    "Orphans (2):",
+    "  c.md",
+    "  d.md",
+  ]);
+});
+
+test("reportLines — a stale entity page shows its date and its freshest citation", () => {
+  const report = {
+    ...CLEAN,
+    staleEntityPages: [{ path: "people/alice.md", updated: "2026-01-01", freshestReference: "2026-06-01" }],
+  };
+  assert.deepEqual(reportLines(report), [
+    "✗ Wiki health: issues found",
+    "",
+    "Stale entity pages (1):",
+    "  people/alice.md (updated 2026-01-01, cited as fresh as 2026-06-01)",
+  ]);
+});
+
+test("reportLines — a frontmatter violation lists the note and its missing keys", () => {
+  const report = {
+    ...CLEAN,
+    frontmatterViolations: [{ path: "bad.md", missing: ["created", "updated", "tags"] }],
+  };
+  assert.deepEqual(reportLines(report), [
+    "✗ Wiki health: issues found",
+    "",
+    "Frontmatter issues (1):",
+    "  bad.md (missing: created, updated, tags)",
   ]);
 });

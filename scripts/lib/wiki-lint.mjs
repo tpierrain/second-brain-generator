@@ -120,3 +120,40 @@ export function lintVault(notes, options = {}) {
   }
   return { danglingLinks, orphans, staleEntityPages, frontmatterViolations };
 }
+
+// The report as human-readable lines (joined by formatReport). Honest and
+// binary: one reassuring line when clean, one titled section per bleeding
+// category otherwise.
+export function reportLines(report) {
+  if (!hasFindings(report)) return ["✓ Wiki health: clean"];
+  const lines = ["✗ Wiki health: issues found"];
+  const section = (title, items) => {
+    if (items.length === 0) return;
+    lines.push("", `${title} (${items.length}):`);
+    for (const item of items) lines.push(`  ${item}`);
+  };
+  section("Dangling links", report.danglingLinks.map((d) => `${d.from} → [[${d.target}]]`));
+  section("Orphans", report.orphans);
+  section(
+    "Stale entity pages",
+    report.staleEntityPages.map(
+      (s) => `${s.path} (updated ${s.updated}, cited as fresh as ${s.freshestReference})`,
+    ),
+  );
+  section(
+    "Frontmatter issues",
+    report.frontmatterViolations.map((v) => `${v.path} (missing: ${v.missing.join(", ")})`),
+  );
+  return lines;
+}
+
+// True when the report holds at least one finding in any category — the signal
+// the CLI turns into a binary exit code (0 clean / 1 bleeding).
+export function hasFindings(report) {
+  return (
+    report.danglingLinks.length > 0 ||
+    report.orphans.length > 0 ||
+    report.staleEntityPages.length > 0 ||
+    report.frontmatterViolations.length > 0
+  );
+}
