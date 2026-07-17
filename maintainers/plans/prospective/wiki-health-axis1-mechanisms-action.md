@@ -1,10 +1,11 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🟢 Tracks A + B + C SHIPPED (2026-07-17). A = `/lint` wiki-health      -->
+<!-- STATUS: 🟢 Tracks A + B + C + F SHIPPED (2026-07-17). A = `/lint` wiki-health   -->
 <!-- scanner. B = `/file-back` deterministic filer (a filed note passes /lint       -->
 <!-- clean, never overwrites). C = `/consolidate`: a deterministic candidate finder -->
 <!-- (stateless "fresher-than-the-page" rule) + a fan-out/fan-in skill that writes  -->
-<!-- via B. All TDD, all engine skills, all proven on the real 405-note vault.      -->
-<!-- Tracks D + E still prospective.                                                -->
+<!-- via B. F = a SessionStart trigger fires the scans on a real event and surfaces  -->
+<!-- them in the chat (Desktop-visible), the write stays confirmed. All TDD, all     -->
+<!-- proven on the real 405-note vault. Tracks D + E still prospective.              -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — give Axis 1 (wiki-health / consolidation) real mechanics
@@ -41,9 +42,9 @@
 - [x] **Track C — The brain consolidates raw captures** into entity/topic pages, backlinks woven _(2026-07-17 · deterministic candidate finder + `/consolidate` skill, TDD, proven on the real 405-note vault)_
 - [ ] **Track D — (v2) The brain flags contradictions** between a new note and an entity page's stated fact
 - [ ] **Track E — Append-only log is first-class** (seeded artifact + hook, not a `sync-sources` side-effect)
-- [ ] **Track F — Run the Axis-1 mechanics from a deterministic trigger** (a hook/event, not only on-demand)
-  - [ ] `/lint` (read-only) auto-runs on a real event and surfaces its report
-  - [ ] `/consolidate` **scan** auto-runs and surfaces candidates — the write stays confirmed (never auto-filed)
+- [x] **Track F — Run the Axis-1 mechanics from a deterministic trigger** (a hook/event, not only on-demand) _(2026-07-17 · b81d937 · SessionStart hook `session-wiki-health.mjs` + pure `wiki-health-nudge` core, TDD, proven on the real 405-note vault)_
+  - [x] `/lint` (read-only) auto-runs on a real event and surfaces its report _(SessionStart hook; only dangling links surface here, orphans/stale stay on-demand)_
+  - [x] `/consolidate` **scan** auto-runs and surfaces candidates — the write stays confirmed (never auto-filed) _(scan only; the merge stays propose → yes)_
 - [ ] **Cross-cutting — Measure the effect on retrieval** on the eval-set (better notes ⇒ better chunks)
 - [ ] **Sequencing decided** — import-before vs import-after (see §Sequencing; recommendation recorded)
 
@@ -153,18 +154,33 @@ conversational trigger). The goal: let them fire **on their own**, from a **dete
 real event** (rung 3 of ADR 0009), so wiki-health stops depending on the user remembering to ask — while
 never turning a silent auto-write loose.
 
-- [ ] Pick the **event** (deterministic, verifiable): SessionStart, post-`sync-sources`, a periodic cron,
-      or a "N new captures since last pass" threshold — prefer a real event over a timer where possible
-- [ ] **`/lint` is read-only → safe to auto-run**: fire the scan on the chosen event, surface the report
-      (or stay silent when clean). No write, no confirmation needed.
-- [ ] **`/consolidate` writes → auto-run only the SCAN**: surface the candidates on the event, but the
-      merge/write **stays confirmed** (propose → the user says yes). Never auto-file. This is the load-
-      bearing guardrail — the brain's write posture must survive automation.
-- [ ] Honour the determinism ladder: the **trigger** is deterministic (hook/event), the **detection** is
-      deterministic (the pure cores already are), only the **merge** stays LLM+confirmed
+- [x] Pick the **event** (deterministic, verifiable): **SessionStart** — the established maintenance
+      rendez-vous (self-heal / health / obsidian-hint / status already fire there). No timer, no counter:
+      the scans are **stateless** (a candidate exists purely because a capture is fresher than its page),
+      so the event alone is enough; the hook stays quiet when there's nothing actionable.
+- [x] **`/lint` is read-only → safe to auto-run**: the scan fires on SessionStart. **Only dangling links**
+      surface here (true regressions); orphans/stale/frontmatter are a standing backlog on a real vault →
+      they stay in the on-demand `/lint` (the noise guardrail, locked by a test).
+- [x] **`/consolidate` writes → auto-run only the SCAN**: candidates surface on the event, the merge/write
+      **stays confirmed** (propose → the user says yes). Never auto-file. The directive itself carries this
+      posture ("OPTIONAL housekeeping … NEVER auto-file … stays confirmed").
+- [x] Honour the determinism ladder: **trigger** deterministic (SessionStart hook, rung 3), **detection**
+      deterministic (`lintVault` + `consolidationCandidates`, rung 1), **surface** an `additionalContext`
+      directive the agent relays in the chat (rung 6, the only Desktop-visible channel), **merge** stays
+      LLM+confirmed on-demand.
 - [ ] Sibling to Track E (both are "maintain Axis 1 via a hook on a real event, not a by-product") — share
-      the wiring/lesson where they overlap
-- [ ] Keep the on-demand skills working unchanged; the hook is an **addition**, not a replacement
+      the wiring/lesson where they overlap _(Track E still prospective; reuse this hook's shape when built)_
+- [x] Keep the on-demand skills working unchanged; the hook is an **addition**, not a replacement
+      (`/lint` and `/consolidate` skills untouched; the hook only reuses their pure cores)
+
+> **Shipped (2026-07-17 · b81d937).** `scripts/session-wiki-health.mjs` (fail-open SessionStart hook) +
+> `scripts/lib/wiki-health-nudge.mjs` (pure core, 7 tests), wired as the 5th SessionStart group after
+> `session-self-heal`, carried in the manifest (`scripts` 1.4.0 → 1.5.0), delivered fleet-wide by the
+> existing `reconcileHooks` add-if-absent. Surface channel = `additionalContext` (chat, Desktop-visible),
+> mirroring `buildSelfHealHookOutput`. A linter false positive surfaced en passant and was fixed at the
+> root: `extractWikiLinks` now ignores `[[links]]` inside fenced/inline code (Obsidian doesn't linkify
+> code), so the shipped demo vault is lint-clean and a **fresh brain stays silent on day one**. Proven on
+> the real 405-note vault (nudge: 12 consolidation candidates + 47 dangling links); full suite 642/642.
 
 ---
 
