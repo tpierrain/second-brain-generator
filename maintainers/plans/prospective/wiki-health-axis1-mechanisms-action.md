@@ -1,7 +1,8 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🟢 Track A SHIPPED (2026-07-17). `/lint` wiki-health scanner built   -->
-<!-- in TDD, proven on the real 405-note vault, shipped as an engine skill.       -->
-<!-- Tracks B–E still prospective. -->
+<!-- STATUS: 🟢 Tracks A + B SHIPPED (2026-07-17). Track A = `/lint` wiki-health   -->
+<!-- scanner (TDD, proven on the real 405-note vault). Track B = `/file-back`      -->
+<!-- deterministic filer (TDD, proven: a filed note passes /lint clean, never      -->
+<!-- overwrites). Both are engine skills. Tracks C–E still prospective.            -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — give Axis 1 (wiki-health / consolidation) real mechanics
@@ -30,7 +31,11 @@
   - [x] Stale entity pages (`updated:` old while cited in fresher notes) _(2a509fd)_
   - [x] Frontmatter conformance (required `type` / `created` / `updated` / `tags`) _(2a509fd)_
   - [x] Ship as an engine skill + a deterministic script, binary report _(a193743, 767caad)_
-- [ ] **Track B — The brain files a good answer back** into a durable note (semi-automatic, confirmed write)
+- [x] **Track B — The brain files a good answer back** into a durable note (semi-automatic, confirmed write) _(2026-07-17 · `/file-back` engine skill + deterministic `filed-note` core, TDD)_
+  - [x] Deterministic core `scripts/lib/filed-note.mjs` (slugify, path, conformant render — 15 tests)
+  - [x] Thin CLI `scripts/file-back-note.mjs` (JSON spec on stdin, writes under vault/, never overwrites — 4 tests)
+  - [x] Engine skill `engine-skills/file-back/SKILL.md` (propose → confirm → file; append path for living pages)
+  - [x] Wired into `update-engine` manifest (`replace` + `scripts` 1.2.0→1.3.0); proven: filed note passes /lint clean
 - [ ] **Track C — The brain consolidates raw captures** into entity/topic pages, backlinks woven
 - [ ] **Track D — (v2) The brain flags contradictions** between a new note and an entity page's stated fact
 - [ ] **Track E — Append-only log is first-class** (seeded artifact + hook, not a `sync-sources` side-effect)
@@ -70,10 +75,18 @@ frontmatter is malformed. This is the highest-leverage, lowest-risk Axis-1 mecha
 (topic / decision / entity page) with backlinks, so hard-won synthesis stops evaporating at the end of
 a session. This is the "answers filed back" Karpathy discipline, absent today.
 
-- [ ] A convention + a light skill that proposes (never silently writes) a filed-back note, with a
-      suggested target zone and `[[links]]`
-  - [ ] Writes stay **confirmed** (brain posture) — propose, the user says yes
-  - [ ] Reuse the note taxonomy already documented in the constitution template
+- [x] A convention + a light skill that proposes (never silently writes) a filed-back note, with a
+      suggested target zone and `[[links]]` _(`engine-skills/file-back/SKILL.md`)_
+  - [x] Writes stay **confirmed** (brain posture) — propose, the user says yes _(SKILL step 2: propose → yes)_
+  - [x] Reuse the note taxonomy already documented in the constitution template _(`filed-note.mjs` FOLDER
+        map + dated types mirror CLAUDE.md.template §"Note format"; frontmatter conformant by construction)_
+
+> **Design note.** The deterministic kernel is the *note builder*, not the *judgment*: given a spec it
+> emits a taxonomy-conformant `{ path, content }` (right zone, complete frontmatter, woven `[[links]]`)
+> and **refuses to overwrite** — so a filed-back answer never re-introduces the defects Track A detects
+> (proven: `file-back-note.mjs` output passes `/lint` clean). Refining an *existing* living page stays a
+> confirmed conversational append (a dated section), which is the right rung of ADR 0009 for a
+> judgment-laden merge, not a risky YAML round-trip.
 
 ## Track C — Consolidate raw captures into entity/topic pages
 
