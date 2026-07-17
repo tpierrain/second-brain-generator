@@ -629,7 +629,7 @@ decision table is higher up, in
 | Element | Role | Status |
 |---|---|---|
 | **`rag/`** | RAG engine (TypeScript MCP server): chunking, embeddings **à la carte** (local / API key / Ollama), semantic search, quota guardrails | ✅ ready to use |
-| **`local-mirror/`** | **Optional** second MCP server: mirrors a chosen **Notion** zone into your vault as Markdown, kept **fully synchronized**, so the local RAG searches & **cites** it offline — a low-friction on-ramp to RAG over your **golden sources** when you have no MCP/API for them yet. Driven by `/local-mirror`. | ⚙️ optional |
+| **`local-mirror/`** | **Optional** second MCP server. Point it at a **Notion** zone; it keeps a **fully-synchronized local copy** in your vault so the RAG searches & **cites** it offline. Driven by `/local-mirror`. *Your company's **golden sources**, searchable by your brain — no enterprise RAG, no MCP/API to expose them, no cloud round-trip. Right now, on your machine.* | ⚙️ optional |
 | **`vault/`** | Your Markdown content (example notes included) | 🔧 to fill in |
 | **`CLAUDE.md`** | The rules Claude follows (4-phase flow, conventions, posture) | 🌱 bootstrap stub in the launcher → the installer **generates** a personalized version **in the brain**, then to be tailored |
 | **`.claude/skills/`** | Shipped skills (see below) + ideas for other skills | 🔧 to flesh out |
