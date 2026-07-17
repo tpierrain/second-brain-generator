@@ -52,8 +52,10 @@ export function buildResolver(notes) {
 }
 
 // Raw-capture zones: notes here are legitimately unlinked (a daily log, an inbox
-// dump), so they are excluded from the orphan rule by default.
-const DEFAULT_ORPHAN_EXCLUDE = ["daily/", "raw-sources/", "inbox/"];
+// dump, the append-only activity ledger), so they are excluded from the orphan rule
+// by default. `actions-log.md` is a grep-able ledger, not a wiki node — nobody links
+// TO it, so flagging it orphan is a permanent false positive.
+const DEFAULT_ORPHAN_EXCLUDE = ["daily/", "raw-sources/", "inbox/", "actions-log.md"];
 
 // Frontmatter `type` values that make a note a curated "entity page" (subject to
 // the stale rule). Configurable via options.entityTypes.

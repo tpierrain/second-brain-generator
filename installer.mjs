@@ -38,6 +38,7 @@ import { resolveLocale, chooseLocale } from "./scripts/lib/locale.mjs";
 import { overlayLocale } from "./scripts/lib/locale-overlay.mjs";
 import { installStagedSkills } from "./scripts/lib/staged-skills.mjs";
 import { seedHealthNote } from "./scripts/lib/staged-health-note.mjs";
+import { seedActionsLog } from "./scripts/lib/actions-log-seed.mjs";
 import {
   buildShLauncher,
   buildCmdLauncher,
@@ -344,6 +345,10 @@ if (stagedSkills.length) {
 // (engine-health/health-check.md, vault/ is sacred — ADR 0026). Seed the runtime
 // vault note from it so a FRESH brain has the canary indexed from the first run.
 seedHealthNote({ sourceDir: TARGET, brainDir: TARGET });
+// Track E: seed the append-only activity ledger (vault/actions-log.md) so it is a
+// first-class artifact from the first run, not a `sync-sources` side-effect. Written
+// once, never overwritten; the session-actions-log hook maintains it thereafter.
+seedActionsLog({ brainDir: TARGET, today: new Date().toISOString().slice(0, 10) });
 // Canary question for the vault actually installed (the overlaid locale, or `en`
 // at the root when no overlay applies) — so an fr brain probes/suggests the fr
 // question, matching its fr vault and its demo-locale.mjs marker.

@@ -89,6 +89,14 @@ test("lintVault — raw-capture zones (daily/, raw-sources/, inbox/) are never o
   assert.deepEqual(report.orphans, ["topic.md"]);
 });
 
+test("lintVault — the append-only ledger (actions-log.md) is a raw zone, never an orphan", () => {
+  const report = lintVault([
+    { path: "actions-log.md", frontmatter: { type: "log" }, body: "" },
+    { path: "topic.md", frontmatter: {}, body: "" },
+  ]);
+  assert.deepEqual(report.orphans, ["topic.md"]);
+});
+
 // ── stale entity pages: an entity note left behind by fresher notes citing it ──
 
 test("lintVault — flags an entity page older than the freshest note linking to it", () => {
