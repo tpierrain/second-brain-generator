@@ -174,6 +174,7 @@ The RAG (`rag/`) splits each Markdown file into **chunks** (one per `#`/`##`/`##
 - Structural navigation (known file) → `Read` directly, no RAG.
 - `search_vault` is fast and cheap — don't hesitate when the question is semantic.
 - The index rebuilds automatically, incrementally (only modified files are re-indexed). No manual maintenance. Forced rebuild: `cd rag && npm run reindex`.
+- **Safe by construction**: a single process indexes at a time (single-writer lock), so a forced rebuild during an active session never doubles the work. With an API embedder (daily quota), a reserve of requests is kept for search: querying the brain is never blocked by an ongoing indexing.
 - **"Which engine version do I have?"** → the engine **TAG** is the answer: the **"Version"** line of `vault_stats` (= the brain's pinned `source.ref`, the same value the status-line shows). The `rag X.Y.Z` / index-schema numbers on the `vault_stats` "internal build" line are **internal mechanics**, *not* the version — never report them as "the version" (ADR 0017).
 
 **⚠️ Fail-loud — never a disguised out-of-vault answer.** If the `mcp__vault-rag__*` tools are **unavailable, missing, or return an error** (MCP server not loaded, missing Gemini key, empty index…), you must **SAY IT LOUDLY** — "⚠️ RAG unavailable: I can't query the vault" — and **REFUSE to fabricate an answer** from the Internet or your general knowledge. A second brain that answers beside the vault *while appearing to work* is worse than a brain that frankly says it's down. This applies **in particular to the demo question** (the user's first contact): no plausible but out-of-vault answer. Instead, indicate how to fix it (key in `.env`, restart Claude Code, `/mcp`).
@@ -227,7 +228,7 @@ Claude must **challenge requests to modify the harness** (CLAUDE.md, `.claude/`,
 
 ### Delegation to sub-agents — limit context rot
 
-The main session's context is a **scarce, high-quality resource**. The quality of attention degrades well before the nominal limit (*lost in the middle*). Goal: keep the main session **dense and relevant**, bringing back only pre-digested signals.
+The main session's context is a **scarce, high-quality resource**. A large context window is a *capacity* (swallowing a big file without crashing), not a cruising regime: the quality of attention degrades well before the nominal limit (*lost in the middle*, dilution, forgetting the middle). Goal: keep the main session **dense and relevant**, ideally **under ~150-200k useful tokens**, bringing back only pre-digested signals.
 
 **Delegate (Agent / Explore) when:**
 - Broad search / fan-out (sweeping many files/sources) without knowing where the answer is.
@@ -243,9 +244,17 @@ The main session's context is a **scarce, high-quality resource**. The quality o
 - **Timestamping mandatory.** Before any source analysis or dated writing, anchor the current date/time — never guess. Since Node is a prerequisite, use a **portable** command (macOS / Linux / Windows):
   - Current date/time: `node -e "console.log(new Date().toString())"`
   - Derived date ("tomorrow", "3 days ago"): `node -e "console.log(new Date(Date.now()+N*864e5).toISOString().slice(0,10))"` (negative N for the past). Never compute a date in your head.
+  - **A bare weekday = always resolve the ambiguity.** If the user mentions a day ("Monday", "Tuesday"…) **without** a date or "last"/"next", never guess: compute **both** dates (the previous one AND the next one) and ask a short one-line question, e.g. "Do you mean Monday **last (06/08)** or Monday **next (06/15)**?". Wait for the answer before committing to either.
 - **Don't create files** outside the defined structure without asking.
 - **Never edit a past daily note** (except for a glaring typo correction that's flagged).
+- **Durable memory is the repo, never Claude Code's local memory.** Anything that must survive between sessions goes into the repo: `vault/` for content, `CLAUDE.md` for rules. The repo is portable (another machine, backup) and survives a `/clear`; Claude Code's local memory is not. Never leave anything useful only in conversation memory.
 - If you touch the harness (`.claude/`), separate commit with a clear message (`harness: …`).
+
+### Sourcing and traceability
+
+- **Keep the direct links to sources** (permalinks, URLs) of everything you use (message, document, email), and include them when you cite a source in an answer.
+- **Never rebuild a permalink by hand** from an identifier + timestamp (often wrong): reuse the link the tool hands you as-is.
+- **Qualify source reliability**: verbatim (transcript, raw message) > human synthesis > AI synthesis. Flag when you interpret rather than report.
 
 ### Main flow — direct question + transparent source sync
 
@@ -309,6 +318,13 @@ On each ingestion of external data, cross-reference with `vault/backlog/*.md`:
 3. **Obsolete actions** → mark `[~]` with a note.
 
 Never present an action as "to do" without having checked that it hasn't already been done. Checked actions stay in the file (tracking register, no deletion).
+
+**Proactive action-item verification (question-first).** When you list actions from external sources, follow the same flow as the main flow:
+1. **Phase 1**: present the actions from the vault right away (fast answer, even if statuses aren't verified yet).
+2. **Phase 2**: in the background, look for **execution traces** (message sent, commit, email, meeting confirmation) that would show an action is already done.
+3. **Phase 3**: amend — check `[x]` what's done, drop it from the "to do" list, add any newly detected actions.
+
+The user should never have to correct "careful, that's already done": it's on Claude to verify upfront.
 
 ### Automatic persistence & commit
 

@@ -1,9 +1,9 @@
 # Migrate a pre-existing second brain into a generated brain — capability gap analysis & strategy
 
 > **Status:** in progress upstream (refreshed 2026-07-17). **Track A DONE** (merged to `main` via
-> PR #29, squash `9448230`, cross-platform CI green). **Track B DONE** for the launcher-bound part
-> (2 generic skills upstreamed on branch `feat/skills-open-note-mcp-token-expired`, commit `235bae2`
-> — not merged yet). **Next: Track C** (constitution merge). Tracks D/F not started.
+> PR #29, squash `9448230`, cross-platform CI green). **Track B DONE** and **merged to `main`** via
+> PR #30 (squash `2420fdc`) — the 2 generic skills now ship at `engine-skills/open-note` and
+> `engine-skills/mcp-token-expired`. **Next: Track C** (constitution merge). Tracks D/F not started.
 > This is the **canonical** plan (repo = single source of truth). The plan-mode scratch file
 > `~/.claude/plans/shimmering-snacking-tome.md` is superseded.
 
@@ -57,11 +57,16 @@ This splits the work into **three bodies**, in order:
       — DONE: merged to `main` via PR #29 (squash `9448230`, 2026-07-17), cross-platform CI green;
       mutation-proven; re-measurement confirmed (105 exact).
 - [x] **Track B — Skills: classify & route** (generic → launcher, private → personal brain)
-      — DONE for the launcher-bound part: 2 generic skills upstreamed as English
-      `engine-skills/` sources (`open-note`, `mcp-token-expired`), delivery proven to fresh
+      — DONE and **merged to `main`** (PR #30, squash `2420fdc`): 2 generic skills upstreamed as
+      English `engine-skills/` sources (`open-note`, `mcp-token-expired`), delivery proven to fresh
       installs + upgraders. Private skills classified (stay in personal brain, layered in Track D).
-      _(2026-07-17 · 235bae2)_
-- [ ] **Track C — Constitution merge** (distill generic disciplines to template; keep newer template wins)
+      _(2026-07-17 · PR #30 / 2420fdc)_
+- [x] **Track C — Constitution merge** (distill generic disciplines to template; keep newer template wins)
+      — DONE: 6 generic disciplines ported to `templates/fr/CLAUDE.md.template` (de-identified, no
+      em-dash, neutral phrasing) + generic embedder-agnostic quota note; template's newer wins verified
+      not regressed. Two items **deliberately deferred** (`_inbox` autostash = source flags it
+      prototype; macOS `pbcopy` workaround = orphan, no host feature). _(2026-07-17 · branch
+      `feat/constitution-merge-track-c`)_
 - [ ] **Track D — Corpus migration** (generate brain → `/import` 405 notes → layer private capabilities)
 - [x] **Track E — Canonical plan** relocated to `maintainers/plans/prospective/` — done (this file, 2026-07-11)
 - [ ] **Track F — Product exploration** (regular content ingestion + ideas from other second brains) — *post-migration; may be prepared in parallel*
@@ -150,22 +155,51 @@ Representative files: `rag/src/lib/chunker.ts`, `rag/src/lib/chunker.test.ts`,
 
 **Port INTO the launcher template (generic disciplines it lacks or has weaker):**
 
-- [ ] 4-phase main flux + diagram; "never ask permission to sync".
-- [ ] Proactive action-item verification (check execution traces before reporting an action as "to do").
-- [ ] Day-of-week ambiguity resolution (compute both dates, ask a one-line disambiguation).
-- [ ] Context-rot thresholds (keep main session ~150–200k; sub-agents return ~500-token digests).
-- [ ] RAG quota guardrails (daily cap, query reserve, single-writer lock) — template's RAG section is thinner.
-- [ ] `vault/_inbox/` autostash safety net; "never write to Claude Code local memory, everything to the repo".
-- [ ] Obsidian namespace routing vs default-editor routing; Slack permalink sourcing discipline.
-- [ ] macOS `pbcopy` UTF-8 workaround (guarded as macOS-only).
+- [x] 4-phase main flux + diagram; "never ask permission to sync". _(already present in the template
+      §4, confirmed no regression · 2026-07-17)_
+- [x] Proactive action-item verification (check execution traces before reporting an action as "to do").
+      _(ported as a question-first 3-phase block in the template §backlog, de-identified · 2026-07-17)_
+- [x] Day-of-week ambiguity resolution (compute both dates, ask a one-line disambiguation).
+      _(ported to §5 Règles générales, portable-Node dates · 2026-07-17)_
+- [x] Context-rot thresholds (keep main session ~150–200k; sub-agents return ~500-token digests).
+      _(threshold + "context window is a capacity not a cruise regime" framing added to §5 delegation · 2026-07-17)_
+- [x] RAG quota guardrails (daily cap, query reserve, single-writer lock) — template's RAG section is thinner.
+      _(ported as a GENERIC, embedder-agnostic note — single-writer lock + query reserve — NO Gemini
+      numbers, since the launcher is multi-embedder · 2026-07-17)_
+- [x] ~~`vault/_inbox/` autostash safety net~~; "never write to Claude Code local memory, everything to the repo".
+      _memory-in-repo ported to §5 (generic rationale: portability + survives `/clear`). **`_inbox`
+      autostash DEFERRED** — the source brain itself flags it "prototype, evaluate before porting to
+      the product"; no host feature in the template yet. · 2026-07-17_
+- [x] Obsidian namespace routing vs default-editor routing; Slack permalink sourcing discipline.
+      _Resolution: the template's **cross-platform default-editor routing is the newer win** (the
+      source brain's hard `obsidian://` routing is older) → brought the **FR** template to parity with
+      the **EN** base's editor-routing section (FR was missing it); Obsidian stays optional/recommended.
+      Slack permalink discipline genericized into a source-agnostic "Sourçage et traçabilité" mini-section
+      in **both** templates. · 2026-07-17_
+- [ ] ~~macOS `pbcopy` UTF-8 workaround (guarded as macOS-only).~~ **DEFERRED** — orphan: it is bound
+      to the source brain's Slack-draft-to-clipboard feature, which does not exist in the template.
+      Re-port only if a clipboard/draft feature lands. _(2026-07-17)_
 
 **Keep the template's newer wins the source brain predates (do NOT regress):**
 
-- [ ] Fail-loud RAG rule; native-tools-over-Bash discipline; first-launch wiring test;
+- [x] Fail-loud RAG rule; native-tools-over-Bash discipline; first-launch wiring test;
       cross-platform editor routing; local-mirror citation pattern (🧠 local + 🔗 source).
+      _(all verified still present in the template, no regression from the merge · 2026-07-17)_
 
 **Mandatory scrub before anything touches the template:** remove all people names, Slack channel
-names/IDs, org/account emails, product-team names, and any private-project references.
+names/IDs, org/account emails, product-team names, and any private-project references. _(Applied:
+`git diff` scrub confirmed zero private terms leaked · 2026-07-17.)_
+
+> **Two constitution templates, kept in parity.** The launcher ships a root **EN base**
+> `CLAUDE.md.template` (copied for every brain) and a **FR overlay** `templates/fr/CLAUDE.md.template`
+> (applied for `--lang fr`, a deliberate product localization). Every Track C port landed in **both**
+> (EN in English, FR in French, no em-dash). The 564 harness tests stay green (incl. the
+> constitution-mirror-citations parity test).
+>
+> **Discovered drift (out of Track C scope, follow-up):** the FR overlay is still missing the EN base's
+> §4 **"Local mirrors"** routing section (the `mcp__local-mirror__*` tool table + routing rule) — a
+> localization gap for `fr` brains, unrelated to the source-brain merge. Track separately: a FR↔EN
+> constitution parity pass.
 
 ---
 
