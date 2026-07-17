@@ -1,11 +1,13 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🟢 Tracks A + B + C + F SHIPPED (2026-07-17). A = `/lint` wiki-health   -->
-<!-- scanner. B = `/file-back` deterministic filer (a filed note passes /lint       -->
-<!-- clean, never overwrites). C = `/consolidate`: a deterministic candidate finder -->
-<!-- (stateless "fresher-than-the-page" rule) + a fan-out/fan-in skill that writes  -->
-<!-- via B. F = a SessionStart trigger fires the scans on a real event and surfaces  -->
-<!-- them in the chat (Desktop-visible), the write stays confirmed. All TDD, all     -->
-<!-- proven on the real 405-note vault. Tracks D + E still prospective.              -->
+<!-- STATUS: 🟢 Tracks A + B + C + E + F SHIPPED (2026-07-17). A = `/lint` wiki-      -->
+<!-- health scanner. B = `/file-back` deterministic filer (a filed note passes /lint -->
+<!-- clean, never overwrites). C = `/consolidate`: a deterministic candidate finder  -->
+<!-- (stateless "fresher-than-the-page" rule) + a fan-out/fan-in skill that writes   -->
+<!-- via B. E = the append-only activity ledger (vault/actions-log.md) becomes a      -->
+<!-- seeded, first-class artifact, maintained by a SessionStart hook (seed-if-absent, -->
+<!-- never overwrites). F = a SessionStart trigger fires the scans on a real event    -->
+<!-- and surfaces them in the chat (Desktop-visible), the write stays confirmed. All  -->
+<!-- TDD, all proven on the real 405-note vault. Track D still prospective.           -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — give Axis 1 (wiki-health / consolidation) real mechanics
@@ -41,7 +43,7 @@
   - [x] Wired into `update-engine` manifest (`replace` + `scripts` 1.2.0→1.3.0); proven: filed note passes /lint clean
 - [x] **Track C — The brain consolidates raw captures** into entity/topic pages, backlinks woven _(2026-07-17 · deterministic candidate finder + `/consolidate` skill, TDD, proven on the real 405-note vault)_
 - [ ] **Track D — (v2) The brain flags contradictions** between a new note and an entity page's stated fact
-- [ ] **Track E — Append-only log is first-class** (seeded artifact + hook, not a `sync-sources` side-effect)
+- [x] **Track E — Append-only log is first-class** (seeded artifact + hook, not a `sync-sources` side-effect) _(2026-07-17 · e2c71f4 · seeded ledger + SessionStart maintainer hook, TDD, proven end-to-end + on the real 405-note vault)_
 - [x] **Track F — Run the Axis-1 mechanics from a deterministic trigger** (a hook/event, not only on-demand) _(2026-07-17 · b81d937 · SessionStart hook `session-wiki-health.mjs` + pure `wiki-health-nudge` core, TDD, proven on the real 405-note vault)_
   - [x] `/lint` (read-only) auto-runs on a real event and surfaces its report _(SessionStart hook; only dangling links surface here, orphans/stale stay on-demand)_
   - [x] `/consolidate` **scan** auto-runs and surfaces candidates — the write stays confirmed (never auto-filed) _(scan only; the merge stays propose → yes)_
@@ -145,7 +147,26 @@ flags it for the user rather than letting the wiki hold two truths. Needs LLM ju
 **WHAT.** The append-only activity log becomes a seeded, maintained artifact (not a by-product of a
 `sync-sources` run), so the "what happened" ledger always exists.
 
-- [ ] Seed the artifact at install + maintain it via a hook bound to a real event (rung 3, ADR 0009)
+> **Shipped (2026-07-17 · e2c71f4).** Same three-rung shape as Tracks A/B/F. A pure core
+> (`scripts/lib/actions-log-seed.mjs`, 6 tests) owns the /lint-conformant seed content and a
+> write-if-absent fs seam that never overwrites real history; a SessionStart hook
+> (`scripts/session-actions-log.mjs`, 5 tests) is the maintainer on a real event. The seed carries
+> `type: log` frontmatter and fences its format example (so it is neither a frontmatter violation nor
+> a dangling link), and `actions-log.md` joins the linter's raw-zone orphan exclusion — proven
+> lint-clean through the real rung-2 reader. `sync-sources` (en + fr) reconciled: the ledger is now a
+> seeded artifact to append to. Wired fleet-wide (manifest `replace` + `scripts` 1.5.0 → 1.6.0,
+> settings template after `session-wiki-health`, delivered by `reconcileHooks` add-if-absent).
+
+- [x] Seed the artifact at install + maintain it via a hook bound to a real event (rung 3, ADR 0009)
+  - [x] Pure core: `/lint`-conformant seed content + write-if-absent fs seam (never overwrites) +
+        the SessionStart hook output builder (quiet unless it just seeded) _(6 tests)_
+  - [x] SessionStart hook seeds-if-absent on a real event → upgraders that never re-run the installer
+        still gain the ledger; a one-time chat note, then silent _(5 tests, fail-open)_
+  - [x] Installer seeds it for fresh brains from the first run
+  - [x] Linter: `actions-log.md` joins the raw-zone orphan exclusion (a grep-able ledger is not a wiki
+        node) — proven lint-clean on the real rung-2 reader; a fresh brain stays silent on day one
+  - [x] Wired fleet-wide (manifest `replace` + `scripts` 1.5.0 → 1.6.0, settings template, reconcileHooks);
+        `sync-sources` docs (en + fr) reconciled
 
 ## Track F — Run the Axis-1 mechanics from a deterministic trigger
 
