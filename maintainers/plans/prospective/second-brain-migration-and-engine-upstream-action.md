@@ -32,6 +32,8 @@ overwrites). It does **not** migrate skills, hooks, `.mcp.json`, or `CLAUDE.md` 
 ## Tracking
 
 - [ ] **Track A — Engine: embedder/chunker degenerate-chunk pruning** (upstream to launcher)
+      — code shipped on `feat/chunker-degenerate-body-pruning` (dd13be0, 2026-07-17), mutation-proven;
+      only the source-vault re-measurement (~105) remains, to run from Thomas's pre-existing brain.
 - [ ] **Track B — Skills: classify & route** (generic → launcher, private → personal brain)
 - [ ] **Track C — Constitution merge** (distill generic disciplines to template; keep newer template wins)
 - [ ] **Track D — Corpus migration** (generate brain → `/import` 405 notes → layer private capabilities)
@@ -51,22 +53,27 @@ falls back to the filename, `frontmatter-parser.ts:48-60`); the `isSubstantialBo
 **only** to section bodies, never to the title chunk → every doc keeps ≥1 chunk. Gain is primarily
 **index-noise / search-quality**, secondarily a small one-time quota saving.
 
-- [ ] Add `isSubstantialBody(body)` + `MIN_BODY_MEANINGFUL_CHARS = 25` (count `\p{L}\p{N}` only) to
+- [x] Add `isSubstantialBody(body)` + `MIN_BODY_MEANINGFUL_CHARS = 25` (count `\p{L}\p{N}` only) to
       `rag/src/lib/chunker.ts`, applied **only** inside the section loop (keep the unconditional
-      `(title)` chunk untouched).
-- [ ] TDD baby-steps (fail-first, one test at a time). Test cases:
-  - [ ] title-only page still yields ≥1 chunk (F8 guard) — the invariant, as an explicit test.
-  - [ ] degenerate section (`---`, `<!-- ... -->`, `- ` stub) is pruned.
-  - [ ] substantial section is kept.
-  - [ ] threshold false-positive guards: URL-only, code-snippet-only, image-only section → decide
-        keep vs prune and lock the decision with a test.
-- [ ] Keep `rag/src/lib/indexer.ts`'s **loud 0-chunk surface** as backstop. Do **NOT** adopt the
+      `(title)` chunk untouched). _(2026-07-17 · dd13be0)_
+- [x] TDD baby-steps (fail-first, one test at a time). Test cases: _(2026-07-17 · dd13be0)_
+  - [x] title-only page still yields ≥1 chunk (F8 guard) — the invariant, as an explicit test
+        (pre-existing empty-body test + new "title + degenerate body → title chunk survives").
+  - [x] degenerate section (`---`, `<!-- ... -->`, `- ` stub) is pruned.
+  - [x] substantial section is kept.
+  - [x] threshold false-positive guards: URL-only + code-snippet → **KEPT**; image-only (no alt) +
+        stub → **pruned**; boundary triangulated (`>= 25` inclusive: 25 kept / 24 pruned) + char
+        class (punctuation/whitespace don't count).
+- [x] Keep `rag/src/lib/indexer.ts`'s **loud 0-chunk surface** as backstop. Do **NOT** adopt the
       source brain's silent `persist-0-chunk-with-hash` (it pairs with a no-title-chunk design and
-      would re-open the F8 silent-drop).
-- [ ] Run mutation testing on `chunker` (Stryker) to confirm the new guard is covered.
-- [ ] Ensure `chunker.ts` is engine-owned in `engine-manifest.json` so the fix reaches upgraders via
-      `update-engine`.
+      would re-open the F8 silent-drop). _(verified intact at `indexer.ts:44-49`, untouched · 2026-07-17)_
+- [x] Run mutation testing on `chunker` (Stryker) to confirm the new guard is covered.
+      _(87.37% — 83 killed / 12 documented equivalent survivors; the new `isSubstantialBody` guard
+      contributes **zero** survivors, boundary + char-class mutants all killed · 2026-07-17)_
+- [x] Ensure `chunker.ts` is engine-owned in `engine-manifest.json` so the fix reaches upgraders via
+      `update-engine`. _(`rag/src/**` already in the manifest `replace` bucket · verified 2026-07-17)_
 - [ ] Re-run the read-only measurement after the change to confirm the pruned count matches (~105).
+      _(needs the source vault path — Thomas's pre-existing brain, not in this repo; run from there.)_
 
 Representative files: `rag/src/lib/chunker.ts`, `rag/src/lib/chunker.test.ts`,
 `rag/src/lib/indexer.ts`, `engine-manifest.json`.
