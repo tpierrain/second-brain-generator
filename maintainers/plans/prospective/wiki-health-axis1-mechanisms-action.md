@@ -1,13 +1,17 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🟢 Tracks A + B + C + E + F SHIPPED (2026-07-17). A = `/lint` wiki-      -->
-<!-- health scanner. B = `/file-back` deterministic filer (a filed note passes /lint -->
-<!-- clean, never overwrites). C = `/consolidate`: a deterministic candidate finder  -->
-<!-- (stateless "fresher-than-the-page" rule) + a fan-out/fan-in skill that writes   -->
-<!-- via B. E = the append-only activity ledger (vault/actions-log.md) becomes a      -->
-<!-- seeded, first-class artifact, maintained by a SessionStart hook (seed-if-absent, -->
-<!-- never overwrites). F = a SessionStart trigger fires the scans on a real event    -->
-<!-- and surfaces them in the chat (Desktop-visible), the write stays confirmed. All  -->
-<!-- TDD, all proven on the real 405-note vault. Track D still prospective.           -->
+<!-- STATUS: 🟢 Tracks A + B + C + D + E + F SHIPPED (A/B/C/E/F 2026-07-17, D 2026-  -->
+<!-- 07-18). A = `/lint` wiki-health scanner. B = `/file-back` deterministic filer   -->
+<!-- (a filed note passes /lint clean, never overwrites). C = `/consolidate`: a      -->
+<!-- deterministic candidate finder (stateless "fresher-than-the-page" rule) + a     -->
+<!-- fan-out/fan-in skill that writes via B. D = contradiction-flagging folded into  -->
+<!-- C's refresh pass (facts live in prose here → LLM judgment; the draft surfaces a  -->
+<!-- `### contradictions` block, the human adjudicates, nothing is silently           -->
+<!-- overwritten). E = the append-only activity ledger (vault/actions-log.md) becomes -->
+<!-- a seeded, first-class artifact, maintained by a SessionStart hook (seed-if-       -->
+<!-- absent, never overwrites). F = a SessionStart trigger fires the scans on a real  -->
+<!-- event and surfaces them in the chat (Desktop-visible), the write stays confirmed.-->
+<!-- All proven on the real 405-note vault. Remaining: cross-cutting retrieval        -->
+<!-- measurement + the formal private import (Thomas-side, see §Sequencing).          -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — give Axis 1 (wiki-health / consolidation) real mechanics
@@ -42,7 +46,7 @@
   - [x] Engine skill `engine-skills/file-back/SKILL.md` (propose → confirm → file; append path for living pages)
   - [x] Wired into `update-engine` manifest (`replace` + `scripts` 1.2.0→1.3.0); proven: filed note passes /lint clean
 - [x] **Track C — The brain consolidates raw captures** into entity/topic pages, backlinks woven _(2026-07-17 · deterministic candidate finder + `/consolidate` skill, TDD, proven on the real 405-note vault)_
-- [ ] **Track D — (v2) The brain flags contradictions** between a new note and an entity page's stated fact
+- [x] **Track D — (v2) The brain flags contradictions** between a new note and an entity page's stated fact _(2026-07-18 · folded into Track C's `/consolidate` refresh pass, skill 1.0.0→1.1.0, manifest `scripts` 1.6.0→1.7.0; flag-only, human adjudicates, never silently overwrites)_
 - [x] **Track E — Append-only log is first-class** (seeded artifact + hook, not a `sync-sources` side-effect) _(2026-07-17 · e2c71f4 · seeded ledger + SessionStart maintainer hook, TDD, proven end-to-end + on the real 405-note vault)_
 - [x] **Track F — Run the Axis-1 mechanics from a deterministic trigger** (a hook/event, not only on-demand) _(2026-07-17 · b81d937 · SessionStart hook `session-wiki-health.mjs` + pure `wiki-health-nudge` core, TDD, proven on the real 405-note vault)_
   - [x] `/lint` (read-only) auto-runs on a real event and surfaces its report _(SessionStart hook; only dangling links surface here, orphans/stale stay on-demand)_
@@ -140,7 +144,34 @@ where the audit found the biggest gap (raw capture dominates; higher-order conso
 **WHAT.** When a new note asserts something that conflicts with an entity page's stated fact, the brain
 flags it for the user rather than letting the wiki hold two truths. Needs LLM judgment → later rung.
 
-- [ ] Fold into Track A's report or Track C's pass, not a standalone engine at first
+> **Shipped (2026-07-18).** Folded into Track C's `/consolidate` refresh pass exactly as this track
+> prescribed ("not a standalone engine at first"), skill `1.0.0 → 1.1.0`.
+>
+> **Why no deterministic engine (grounding, not laziness).** In this vault **facts live in prose**: the
+> living `people/` and `topics/` pages accrete *dated appended sections* (constitution §"Note format"),
+> and frontmatter is only metadata (`type/created/updated/tags`), never structured facts. So there is no
+> `field = A` vs `field = B` seam to diff deterministically, contradiction detection is irreducibly LLM
+> judgment over prose (rung 5+ of ADR 0009). Inventing a deterministic "contradiction engine" against a
+> prose corpus would be over-engineering against an unproven risk, so the detection rides the LLM merge
+> that Track C already runs, and the deterministic part is the pairing Track C *already* surfaces (a page
+> + the fresher captures citing it = the refresh candidates). No new finder was needed.
+>
+> **What changed.** The refresh drafting sub-agent now watches for a capture that CONFLICTS with a fact
+> the page states (changed role, reversed decision, different number/date/owner) and returns it under a
+> `### contradictions` block instead of folding it in as an addition. The propose step surfaces conflicts
+> FIRST and distinctly (⚠️ page says X, capture says Y); the user adjudicates (keep / adopt / dated
+> "as of" both); a contradicting claim is **never** appended without that explicit decision. Strictly
+> conservative: it can only make the human catch a conflict, it never makes the wiki worse.
+
+- [x] Fold into Track A's report or Track C's pass, not a standalone engine at first _(Track C's refresh
+      pass; see the shipped note above)_
+
+> **Optional deterministic complement (not built, needs Thomas's call).** A *structural* sibling that IS
+> deterministic and testable: flag **colliding entity pages** (two curated `person`/`topic` pages that
+> resolve to the same link key), the structural precondition for "the wiki holds two truths". That is a
+> different mechanic from semantic contradiction (it would fold into Track A's `/lint` report, TDD rung
+> 1), deliberately left out tonight to avoid substituting a deterministic proxy for the LLM feature Track
+> D actually asked for. Consider if false negatives from the LLM path prove to be a problem.
 
 ## Track E — Append-only log, first-class
 
