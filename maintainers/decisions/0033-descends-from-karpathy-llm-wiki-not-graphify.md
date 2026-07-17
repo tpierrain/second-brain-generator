@@ -15,9 +15,11 @@
 
 **Prior art (why this isn't NIH):** this project's retrieval philosophy is **Andrej Karpathy's
 "LLM Wiki"** pattern — an LLM compiles sources into an interlinked Markdown wiki you point an agent at,
-rather than a stateless embed-and-search index. We adopted it **deliberately and credited it from day
-one** (the originating private brain's `README` / `PLAN` cite Karpathy, and the clarifying write-up by
-Leo @defileo). **Graphify** is a **sibling** implementation of the **same public idea**, not our source.
+rather than a stateless embed-and-search index. It began from a **concrete personal need**, and from
+**day one** the brief was to **evaluate whether the LLM-Wiki ideas could serve that need** — not to
+adopt them blindly: we imported them **deliberately and credited them from the start** (the originating
+private brain's `README` / `PLAN` cite Karpathy, and the clarifying write-up by Leo @defileo).
+**Graphify** is a **sibling** implementation of the **same public idea**, not our source.
 The decision: **position Kenjaku as a *superset* of the LLM Wiki** — a personal second brain that keeps
 the wiki (Axis 1) **and** adds an embedding RAG (Axis 2) **and** connectors — and **defend against
 "you copied Graphify" with the truth, not with a false priority claim**: common public ancestor +

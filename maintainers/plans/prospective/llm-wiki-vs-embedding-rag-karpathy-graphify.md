@@ -71,11 +71,21 @@ On that grid, **Kenjaku is not an alternative to the LLM Wiki — it is a supers
   over in-process ONNX / Ollama / Gemini) **on top of** the wiki, as a **recall accelerator** once
   the vault outgrows pure agent-navigation. It did not replace the wiki.
 
-**Lineage (confirmed, not retrofitted theory).** The private second brain Kenjaku was extracted
-from **started explicitly from Karpathy's "LLM Wiki" pattern**: a 3-layer *raw / wiki / schema*
-architecture, an append-only global log, a `/lint` wiki-health operation, "good answers filed
-back" — then grew a RAG as it scaled. The RAG is an **augmentation of the principle, not a
-departure from it**.
+**Lineage (confirmed, not retrofitted theory).** Kenjaku did **not** start from an idea to copy — it
+started from a **concrete personal need** (a working second brain). From **day one**, the brief to
+Claude was explicitly to **evaluate whether Karpathy's "LLM Wiki" ideas could serve that need**, not
+to adopt them blindly: the originating private brain's `PLAN` states the need first, then
+**deliberately imports four LLM-Wiki ideas** (a 3-layer *raw / wiki / schema* architecture, an
+append-only global log, a `/lint` wiki-health operation, "good answers filed back"), and even runs a
+"Karpathy-style critique" of its own first plan. So the wiki discipline (Axis 1) was there **by
+design, from the start** — need-driven, then a public pattern weighed against it.
+
+**How the gap opened (the honest arc).** What eroded Axis 1 was **success on Axis 2**: the sheer
+power of the answers, and then the **RAG (which came second)**, pulled the investment toward
+retrieval and let the **curation / consolidation / lint discipline quietly lapse**. The RAG is an
+**augmentation of the principle, not a departure from it** — but it also **eclipsed** the compile
+discipline. **Reclaiming Axis 1 is precisely what this study, and its action plan
+([`wiki-health-axis1-mechanisms-action.md`](wiki-health-axis1-mechanisms-action.md)), are for.**
 
 **Compatible or exclusive? Complementary.** The only genuine either/or is the *retrieval mechanism
 at query time*, and even there the two cover each other's blind spots: embeddings give **semantic
