@@ -4,7 +4,7 @@
     "rag": "1.1.5",
     "local-mirror": "0.2.0",
     "constitutionTemplate": "1.0.0",
-    "scripts": "1.1.0"
+    "scripts": "1.2.0"
   },
   "indexSchemaVersion": 1,
   "regimes": {
@@ -26,6 +26,7 @@
       "scripts/session-health.mjs",
       "scripts/session-obsidian-hint.mjs",
       "scripts/health-probe-run.mjs",
+      "scripts/lint-vault.mjs",
       "scripts/lib/**",
       ".claude/settings.json.template",
       ".mcp.json.template",
