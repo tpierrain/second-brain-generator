@@ -220,8 +220,10 @@ never turning a silent auto-write loose.
       deterministic (`lintVault` + `consolidationCandidates`, rung 1), **surface** an `additionalContext`
       directive the agent relays in the chat (rung 6, the only Desktop-visible channel), **merge** stays
       LLM+confirmed on-demand.
-- [ ] Sibling to Track E (both are "maintain Axis 1 via a hook on a real event, not a by-product") — share
-      the wiring/lesson where they overlap _(Track E still prospective; reuse this hook's shape when built)_
+- [x] Sibling to Track E (both are "maintain Axis 1 via a hook on a real event, not a by-product"): the
+      wiring/lesson is shared _(E shipped 2026-07-17 and reused this exact shape — a SessionStart hook,
+      delivered add-if-absent by `reconcileHooks`, ordered in the settings template right after
+      `session-wiki-health`)_
 - [x] Keep the on-demand skills working unchanged; the hook is an **addition**, not a replacement
       (`/lint` and `/consolidate` skills untouched; the hook only reuses their pure cores)
 
