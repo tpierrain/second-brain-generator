@@ -1,11 +1,9 @@
 # Migrate a pre-existing second brain into a generated brain — capability gap analysis & strategy
 
-> **Branch:** `feat/chunker-degenerate-body-pruning` carries Track A (code-complete). The remaining
-> launcher-bound work (Tracks B/C generic) will branch off `main`.
-> **Status:** in progress upstream (refreshed 2026-07-17). **Track A is code-complete and
-> mutation-proven on `feat/chunker-degenerate-body-pruning`** (commits `dd13be0`, `746eaf0`) — one
-> read-only re-measurement remains, to run from the source vault. Engine still `1.1.5`; the branch
-> is not merged to `main` yet. Tracks B/C/D/F not started.
+> **Status:** in progress upstream (refreshed 2026-07-17). **Track A DONE** (merged to `main` via
+> PR #29, squash `9448230`, cross-platform CI green). **Track B DONE** for the launcher-bound part
+> (2 generic skills upstreamed on branch `feat/skills-open-note-mcp-token-expired`, commit `235bae2`
+> — not merged yet). **Next: Track C** (constitution merge). Tracks D/F not started.
 > This is the **canonical** plan (repo = single source of truth). The plan-mode scratch file
 > `~/.claude/plans/shimmering-snacking-tome.md` is superseded.
 
@@ -58,7 +56,11 @@ This splits the work into **three bodies**, in order:
 - [x] **Track A — Engine: embedder/chunker degenerate-chunk pruning** (upstream to launcher)
       — DONE: merged to `main` via PR #29 (squash `9448230`, 2026-07-17), cross-platform CI green;
       mutation-proven; re-measurement confirmed (105 exact).
-- [ ] **Track B — Skills: classify & route** (generic → launcher, private → personal brain)
+- [x] **Track B — Skills: classify & route** (generic → launcher, private → personal brain)
+      — DONE for the launcher-bound part: 2 generic skills upstreamed as English
+      `engine-skills/` sources (`open-note`, `mcp-token-expired`), delivery proven to fresh
+      installs + upgraders. Private skills classified (stay in personal brain, layered in Track D).
+      _(2026-07-17 · 235bae2)_
 - [ ] **Track C — Constitution merge** (distill generic disciplines to template; keep newer template wins)
 - [ ] **Track D — Corpus migration** (generate brain → `/import` 405 notes → layer private capabilities)
 - [x] **Track E — Canonical plan** relocated to `maintainers/plans/prospective/` — done (this file, 2026-07-11)
@@ -121,19 +123,23 @@ Representative files: `rag/src/lib/chunker.ts`, `rag/src/lib/chunker.test.ts`,
 
 **Generic → launcher (de-identified):**
 
-- [ ] `open-note` — open/synthesize a vault note from natural-language intent. Genericize any
-      hard-coded vault-path / Obsidian-namespace assumptions.
-- [ ] `mcp-token-expired` — connector reconnection guidance on auth errors. Strip the
-      contractor/Gmail-specific caveat (make it a generic "connector unavailable" note).
-- [ ] (Optional) extract the *pattern* of the source brain's structured-report skill as a generic
-      "structured report" skill — with **no** names / executive-committee content.
+- [x] `open-note` — open/synthesize a vault note from natural-language intent. Genericized to a
+      neutral user + placeholder examples; ships English at `engine-skills/open-note/`.
+      _(2026-07-17 · 235bae2)_
+- [x] `mcp-token-expired` — connector reconnection guidance on auth errors. Contractor/Gmail-specific
+      caveat generalized to a neutral "connector unavailable by design" note; ships English at
+      `engine-skills/mcp-token-expired/`. _(2026-07-17 · 235bae2)_
+- [x] ~~(Optional) extract the *pattern* of the source brain's structured-report skill~~ — **dropped
+      on decision**: the report was for a past context, will not be regenerated → not ported (not even
+      the pattern). _(2026-07-17)_
 
-**Private → personal brain ONLY (never this repo):**
+**Private → personal brain ONLY (never this repo):** — classified; actioned in Track D (layering).
 
-- [ ] `refresh-*` (security / quality / deploy KPI refreshers), `setup-kpi`, and the concrete
-      report skill (nominative content) stay in the personal brain.
+- [ ] `refresh-*` (security / quality / deploy KPI refreshers — `refresh-aikido`, `refresh-deploys`,
+      `refresh-sonar`), `setup-kpi`, and the concrete report skill (`rapport-etonnement`, nominative
+      content) stay in the personal brain. _(classified 2026-07-17; layered in Track D)_
 - [ ] The employer Slack connector and KPI data files (`scripts/data/*.json`) stay private
-      (personal brain's `.mcp.json` / `scripts/`).
+      (personal brain's `.mcp.json` / `scripts/`). _(classified 2026-07-17; layered in Track D)_
 
 **Already gained for free at install (nothing to do):** `coach`, `improve`, `local-mirror`,
 `prepare-1-1`, `tdd-discipline`, `update-engine`, `import`.
