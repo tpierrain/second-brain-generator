@@ -31,7 +31,7 @@
   - [x] Stale entity pages (`updated:` old while cited in fresher notes) _(2a509fd)_
   - [x] Frontmatter conformance (required `type` / `created` / `updated` / `tags`) _(2a509fd)_
   - [x] Ship as an engine skill + a deterministic script, binary report _(a193743, 767caad)_
-- [x] **Track B — The brain files a good answer back** into a durable note (semi-automatic, confirmed write) _(2026-07-17 · `/file-back` engine skill + deterministic `filed-note` core, TDD)_
+- [x] **Track B — The brain files a good answer back** into a durable note (semi-automatic, confirmed write) _(2026-07-17 · 87bf2f7 · `/file-back` engine skill + deterministic `filed-note` core, TDD)_
   - [x] Deterministic core `scripts/lib/filed-note.mjs` (slugify, path, conformant render — 15 tests)
   - [x] Thin CLI `scripts/file-back-note.mjs` (JSON spec on stdin, writes under vault/, never overwrites — 4 tests)
   - [x] Engine skill `engine-skills/file-back/SKILL.md` (propose → confirm → file; append path for living pages)
