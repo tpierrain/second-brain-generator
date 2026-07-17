@@ -629,7 +629,7 @@ decision table is higher up, in
 | Element | Role | Status |
 |---|---|---|
 | **`rag/`** | RAG engine (TypeScript MCP server): chunking, embeddings **à la carte** (local / API key / Ollama), semantic search, quota guardrails | ✅ ready to use |
-| **`local-mirror/`** | **Optional** second MCP server. Point it at a **Notion** zone; it keeps a **fully-synchronized local copy** in your vault so the RAG searches & **cites** it offline. Driven by `/local-mirror`. *Your company's **golden sources**, searchable by your brain — no enterprise RAG, no MCP/API to expose them, no cloud round-trip. Right now, on your machine.* | ⚙️ optional |
+| **`local-mirror/`** | **Optional** second MCP server. Point it at a **Notion** zone; it keeps a **fully-synchronized local copy** in your vault so the RAG searches & **cites** it offline. Driven by `/local-mirror`. *Built as a **fallback** for teams with **no golden-source RAG** in reach: when your company hasn't exposed its golden sources through an MCP/API, your brain can still search them locally. A pragmatic alternative, **not a target**.* | ⚙️ optional |
 | **`vault/`** | Your Markdown content (example notes included) | 🔧 to fill in |
 | **`CLAUDE.md`** | The rules Claude follows (4-phase flow, conventions, posture) | 🌱 bootstrap stub in the launcher → the installer **generates** a personalized version **in the brain**, then to be tailored |
 | **`.claude/skills/`** | Shipped skills (see below) + ideas for other skills | 🔧 to flesh out |
@@ -652,12 +652,12 @@ The generator stays deliberately **frugal**. The ones you invoke day to day:
 > **Why `/local-mirror` matters.** Companies increasingly wire their **golden sources** — the
 > canonical, curated documentation (specs, runbooks, product knowledge) often used for **enterprise
 > RAG** — into a central search. But that usually needs an **MCP server or an API** to expose those
-> sources, and you may not have one **yet**. `/local-mirror` is the **low-friction on-ramp**: point it
-> at a Notion zone and it keeps a **local cache that stays fully synchronized** in your vault, so your
-> second brain's **local RAG searches and cites entire swaths of your documentation offline** — no
-> server to run, nothing leaving your machine. When the "real" API/MCP exposure of those golden
-> sources eventually lands, you switch to it; until then, you already have RAG over your company
-> knowledge, right now. *(Optional component — most users never enable it.)*
+> sources, and **many teams simply don't have one**. `/local-mirror` was built **as a fallback for
+> exactly that case**: point it at a Notion zone and it keeps a **local cache that stays fully
+> synchronized** in your vault, so your second brain's **local RAG searches and cites entire swaths of
+> your documentation offline** — no server to run, nothing leaving your machine. It is **not the
+> target** — if your company already exposes its golden sources through an MCP/API, use that. This is
+> the pragmatic alternative for those who don't. *(Optional component — most users never enable it.)*
 
 ### The internal tooling (you don't call it)
 
