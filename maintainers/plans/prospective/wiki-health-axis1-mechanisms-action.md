@@ -1,5 +1,7 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🟡 PROSPECTIVE / NOT STARTED (created 2026-07-17). Nothing built yet. -->
+<!-- STATUS: 🟢 Track A SHIPPED (2026-07-17). `/lint` wiki-health scanner built   -->
+<!-- in TDD, proven on the real 405-note vault, shipped as an engine skill.       -->
+<!-- Tracks B–E still prospective. -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — give Axis 1 (wiki-health / consolidation) real mechanics
@@ -22,12 +24,12 @@
 
 ## Tracking
 
-- [ ] **Track A — The brain can detect where its wiki is bleeding** (`/lint` wiki-health)
-  - [ ] Dangling `[[links]]` (target note missing)
-  - [ ] Orphan notes (zero inbound links)
-  - [ ] Stale entity pages (`updated:` old while cited in fresher notes)
-  - [ ] Frontmatter conformance (required `type` / `created` / `updated` / `tags`)
-  - [ ] Ship as an engine skill + a deterministic script, binary report
+- [x] **Track A — The brain can detect where its wiki is bleeding** (`/lint` wiki-health) _(2026-07-17 · 131a72e…767caad)_
+  - [x] Dangling `[[links]]` (target note missing) _(131a72e)_
+  - [x] Orphan notes (zero inbound links) _(131a72e)_
+  - [x] Stale entity pages (`updated:` old while cited in fresher notes) _(2a509fd)_
+  - [x] Frontmatter conformance (required `type` / `created` / `updated` / `tags`) _(2a509fd)_
+  - [x] Ship as an engine skill + a deterministic script, binary report _(a193743, 767caad)_
 - [ ] **Track B — The brain files a good answer back** into a durable note (semi-automatic, confirmed write)
 - [ ] **Track C — The brain consolidates raw captures** into entity/topic pages, backlinks woven
 - [ ] **Track D — (v2) The brain flags contradictions** between a new note and an entity page's stated fact
@@ -44,17 +46,23 @@ vault: what links point nowhere, what notes nobody links to, what entity pages h
 frontmatter is malformed. This is the highest-leverage, lowest-risk Axis-1 mechanic and the most
 "Kenjaku" (deterministic, fail-loud).
 
-- [ ] A deterministic scanner (pure JS, injected fs) that, given a vault path, returns a structured
+- [x] A deterministic scanner (pure JS, injected fs) that, given a vault path, returns a structured
       report: `danglingLinks[]`, `orphans[]`, `staleEntityPages[]`, `frontmatterViolations[]`
-  - [ ] TDD, rung 1 of the determinism ladder (ADR 0009): correctness in an I/O-free function, faked fs
-  - [ ] Stale rule = an entity page (`type: person|topic|…`) whose `updated:` predates the newest note
-        that `[[links]]` to it by more than a threshold (config, default e.g. 90 days)
-  - [ ] Orphan rule = a note with zero inbound `[[links]]` (excluding `daily/`, `raw-sources/`, inbox)
-- [ ] A thin CLI wrapper with a **binary exit code** (rung 2): `exit 0` clean / `exit 1` + report
-- [ ] An **engine skill** (`engine-skills/`) so the brain can run it conversationally and read the report
-- [ ] Wire into `update-engine` manifest so the fleet receives it (ADR 0012 / 0025)
-- [ ] Measure: run against a **real** vault (see §Sequencing), not the 7-note demo — the demo cannot
-      exercise orphan/stale/dangling logic meaningfully
+      _(`scripts/lib/wiki-lint.mjs`, 25 tests · 131a72e, 2a509fd)_
+  - [x] TDD, rung 1 of the determinism ladder (ADR 0009): correctness in an I/O-free function, faked fs
+        _(the pure core takes already-parsed notes; the fs adapter `wiki-lint-io.mjs` is the rung-2 seam)_
+  - [x] Stale rule = an entity page (`type: person|topic|…`) whose `updated:` predates the newest note
+        that `[[links]]` to it by more than a threshold (config, default e.g. 90 days) _(2a509fd)_
+  - [x] Orphan rule = a note with zero inbound `[[links]]` (excluding `daily/`, `raw-sources/`, inbox) _(131a72e)_
+- [x] A thin CLI wrapper with a **binary exit code** (rung 2): `exit 0` clean / `exit 1` + report
+      _(`scripts/lint-vault.mjs`, injected deps port · a193743)_
+- [x] An **engine skill** (`engine-skills/`) so the brain can run it conversationally and read the report
+      _(`engine-skills/lint/SKILL.md` · 767caad)_
+- [x] Wire into `update-engine` manifest so the fleet receives it (ADR 0012 / 0025)
+      _(manifest `replace` + `engineVersion.scripts` 1.1.0→1.2.0 · 767caad)_
+- [x] Measure: run against a **real** vault (see §Sequencing), not the 7-note demo — the demo cannot
+      exercise orphan/stale/dangling logic meaningfully _(405-note vault: found the path-form link
+      resolution bug — dangling 795→47, orphans 352→175 once fixed · 24b6c7f)_
 
 ## Track B — File the good answer back
 
@@ -110,8 +118,9 @@ artifacts**:
 
 **Recommendation (deterministic-first, validate on real not demo — [[validate-shipped-not-test-instance]]):**
 
-- [ ] **Build Track A (`/lint`) now, using the real local vault as the dev/test corpus** (read-only
+- [x] **Build Track A (`/lint`) now, using the real local vault as the dev/test corpus** (read-only
       fixture) — it is the linter's killer use case and its only honest test bed
+      _(done 2026-07-17 — the real vault immediately paid off by exposing the path-form link bug)_
 - [ ] **Then run the formal import** into the generated brain — by then the linter is ready to
       health-check the arriving notes, and the import becomes the linter's first real job (compile-on-
       ingestion, the Karpathy discipline applied to the migration itself)
