@@ -18,6 +18,29 @@
 
 ---
 
+## Kenjaku's origin story — need-first, LLM-Wiki by design, then Axis 1 lapsed
+
+> This is the framing that matters most, so it leads.
+
+**Where Kenjaku came from.** Kenjaku did **not** start from an idea to copy — it started from a
+**concrete personal need**: a second brain that actually works. From **day one**, the brief to Claude
+was explicit: **evaluate whether Karpathy's "LLM Wiki" ideas could serve that need**, not adopt them
+blindly. The originating private brain's `PLAN` states the **need first**, then **deliberately imports
+four LLM-Wiki ideas** (a 3-layer *raw / wiki / schema* architecture, an append-only global log, a
+`/lint` wiki-health operation, "good answers filed back"), and even runs a "Karpathy-style critique" of
+its own first plan. So the wiki / curation discipline (**Axis 1**, defined precisely in §3) was there
+**by design, from the very start** — need-driven, with a public pattern weighed **against** that need.
+
+**How the gap opened (the honest arc).** What eroded Axis 1 was **success on Axis 2**: the sheer power
+of the answers, and then the **RAG (which came second)**, pulled all the investment toward retrieval
+and let the **curation / consolidation / lint discipline quietly lapse**. The RAG is an **augmentation
+of the LLM-Wiki principle, not a departure from it** — but its success **eclipsed** the compile
+discipline. **Reclaiming Axis 1 is precisely what this study, and its action plan
+([`wiki-health-axis1-mechanisms-action.md`](wiki-health-axis1-mechanisms-action.md)), are for** — and
+the §8 audit confirms Axis 1 is, today, under-invested.
+
+---
+
 ## 1. The idea — Karpathy's "LLM Wiki"
 
 Instead of stateless RAG over **raw** documents (embed everything, vector-search at every
@@ -71,21 +94,10 @@ On that grid, **Kenjaku is not an alternative to the LLM Wiki — it is a supers
   over in-process ONNX / Ollama / Gemini) **on top of** the wiki, as a **recall accelerator** once
   the vault outgrows pure agent-navigation. It did not replace the wiki.
 
-**Lineage (confirmed, not retrofitted theory).** Kenjaku did **not** start from an idea to copy — it
-started from a **concrete personal need** (a working second brain). From **day one**, the brief to
-Claude was explicitly to **evaluate whether Karpathy's "LLM Wiki" ideas could serve that need**, not
-to adopt them blindly: the originating private brain's `PLAN` states the need first, then
-**deliberately imports four LLM-Wiki ideas** (a 3-layer *raw / wiki / schema* architecture, an
-append-only global log, a `/lint` wiki-health operation, "good answers filed back"), and even runs a
-"Karpathy-style critique" of its own first plan. So the wiki discipline (Axis 1) was there **by
-design, from the start** — need-driven, then a public pattern weighed against it.
-
-**How the gap opened (the honest arc).** What eroded Axis 1 was **success on Axis 2**: the sheer
-power of the answers, and then the **RAG (which came second)**, pulled the investment toward
-retrieval and let the **curation / consolidation / lint discipline quietly lapse**. The RAG is an
-**augmentation of the principle, not a departure from it** — but it also **eclipsed** the compile
-discipline. **Reclaiming Axis 1 is precisely what this study, and its action plan
-([`wiki-health-axis1-mechanisms-action.md`](wiki-health-axis1-mechanisms-action.md)), are for.**
+> **How this superset actually came to be** — need-first, LLM-Wiki by design from day one, then Axis 1
+> lapsing under the success of the answers and the RAG — is told up front in **"Kenjaku's origin
+> story"** at the top of this note. The two-axis definitions in this section are what that story
+> refers to.
 
 **Compatible or exclusive? Complementary.** The only genuine either/or is the *retrieval mechanism
 at query time*, and even there the two cover each other's blind spots: embeddings give **semantic
