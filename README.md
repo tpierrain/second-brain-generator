@@ -648,6 +648,16 @@ The generator stays deliberately **frugal**. The ones you invoke day to day:
 | **`/local-mirror`** | Plugs your brain onto a **local mirror** — a live zone of an internal tool (**Notion** today) that gets **mirrored into your vault** as Markdown, so the RAG searches and **cites** it. Declare one, then sync / refresh / inspect it. *The central RAG you don't have yet — but local, right now.* |
 | **`/sync`** | Syncs your repo between machines — useful mostly if you have **several laptops**. Rarely needed day to day. |
 
+> **Why `/local-mirror` matters.** Companies increasingly wire their **golden sources** — the
+> canonical, curated documentation (specs, runbooks, product knowledge) often used for **enterprise
+> RAG** — into a central search. But that usually needs an **MCP server or an API** to expose those
+> sources, and you may not have one **yet**. `/local-mirror` is the **low-friction on-ramp**: point it
+> at a Notion zone and it keeps a **local cache that stays fully synchronized** in your vault, so your
+> second brain's **local RAG searches and cites entire swaths of your documentation offline** — no
+> server to run, nothing leaving your machine. When the "real" API/MCP exposure of those golden
+> sources eventually lands, you switch to it; until then, you already have RAG over your company
+> knowledge, right now. *(Optional component — most users never enable it.)*
+
 ### The internal tooling (you don't call it)
 
 These elements are part of the machinery: you don't have to know them. It's just good to know they
