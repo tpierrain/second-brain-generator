@@ -14,9 +14,28 @@ export function extractWikiLinks(body) {
   );
 }
 
-// A note's basename (filename without extension) — how Obsidian resolves a link.
+// A note's basename (filename without extension) — the short Obsidian link form.
 function basename(path) {
   return path.split("/").pop().replace(/\.md$/, "");
+}
+
+// Build a resolver mapping every accepted link spelling to a note's canonical
+// path. Obsidian resolves a `[[Target]]` by basename, and a `[[folder/note]]` (or
+// `[[folder/note.md]]`) by path. Path spellings are registered even when a
+// basename collides, so the longer form always disambiguates.
+function buildResolver(notes) {
+  const byKey = new Map();
+  const register = (key, path) => {
+    if (!byKey.has(key)) byKey.set(key, path);
+  };
+  for (const note of notes) {
+    const noExt = note.path.replace(/\.md$/, "");
+    register(note.path, note.path); // folder/note.md
+    register(noExt, note.path); //     folder/note
+    register(basename(note.path), note.path); // note
+  }
+  // Resolve a raw link target to a canonical note path, or null if it points nowhere.
+  return (target) => byKey.get(target) ?? byKey.get(target.replace(/\.md$/, "")) ?? null;
 }
 
 // Raw-capture zones: notes here are legitimately unlinked (a daily log, an inbox
@@ -56,33 +75,39 @@ export function lintVault(notes, options = {}) {
   const staleDays = options.staleDays ?? DEFAULT_STALE_DAYS;
   const requiredFrontmatter = options.requiredFrontmatter ?? DEFAULT_REQUIRED_FRONTMATTER;
 
-  const known = new Set(notes.map((n) => basename(n.path)));
+  const resolve = buildResolver(notes);
   const danglingLinks = [];
-  const inbound = new Set();
-  const freshestReference = new Map(); // target basename → newest linking note's `updated`
+  const danglingSeen = new Set(); // "from\0target" already recorded — report each once
+  const inbound = new Set(); // canonical paths that receive at least one link
+  const freshestReference = new Map(); // canonical path → newest linking note's `updated`
   for (const note of notes) {
     for (const target of extractWikiLinks(note.body)) {
-      if (!known.has(target)) {
-        danglingLinks.push({ from: note.path, target });
+      const resolved = resolve(target);
+      if (!resolved) {
+        const key = `${note.path}\0${target}`;
+        if (!danglingSeen.has(key)) {
+          danglingSeen.add(key);
+          danglingLinks.push({ from: note.path, target });
+        }
         continue;
       }
-      inbound.add(target);
+      inbound.add(resolved);
       const when = note.frontmatter.updated;
-      const seen = freshestReference.get(target);
+      const seen = freshestReference.get(resolved);
       if (when && (!seen || Date.parse(when) > Date.parse(seen))) {
-        freshestReference.set(target, when);
+        freshestReference.set(resolved, when);
       }
     }
   }
   const orphans = notes
-    .filter((n) => !inbound.has(basename(n.path)))
+    .filter((n) => !inbound.has(n.path))
     .filter((n) => !orphanExclude.some((prefix) => n.path.startsWith(prefix)))
     .map((n) => n.path);
 
   const staleEntityPages = [];
   for (const note of notes) {
     if (!entityTypes.includes(note.frontmatter.type)) continue;
-    const freshest = freshestReference.get(basename(note.path));
+    const freshest = freshestReference.get(note.path);
     const updated = note.frontmatter.updated;
     if (freshest && updated && daysBetween(freshest, updated) > staleDays) {
       staleEntityPages.push({ path: note.path, updated, freshestReference: freshest });

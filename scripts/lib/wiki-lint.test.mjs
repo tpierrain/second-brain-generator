@@ -38,6 +38,22 @@ test("lintVault — flags a link whose target note is absent, keeps resolved one
   assert.deepEqual(report.danglingLinks, [{ from: "notes/a.md", target: "Missing" }]);
 });
 
+test("lintVault — the same broken link repeated in one note is reported once", () => {
+  const report = lintVault([
+    { path: "a.md", frontmatter: {}, body: "[[Missing]] and again [[Missing]]" },
+  ]);
+  assert.deepEqual(report.danglingLinks, [{ from: "a.md", target: "Missing" }]);
+});
+
+test("lintVault — resolves path-form links [[folder/note]] and [[folder/note.md]]", () => {
+  const report = lintVault([
+    { path: "topics/rag.md", frontmatter: {}, body: "" },
+    { path: "notes/x.md", frontmatter: {}, body: "see [[topics/rag]] and [[topics/rag.md]]" },
+  ]);
+  assert.deepEqual(report.danglingLinks, []);
+  assert.deepEqual(report.orphans, ["notes/x.md"]); // topics/rag has an inbound link now
+});
+
 // ── orphans: a note nobody links to ───────────────────────────────────────────
 
 test("lintVault — flags the note with zero inbound links, not the linked ones", () => {
