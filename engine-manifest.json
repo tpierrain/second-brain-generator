@@ -4,7 +4,7 @@
     "rag": "1.1.5",
     "local-mirror": "0.2.0",
     "constitutionTemplate": "1.0.0",
-    "scripts": "1.3.0"
+    "scripts": "1.4.0"
   },
   "indexSchemaVersion": 1,
   "regimes": {
@@ -28,6 +28,7 @@
       "scripts/health-probe-run.mjs",
       "scripts/lint-vault.mjs",
       "scripts/file-back-note.mjs",
+      "scripts/consolidate-scan.mjs",
       "scripts/lib/**",
       ".claude/settings.json.template",
       ".mcp.json.template",

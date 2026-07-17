@@ -23,7 +23,7 @@ function basename(path) {
 // path. Obsidian resolves a `[[Target]]` by basename, and a `[[folder/note]]` (or
 // `[[folder/note.md]]`) by path. Path spellings are registered even when a
 // basename collides, so the longer form always disambiguates.
-function buildResolver(notes) {
+export function buildResolver(notes) {
   const byKey = new Map();
   const register = (key, path) => {
     if (!byKey.has(key)) byKey.set(key, path);

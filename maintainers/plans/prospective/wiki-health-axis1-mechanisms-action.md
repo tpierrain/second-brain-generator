@@ -1,8 +1,10 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🟢 Tracks A + B SHIPPED (2026-07-17). Track A = `/lint` wiki-health   -->
-<!-- scanner (TDD, proven on the real 405-note vault). Track B = `/file-back`      -->
-<!-- deterministic filer (TDD, proven: a filed note passes /lint clean, never      -->
-<!-- overwrites). Both are engine skills. Tracks C–E still prospective.            -->
+<!-- STATUS: 🟢 Tracks A + B + C SHIPPED (2026-07-17). A = `/lint` wiki-health      -->
+<!-- scanner. B = `/file-back` deterministic filer (a filed note passes /lint       -->
+<!-- clean, never overwrites). C = `/consolidate`: a deterministic candidate finder -->
+<!-- (stateless "fresher-than-the-page" rule) + a fan-out/fan-in skill that writes  -->
+<!-- via B. All TDD, all engine skills, all proven on the real 405-note vault.      -->
+<!-- Tracks D + E still prospective.                                                -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Action plan — give Axis 1 (wiki-health / consolidation) real mechanics
@@ -36,7 +38,7 @@
   - [x] Thin CLI `scripts/file-back-note.mjs` (JSON spec on stdin, writes under vault/, never overwrites — 4 tests)
   - [x] Engine skill `engine-skills/file-back/SKILL.md` (propose → confirm → file; append path for living pages)
   - [x] Wired into `update-engine` manifest (`replace` + `scripts` 1.2.0→1.3.0); proven: filed note passes /lint clean
-- [ ] **Track C — The brain consolidates raw captures** into entity/topic pages, backlinks woven
+- [x] **Track C — The brain consolidates raw captures** into entity/topic pages, backlinks woven _(2026-07-17 · deterministic candidate finder + `/consolidate` skill, TDD, proven on the real 405-note vault)_
 - [ ] **Track D — (v2) The brain flags contradictions** between a new note and an entity page's stated fact
 - [ ] **Track E — Append-only log is first-class** (seeded artifact + hook, not a `sync-sources` side-effect)
 - [ ] **Cross-cutting — Measure the effect on retrieval** on the eval-set (better notes ⇒ better chunks)
@@ -90,13 +92,42 @@ a session. This is the "answers filed back" Karpathy discipline, absent today.
 
 ## Track C — Consolidate raw captures into entity/topic pages
 
-**WHAT.** On demand (or scheduled), the brain reviews recent raw captures (`meetings/`, `daily/`) and
-**promotes / updates** the higher-order pages: propagate a newly-mentioned person into `people/`, merge
-topic fragments, weave backlinks. This is the heart of the compile discipline and where the audit found
-the biggest gap (raw capture dominates; higher-order consolidation lags).
+**WHAT.** On demand (or scheduled), the brain reviews recent raw captures (`meetings/`, `daily/`,
+`raw-sources/`) and **promotes / updates** the higher-order pages: propagate a newly-mentioned person
+into `people/`, merge topic fragments, weave backlinks. This is the heart of the compile discipline and
+where the audit found the biggest gap (raw capture dominates; higher-order consolidation lags).
 
-- [ ] A consolidation skill reusing the `sync-sources` fan-out/fan-in shape
-- [ ] Bounded, resumable, and honest about what it changed (a diff/report the user reviews)
+> **Design (agreed 2026-07-17).** Same three-rung shape as Tracks A/B: a **deterministic candidate
+> finder** (rung 1) surfaces *what* needs consolidating; the **LLM fan-out** (`sync-sources` shape) does
+> the *merge* (judgment); the **write reuses Track B** (`filed-note` builder for new pages, confirmed
+> dated append for living pages — never overwrites). **Resumability is stateless** (owner's call): a
+> capture is a candidate purely because it is **fresher than the page it feeds** (or that page doesn't
+> exist yet) — no state file to seed or corrupt, most in the spirit of ADR 0009. Once a page is
+> refreshed its `updated:` moves past the capture, so the candidate drops off on its own.
+
+- [x] **Deterministic candidate finder** (`scripts/lib/consolidation-candidates.mjs`, pure/I/O-free, TDD
+      rung 1) — reuses Track A's `extractWikiLinks` + resolver + note shape. Given parsed notes it returns
+      candidates grouped by target page _(17 tests)_
+  - [x] *new-page* — an entity/person `[[mention]]` in a **capture** note that resolves to **no page**
+        (grouped by target, with its source captures + a count = signal strength)
+  - [x] *refresh* — an existing **entity page** cited by a **capture** note that is **fresher** than the
+        page's `updated:` (reuses `buildResolver`, now exported from wiki-lint; stateless, no threshold)
+  - [x] Capture zones (`meetings/`, `daily/`, `raw-sources/`, `inbox/`) and entity types configurable;
+        deterministic ordering (sorted by target, sources sorted) + `hasCandidates` / `reportLines`
+- [x] **Thin CLI** (rung 2) over the fs adapter — reads the vault, prints a human candidate report,
+      binary exit (0 nothing to consolidate / 1 candidates found) _(`scripts/consolidate-scan.mjs`, 3 tests)_
+- [x] **Consolidation skill** (`engine-skills/consolidate/`) reusing the `sync-sources` fan-out/fan-in
+      shape: one sub-agent per candidate drafts the merge; **propose → confirm → write via Track B**
+      _(`engine-skills/consolidate/SKILL.md`)_
+- [x] Bounded, resumable (stateless), and honest about what it changed (a diff/report the user reviews)
+      _(skill steps 2 "bound the batch", 4 "propose as a reviewable diff", 6 "report + stateless resume")_
+- [x] Wire into `update-engine` manifest so the fleet receives it (ADR 0012 / 0025) _(`scripts/consolidate-scan.mjs`
+      declared in `replace`; core + skill ride `scripts/lib/**` + `engine-skills/**`; `scripts` 1.3.0→1.4.0;
+      installer + self-heal enumerate `engine-skills/` dynamically → no hardcoded list)_
+- [x] Measure on a **real** vault (the 405-note local corpus), not the demo — the scan meaningfully
+      exercised both rules: 3 new-page candidates (entities cited in captures with no page) + 9 refresh
+      candidates (entity/topic pages a fresher meeting/transcript overtook, one cited by 3), exit 1,
+      read-only. The stateless "fresher-than-the-page" rule fires exactly where consolidation lags.
 
 ## Track D — (v2) Contradiction flagging
 
