@@ -58,3 +58,52 @@ test("lintVault — raw-capture zones (daily/, raw-sources/, inbox/) are never o
   ]);
   assert.deepEqual(report.orphans, ["topic.md"]);
 });
+
+// ── stale entity pages: an entity note left behind by fresher notes citing it ──
+
+test("lintVault — flags an entity page older than the freshest note linking to it", () => {
+  const report = lintVault([
+    { path: "people/alice.md", frontmatter: { type: "person", updated: "2026-01-01" }, body: "" },
+    { path: "notes/meeting.md", frontmatter: { updated: "2026-06-01" }, body: "met [[alice]]" },
+  ]);
+  assert.deepEqual(report.staleEntityPages, [
+    { path: "people/alice.md", updated: "2026-01-01", freshestReference: "2026-06-01" },
+  ]);
+});
+
+test("lintVault — exactly at the threshold is not stale, and non-entities never are", () => {
+  const report = lintVault([
+    // entity, freshest reference exactly 90 days later (Jan1→Apr1) — on the border, not past it
+    { path: "people/bob.md", frontmatter: { type: "person", updated: "2026-01-01" }, body: "" },
+    { path: "notes/a.md", frontmatter: { updated: "2026-04-01" }, body: "[[bob]]" },
+    // plain note far behind its reference, but no entity type → never stale
+    { path: "notes/plain.md", frontmatter: { updated: "2026-01-01" }, body: "" },
+    { path: "notes/b.md", frontmatter: { updated: "2026-12-01" }, body: "[[plain]]" },
+  ]);
+  assert.deepEqual(report.staleEntityPages, []);
+});
+
+// ── frontmatter conformance: required keys present ────────────────────────────
+
+test("lintVault — lists the required frontmatter keys a note is missing", () => {
+  const report = lintVault([
+    { path: "bad.md", frontmatter: { type: "person" }, body: "" },
+    {
+      path: "good.md",
+      frontmatter: { type: "topic", created: "2026-01-01", updated: "2026-01-02", tags: ["x"] },
+      body: "",
+    },
+  ]);
+  assert.deepEqual(report.frontmatterViolations, [
+    { path: "bad.md", missing: ["created", "updated", "tags"] },
+  ]);
+});
+
+test("lintVault — an empty string or empty array counts as a missing required key", () => {
+  const report = lintVault([
+    { path: "empties.md", frontmatter: { type: "topic", created: "2026-01-01", updated: "", tags: [] }, body: "" },
+  ]);
+  assert.deepEqual(report.frontmatterViolations, [
+    { path: "empties.md", missing: ["updated", "tags"] },
+  ]);
+});
