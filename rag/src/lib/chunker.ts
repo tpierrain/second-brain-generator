@@ -23,6 +23,19 @@ function splitAtParagraphs(text: string, maxChars: number): string[] {
   return pieces;
 }
 
+// A section body is "substantial" — worth embedding — when it carries enough
+// meaningful text: at least MIN_BODY_MEANINGFUL_CHARS letters/digits. Empty
+// template scaffolds (`---`, placeholder comments, bare list stubs) fall short and
+// are pruned as index noise. Only letters/digits count, so punctuation-only or
+// markup-only bodies score zero. The `(title)` chunk is never subjected to this
+// filter, so the F8 title-only invariant is preserved.
+const MIN_BODY_MEANINGFUL_CHARS = 25;
+
+function isSubstantialBody(body: string): boolean {
+  const meaningful = body.match(/[\p{L}\p{N}]/gu);
+  return (meaningful?.length ?? 0) >= MIN_BODY_MEANINGFUL_CHARS;
+}
+
 export function chunkMarkdown(content: string, title?: string): Chunk[] {
   const lines = content.split("\n");
   const sections: { heading: string; body: string }[] = [];
@@ -59,7 +72,7 @@ export function chunkMarkdown(content: string, title?: string): Chunk[] {
 
   for (const section of sections) {
     const bodyTrimmed = section.body.trim();
-    if (!bodyTrimmed) continue;
+    if (!isSubstantialBody(bodyTrimmed)) continue;
 
     const fullText = `${section.heading}\n\n${bodyTrimmed}`;
 
