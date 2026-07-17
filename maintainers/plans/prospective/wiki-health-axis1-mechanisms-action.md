@@ -41,6 +41,9 @@
 - [x] **Track C — The brain consolidates raw captures** into entity/topic pages, backlinks woven _(2026-07-17 · deterministic candidate finder + `/consolidate` skill, TDD, proven on the real 405-note vault)_
 - [ ] **Track D — (v2) The brain flags contradictions** between a new note and an entity page's stated fact
 - [ ] **Track E — Append-only log is first-class** (seeded artifact + hook, not a `sync-sources` side-effect)
+- [ ] **Track F — Run the Axis-1 mechanics from a deterministic trigger** (a hook/event, not only on-demand)
+  - [ ] `/lint` (read-only) auto-runs on a real event and surfaces its report
+  - [ ] `/consolidate` **scan** auto-runs and surfaces candidates — the write stays confirmed (never auto-filed)
 - [ ] **Cross-cutting — Measure the effect on retrieval** on the eval-set (better notes ⇒ better chunks)
 - [ ] **Sequencing decided** — import-before vs import-after (see §Sequencing; recommendation recorded)
 
@@ -142,6 +145,26 @@ flags it for the user rather than letting the wiki hold two truths. Needs LLM ju
 `sync-sources` run), so the "what happened" ledger always exists.
 
 - [ ] Seed the artifact at install + maintain it via a hook bound to a real event (rung 3, ADR 0009)
+
+## Track F — Run the Axis-1 mechanics from a deterministic trigger
+
+**WHAT (owner's ask, 2026-07-17).** Today `/lint` and `/consolidate` are **on-demand only** (a
+conversational trigger). The goal: let them fire **on their own**, from a **deterministic hook bound to a
+real event** (rung 3 of ADR 0009), so wiki-health stops depending on the user remembering to ask — while
+never turning a silent auto-write loose.
+
+- [ ] Pick the **event** (deterministic, verifiable): SessionStart, post-`sync-sources`, a periodic cron,
+      or a "N new captures since last pass" threshold — prefer a real event over a timer where possible
+- [ ] **`/lint` is read-only → safe to auto-run**: fire the scan on the chosen event, surface the report
+      (or stay silent when clean). No write, no confirmation needed.
+- [ ] **`/consolidate` writes → auto-run only the SCAN**: surface the candidates on the event, but the
+      merge/write **stays confirmed** (propose → the user says yes). Never auto-file. This is the load-
+      bearing guardrail — the brain's write posture must survive automation.
+- [ ] Honour the determinism ladder: the **trigger** is deterministic (hook/event), the **detection** is
+      deterministic (the pure cores already are), only the **merge** stays LLM+confirmed
+- [ ] Sibling to Track E (both are "maintain Axis 1 via a hook on a real event, not a by-product") — share
+      the wiring/lesson where they overlap
+- [ ] Keep the on-demand skills working unchanged; the hook is an **addition**, not a replacement
 
 ---
 
