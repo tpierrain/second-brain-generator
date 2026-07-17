@@ -134,10 +134,41 @@ embedder watch: **eval-first, measure, don't assume** (that note's §6).
 - [ ] Read Graphify's actual extraction pipeline (AST pass + subagent prompts) for reusable ideas on the **consolidation layer**, ignoring the code-graph specifics
 - [ ] Frame a tiny spike: an **ingestion-time consolidation** step (entity/topic pages + cross-links) on top of the current vault, measured against today's embedding-RAG on the FR eval-set
 - [ ] Confirm/deny the token-efficiency claim **against Kenjaku's RAG** (not vs raw-file reading) before quoting any multiplier
-- [ ] Audit whether Kenjaku still carries the wiki-health disciplines of its originating brain (a `/lint`-equivalent, an append-only log, "answers filed back") or whether the vector index became the only retrieval investment
+- [x] Audit whether Kenjaku still carries the wiki-health disciplines of its originating brain (a `/lint`-equivalent, an append-only log, "answers filed back") or whether the vector index became the only retrieval investment — **done (2026-07-17), see §8: intuition confirmed, Axis 1 ships as conventions only, zero enforcement**
 - [ ] Cross-link this note from the sibling `etude-rag-local-criteres-et-veille.md` if the direction firms up
 
-## 8. Sources
+## 8. Audit result — is Axis 1 under-invested in Kenjaku? (2026-07-17)
+
+**Verdict: yes, clearly.** Kenjaku ships Axis 2 (retrieval / RAG) as a complete, versioned, tested,
+auto-updating engine, and ships Axis 1 (wiki-health / consolidation) as **writing conventions in the
+constitution template with zero deterministic enforcement**. The constitution carries the *spirit*
+of an LLM wiki; the *mechanics* went entirely into the RAG.
+
+Discipline-by-discipline (evidence gathered across `CLAUDE.md.template`, the shipped
+`.claude/skills/**`, `rag/**`, `scripts/**`):
+
+| Axis-1 discipline | Status | Note |
+|---|---|---|
+| Wiki-health / `/lint` (orphans, dangling links, stale pages) | **ABSENT** | No lint skill, link-checker, orphan/stale scanner anywhere shipped |
+| Append-only log | **PARTIAL** | A convention (dailies never edited) + a `vault/actions-log.md` idiom inside `sync-sources`, but no standing/seeded artifact or hook |
+| "Answers filed back" (good Q&A → durable note) | **ABSENT** | No skill/hook turns a good answer into a filed knowledge page |
+| Backlink / entity-page consolidation | **ABSENT** as mechanism | `[[wikilink]]` syntax is documented; nothing actively cross-links, merges topics, or propagates a new person into a `people/` page — purely implicit, in-conversation |
+| Contradiction flagging | **ABSENT** | No rule/skill detects or flags contradictions between notes |
+
+**Contrast (Axis 2).** `rag/` is ~9k source lines (chunker, 3-adapter Embedder SPI, SQLite vector
+store, incremental index manager + single-writer lock, vault watcher, quota/degradation), plus
+`local-mirror/` (~14k lines) and deterministic harness scripts (`verify-rag.mjs`, `reindex-trigger`,
+`rag-launcher`), a versioned `engine-manifest.json` + `update-engine` skill, and mutation-tested
+coverage. The constitution devotes a full named section to the RAG. **No comparable code, test, or
+constitution section exists for any Axis-1 discipline.**
+
+**Implication (for a future ADR / spike, not decided here).** The highest-leverage move is not a new
+retrieval engine but **giving Axis 1 some mechanics**: a wiki-health check (orphans / dangling links
+/ stale entity pages), a light "file the good answer back" reflex, and consolidation prompts — all of
+which also *improve the RAG* (better notes ⇒ better chunks). This is the concrete shape the §7 spike
+could take.
+
+## 9. Sources
 
 - [Karpathy — LLM Wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)
 - [Graphify repo — safishamsi/graphify](https://github.com/safishamsi/graphify) · [Graphify-Labs mirror](https://github.com/Graphify-Labs/graphify)
