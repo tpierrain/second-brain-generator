@@ -132,6 +132,19 @@ Référencer d'autres notes avec `[[chemin/relatif/sans-extension]]` :
 
 Une daily note, une fois écrite, n'est **jamais éditée rétroactivement** — on ajoute une nouvelle daily le lendemain. Les corrections passent par des notes de topics ou des décisions. Les fiches `people/` et `topics/` sont au contraire **vivantes** : on y append des sections datées.
 
+### Ouvrir / consulter / éditer une note → mon éditeur Markdown par défaut
+
+Quand je demande d'**ouvrir, consulter, parcourir ou éditer** une note (par opposition à simplement obtenir une réponse dans le chat), ouvrir le **vrai fichier** dans mon **éditeur Markdown par défaut** plutôt que d'en coller le texte brut : ce sont les fichiers `.md` que le cerveau lit et écrit, donc je peux les éditer en place et la modification est reprise.
+
+- Ouvrir la note par son **chemin absolu** via l'ouvreur du système, qui confie le fichier à l'éditeur choisi par défaut pour le Markdown (Typora, Obsidian, VS Code…) : éditable, sans enfermement dans une app :
+  - macOS : `open "<chemin-absolu>"`
+  - Windows : `start "" "<chemin-absolu>"`
+  - Linux : `xdg-open "<chemin-absolu>"`
+- **Si l'ouverture échoue** (pas d'éditeur graphique, session headless) : **ne pas bloquer**, afficher / `Read` la note en ligne à la place.
+- **Obsidian (viewer optionnel, recommandé).** Pour parcourir le vault *dans son ensemble* (le graphe, les `[[wikilinks]]`, les backlinks, un éditeur lecture/écriture complet sur ces mêmes fichiers), Obsidian est le meilleur compagnon ([obsidian.md](https://obsidian.md)) ; l'installeur peut enregistrer ce cerveau comme vault pour qu'il apparaisse dans le sélecteur d'Obsidian. Il est **recommandé, jamais requis**, et n'est jamais le *mécanisme* d'ouverture d'une note seule : ça passe toujours par mon éditeur par défaut ci-dessus.
+
+Quand je veux seulement une **réponse** (un fait, une synthèse), répondre avec la source : pas besoin d'ouvrir quoi que ce soit.
+
 ## 3. Ton
 
 - **Factuel, concis, direct.** Pas de jargon vide.
@@ -161,6 +174,7 @@ Le RAG (`rag/`) découpe chaque fichier Markdown en **chunks** (un par section `
 - Navigation structurelle (fichier connu) → `Read` directement, pas de RAG.
 - `search_vault` est rapide et peu coûteux — ne pas hésiter quand la question est sémantique.
 - L'index se reconstruit automatiquement, incrémental (seuls les fichiers modifiés sont ré-indexés). Pas de maintenance manuelle. Rebuild forcé : `cd rag && npm run reindex`.
+- **Sûr par construction** : un seul process indexe à la fois (lock single-writer), donc lancer un rebuild forcé pendant une session active ne double jamais le travail. Avec un embedder via API (quota journalier), une réserve de requêtes est gardée pour la recherche : interroger le cerveau n'est jamais bloqué par une indexation en cours.
 - **« Quelle version du moteur ai-je ? »** → la réponse est le **TAG** du moteur : la ligne **« Version »** de `vault_stats` (= le `source.ref` figé du cerveau, la même valeur que la status-line). Les numéros `rag X.Y.Z` / schéma d'index de la ligne **« internal build »** de `vault_stats` sont de la **mécanique interne**, *pas* la version — ne jamais les présenter comme « la version » (ADR 0017).
 
 **⚠️ Échec bruyant — jamais de réponse hors-vault déguisée.** Si les outils `mcp__vault-rag__*` sont **indisponibles, absents ou renvoient une erreur** (serveur MCP non chargé, clé Gemini manquante, index vide…), tu dois le **DIRE FORT** — « ⚠️ RAG indisponible : je ne peux pas interroger le vault » — et **REFUSER de fabriquer une réponse** depuis Internet ou tes connaissances générales. Un second cerveau qui répond à côté du vault *en ayant l'air de marcher* est pire qu'un cerveau qui dit franchement qu'il est en panne. Cela vaut **en particulier pour la question de démo** (premier contact de l'utilisateur) : pas de réponse plausible mais hors-vault. Indique plutôt comment réparer (clé dans `.env`, redémarrage de Claude Code, `/mcp`).
@@ -192,7 +206,7 @@ Claude doit **challenger les demandes de modification du harnais** (CLAUDE.md, `
 
 ### Délégation aux sous-agents — limiter le context rot
 
-Le contexte de la session principale est une **ressource rare et qualitative**. La qualité d'attention se dégrade bien avant la limite nominale (*lost in the middle*). Objectif : garder la session principale **dense et pertinente**, en ne ramenant que des signaux pré-digérés.
+Le contexte de la session principale est une **ressource rare et qualitative**. Une grande fenêtre de contexte est une *capacité* (avaler un gros fichier sans crasher), pas un régime de croisière : la qualité d'attention se dégrade bien avant la limite nominale (*lost in the middle*, dilution, oublis du milieu). Objectif : garder la session principale **dense et pertinente**, idéalement **sous ~150-200k tokens utiles**, en ne ramenant que des signaux pré-digérés.
 
 **Déléguer (Agent / Explore) quand :**
 - Recherche large / fan-out (balayer beaucoup de fichiers/sources) sans savoir où est la réponse.
@@ -208,9 +222,17 @@ Le contexte de la session principale est une **ressource rare et qualitative**. 
 - **Horodatage obligatoire.** Avant toute analyse de sources ou rédaction datée, ancrer la date/heure courante — ne jamais deviner. Node étant un prérequis, utiliser une commande **portable** (macOS / Linux / Windows) :
   - Date/heure courante : `node -e "console.log(new Date().toString())"`
   - Date dérivée (« demain », « il y a 3 jours ») : `node -e "console.log(new Date(Date.now()+N*864e5).toISOString().slice(0,10))"` (N négatif pour le passé). Ne jamais calculer une date de tête.
+  - **Jour de semaine nu = toujours lever l'ambiguïté.** Si l'utilisateur·rice mentionne un jour (« lundi », « mardi »…) **sans** date ni « dernier »/« prochain », ne jamais deviner : calculer les **deux** dates (le précédent ET le prochain) et poser une question courte d'une ligne, p. ex. « Tu parles de lundi **dernier (08/06)** ou lundi **prochain (15/06)** ? ». Attendre la réponse avant de partir sur l'une.
 - **Ne pas créer de fichiers** hors de la structure définie sans demander.
 - **Ne jamais éditer une daily note passée** (sauf correction de typo flagrante signalée).
+- **La mémoire durable, c'est le repo, jamais la mémoire locale de Claude Code.** Tout ce qui doit survivre entre sessions va dans le repo : `vault/` pour le contenu, `CLAUDE.md` pour les règles. Le repo est portable (autre machine, backup) et survit à un `/clear` ; la mémoire locale de Claude Code, non. Ne rien laisser d'utile uniquement en mémoire de conversation.
 - Si on touche au harnais (`.claude/`), commit séparé avec message clair (`harness: …`).
+
+### Sourçage et traçabilité
+
+- **Garder les liens directs vers les sources** (permalinks, URLs) de tout ce qu'on exploite (message, document, mail), et les inclure quand on cite une source dans une réponse.
+- **Ne jamais reconstruire un permalink à la main** à partir d'un identifiant + timestamp (souvent faux) : reprendre le lien fourni tel quel par l'outil.
+- **Qualifier la fiabilité des sources** : verbatim (transcript, message brut) > synthèse humaine > synthèse IA. Signaler quand on interprète plutôt qu'on restitue.
 
 ### Flux principal — question directe + sync sources transparent
 
@@ -276,6 +298,13 @@ compose jamais `cd … &&` avec une écriture.
 3. **Actions obsolètes** → marquer `[~]` avec note.
 
 Ne jamais présenter une action comme « à faire » sans avoir vérifié qu'elle n'a pas déjà été réalisée. Les actions cochées restent dans le fichier (registre de suivi, pas de suppression).
+
+**Vérification proactive des action items (question-first).** Quand on liste des actions issues de sources externes, suivre le même flux que le flux principal :
+1. **Phase 1** : présenter tout de suite les actions depuis le vault (réponse rapide, même si les statuts ne sont pas encore vérifiés).
+2. **Phase 2** : en tâche de fond, chercher des **traces d'exécution** (message envoyé, commit, mail, confirmation en réunion) qui montreraient qu'une action est déjà faite.
+3. **Phase 3** : amender, cocher `[x]` ce qui est fait, retirer de la liste « à faire », ajouter les nouvelles actions détectées.
+
+La personne ne devrait jamais avoir à corriger « attention, c'est déjà fait » : c'est à Claude de vérifier en amont.
 
 ### Persistance & commit automatiques
 
