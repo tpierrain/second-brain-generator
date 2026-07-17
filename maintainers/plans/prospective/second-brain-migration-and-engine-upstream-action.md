@@ -231,6 +231,36 @@ blocking A→D.
 - [ ] For any note-convention change, note it may be cleaner to fold into the generate step for
       *future* brains — but never a blocker for the already-migrated personal brain.
 
+### Sequencing lens for incoming ideas — "migrate before or after?" (avoid re-embed churn)
+
+**The concern (Thomas, 2026-07-17):** before feeding in articles/tweets about other second brains,
+decide whether to migrate the personal corpus **before or after** adopting any idea, to avoid
+re-embedding ~405 notes twice.
+
+**How re-embedding actually works (so we don't over-worry):** the RAG is **content-hash incremental** —
+only notes whose **text changes** re-embed, never the whole vault, and never on engine/skill/hook
+changes. The migration itself embeds everything **once** (the `/import` + reindex). The **cost of any
+later re-embed is governed by the embedder**: `in-process` = free + offline, re-embed anytime at no
+quota cost; an **API embedder** (Gemini/OpenAI/…) = quota + time for the touched notes.
+
+**Triage each incoming idea into one of two buckets:**
+
+- [ ] **Bucket 1 — changes vault STRUCTURE or NOTE CONVENTIONS** (frontmatter shape, folder layout,
+      section/heading conventions, tagging scheme). These rewrite note **content** → they *would*
+      re-embed the touched notes. **Cheaper to decide BEFORE generating** (fold into the generate /
+      `/import` step) so the single big embed already lands in the final shape. → **may justify holding
+      the migration.**
+- [ ] **Bucket 2 — engine / skill / hook / behavior** (capture inbox flows, resurfacing loops, new MCP
+      tools, constitution rules, sync cadences). These **don't touch note content** → **no re-embed**.
+      Safe to add **AFTER** migration; they flow back to the migrated brain via `update-engine`. →
+      **migrate-early is fine; do not hold the migration for these.**
+
+**Net recommendation:** bring the articles; triage each idea into Bucket 1 vs 2. **Only Bucket-1 items
+justify migrating later**; everything else → migrate now, layer afterwards. And if the personal brain
+uses the **in-process** embedder, even Bucket-1 re-embeds are cheap/offline, which further weakens the
+"must decide before" pressure — the only hard reason to wait would be a big structural convention we're
+confident about up front.
+
 ---
 
 ## Sequencing & rationale
