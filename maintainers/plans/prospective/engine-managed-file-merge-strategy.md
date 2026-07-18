@@ -99,14 +99,21 @@ brain is born two-layer. This surfaced while realising the concern is broader th
 is the **whole upgrade experience for the brains already deployed in the field** from an earlier Kenjaku
 release (the pre-layering, monolithic-constitution line, ~v3.2.x).
 
-- [ ] **Fresh-install layering ("green") is a prerequisite of the migration's generate step, and must be
-      legacy-SAFE by construction.** Do **not** remove `CLAUDE.md` from `SACRED_FILES`
+- [x] **Fresh-install layering ("green") is a prerequisite of the migration's generate step, and must be
+      legacy-SAFE by construction.** _(2026-07-18 · f998259)_ Did **not** remove `CLAUDE.md` from `SACRED_FILES`
       (`scripts/lib/engine-apply-plan.mjs:32`): that would expose every deployed monolithic brain to a clobber
-      on its next update. Instead **add a new engine-owned constitution layer file** (e.g. `CLAUDE.engine.md`,
-      in `replace`, absent from `SACRED_FILES`) that a fresh, thin, sacred `CLAUDE.md` `@import`s. Deployed
-      monolithic brains keep their sacred `CLAUDE.md` untouched (they simply lack the new file).
-  - [ ] **Green-time "do-no-harm" QA (required before releasing green):** prove a reproduced legacy brain
-        updating past green is untouched — no clobber of its `CLAUDE.md`, no reindex, no behaviour change.
+      on its next update. Instead **added a new engine-owned constitution layer file** `CLAUDE.engine.md`
+      (generic, token-free) that a fresh, thin, sacred `CLAUDE.md` `@import`s — **EN and `templates/fr/` both**.
+      Deployed monolithic brains keep their sacred `CLAUDE.md` untouched (they simply lack the new file).
+      **Refinement vs the original sketch — `CLAUDE.engine.md` is NOT put in `replace` yet.** Putting it in
+      `replace` would refresh it verbatim from the (English) repo on every upgrade → a **French** brain would
+      be **re-anglicized**. So green ships the *structure* only (fresh installs born two-layer, legacy-safe);
+      the actual **propagation** of the engine layer to brains is folded into Gate 3, which must first make it
+      **locale-aware**. The shipped apply-plan therefore touches neither `CLAUDE.md` nor `CLAUDE.engine.md`.
+  - [x] **Green-time "do-no-harm" QA:** _(2026-07-18 · f998259)_ locked by a test on the shipped manifest —
+        the plan touches NEITHER `CLAUDE.md` NOR `CLAUDE.engine.md` (no clobber, no reindex, no behaviour
+        change). Trivially safe while the engine layer is not yet propagated to deployed brains.
+  - [ ] Field-verify a real fresh two-layer install (EN + FR) when Gate 2 generates the personal brain.
 - [ ] **The heavy re-layering QA is safely deferred to AFTER the migration.** The deployed fleet is safe in the
       interim, for the reasons in "Why this is non-blocking": sacred `CLAUDE.md`, `constitutionTemplate` frozen
       at `1.0.0`, a stale constitution cannot break the engine. Nothing forces their upgrade.
@@ -116,6 +123,9 @@ release (the pre-layering, monolithic-constitution line, ~v3.2.x).
         present since before v3.2.1), so no intermediate versions are replayed. The remaining completeness gap
         is exactly the **frozen** files: the constitution (this plan) and the shipped user-skills under
         `.claude/skills/` (`coach`, `prepare-1-1`, … install-if-absent). Close them the same way.
+        **Now explicitly owns the engine-layer propagation deferred from Gate 1:** move `CLAUDE.engine.md`
+        into a refreshed regime **locale-aware** (a FR brain must receive the FR engine layer, never the EN
+        one), so an upgrade actually delivers constitution improvements without re-anglicizing localized brains.
   - [ ] **(B) Tell the user what they gained.** A human, benefit-framed changelog spanning the jump (from the
         brain's recorded ref to target), surfaced at upgrade. Reuse the "The One With…" release codenames as the
         substrate; suited to non-technical owners.
