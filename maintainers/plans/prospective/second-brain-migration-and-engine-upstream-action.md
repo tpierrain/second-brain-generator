@@ -205,6 +205,9 @@ names/IDs, org/account emails, product-team names, and any private-project refer
 
 ## Track D — Corpus migration (personal brain)
 
+> **Cross-plan order:** this is Gate 2 of [`../ROADMAP.md`](../ROADMAP.md) — it depends on Gate 1
+> (green) landing first (see the prerequisite below).
+
 - [ ] Generate a fresh brain from the launcher (after Track A + generic bits of B/C have landed
       upstream), choosing the embedder consciously (privacy trade-off).
   - [ ] **Prerequisite (engine):** the *legacy-safe fresh-install constitution layering* ("green") must land

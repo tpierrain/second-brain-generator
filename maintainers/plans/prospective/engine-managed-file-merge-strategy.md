@@ -88,6 +88,10 @@ bump). Until then, the current install-if-absent / sacred behavior is the correc
 
 ## Sequencing decision (2026-07-18) — after the personal-brain migration; broaden to the fleet's upgrade experience
 
+> **Cross-plan order:** this section is Gate 1 (green) and Gate 3 (fleet re-layering) of
+> [`../ROADMAP.md`](../ROADMAP.md), the ordering authority. This plan owns the *how*; the ROADMAP owns
+> the *order relative to the migration*.
+
 **Decision.** Build the *legacy re-layering* (retro-fitting existing monolithic brains) **after** the personal
 second-brain migration (`second-brain-migration-and-engine-upstream-action.md`, Track D). Ship **only** the
 *legacy-safe fresh-install layering* **before** that migration's generate step, so the regenerated personal
