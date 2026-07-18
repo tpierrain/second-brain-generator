@@ -59,16 +59,28 @@ i.e. `claude` with the leading `c` stripped. Reported by @anunnakian (Mohamed), 
   If hooks support an **exec form** (`command`+`args` array, no shell), that bypasses quoting entirely
   and is the preferred fix.
 
-- [ ] Confirm Claude Code's deterministic Windows hook shell (+ whether hooks accept an `args`/exec form).
-- [ ] From that evidence, write the **real fix** at the source (`nodeHookCommand` / the settings
-      template quoting, or an exec form) + a permanent **regression test** (TDD; assert the command
-      executes the probe on win32 under the real shell). Keep POSIX behaviour unchanged.
-- [ ] **Remove the temporary diagnostic** test once the mechanism is captured by the regression test.
-- [ ] Ensure the fix reaches the **deployed fleet**: `rag-launcher.mjs` is engine-owned (`scripts/lib/**`
-      in the manifest `replace` bucket) → verify it travels via `update-engine`; deployed brains re-render
-      launchers/settings on reconcile. Confirm no reindex needed.
-- [ ] Green cross-platform CI (all Windows jobs). Retitle the PR as the fix (English, "The One With…"
-      codename optional), reference issue #31 (`Fixes #31`), merge to `main`.
+- [x] Confirm Claude Code's deterministic Windows hook shell (+ exec-form question). **Git Bash by
+      default, PowerShell fallback if Git Bash absent (sourced via claude-code-guide). No universal
+      quoted string exists across bash+pwsh; the UNQUOTED forward-slash command IS universal (bash/cmd/
+      pwsh) for space-free paths (round 4). Exec-form via cmd.exe re-hits the strip bug with spaces.**
+      _(2026-07-18)_
+- [x] Write the **real fix** + a permanent **regression test** (TDD). `nodeHookCommand(win32)` now emits
+      a bare forward-slash `run-node.cmd` path (no nested `cmd /c`, no backslash); template keeps the
+      script quoted → the built command runs the probe under Git Bash AND PowerShell (proven live on
+      windows-latest: `scripts/win-hook-exec.test.mjs`, test #663 ran `ok`). POSIX unchanged.
+      _(2026-07-18)_
+- [x] **Remove the temporary diagnostic** test — replaced by `scripts/win-hook-exec.test.mjs`. _(2026-07-18)_
+- [x] Ensure the fix reaches the **deployed fleet**. **Discovered the plan's assumption was WRONG: the
+      settings.json reconcile is ADDITIVE-only (never rewrites an existing command), so `nodeHookCommand`
+      alone fixes only NEW installs.** Added a narrow, nominative in-place **repair**
+      (`repairEngineHookCommands` / `repairWin32NodePrefix`) that heals the broken `cmd /c "…\run-node.cmd"`
+      prefix in both hook commands and the top-level statusLine, idempotently (no churn on converged/posix
+      brains, never touches a user hook). Converges at the next self-heal restart; `update-engine`
+      names the healed commands. `rag-launcher.mjs` is engine-owned (`replace` bucket) → travels via
+      update-engine. No reindex needed (no schema change). _(2026-07-18)_
+- [x] Green cross-platform CI (all Windows jobs) — run `29640368190` fully green, Windows execution
+      test ran `ok` (not skipped). _(2026-07-18)_
+- [ ] Retitle+undraft PR #35 as the fix (English), `Fixes #31`, merge to `main`.
 - [ ] Reply on issue #31 with the root cause + fix; thank Mohamed.
 - [ ] Archive this plan (`git mv` to `archived/` + STATUS ✅ with the merge commit) per the plan-done rule.
 
