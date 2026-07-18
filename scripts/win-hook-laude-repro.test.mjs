@@ -8,47 +8,30 @@ import { nodeHookCommand, buildNodeRunnerCmd } from "./lib/rag-launcher.mjs";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TEMPORARY DIAGNOSTIC (issue #31 — "'laude' is not recognized" on Windows).
-// This is NOT a permanent regression test: it reproduces, on the windows-latest
-// CI runner, how a generated hook command is actually executed, and LOGS what
-// each plausible (shell × command-string) combination yields. It always passes —
-// its output in the Windows job log is the evidence we're after. Removed once the
-// mechanism is understood and the real fix + regression test land.
+// Always passes — its output in the windows-latest job log is the evidence. It
+// is removed once the fix + permanent regression test land.
 //
-// ROUND 2. Round 1 tested only cmd.exe invocations and reproduced a
-// "not recognized" failure with the shipped command shape. But Claude Code runs
-// hooks on Windows through **Git Bash** (`bash -c`) by default, with PowerShell
-// as a fallback — NOT cmd.exe. Round 1 tested the wrong shell. This round runs a
-// matrix of candidate command STRINGS under the shells Claude Code actually uses
-// (bash, cmd, powershell), so the log pins BOTH: which (shell × current-string)
-// reproduces Mohamed's exact `'laude' is not recognized`, and which candidate
-// string runs the probe cleanly (PROBE_OK) under that same shell.
+// ROUND 2 (kept for reference in git history) established, on windows-latest:
+//   - The SHIPPED hook string `cmd /c "C:\…\run-node.cmd" "C:/…/script.mjs"`
+//     FAILS under Git Bash (`bash -c`) — backslashes are eaten, a char is lost
+//     (`RUNNER`→`UNNER`), cmd then says "is not recognized". SAME mechanism as
+//     Mohamed's `claude`→`laude`. It works only under PowerShell.
+//   - A no-nested-cmd string `"…/run-node.cmd" "…/script.mjs"` works under bash
+//     but FAILS under PowerShell (needs `&`). No single quoted string works under
+//     both shells.
+//
+// ROUND 3 (this file) resolves the fix. Two questions, one CI pass:
+//   (1) EXEC FORM — if hooks can be spawned as command+args WITHOUT a shell,
+//       CreateProcess quoting handles everything, INCLUDING paths with spaces.
+//       Simulated by spawnSync("cmd", ["/c", runner, script]) (no shell:true).
+//   (2) SHELL-SPECIFIC string fixes, tested with a SPACE in the brain path
+//       (`John Doe`, the real-world case that breaks naive quoting): the bash
+//       fix (no nested cmd) and the PowerShell fix (`& "runner" "script"`).
+// The log tells us which fix is robust to spaces under the real shell.
 // ═══════════════════════════════════════════════════════════════════════════
 
 const toPosix = (p) => p.split("\\").join("/");
 
-// Reproduces installer.mjs's substitution (split/join per key), like the
-// rag-launcher tests, so we get the EXACT command string Claude Code reads from
-// settings.json after JSON.parse.
-function substitute(tpl, reps) {
-  let out = tpl;
-  for (const [k, v] of Object.entries(reps)) out = out.split(k).join(v);
-  return out;
-}
-
-// The real settings.json.template hook shape: {{NODE}} then the quoted .mjs path.
-// {{NODE}} on win32 = `cmd /c "<WIN-BACKSLASH-path>\scripts\run-node.cmd"`, while
-// {{PROJECT_ROOT}} is the FORWARD-slash brain path → the shipped string mixes
-// slash styles, which is exactly what a bash hook mangles.
-function shippedHookCommand(projectRootPosix, scriptRel) {
-  const tpl = `{ "command": "{{NODE}} \\"{{PROJECT_ROOT}}/${scriptRel}\\"" }`;
-  const out = substitute(tpl, {
-    "{{NODE}}": nodeHookCommand("win32", projectRootPosix),
-    "{{PROJECT_ROOT}}": projectRootPosix,
-  });
-  return JSON.parse(out).command;
-}
-
-// Locate Git Bash on the runner (the primary shell Claude Code uses on Windows).
 function findBash() {
   const candidates = [
     "C:\\Program Files\\Git\\bin\\bash.exe",
@@ -56,28 +39,24 @@ function findBash() {
     "C:\\Program Files (x86)\\Git\\bin\\bash.exe",
   ];
   for (const c of candidates) if (existsSync(c)) return c;
-  return "bash"; // fall back to PATH
+  return "bash";
 }
 
-function detect(err) {
-  return /laude|not recognized|is not recognized/i.test(err);
-}
-
-function log(shell, label, r) {
+function log(label, r) {
   const out = (r.stdout ?? "").toString().trim();
   const err = (r.stderr ?? "").toString().trim();
   const ok = /PROBE_OK/.test(out);
-  console.error(`\n[repro] [${shell}] ${label}`);
+  console.error(`\n[repro] ${label}`);
   console.error(`[repro]   status=${r.status} signal=${r.signal ?? ""} error=${r.error?.message ?? ""}`);
   console.error(`[repro]   stdout=${JSON.stringify(out)}`);
   console.error(`[repro]   stderr=${JSON.stringify(err)}`);
-  console.error(`[repro]   verdict=${ok ? "PROBE_OK ✅" : detect(err) ? "not-recognized/laude ← reproduced" : "other-failure"}`);
+  console.error(`[repro]   verdict=${ok ? "PROBE_OK ✅" : /not recognized|laude/i.test(err) ? "not-recognized/laude" : "other-failure"}`);
 }
 
-test("DIAGNOSTIC #31 (round 2) — hook command across real Windows shells", () => {
-  const root = mkdtempSync(join(tmpdir(), "sbg-hook-repro-"));
-  const rootPosix = toPosix(root);
-  const rootWin = rootPosix.split("/").join("\\");
+test("DIAGNOSTIC #31 (round 3) — exec form + shell fixes with a SPACE in the path", () => {
+  // Force a space in the brain path — the real-world `C:\Users\John Doe\…` case.
+  const base = mkdtempSync(join(tmpdir(), "sbg-hook-repro-"));
+  const root = join(base, "John Doe", "brain");
   mkdirSync(join(root, "scripts"), { recursive: true });
   writeFileSync(join(root, "scripts", "run-node.cmd"), buildNodeRunnerCmd());
   writeFileSync(
@@ -85,45 +64,40 @@ test("DIAGNOSTIC #31 (round 2) — hook command across real Windows shells", () 
     `console.log("PROBE_OK argv=" + JSON.stringify(process.argv.slice(2)));\n`,
   );
 
-  const scriptPosix = `${rootPosix}/scripts/probe.mjs`;
-  const runnerPosix = `${rootPosix}/scripts/run-node.cmd`;
+  const rootPosix = toPosix(root);
+  const rootWin = rootPosix.split("/").join("\\");
   const runnerWin = `${rootWin}\\scripts\\run-node.cmd`;
-
-  // Candidate command STRINGS (what would live in settings.json "command"):
-  const strings = {
-    // S0 — the CURRENTLY SHIPPED string (mixed slashes, nested cmd /c). Baseline.
-    S0_shipped: shippedHookCommand(rootPosix, "scripts/probe.mjs"),
-    // S1 — nested cmd, but ALL forward slashes (cmd.exe tolerates '/'; bash keeps them clean).
-    S1_cmd_fwd: `cmd /c "${runnerPosix}" "${scriptPosix}"`,
-    // S2 — NO nested cmd, forward slashes (let the shell run the .cmd directly).
-    S2_nonest_fwd: `"${runnerPosix}" "${scriptPosix}"`,
-    // S3 — NO nested cmd, Windows backslashes for the runner.
-    S3_nonest_win: `"${runnerWin}" "${scriptPosix}"`,
-    // S4 — extra outer wrapping so cmd's strip-first-and-last leaves valid inner quotes.
-    S4_cmd_wrapped: `cmd /c ""${runnerPosix}" "${scriptPosix}""`,
-  };
+  const runnerPosix = `${rootPosix}/scripts/run-node.cmd`;
+  const scriptPosix = `${rootPosix}/scripts/probe.mjs`;
 
   console.error(`[repro] platform=${process.platform}`);
-  for (const [k, v] of Object.entries(strings)) {
-    console.error(`[repro] ${k} = ${JSON.stringify(v)}`);
-  }
+  console.error(`[repro] root (has space) = ${JSON.stringify(root)}`);
+  console.error(`[repro] runnerWin  = ${JSON.stringify(runnerWin)}`);
+  console.error(`[repro] runnerPosix= ${JSON.stringify(runnerPosix)}`);
 
   if (process.platform !== "win32") {
     console.error("[repro] not win32 → execution skipped (shapes logged above)");
-    return; // pass: diagnostic only
+    return;
   }
 
   const enc = { encoding: "utf8" };
   const bash = findBash();
   console.error(`[repro] bash resolved to ${JSON.stringify(bash)}`);
 
-  for (const [name, cmdStr] of Object.entries(strings)) {
-    // Git Bash — Claude Code's PRIMARY hook shell on Windows.
-    log("bash", name, spawnSync(bash, ["-c", cmdStr], enc));
-    // cmd.exe — the /c <string> form (round-1's reproducing form).
-    log("cmd", name, spawnSync("cmd", ["/c", cmdStr], enc));
-    // PowerShell — the documented fallback shell.
-    log("pwsh", name, spawnSync("powershell", ["-NoProfile", "-Command", cmdStr], enc));
-  }
-  // Always pass: this test's job is to LEAVE EVIDENCE in the CI log, not to gate.
+  // (1) EXEC FORM — no shell. This is what a hook `command`+`args` entry would do.
+  //     Node quotes each arg for CreateProcess → robust to spaces, no shell parsing.
+  log("EXEC  cmd /c <runnerWin> <script>   (command+args, no shell)",
+    spawnSync("cmd", ["/c", runnerWin, scriptPosix], enc));
+  log("EXEC  cmd /c <runnerPosix> <script> (command+args, no shell)",
+    spawnSync("cmd", ["/c", runnerPosix, scriptPosix], enc));
+
+  // (2a) BASH fix — no nested cmd, forward slashes, quoted (handles the space).
+  log("BASH  \"<runnerPosix>\" \"<script>\"",
+    spawnSync(bash, ["-c", `"${runnerPosix}" "${scriptPosix}"`], enc));
+
+  // (2b) POWERSHELL fix — call operator `&` before the quoted path (handles the space).
+  log("PWSH  & \"<runnerPosix>\" \"<script>\"",
+    spawnSync("powershell", ["-NoProfile", "-Command", `& "${runnerPosix}" "${scriptPosix}"`], enc));
+
+  // Always pass: evidence only.
 });

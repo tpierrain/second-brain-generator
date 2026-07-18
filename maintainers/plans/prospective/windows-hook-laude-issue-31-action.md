@@ -36,13 +36,33 @@ i.e. `claude` with the leading `c` stripped. Reported by @anunnakian (Mohamed), 
       executes it through several invocation forms (A: `cmd /c <cmd>`, B: `cmd /d /s /c "<cmd>"`,
       C: `shell:true`, D/E: a **candidate fix** form with NO nested `cmd /c`). Logs stdout/stderr/exit of
       each; always passes (evidence only). _(2026-07-18)_
-- [ ] Open a **draft PR** for `fix/windows-hook-laude-31` so CI runs (CI triggers on `pull_request`; a
-      bare push to this branch does NOT trigger it — `ci.yml` push branches = `[main, node-compat]`).
-- [ ] Read the **windows-latest** job log; identify which form reproduces `laude`/`not recognized`, and
-      whether the candidate form (D/E) runs the probe cleanly (`PROBE_OK`).
-- [ ] From that evidence, write the **real fix** at the source (likely `nodeHookCommand` / the settings
-      template quoting) + a permanent **regression test** (TDD; assert the command executes the probe on
-      win32). Keep POSIX behaviour unchanged.
+- [x] Open a **draft PR** for `fix/windows-hook-laude-31` so CI runs — **draft PR #35** open. _(2026-07-18)_
+- [x] Read the **windows-latest** job log; identify which form reproduces `laude`/`not recognized`, and
+      whether a candidate form runs the probe cleanly (`PROBE_OK`). **Done (round 2, matrix shell×string).**
+      _(2026-07-18)_
+
+### Evidence captured (round 2, windows-latest — `bash` = Git Bash, the shell Claude Code uses)
+
+| command string | **bash** | cmd | pwsh |
+|---|---|---|---|
+| shipped `cmd /c "WIN\path" "posix"` | ❌ `UNNER~1' is not recognized` | ❌ | ✅ |
+| no-nested `"posix/run-node.cmd" "posix/script"` | ✅ `PROBE_OK` | ❌ | ❌ parse |
+
+- **Root cause = `laude` solved.** Under Git Bash, the shipped `cmd /c "C:\…\run-node.cmd"` command has
+  its backslashes treated as escapes → a char is **eaten** (`RUNNER`→`UNNER`), cmd then fails with
+  `is not recognized`. Same mechanism as Mohamed's `claude`→`laude` (leading `c` eaten). The nested
+  `cmd /c` + Windows-backslash path is the fragility.
+- **Dilemma:** the shipped form works under **pwsh** but breaks under **bash**; the no-nested form works
+  under **bash** but breaks under **pwsh** (needs `&`). **No single quoted string works under both.** →
+  the correct fix depends on which shell Claude Code deterministically uses for hooks on Windows
+  (asked the claude-code-guide agent; likely Git Bash, but must confirm to avoid regressing pwsh users).
+  If hooks support an **exec form** (`command`+`args` array, no shell), that bypasses quoting entirely
+  and is the preferred fix.
+
+- [ ] Confirm Claude Code's deterministic Windows hook shell (+ whether hooks accept an `args`/exec form).
+- [ ] From that evidence, write the **real fix** at the source (`nodeHookCommand` / the settings
+      template quoting, or an exec form) + a permanent **regression test** (TDD; assert the command
+      executes the probe on win32 under the real shell). Keep POSIX behaviour unchanged.
 - [ ] **Remove the temporary diagnostic** test once the mechanism is captured by the regression test.
 - [ ] Ensure the fix reaches the **deployed fleet**: `rag-launcher.mjs` is engine-owned (`scripts/lib/**`
       in the manifest `replace` bucket) → verify it travels via `update-engine`; deployed brains re-render
