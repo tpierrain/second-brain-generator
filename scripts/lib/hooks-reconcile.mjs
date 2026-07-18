@@ -72,6 +72,54 @@ export function reconcileHooks({ brainHooks, templateHooks, projectRoot, nodePre
   return { hooks: result, hooksAdded };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Issue #31 repair — heal a broken win32 hook prefix in a DEPLOYED brain.
+// A brain generated before the fix baked `cmd /c "C:\…\run-node.cmd"` into every
+// hook command. Claude Code runs Windows hooks through Git Bash by default, which
+// treats the backslashes as escapes and eats a character (`claude`→`laude`) → the
+// hooks fail at every SessionStart / Stop. The additive reconcile above NEVER
+// rewrites an existing command, so those brains would stay broken forever. This is
+// the narrow, nominative counter-measure (twin of the health-note carve-out): it
+// rewrites ONLY the broken engine run-node prefix to the fixed forward-slash form,
+// leaving the rest of the command (the quoted script argument) intact. Idempotent
+// — an already-fixed command has no `cmd /c` and is left byte-identical (no churn)
+// — and it never touches a user hook (which doesn't run the engine's run-node.cmd).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// The broken win32 engine prefix: `cmd /c "<any backslash path>\run-node.cmd"`.
+const BROKEN_WIN32_RUN_NODE = /^cmd \/c "[^"]*\\run-node\.cmd"/;
+
+// Repair a single command string (reused for both the hooks tree and statusLine).
+// Returns the fixed command, or the original unchanged when it isn't the broken shape.
+export function repairWin32NodePrefix(command, projectRoot) {
+  if (typeof command !== "string" || !BROKEN_WIN32_RUN_NODE.test(command)) return command;
+  return command.replace(BROKEN_WIN32_RUN_NODE, `${projectRoot}/scripts/run-node.cmd`);
+}
+
+// Repair every broken engine hook command in a settings.json `hooks` tree. Pure:
+// returns a fresh { hooks, repaired } (repaired = the engine scripts whose command
+// was healed). A no-op on non-win32 and on already-fixed brains.
+export function repairEngineHookCommands({ hooks, platform, projectRoot }) {
+  const repaired = [];
+  if (platform !== "win32") return { hooks: hooks ?? {}, repaired };
+  const result = {};
+  for (const [event, groups] of Object.entries(hooks ?? {})) {
+    result[event] = (groups ?? []).map((group) => ({
+      ...group,
+      hooks: (group.hooks ?? []).map((h) => {
+        const fixed = repairWin32NodePrefix(h.command, projectRoot);
+        if (fixed !== h.command) {
+          const script = hookScript(fixed);
+          if (script) repaired.push(script);
+          return { ...h, command: fixed };
+        }
+        return h;
+      }),
+    }));
+  }
+  return { hooks: result, repaired };
+}
+
 // detectHookGap — the pure bootstrap drift gate (ADR 0026, mirrors detectSelfHealGap).
 // `session-status` uses it to decide whether to spawn the one-time reconcile on a
 // pre-3.2 brain. A gap exists iff reconcileHooks WOULD append something. The substituted

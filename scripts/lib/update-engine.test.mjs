@@ -153,6 +153,28 @@ test("formatReport — names the runtime hook(s) it wired and counts them as nee
   assert.match(out, /restart/i);
 });
 
+// Issue #31: an upgrade of a pre-fix WINDOWS brain heals the broken `cmd /c "…\run-node.cmd"`
+// hook/statusLine commands in place. The report must NAME the healed commands so the user knows
+// the 'laude' error is gone (bare names; "statusLine" passes through unchanged).
+test("formatReport — names the Windows hook command(s) it repaired (issue #31)", () => {
+  const out = formatReport({
+    ref: "v1.1.0",
+    engineVersion: { rag: "1.1.0" },
+    copied: ["scripts/lib/rag-launcher.mjs"],
+    regenerated: true,
+    reindexed: false,
+    installedSkills: [],
+    mcpServersAdded: [],
+    hooksAdded: [],
+    hooksRepaired: ["scripts/session-self-heal.mjs", "scripts/auto-push.mjs", "statusLine"],
+  });
+  assert.match(out, /repair/i, "the healed commands must be reported as a repair");
+  assert.match(out, /session-self-heal/);
+  assert.match(out, /auto-push/);
+  assert.match(out, /statusLine/);
+  assert.match(out, /#31/, "point at the issue so the 'laude' fix is traceable");
+});
+
 // F1.6 (ADR 0026, point 4): a freshly-installed skill/MCP is on disk but NOT live in
 // the CURRENT conversation (Layer B config-freeze). The report must LOUDLY say so and
 // tell the user to restart — instead of today's silence that reads as "already usable".

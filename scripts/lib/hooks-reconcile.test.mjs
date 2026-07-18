@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { reconcileHooks, detectHookGap } from "./hooks-reconcile.mjs";
+import { reconcileHooks, detectHookGap, repairEngineHookCommands, repairWin32NodePrefix } from "./hooks-reconcile.mjs";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // hooks-reconcile — pure, idempotent reconcile of a brain's settings.json hook
@@ -119,6 +119,78 @@ test("reconcileHooks — preserves the run-node prefix on win32 (quoted backslas
   assert.ok(
     cmds.includes('cmd /c "C:\\brains\\foo\\scripts\\run-node.cmd" "C:/brains/foo/scripts/session-self-heal.mjs"'),
     "win32: keep the quoted run-node.cmd prefix; the new script path uses the posix {{PROJECT_ROOT}}",
+  );
+});
+
+// ── repairEngineHookCommands — heal the issue-#31 broken win32 hook prefix ──────
+//    A brain generated before the fix baked `cmd /c "C:\…\run-node.cmd"` into every
+//    hook command; Git Bash (Claude Code's default Windows hook shell) eats the
+//    backslashes → `claude`→`laude`, hooks fail. The additive reconcile never
+//    rewrites an existing command, so deployed Windows brains stay broken. This
+//    narrow, nominative repair rewrites ONLY the broken engine run-node prefix to
+//    the forward-slash form, in place, converging at the next self-heal restart.
+
+test("repairEngineHookCommands (win32) — rewrites the broken `cmd /c \"…\\run-node.cmd\"` prefix to forward-slash", () => {
+  const brainHooks = {
+    SessionStart: [
+      { matcher: "", hooks: [{ type: "command", command: 'cmd /c "C:\\Users\\x\\brain\\scripts\\run-node.cmd" "C:/Users/x/brain/scripts/session-self-heal.mjs"', timeout: 20000 }] },
+    ],
+    Stop: [
+      { matcher: "", hooks: [{ type: "command", command: 'cmd /c "C:\\Users\\x\\brain\\scripts\\run-node.cmd" "C:/Users/x/brain/scripts/auto-push.mjs"', timeout: 20000 }] },
+    ],
+  };
+  const { hooks, repaired } = repairEngineHookCommands({ hooks: brainHooks, platform: "win32", projectRoot: "C:/Users/x/brain" });
+  assert.equal(
+    hooks.SessionStart[0].hooks[0].command,
+    'C:/Users/x/brain/scripts/run-node.cmd "C:/Users/x/brain/scripts/session-self-heal.mjs"',
+  );
+  assert.equal(
+    hooks.Stop[0].hooks[0].command,
+    'C:/Users/x/brain/scripts/run-node.cmd "C:/Users/x/brain/scripts/auto-push.mjs"',
+  );
+  assert.deepEqual(repaired.sort(), ["scripts/auto-push.mjs", "scripts/session-self-heal.mjs"]);
+});
+
+test("repairEngineHookCommands — idempotent: an already-fixed brain is left byte-identical (no repair, no churn)", () => {
+  const fixed = {
+    SessionStart: [
+      { matcher: "", hooks: [{ type: "command", command: 'C:/Users/x/brain/scripts/run-node.cmd "C:/Users/x/brain/scripts/session-self-heal.mjs"', timeout: 20000 }] },
+    ],
+  };
+  const { hooks, repaired } = repairEngineHookCommands({ hooks: fixed, platform: "win32", projectRoot: "C:/Users/x/brain" });
+  assert.deepEqual(repaired, []);
+  assert.deepEqual(hooks, fixed);
+});
+
+test("repairEngineHookCommands — a USER hook (no run-node.cmd) is never touched", () => {
+  const brainHooks = {
+    PreToolUse: [{ matcher: "Write", hooks: [{ type: "command", command: 'cmd /c "C:\\tools\\my-own.cmd" "arg"', timeout: 5000 }] }],
+  };
+  const { hooks, repaired } = repairEngineHookCommands({ hooks: brainHooks, platform: "win32", projectRoot: "C:/Users/x/brain" });
+  assert.deepEqual(repaired, []);
+  assert.deepEqual(hooks, brainHooks);
+});
+
+test("repairEngineHookCommands (posix) — no-op: the /bin/sh run-node.sh prefix is fine, never rewritten", () => {
+  const brainHooks = {
+    SessionStart: [
+      { matcher: "", hooks: [{ type: "command", command: '/bin/sh "/brains/foo/scripts/run-node.sh" "/brains/foo/scripts/session-self-heal.mjs"', timeout: 20000 }] },
+    ],
+  };
+  const { hooks, repaired } = repairEngineHookCommands({ hooks: brainHooks, platform: "darwin", projectRoot: "/brains/foo" });
+  assert.deepEqual(repaired, []);
+  assert.deepEqual(hooks, brainHooks);
+});
+
+test("repairWin32NodePrefix — repairs a single command string (used for statusLine too), else returns it unchanged", () => {
+  assert.equal(
+    repairWin32NodePrefix('cmd /c "C:\\Users\\x\\brain\\scripts\\run-node.cmd" "C:/Users/x/brain/scripts/status-line.mjs"', "C:/Users/x/brain"),
+    'C:/Users/x/brain/scripts/run-node.cmd "C:/Users/x/brain/scripts/status-line.mjs"',
+  );
+  // already fixed → unchanged (no churn)
+  assert.equal(
+    repairWin32NodePrefix('C:/Users/x/brain/scripts/run-node.cmd "C:/Users/x/brain/scripts/status-line.mjs"', "C:/Users/x/brain"),
+    'C:/Users/x/brain/scripts/run-node.cmd "C:/Users/x/brain/scripts/status-line.mjs"',
   );
 });
 

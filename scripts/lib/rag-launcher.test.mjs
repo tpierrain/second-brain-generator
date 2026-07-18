@@ -89,14 +89,26 @@ test("nodeHookCommand posix: substituted in the JSON template → command parsea
   );
 });
 
-test("nodeHookCommand win32: substituted → valid JSON, backslash paths to run-node.cmd", () => {
+test("nodeHookCommand win32: forward-slash run-node.cmd, NO nested `cmd /c`, NO backslash (issue #31)", () => {
+  // Claude Code runs Windows hooks through Git Bash by default (PowerShell if Git
+  // Bash is absent). The old `cmd /c "C:\…\run-node.cmd"` shape was eaten by Git
+  // Bash's backslash-as-escape handling — a char was dropped (`claude`→`laude`,
+  // issue #31). A bare forward-slash path to the .cmd, with NO nested `cmd /c`,
+  // runs the probe cleanly under bash, PowerShell AND cmd (proven on windows-latest;
+  // see scripts/win-hook-exec.test.mjs). The script stays quoted by the template.
   const tpl = '{ "command": "{{NODE}} \\"{{PROJECT_ROOT}}/scripts/auto-commit.mjs\\"" }';
   const out = substitute(tpl, {
     "{{NODE}}": nodeHookCommand("win32", "C:/Users/x/brain"),
     "{{PROJECT_ROOT}}": "C:/Users/x/brain",
   });
-  const parsed = JSON.parse(out);
-  assert.match(parsed.command, /^cmd \/c "C:\\Users\\x\\brain\\scripts\\run-node\.cmd"/);
+  const parsed = JSON.parse(out); // must stay valid JSON
+  assert.equal(
+    parsed.command,
+    'C:/Users/x/brain/scripts/run-node.cmd "C:/Users/x/brain/scripts/auto-commit.mjs"',
+  );
+  // The two things that broke Git Bash must be gone:
+  assert.doesNotMatch(parsed.command, /cmd \/c/i); // no nested cmd wrapper
+  assert.doesNotMatch(nodeHookCommand("win32", "C:/Users/x/brain"), /\\/); // no backslash to eat
 });
 
 test("minimalPathEnv posix: neutralizes PATH, preserves the rest of the env", () => {

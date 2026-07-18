@@ -202,17 +202,24 @@ export function minimalPathEnv(platform, baseEnv) {
 
 // Builds the {{NODE}} replacement value for the hook commands in
 // .claude/settings.json (statusLine, PostToolUse, SessionStart). The result is
-// inserted as-is into a JSON string → the quotes are already escaped (\").
-// Points by ABSOLUTE path to the OS-appropriate run-node.* self-heal launcher (the
-// hook's cwd is not guaranteed on the desktop app side). We bake the resolved path
-// (no nested {{PROJECT_ROOT}}) → no dependency on the order of substitutions.
-// projectRootPosix = brain path normalized to "/" slashes.
+// inserted as-is into a JSON string. Points by ABSOLUTE path to the OS-appropriate
+// run-node.* self-heal launcher (the hook's cwd is not guaranteed on the desktop
+// app side). We bake the resolved path (no nested {{PROJECT_ROOT}}) → no dependency
+// on the order of substitutions. projectRootPosix = brain path normalized to "/".
+//
+// WINDOWS (issue #31): Claude Code runs hook commands through Git Bash by default
+// (PowerShell if Git Bash is absent), NOT cmd.exe. The old `cmd /c "C:\…\run-node.cmd"`
+// shape had two fatal flaws under Git Bash: the backslashes were treated as escapes
+// (a character got eaten — `claude`→`laude`, the reported symptom), and the nested
+// `cmd /c "A" "B"` hit cmd.exe's quote-stripping. A bare FORWARD-SLASH path to the
+// .cmd, UNQUOTED and with NO nested `cmd /c`, executes the probe cleanly under bash,
+// PowerShell AND cmd (a .cmd is directly runnable by all three; proven on the
+// windows-latest CI). The script argument stays quoted by the settings template.
+// Forward slashes also need no JSON escaping. NB: a SPACE in the brain path is a
+// separate, pre-existing Git Bash limitation (#16451) — unquoting doesn't regress it.
 export function nodeHookCommand(platform, projectRootPosix) {
   if (platform === "win32") {
-    // In JSON, each Windows path separator must be an escaped backslash (\\).
-    // split("/").join("\\\\") literally produces "\\" in the JSON text.
-    const win = projectRootPosix.split("/").join("\\\\");
-    return `cmd /c \\"${win}\\\\scripts\\\\run-node.cmd\\"`;
+    return `${projectRootPosix}/scripts/run-node.cmd`;
   }
   return `/bin/sh \\"${projectRootPosix}/scripts/run-node.sh\\"`;
 }
