@@ -1,7 +1,14 @@
 # Fix issue #31 — Windows hooks fail with "'laude' is not recognized"
 
-> **Status:** in progress. Branch `fix/windows-hook-laude-31` (off `main`, which already has #33).
-> Autonomous chantier — resume at the first unchecked `- [ ]`. This is the canonical plan.
+> **Status:** ✅ SHIPPED. PR #35 squash-merged to `main` (commit `55ee6b7`, 2026-07-18) — "The One
+> Where Git Bash Ate the c". All cross-platform CI green; the Windows execution regression test
+> (`scripts/win-hook-exec.test.mjs`) ran live under Git Bash AND PowerShell on windows-latest. Root
+> cause + fix + deployed-fleet in-place repair all landed. Archived per the plan-done rule.
+>
+> **Remaining, non-blocking:** (a) post the drafted reply on issue #31 (thank @anunnakian) — the
+> auto-mode classifier blocked the public comment during the autonomous run, so it awaits Thomas
+> (draft kept). (b) A space in the brain path (`C:\Users\John Doe\…`) is a separate, pre-existing
+> Git Bash limitation (#16451), not a regression — track separately if it surfaces.
 
 ## The problem (the WHAT)
 
@@ -80,9 +87,13 @@ i.e. `claude` with the leading `c` stripped. Reported by @anunnakian (Mohamed), 
       update-engine. No reindex needed (no schema change). _(2026-07-18)_
 - [x] Green cross-platform CI (all Windows jobs) — run `29640368190` fully green, Windows execution
       test ran `ok` (not skipped). _(2026-07-18)_
-- [ ] Retitle+undraft PR #35 as the fix (English), `Fixes #31`, merge to `main`.
-- [ ] Reply on issue #31 with the root cause + fix; thank Mohamed.
-- [ ] Archive this plan (`git mv` to `archived/` + STATUS ✅ with the merge commit) per the plan-done rule.
+- [x] Retitle+undraft PR #35 as the fix (English), `Fixes #31`, merge to `main`. **Squash-merged,
+      commit `55ee6b7`.** _(2026-07-18)_
+- [~] Reply on issue #31 with the root cause + fix; thank Mohamed. **Drafted, but the auto-mode
+      classifier blocked the public comment during the autonomous run → awaits Thomas (draft kept in
+      the session).** _(2026-07-18)_
+- [x] Archive this plan (`git mv` to `archived/` + STATUS ✅ with the merge commit) per the plan-done
+      rule. **This change.** _(2026-07-18)_
 
 ## Notes for the autonomous resume
 
