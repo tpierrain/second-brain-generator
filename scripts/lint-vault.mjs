@@ -9,11 +9,16 @@
 //   node scripts/lint-vault.mjs            # health-check ./vault
 //   node scripts/lint-vault.mjs <dir>      # health-check another vault path
 // ─────────────────────────────────────────────────────────────────────────────
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 
 import { readVaultNotes } from "./lib/wiki-lint-io.mjs";
 import { lintVault, reportLines, hasFindings } from "./lib/wiki-lint.mjs";
 import { isEntrypoint } from "./lib/entrypoint.mjs";
+
+// The scanned vault dir is displayed (and passed to the reader) in POSIX form so
+// the output is identical across platforms — on Windows join() yields backslashes
+// and resolve() prepends a drive letter. Cf. installer toPosix / document-scanner.
+const toPosix = (p) => p.split("\\").join("/");
 
 // Real wiring — the side effects, injected so runLint stays unit-testable.
 export const realLintDeps = {
@@ -26,7 +31,7 @@ export const realLintDeps = {
 // Scan the vault and print an honest health report. Returns the process exit
 // code: 0 clean, 1 issues found. All side effects come through `deps`.
 export function runLint(argv, deps = realLintDeps) {
-  const vaultDir = argv[0] ? resolve(argv[0]) : join(deps.cwd(), "vault");
+  const vaultDir = toPosix(argv[0] ? argv[0] : join(deps.cwd(), "vault"));
   const notes = deps.readNotes(vaultDir);
   const report = lintVault(notes);
   deps.log(`Scanned ${notes.length} notes under ${vaultDir}`);
