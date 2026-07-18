@@ -20,6 +20,12 @@ import { dirname, join } from "node:path";
 import { renderFiledNote } from "./lib/filed-note.mjs";
 import { isEntrypoint } from "./lib/entrypoint.mjs";
 
+// Vault paths are displayed, compared and written in POSIX form so behaviour is
+// identical across platforms — on Windows join() yields backslashes, which would
+// break the string match against the vault path and the existence check. Cf.
+// installer toPosix / document-scanner.
+const toPosix = (p) => p.split("\\").join("/");
+
 // Real wiring — the side effects, injected so runFileBack stays unit-testable.
 export const realFileBackDeps = {
   cwd: () => process.cwd(),
@@ -53,7 +59,7 @@ export function runFileBack(argv, deps = realFileBackDeps) {
     return 1;
   }
 
-  const absPath = join(deps.cwd(), "vault", note.path);
+  const absPath = toPosix(join(deps.cwd(), "vault", note.path));
   if (deps.exists(absPath)) {
     deps.error(
       `✗ vault/${note.path} already exists — filing back never overwrites. ` +

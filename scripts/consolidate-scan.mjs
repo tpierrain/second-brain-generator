@@ -13,11 +13,16 @@
 //   node scripts/consolidate-scan.mjs            # scan ./vault
 //   node scripts/consolidate-scan.mjs <dir>      # scan another vault path
 // ─────────────────────────────────────────────────────────────────────────────
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 
 import { readVaultNotes } from "./lib/wiki-lint-io.mjs";
 import { consolidationCandidates, reportLines, hasCandidates } from "./lib/consolidation-candidates.mjs";
 import { isEntrypoint } from "./lib/entrypoint.mjs";
+
+// The scanned vault dir is displayed (and passed to the reader) in POSIX form so
+// the output is identical across platforms — on Windows join() yields backslashes
+// and resolve() prepends a drive letter. Cf. installer toPosix / document-scanner.
+const toPosix = (p) => p.split("\\").join("/");
 
 // Real wiring — the side effects, injected so runConsolidateScan stays unit-testable.
 export const realConsolidateDeps = {
@@ -30,7 +35,7 @@ export const realConsolidateDeps = {
 // the process exit code: 0 nothing to consolidate, 1 candidates found. All side
 // effects come through `deps`.
 export function runConsolidateScan(argv, deps = realConsolidateDeps) {
-  const vaultDir = argv[0] ? resolve(argv[0]) : join(deps.cwd(), "vault");
+  const vaultDir = toPosix(argv[0] ? argv[0] : join(deps.cwd(), "vault"));
   const notes = deps.readNotes(vaultDir);
   const report = consolidationCandidates(notes);
   deps.log(`Scanned ${notes.length} notes under ${vaultDir}`);
