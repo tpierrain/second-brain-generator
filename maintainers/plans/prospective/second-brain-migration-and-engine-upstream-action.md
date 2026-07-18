@@ -207,11 +207,23 @@ names/IDs, org/account emails, product-team names, and any private-project refer
 
 - [ ] Generate a fresh brain from the launcher (after Track A + generic bits of B/C have landed
       upstream), choosing the embedder consciously (privacy trade-off).
+  - [ ] **Prerequisite (engine):** the *legacy-safe fresh-install constitution layering* ("green") must land
+        in the launcher FIRST, so the regenerated brain is **born two-layer** and future constitution
+        improvements keep flowing to it. See the "Sequencing decision" in
+        `engine-managed-file-merge-strategy.md`. Skipping it would make this brand-new brain a future
+        monolithic-legacy case.
 - [ ] From the **new** brain, run `/import` pointing at the source vault → 405 notes + attachments
       (demo skipped, no overwrite).
 - [ ] Reindex; verify with a canary query (`node scripts/verify-rag.mjs` → exit 0).
 - [ ] Layer the **private** skills (Track B) and the **merged** constitution (Track C) into the new
       brain (these are the parts that never go through the launcher).
+
+> **Not a fleet fixture.** The source brain is **not** a Kenjaku brain (it only supplies the notes to
+> `/import`), so it is **not** a legacy-upgrade fixture. Re-layering the brains already deployed from an
+> earlier Kenjaku release, and its substantial QA (completeness across a big jump, a "what you gained"
+> changelog, a pre-flight reindex preview), is a **separate, deferred** chantier: see
+> `engine-managed-file-merge-strategy.md` §"Sequencing decision". Deferring it is safe: those brains are
+> sacred/working today and a v3.2.x → current jump triggers no reindex (`indexSchemaVersion` unchanged).
 
 ---
 
