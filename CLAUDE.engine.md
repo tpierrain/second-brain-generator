@@ -1,0 +1,299 @@
+# CLAUDE.engine.md — engine layer (generic machinery)
+
+> 🛠️ **This is the ENGINE layer of your constitution.** It carries the **generic machinery**
+> shared by every second brain: routing to the RAG, expected behaviors, note format, commit
+> conventions. It is **owned by the engine** and refreshed by upgrades — so **don't personalize it
+> here**. Your personal settings (name, language, confidentiality rules, tone) and everything you
+> want to tailor live in **[CLAUDE.md](CLAUDE.md)**, which `@import`s this file. Edit `CLAUDE.md`,
+> not this one.
+
+---
+
+## First launch — offer the "is it really wired up?" test
+
+> 🟢 **Startup directive (for Claude).** **As long as the vault still contains the fictional
+> sample notes** — reliable marker: the file **`vault/topics/flemmr.md`** exists —, at the
+> **very start of your FIRST reply of the session**, before moving on to anything else, **spontaneously
+> offer the user a wiring test** so they can see with their own eyes that their brain really reads
+> THEIR data (and isn't answering "off the cuff" from the Internet). Present it in a short and
+> friendly way, roughly like this:
+>
+> > 👋 **Before we really get started, shall we check that your brain is properly wired up?**
+> > For now your vault contains **a few fictional (and slightly absurd) notes** about an
+> > imaginary company, **Flemmr™** ("we industrialize procrastination"). Ask me this
+> > question — copy it as is:
+> >
+> > > *"At the company that helps people stop overworking, which employee was honored for
+> > > doing the least of everyone — and with what percentage?"*
+> >
+> > If everything is properly wired up, I should answer **Pélagie de Mollecuisse**, **Trophée de l'Inertie
+> > 2025**, **Slacking-Off Rate of 98.7%** — **citing the vault notes as sources**.
+> > That's the proof I read YOUR data: the answer can't be found outside your brain. ✅
+> >
+> > Once reassured, **replace these sample notes with your own** in `vault/` (and edit
+> > `CLAUDE.md` to match your style) — this message will disappear on its own.
+>
+> Don't force the test; **offer it**. If the user prefers to move on, do so. **As soon as the
+> sample notes have been replaced** (no more `vault/topics/flemmr.md`), **never display this
+> block again**: the brain has entered real service.
+>
+> 🧹 **Right after you've answered that demo question** (and only then — once the wiring is proven),
+> **proactively offer to clear the fictional example notes**, with a simple **yes/no**. A deletion
+> is a write → it stays **confirmed** (consistent with "writes are always confirmed"). Phrase it
+> warmly, roughly:
+>
+> > ✅ Wiring confirmed — your brain really reads YOUR data! Want me to **remove the ~5 fictional
+> > example notes** now (Flemmr, Pélagie & co.) so your vault starts clean? **yes / no** — no rush
+> > either way: you can ask me to remove them **anytime later**, and I'll re-index so the brain
+> > forgets them.
+>
+> - On **yes**: run `node scripts/clear-example-notes.mjs` from the brain folder — it deletes the
+>   `exemple`-tagged notes (locale-agnostic) and re-indexes the RAG so they're forgotten; auto-commit
+>   records it. Confirm in one line. (`flemmr.md` is then gone → this whole wiring block retires on
+>   its own.)
+> - On **no**: keep them and reassure — "no problem: just ask whenever, I'll remove these ~5 example
+>   notes and re-index." No pressure, no drama.
+
+## Note format
+
+All vault notes are in **Markdown**, Obsidian-compatible.
+
+### Naming conventions
+
+| Folder | Format | Example |
+|---|---|---|
+| `vault/daily/` | `YYYY-MM-DD.md` | `2026-04-16.md` |
+| `vault/people/` | `firstname-lastname.md` (kebab-case, no accents) | `jane-doe.md` |
+| `vault/topics/` | `topic-in-kebab.md` | `capacity-management.md` |
+| `vault/decisions/` | `YYYY-MM-DD-short-title.md` | `2026-04-16-archi-choice.md` |
+| `vault/meetings/` | `YYYY-MM-DD-title.md` | `2026-04-16-committee.md` |
+| `vault/backlog/` | `topic.md` or `person.md` | `perso.md` |
+
+> 🔧 **To adapt**: add/remove folders to fit your usage (e.g.: `prep-1-1/`, `initiatives/`, `coaching/`...).
+
+### Minimal structure of a note
+
+```markdown
+---
+type: daily | person | topic | decision | meeting
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+tags: [tag1, tag2]
+---
+
+# Title
+
+Markdown content.
+```
+
+### Obsidian backlinks
+
+Reference other notes with `[[relative/path/without-extension]]`:
+- `[[people/jane-doe]]`
+- `[[daily/2026-04-15#Section]]` (link to a section)
+- `[[topics/capacity-management]]`
+
+> **Notes from a local mirror** (`vault/mirrors/…`): when you cite one, present **two**
+> links — 🧠 the **local copy** (opens the note inside the brain) **and** 🔗 the **source** (the
+> original Notion page). The `search_vault` output already hands them to you ready-made; relay them as-is.
+
+### Append-only for dailies
+
+A daily note, once written, is **never edited retroactively** — you add a new daily the next day. Corrections go through topic notes or decisions. The `people/` and `topics/` files are, on the contrary, **living**: you append dated sections to them.
+
+### Opening / viewing / editing a note → my default Markdown editor
+
+When I ask to **open, view, browse or edit** a note (as opposed to just getting an answer in chat), open the **real file** in my **default Markdown editor** rather than pasting the raw text — these are the very `.md` files the brain reads and writes, so I can edit them in place and the change is picked up:
+
+- Open the note by its **absolute file path** through the OS opener, which hands the file to whatever editor I've set as my default for Markdown (Typora, Obsidian, VS Code, …) — editable, no lock-in to one app:
+  - macOS: `open "<abs-path>"`
+  - Windows: `start "" "<abs-path>"`
+  - Linux: `xdg-open "<abs-path>"`
+- **If the open fails** (no GUI editor, headless session): **don't block** — display / `Read` the note inline instead.
+- **Obsidian (optional, recommended viewer).** To browse the vault *as a whole* — the graph, `[[wikilinks]]`, backlinks, a full read/write editor over these same files — Obsidian is the nicest companion ([obsidian.md](https://obsidian.md)); the installer can register this brain as a vault so it shows up in Obsidian's switcher. It is **recommended, never required**, and is never the *mechanism* for opening a single note — that always goes through my default editor above.
+
+When I only want an **answer** (a fact, a synthesis), just answer with the source — no need to open anything.
+
+## Routing — which tool for what
+
+### Vault — semantic RAG (heart of the system)
+
+The RAG (`rag/`) splits each Markdown file into **chunks** (one per `#`/`##`/`###` section), turns each chunk into a vector (Gemini embedding) and stores them. A search embeds the question and surfaces the closest chunks by meaning similarity.
+
+> **The file is the unit you write; the chunk is the unit the engine embeds, stores, and retrieves.**
+
+| Operation | Tool |
+|---|---|
+| **Semantic / cross-cutting question** ("what do we know about X?") | `mcp__vault-rag__search_vault` |
+| **Read a full doc** retrieved by search | `mcp__vault-rag__get_document` |
+| **List indexed documents** | `mcp__vault-rag__list_documents` |
+| **Stats / index state** | `mcp__vault-rag__vault_stats` |
+| **Direct navigation** (exact path, specific date) | `Read` (no RAG) |
+| **Exact search** (name, identifier, precise keyword) | `grep` / `Glob` (no RAG) |
+
+**Retrieval rules:**
+- Open / cross-cutting questions → `search_vault` first, grep as a complement.
+- Structural navigation (known file) → `Read` directly, no RAG.
+- `search_vault` is fast and cheap — don't hesitate when the question is semantic.
+- The index rebuilds automatically, incrementally (only modified files are re-indexed). No manual maintenance. Forced rebuild: `cd rag && npm run reindex`.
+- **Safe by construction**: a single process indexes at a time (single-writer lock), so a forced rebuild during an active session never doubles the work. With an API embedder (daily quota), a reserve of requests is kept for search: querying the brain is never blocked by an ongoing indexing.
+- **"Which engine version do I have?"** → the engine **TAG** is the answer: the **"Version"** line of `vault_stats` (= the brain's pinned `source.ref`, the same value the status-line shows). The `rag X.Y.Z` / index-schema numbers on the `vault_stats` "internal build" line are **internal mechanics**, *not* the version — never report them as "the version" (ADR 0017).
+
+**⚠️ Fail-loud — never a disguised out-of-vault answer.** If the `mcp__vault-rag__*` tools are **unavailable, missing, or return an error** (MCP server not loaded, missing Gemini key, empty index…), you must **SAY IT LOUDLY** — "⚠️ RAG unavailable: I can't query the vault" — and **REFUSE to fabricate an answer** from the Internet or your general knowledge. A second brain that answers beside the vault *while appearing to work* is worse than a brain that frankly says it's down. This applies **in particular to the demo question** (the user's first contact): no plausible but out-of-vault answer. Instead, indicate how to fix it (key in `.env`, restart Claude Code, `/mcp`).
+
+### Local mirrors — live internal zones mirrored into the vault (optional)
+
+A **local mirror** is a zone of an internal tool (Notion today) you declared once; the
+`local-mirror` MCP server mirrors its pages into `vault/mirrors/<name>/` as Markdown,
+which the RAG then indexes and cites like any other note. Set one up — or sync / inspect / remove one —
+with the **`/local-mirror` skill** (the thin driver; the work runs in the MCP server).
+
+| Operation | Tool |
+|---|---|
+| **Declare / onboard a source** (URL + token env) | `mcp__local-mirror__setup_source` |
+| **Sync the delta + reconcile deletions** (one source or `"all"`) | `mcp__local-mirror__sync` |
+| **Is it behind?** (light, watermark-only) | `mcp__local-mirror__check_freshness` |
+| **State** (last sync, item count, lateness) | `mcp__local-mirror__status` |
+| **List declared sources** | `mcp__local-mirror__list_sources` |
+| **Remove a source** (opt-in `cleanup` deletes its files) | `mcp__local-mirror__remove_source` |
+
+**Routing rule:** when a question is clearly **about a declared source's topic** (the `description`
+captured at setup), **`sync` that one source first** so the answer is fresh, then `search_vault`. Sync
+only the relevant source — never `"all"` on a whim. The token lives **only in `.env`** (`token_env`),
+never in the chat. If a sync returns `partial` (enumeration error), say so — no deletion happened and
+the watermark didn't advance.
+
+## Expected Claude Code behaviors
+
+### Advisory posture on the harness
+
+Claude must **challenge requests to modify the harness** (CLAUDE.md, `.claude/`, skills, hooks). Before implementing a harness change:
+- Avoid over-engineered contraptions — always ask "is it worth the added complexity?"
+- Propose the simplest solution that solves the real problem.
+- Flag when a request risks creating debt (contradictory rules, mechanisms never used, over-engineering).
+- Say "careful" when an addition adds complexity without a clear benefit.
+
+**Determinism reflex**: for a **critical + repeatable + mechanical** behavior, first ask *"can we make it deterministic (hook / code / test)?"* rather than making it a mere rule that Claude can forget. Determinism where it matters; intelligence for judgment. Without over-rigidifying.
+
+### Delegation to sub-agents — limit context rot
+
+The main session's context is a **scarce, high-quality resource**. A large context window is a *capacity* (swallowing a big file without crashing), not a cruising regime: the quality of attention degrades well before the nominal limit (*lost in the middle*, dilution, forgetting the middle). Goal: keep the main session **dense and relevant**, ideally **under ~150-200k useful tokens**, bringing back only pre-digested signals.
+
+**Delegate (Agent / Explore) when:**
+- Broad search / fan-out (sweeping many files/sources) without knowing where the answer is.
+- Reading a **large document** of which you only want the synthesis.
+- Several independent reads → **parallelize** them, one sub-agent per source, ~500-token return.
+
+**Read directly (Read / grep) when:** known file, exact path, reasonable size; exact search; need for faithful content, not a summary.
+
+**Golden rule**: a sub-agent returns only pre-digested signals (~500 tokens), never file dumps.
+
+### General rules
+
+- **Timestamping mandatory.** Before any source analysis or dated writing, anchor the current date/time — never guess. Since Node is a prerequisite, use a **portable** command (macOS / Linux / Windows):
+  - Current date/time: `node -e "console.log(new Date().toString())"`
+  - Derived date ("tomorrow", "3 days ago"): `node -e "console.log(new Date(Date.now()+N*864e5).toISOString().slice(0,10))"` (negative N for the past). Never compute a date in your head.
+  - **A bare weekday = always resolve the ambiguity.** If the user mentions a day ("Monday", "Tuesday"…) **without** a date or "last"/"next", never guess: compute **both** dates (the previous one AND the next one) and ask a short one-line question, e.g. "Do you mean Monday **last (06/08)** or Monday **next (06/15)**?". Wait for the answer before committing to either.
+- **Don't create files** outside the defined structure without asking.
+- **Never edit a past daily note** (except for a glaring typo correction that's flagged).
+- **Durable memory is the repo, never Claude Code's local memory.** Anything that must survive between sessions goes into the repo: `vault/` for content, `CLAUDE.md` for rules. The repo is portable (another machine, backup) and survives a `/clear`; Claude Code's local memory is not. Never leave anything useful only in conversation memory.
+- If you touch the harness (`.claude/`), separate commit with a clear message (`harness: …`).
+
+### Sourcing and traceability
+
+- **Keep the direct links to sources** (permalinks, URLs) of everything you use (message, document, email), and include them when you cite a source in an answer.
+- **Never rebuild a permalink by hand** from an identifier + timestamp (often wrong): reuse the link the tool hands you as-is.
+- **Qualify source reliability**: verbatim (transcript, raw message) > human synthesis > AI synthesis. Flag when you interpret rather than report.
+
+### Main flow — direct question + transparent source sync
+
+This is **THE** operating mode. Question asked → answer. No sync command to trigger.
+
+```
+Question
+   │
+   ▼  PHASE 1 — Immediate answer from the vault (RAG + Read)
+   │
+   ├──▶ PHASE 2 — Sync external sources in the BACKGROUND (automatic, just ANNOUNCED)
+   │            fetches only the DELTA, sub-agents //, ~500 tokens each
+   │
+   ▼  PHASE 3 — Amend the answer if the delta brings something new
+   │
+   ▼  PHASE 4 — Persistence: everything produced → vault + commit (hook)
+```
+
+> 🚫 **NEVER ASK permission to sync.** You ask **no** question of the kind "do you want me to
+> refresh with a sync of recent signals?", "should I go fetch…?", "is that enough or…?". Syncing
+> sources is **systematic and transparent**: you **launch it yourself in the background** and you
+> simply **announce** it in one line. Asking means relying on the user to drive a mechanism that
+> should run on its own — exactly what we don't want.
+
+**Phase 1** — Iterative retrieval: `search_vault` → read the 3-5 most relevant notes → drill down if needed. Always cite sources (backlinks) and their freshness date. **Answer right away**, without waiting for anything.
+
+**Phase 2 — automatic, as soon as external sources are wired up.** By **default**, on **each** question whose answer might have moved (people, projects, decisions, ongoing topics, 1-1s, calendar…), you **immediately launch** parallel sub-agents (skill `sync-sources`, **read-only**) to fetch the DELTA — **without asking**, and **without waiting for their return to answer**. You simply **announce** it, e.g.: *"🔄 I'm checking in the background whether there's anything new on Slack/calendar — I'll complete if it changes anything."* Max 3 background agents per question. **Sole exception (silent, without commenting on it)**: a purely historical/definitional question that the vault settles for sure → no need to launch a sync; you don't even mention it.
+
+**Phase 3** — Complete the answer only if the delta brings something new, **on your own** (never by asking again): "🔄 Update: …". If the delta brings nothing, you can say so in a word or add nothing.
+
+**Phase 4** — Everything fetched or produced in session is saved to the vault. Nothing remains only in conversation memory.
+
+### Tooling — native tools, NEVER Bash to probe the vault or process text
+
+This brain often runs in **Claude Desktop (Code tab)**, where **each Bash command re-triggers a
+permission prompt** — and where **compound or risky** commands (`cd … && mkdir …`, multiline
+`python3 -c "…"`, `#` in an argument) are **refused outright** (no "Always allow" button): the
+user *cannot* pre-authorize them. Conversely, the **native tools** `Read`/`Write`/`Edit`/`Glob`/`Grep`
+and the `vault-rag` MCP tools are **pre-authorized and silent**. So, **by default, never use Bash**
+to inspect the vault or manipulate content — use the equivalent native tool:
+
+| Need | ✅ Native tool (silent) | ❌ Bash (prompt every time, sometimes non-authorizable) |
+|---|---|---|
+| List / find files | `Glob` | `ls`, `find` |
+| Test if a file/folder exists | `Glob` or `Read` | `test -f`, `[ -e … ]` |
+| Read a note or an off-loaded result (`…/tool-results/…`) | `Read` | `cat`, `head`, `python3 -c "open(...)"` |
+| Search in the vault | `search_vault` (RAG) or `Grep` | `grep` |
+| Create / write a file | `Write` / `Edit` (create parent folders) | `mkdir -p`, `echo > …`, `>>` |
+| Split / summarize content | **by reasoning** (you're an LLM) | `awk`, `sed`, `jq`, `python3 -c` |
+
+Bash stays reserved for the strict minimum **with no** native equivalent (and for **read-only** git:
+`status`/`log`/`diff`). For everything else — discovering the vault's state before a fan-out,
+re-reading an off-loaded transcript, slicing content — **native tools only**. Never compose
+`cd … &&` with a write.
+
+### Backlogs (`vault/backlog/`)
+
+On each ingestion of external data, cross-reference with `vault/backlog/*.md`:
+1. **New actions** (commitment made, request received) → add with `— source: [origin] [date]`.
+2. **Completed actions** (execution trace) → check `[x]` with date.
+3. **Obsolete actions** → mark `[~]` with a note.
+
+Never present an action as "to do" without having checked that it hasn't already been done. Checked actions stay in the file (tracking register, no deletion).
+
+**Proactive action-item verification (question-first).** When you list actions from external sources, follow the same flow as the main flow:
+1. **Phase 1**: present the actions from the vault right away (fast answer, even if statuses aren't verified yet).
+2. **Phase 2**: in the background, look for **execution traces** (message sent, commit, email, meeting confirmation) that would show an action is already done.
+3. **Phase 3**: amend — check `[x]` what's done, drop it from the "to do" list, add any newly detected actions.
+
+The user should never have to correct "careful, that's already done": it's on Claude to verify upfront.
+
+### Automatic persistence & commit
+
+**Persistence is handled by a hook** (`.claude/settings.json`), not by Claude: `git add` + `commit` (+ `push` if a remote exists) on each file modification — hence the `auto: …` commits.
+
+**Consequence: do NOT run `git add` / `commit` / `push` yourself** while the hook runs (a manual commit races the hook and garbles the output). Read-only git commands (`status`, `log`, `diff`) remain OK.
+
+### Passive observation — frictions at end of session
+
+At the end of a session (explicit signal from the user **AND** 10+ exchanges), before the last message: scan the session to detect repeated workarounds, questions the vault couldn't answer, failed skills, long searches. If friction → add a line to `vault/backlog/harnais.md`:
+```
+- [ ] [observation] Short description of the friction — YYYY-MM-DD
+```
+Then display an end-of-session box (frictions added / tips / all clear).
+
+> 🔧 **To adapt**: this block is optional — remove it if you don't want auto-analysis.
+
+## Commit conventions
+
+- `sync: YYYY-MM-DD` — sources ingested
+- `note: …` — note creation/update (people, topic, decision…)
+- `harness: …` — changes to `.claude/`, `scripts/`, `rag/`
+- `docs: …` — README, CLAUDE.md, SETUP.md

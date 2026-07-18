@@ -14,17 +14,25 @@ import { dirname, join } from "node:path";
 //
 // The FR template has carried it since `5d61ce6`; the EN template had NO citation
 // directive at all (verified 2026-06-21) — so even a FRESH English brain was
-// missing it. This parity test locks both templates so neither can silently drift.
-// (Delivering this directive to ALREADY-INSTALLED brains is the separate
-// engine-managed-block work; this test only guards the template content.)
+// missing it. This parity test locks the EFFECTIVE constitution so neither locale
+// can silently drift. Since the two-layer split (Gate 1 "green"), the directive is
+// generic engine machinery → it lives in the CLAUDE.engine.md layer that the thin
+// sacred CLAUDE.md.template @imports; the test asserts on the UNION so it stays
+// correct wherever the directive sits. (Delivering it to ALREADY-INSTALLED brains
+// is the separate engine-managed propagation work; this test guards content only.)
 // ═══════════════════════════════════════════════════════════════════════════
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const read = (rel) => readFileSync(join(REPO_ROOT, rel), "utf8");
 
-for (const tpl of ["CLAUDE.md.template", "templates/fr/CLAUDE.md.template"]) {
-  test(`${tpl} tells Claude to relay BOTH mirror-citation links (🧠 local + 🔗 source)`, () => {
-    const text = read(tpl);
+const CONSTITUTIONS = [
+  { locale: "EN", layers: ["CLAUDE.md.template", "CLAUDE.engine.md"] },
+  { locale: "FR", layers: ["templates/fr/CLAUDE.md.template", "templates/fr/CLAUDE.engine.md"] },
+];
+
+for (const { locale, layers } of CONSTITUTIONS) {
+  test(`${locale} constitution tells Claude to relay BOTH mirror-citation links (🧠 local + 🔗 source)`, () => {
+    const text = layers.map(read).join("\n");
     assert.match(text, /🧠/, "must mention the 🧠 local-copy link");
     assert.match(text, /🔗/, "must mention the 🔗 source link");
     assert.match(
