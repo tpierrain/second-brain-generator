@@ -152,6 +152,24 @@ test("SELF-CARRY — the plan covers update-engine + every lib the core depends 
   }
 });
 
+// Gate 1 "green": the constitution ships two-layer (thin sacred CLAUDE.md @imports a
+// generic CLAUDE.engine.md). It is STRUCTURE-ONLY — propagation of the engine layer to
+// deployed brains is deferred to Gate 3 (it must first be made locale-aware, or a FR
+// brain would be re-anglicized on upgrade). So the shipped plan must touch NEITHER file:
+// CLAUDE.md because it is sacred, CLAUDE.engine.md because it is not yet in any regime.
+// This locks the legacy-safety invariant — a deployed monolithic brain updating is not
+// clobbered — and guards against someone wiring CLAUDE.engine.md into `replace` before
+// the locale-aware propagation of Gate 3 exists.
+test("GREEN LAYERING — the shipped plan touches NEITHER CLAUDE.md NOR CLAUDE.engine.md (structure-only, propagation deferred)", () => {
+  const plan = computeApplyPlan(shippedManifest());
+  assert.equal(planTouches(plan, "CLAUDE.md"), false, "CLAUDE.md is sacred — never clobber a deployed brain's constitution");
+  assert.equal(
+    planTouches(plan, "CLAUDE.engine.md"),
+    false,
+    "CLAUDE.engine.md must NOT be propagated yet — Gate 3 makes it locale-aware first (else a FR brain is re-anglicized on upgrade)",
+  );
+});
+
 test("planTouches — NEVER touches the user's files; DOES touch the engine's", () => {
   const plan = computeApplyPlan(fullTarget());
 
