@@ -241,14 +241,16 @@ No empty section — omit it. Each signal cites its source (brackets or backlink
 
 ### Step 5 — Append to `vault/actions-log.md`
 
-**Append** (create the file if it doesn't exist) one flat line per action, prefixed with the date —
-no frontmatter, *grep-able* file:
+The ledger is a **first-class, seeded artifact**: it is created at install and re-seeded (if ever
+missing) on session start by the `session-actions-log` hook, so it normally already exists — just
+**append** one flat, *grep-able* line per action below its header (still create it if it is somehow
+absent):
 
 ```markdown
 ## [YYYY-MM-DD] <action> — #channel [[people/recipient]]
 ```
 
-**Append-only**: never rewrite the existing lines. Usage: "what did I do on
+**Append-only**: never rewrite the existing lines or the seeded header. Usage: "what did I do on
 X?" → `grep -i "X" vault/actions-log.md` then enrich via the referenced briefings.
 
 ## Re-run mode (same day)

@@ -241,15 +241,18 @@ Pas de section vide — l'omettre. Chaque signal cite sa source (crochets ou bac
 
 ### Étape 5 — Append dans `vault/actions-log.md`
 
-**Appender** (créer le fichier s'il n'existe pas) une ligne plate par action, préfixée de la date —
-pas de frontmatter, fichier *grep-able* :
+Le ledger est un **artefact de première classe, initialisé (seedé)** : il est créé à l'installation
+et re-seedé (s'il venait à manquer) au démarrage de session par le hook `session-actions-log`, donc
+il existe normalement déjà - il suffit d'**appender** une ligne plate et *grep-able* par action sous
+son en-tête (le créer quand même s'il est absent) :
 
 ```markdown
 ## [YYYY-MM-DD] <action> — #canal [[people/destinataire]]
 ```
 
-**Append-only** : ne jamais réécrire les lignes existantes. Usage : « qu'est-ce que j'ai fait sur
-X ? » → `grep -i "X" vault/actions-log.md` puis enrichissement via les briefings référencés.
+**Append-only** : ne jamais réécrire les lignes existantes ni l'en-tête seedé. Usage : « qu'est-ce
+que j'ai fait sur X ? » → `grep -i "X" vault/actions-log.md` puis enrichissement via les briefings
+référencés.
 
 ## Mode re-exécution (même jour)
 
