@@ -2,6 +2,11 @@
 <!-- STATUS: 🔭 PROSPECTIVE / ANALYSIS (2026-06-21) — design captured, not yet an  -->
 <!-- ADR, NOT implemented. Provisional direction agreed; decide + write the ADR     -->
 <!-- when a release actually changes the constitution (see "Why this is non-blocking"). -->
+<!-- SEQUENCING DECIDED (2026-07-18): fresh-install "green" (legacy-safe) ships       -->
+<!-- BEFORE the personal-brain migration; the deployed fleet's re-layering + the      -->
+<!-- broader big-jump upgrade experience (completeness, what-you-gained notes,        -->
+<!-- pre-flight reindex preview) + heavy QA are deferred AFTER it. See "Sequencing    -->
+<!-- decision" below.                                                                 -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # Propagating engine improvements into user-editable provided files (constitution + shipped skills)
@@ -54,6 +59,9 @@ install-if-absent behavior for shipped skills.
   edits scattered anywhere — the `ENGINE:BEGIN/END` boundary cannot be inferred retroactively without risk
   of capturing a personal edit inside the engine block. Option 3 needs a migration story (likely lean on the
   2/1 net for the first jump, or introduce the boundary only on fresh installs + a guided one-time migration).
+  _(Sequencing + safety framing decided 2026-07-18, see "Sequencing decision": fresh installs get the
+  boundary; deployed monoliths stay sacred/untouched and are re-layered later via an opt-in, QA'd upgrade,
+  never inferred blindly. The retro-fit split algorithm itself still to design.)_
 - [ ] **Editing an engine *instruction*** (not just adding one's own) — prose doesn't override like CSS;
   decide whether that's supported (probably via the personal zone / overrides, or accepted as out-of-scope).
 - [ ] **Where the base lives** for option 2 (store the rendered base, or the template version + params to
@@ -77,6 +85,55 @@ independent reasons — so this enhancement is not required to ship any current 
 
 This enhancement becomes relevant only the day a release *does* change the constitution (a `constitutionTemplate`
 bump). Until then, the current install-if-absent / sacred behavior is the correct, safe default.
+
+## Sequencing decision (2026-07-18) — after the personal-brain migration; broaden to the fleet's upgrade experience
+
+> **Cross-plan order:** this section is Gate 1 (green) and Gate 3 (fleet re-layering) of
+> [`../ROADMAP.md`](../ROADMAP.md), the ordering authority. This plan owns the *how*; the ROADMAP owns
+> the *order relative to the migration*.
+
+**Decision.** Build the *legacy re-layering* (retro-fitting existing monolithic brains) **after** the personal
+second-brain migration (`second-brain-migration-and-engine-upstream-action.md`, Track D). Ship **only** the
+*legacy-safe fresh-install layering* **before** that migration's generate step, so the regenerated personal
+brain is born two-layer. This surfaced while realising the concern is broader than the constitution merge: it
+is the **whole upgrade experience for the brains already deployed in the field** from an earlier Kenjaku
+release (the pre-layering, monolithic-constitution line, ~v3.2.x).
+
+- [ ] **Fresh-install layering ("green") is a prerequisite of the migration's generate step, and must be
+      legacy-SAFE by construction.** Do **not** remove `CLAUDE.md` from `SACRED_FILES`
+      (`scripts/lib/engine-apply-plan.mjs:32`): that would expose every deployed monolithic brain to a clobber
+      on its next update. Instead **add a new engine-owned constitution layer file** (e.g. `CLAUDE.engine.md`,
+      in `replace`, absent from `SACRED_FILES`) that a fresh, thin, sacred `CLAUDE.md` `@import`s. Deployed
+      monolithic brains keep their sacred `CLAUDE.md` untouched (they simply lack the new file).
+  - [ ] **Green-time "do-no-harm" QA (required before releasing green):** prove a reproduced legacy brain
+        updating past green is untouched — no clobber of its `CLAUDE.md`, no reindex, no behaviour change.
+- [ ] **The heavy re-layering QA is safely deferred to AFTER the migration.** The deployed fleet is safe in the
+      interim, for the reasons in "Why this is non-blocking": sacred `CLAUDE.md`, `constitutionTemplate` frozen
+      at `1.0.0`, a stale constitution cannot break the engine. Nothing forces their upgrade.
+- [ ] **The deferred chantier is the fleet's UPGRADE EXPERIENCE, not only the constitution merge.** Scope:
+  - [ ] **(A) Completeness across a big jump.** `update-engine` is **state-convergent** (fetch the latest ref,
+        apply the current manifest's regimes → one jump converges to target; the manifest + reconciler are
+        present since before v3.2.1), so no intermediate versions are replayed. The remaining completeness gap
+        is exactly the **frozen** files: the constitution (this plan) and the shipped user-skills under
+        `.claude/skills/` (`coach`, `prepare-1-1`, … install-if-absent). Close them the same way.
+  - [ ] **(B) Tell the user what they gained.** A human, benefit-framed changelog spanning the jump (from the
+        brain's recorded ref to target), surfaced at upgrade. Reuse the "The One With…" release codenames as the
+        substrate; suited to non-technical owners.
+  - [ ] **(C) Pre-flight preview (say it BEFORE upgrading).** A dry-run that computes the apply plan **and the
+        reindex decision** (recorded vs target `indexSchemaVersion`) and shows it before applying: what lands,
+        and whether notes will be re-encoded + the rough cost. Today `update-engine` reports reindex only
+        *after* (`scripts/update-engine.mjs:15`, `runReindex` IFF the schema moved); expose it *ahead*.
+  - [ ] **Grounded reindex fact:** `indexSchemaVersion` has been **`1` continuously** since before v3.2.1
+        (introduced 2026-06-14, never changed) through today → a **v3.2.x → current jump triggers NO reindex**.
+        A reindex only ever fires if the index format changes in the future — exactly when (C) earns its keep.
+  - [ ] **QA fixtures:** reproduce legacy brains from the release **tag(s)** (checkout the deployed version, run
+        the installer) + **synthetic** personal edits to exercise the nasty boundary cases. Never use real
+        deployed brains' private content. First step: **enumerate the versions actually deployed** so QA covers
+        the real span.
+- [ ] **This deferred chantier likely graduates to its own plan** ("engine upgrade experience for the deployed
+      fleet") when picked up; F-B7e (constitution re-layering) becomes one component of it.
+
+> Cross-ref: the reciprocal prerequisite note lives in the migration plan's Track D.
 
 ## Next steps (post-demo)
 
