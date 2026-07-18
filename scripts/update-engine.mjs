@@ -44,10 +44,13 @@ export { defaultCountVaultNotes };
 // Human summary the brain-side `update-engine` skill shows the user (Step 6, ADR
 // 0016). Pure so the wording is unit-tested; the CLI entry only wires the I/O.
 export function formatReport(report) {
-  const { ref, engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills = [], mcpServersAdded = [], hooksAdded = [] } = report;
+  const { ref, engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills = [], mcpServersAdded = [], hooksAdded = [], hooksRepaired = [] } = report;
   // F-B2 (ADR 0026): the engine-owned SessionStart hooks wired into an upgrader's
   // settings.json, by their bare name (scripts/session-health.mjs → session-health).
   const wiredHooks = hooksAdded.map((s) => s.replace(/^scripts\//, "").replace(/\.mjs$/, ""));
+  // Issue #31: broken `cmd /c "…\run-node.cmd"` hook/statusLine commands healed in place
+  // on a pre-fix Windows brain (by bare name; "statusLine" passes through unchanged).
+  const healedHooks = hooksRepaired.map((s) => s.replace(/^scripts\//, "").replace(/\.mjs$/, ""));
   // Honest reindex line: a schema move re-encodes EVERY note; the health-note pairing (ADR
   // 0026 decision B, upgraders) only makes sure the one engine-owned note is present and
   // indexed (incremental — your other notes are untouched) — never claim "the index format
@@ -81,6 +84,9 @@ export function formatReport(report) {
   }
   if (wiredHooks.length > 0) {
     lines.push(`   • new runtime hook(s) wired: ${wiredHooks.join(", ")}`);
+  }
+  if (healedHooks.length > 0) {
+    lines.push(`   • repaired Windows hook command(s) (issue #31 — 'laude' error): ${healedHooks.join(", ")}`);
   }
   // F1.6 (ADR 0026, point 4): a freshly-installed skill/MCP is on disk but Claude
   // loads skills/MCP/hooks when a conversation STARTS (Layer B config-freeze), so it
@@ -152,7 +158,7 @@ export async function updateEngine({
   //    vault notes — all behind the deterministic, idempotent
   //    `reconcileBrain`. Extracted so the SAME reconciler runs at auto-finalize (a fresh
   //    child process at the end of this function) and at SessionStart self-heal.
-  const { copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded, hooksAdded } =
+  const { copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded, hooksAdded, hooksRepaired } =
     await reconcileBrain({
       brainDir,
       platform,
@@ -206,7 +212,7 @@ export async function updateEngine({
     // swallowed on purpose — the update succeeded; self-heal will finish the job.
   }
 
-  return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded, hooksAdded };
+  return { ref: updated.source.ref, engineVersion: updated.engineVersion, copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded, hooksAdded, hooksRepaired };
 }
 
 // ── CLI entry (the command the brain-side `update-engine` skill runs) ─────────

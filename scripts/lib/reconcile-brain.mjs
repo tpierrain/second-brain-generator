@@ -27,7 +27,7 @@ import { matchesAny } from "./glob-match.mjs";
 import { installStagedSkills } from "./staged-skills.mjs";
 import { seedHealthNote } from "./staged-health-note.mjs";
 import { reconcileMcpServers } from "./mcp-reconcile.mjs";
-import { reconcileHooks } from "./hooks-reconcile.mjs";
+import { reconcileHooks, repairEngineHookCommands, repairWin32NodePrefix } from "./hooks-reconcile.mjs";
 import { needsReindex } from "./reindex-trigger.mjs";
 import { listFilesRelPosix } from "./fs-walk.mjs";
 import { selectEngineFilesToCopy } from "./engine-copy-select.mjs";
@@ -135,20 +135,34 @@ export async function reconcileBrain({
   //    session-status bootstrap tick spawns this reconcile in self-heal mode (no 2nd update
   //    needed). Upgraders from v3.3.0+ converge the same way in-band via auto-finalize.
   const hooksAdded = [];
+  const hooksRepaired = [];
   const settingsTemplatePath = join(sourceDir, ".claude", "settings.json.template");
   const brainSettingsPath = join(brainDir, ".claude", "settings.json");
   if (existsSync(settingsTemplatePath) && existsSync(brainSettingsPath)) {
     const projectRoot = brainDir.split("\\").join("/"); // {{PROJECT_ROOT}} is posix (cf. step 2.ter)
     const brainSettings = JSON.parse(readFileSync(brainSettingsPath, "utf8"));
     const templateSettings = JSON.parse(readFileSync(settingsTemplatePath, "utf8"));
-    const { hooks, hooksAdded: added } = reconcileHooks({
+    const { hooks: addedHooks, hooksAdded: added } = reconcileHooks({
       brainHooks: brainSettings.hooks ?? {},
       templateHooks: templateSettings.hooks ?? {},
       projectRoot,
     });
-    if (added.length > 0) {
-      writeFileSync(brainSettingsPath, JSON.stringify({ ...brainSettings, hooks }, null, 2) + "\n");
+    // Issue #31: heal the broken `cmd /c "…\run-node.cmd"` prefix that pre-fix
+    // Windows brains baked into every hook — AND into the top-level statusLine
+    // command — which Git Bash eats (`claude`→`laude`). Narrow, in-place, idempotent
+    // (a no-op on posix and on already-fixed brains), so a converged brain stays
+    // byte-identical and the deployed fleet self-heals at the next restart's reconcile.
+    const { hooks: healedHooks, repaired } = repairEngineHookCommands({ hooks: addedHooks, platform, projectRoot });
+    const healedStatusLine = brainSettings.statusLine?.command
+      ? repairWin32NodePrefix(brainSettings.statusLine.command, projectRoot)
+      : brainSettings.statusLine?.command;
+    const statusLineRepaired = healedStatusLine !== brainSettings.statusLine?.command;
+    if (added.length > 0 || repaired.length > 0 || statusLineRepaired) {
+      const nextSettings = { ...brainSettings, hooks: healedHooks };
+      if (statusLineRepaired) nextSettings.statusLine = { ...brainSettings.statusLine, command: healedStatusLine };
+      writeFileSync(brainSettingsPath, JSON.stringify(nextSettings, null, 2) + "\n");
       hooksAdded.push(...added);
+      hooksRepaired.push(...repaired, ...(statusLineRepaired ? ["statusLine"] : []));
     }
   }
 
@@ -193,7 +207,7 @@ export async function reconcileBrain({
   //    any reindex so it reflects the current vault.
   const vaultNoteCount = await countVaultNotes({ brainDir });
 
-  return { copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded, hooksAdded };
+  return { copied, regenerated, reindexed, reindexReason, vaultNoteCount, installedSkills, mcpServersAdded, hooksAdded, hooksRepaired };
 }
 
 // ── CLI entry — what the auto-finalize child process runs (ADR 0026, Layer A) ──

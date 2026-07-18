@@ -622,6 +622,64 @@ test("reconcileBrain — a converged brain's settings.json is left byte-identica
   assert.equal(sha256(join(brainDir, ".claude/settings.json")), settingsHash, "settings.json must be byte-identical on the 2nd run (no churn)");
 });
 
+// A DEPLOYED Windows brain generated before the issue-#31 fix: every engine hook
+// command (and the statusLine) baked the broken `cmd /c "<win-backslash>\run-node.cmd"`
+// prefix that Git Bash eats. Uses win32 backslash paths, as the old installer rendered them.
+function brokenWin32Settings(rootPosix) {
+  const rootWin = rootPosix.split("/").join("\\");
+  const broken = (script) => `cmd /c "${rootWin}\\scripts\\run-node.cmd" "${rootPosix}/scripts/${script}"`;
+  return {
+    mine: true,
+    statusLine: { type: "command", command: broken("status-line.mjs") },
+    hooks: {
+      PostToolUse: [{ matcher: "Write|Edit", hooks: [{ type: "command", command: broken("auto-commit.mjs"), timeout: 30000 }] }],
+      SessionStart: ["session-self-heal", "session-health", "session-obsidian-hint", "session-status"].map((s) => ({
+        matcher: "", hooks: [{ type: "command", command: broken(`${s}.mjs`), timeout: 20000 }],
+      })),
+      Stop: [{ matcher: "", hooks: [{ type: "command", command: broken("auto-push.mjs"), timeout: 20000 }] }],
+    },
+  };
+}
+
+// ── Test 13.bis: issue #31 — a DEPLOYED win32 brain's broken `cmd /c "…\run-node.cmd"`
+//    hook + statusLine commands are HEALED in place (self-heal reconcile). The additive
+//    merge never rewrites an existing command, so without this repair those brains stay
+//    broken forever. Idempotent: a second pass leaves settings.json byte-identical.
+test("reconcileBrain (win32) — heals the issue-#31 broken hook + statusLine commands in place", async (t) => {
+  const brainDir = buildBrain();
+  t.after(() => rmSync(brainDir, { recursive: true, force: true }));
+  const rootPosix = brainDir.split("\\").join("/");
+  writeFile(brainDir, ".claude/settings.json", JSON.stringify(brokenWin32Settings(rootPosix), null, 2) + "\n");
+  // self-heal mode: the brain reads its OWN template (sourceDir === brainDir).
+  writeFile(brainDir, ".claude/settings.json.template", JSON.stringify(templateSessionStart(), null, 2) + "\n");
+  const target = manifest();
+  const local = manifest({ ragVersion: "1.0.0" });
+
+  const s1 = seams();
+  const report = await reconcile({ brainDir, platform: "win32", sourceDir: brainDir, target, local, ...s1 });
+
+  const settings = JSON.parse(readFileSync(join(brainDir, ".claude/settings.json"), "utf8"));
+  const allCmds = [
+    settings.statusLine.command,
+    ...Object.values(settings.hooks).flatMap((groups) => groups.flatMap((g) => g.hooks.map((h) => h.command))),
+  ];
+  for (const cmd of allCmds) {
+    assert.doesNotMatch(cmd, /cmd \/c/i, "no nested cmd /c must remain after the repair");
+    assert.doesNotMatch(cmd, /\\/, "no backslash must remain (Git Bash would eat it)");
+    assert.match(cmd, new RegExp(`^${rootPosix}/scripts/run-node\\.cmd `), "the fixed forward-slash run-node.cmd prefix");
+  }
+  assert.ok(report.hooksRepaired.includes("scripts/session-self-heal.mjs"), "a healed hook is reported");
+  assert.ok(report.hooksRepaired.includes("scripts/auto-push.mjs"), "the Stop hook is healed too");
+  assert.ok(report.hooksRepaired.includes("statusLine"), "the statusLine command is healed too");
+  assert.equal(settings.mine, true, "a user-owned settings key survives the repair");
+
+  // Idempotent: a second self-heal pass repairs nothing and leaves the file byte-identical.
+  const hash = sha256(join(brainDir, ".claude/settings.json"));
+  const second = await reconcile({ brainDir, platform: "win32", sourceDir: brainDir, target, local, ...seams() });
+  assert.deepEqual(second.hooksRepaired, [], "a converged brain repairs nothing");
+  assert.equal(sha256(join(brainDir, ".claude/settings.json")), hash, "no churn on the 2nd pass");
+});
+
 // ── Test 14: F-B7 2d — STAGED skills converge on upgraders. A new upgrader-bound
 //    skill ships at the NON-sacred `engine-skills/<name>/` path (the sacred scrub forbids
 //    delivering under `.claude/skills/`). reconcileBrain install-if-absent's it into
