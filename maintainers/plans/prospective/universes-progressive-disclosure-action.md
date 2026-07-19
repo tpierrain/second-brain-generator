@@ -81,7 +81,7 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
 > schema is what triggers the one-shot upgrade reindex across the fleet, and that retirement of the
 > "v3.2.x → current = no reindex" simplification is a **coordinated** Gate-4 action (see the
 > fleet-upgrade plan). The engine **code** constant is already `2` (fresh brains are born at 2).
-- [x] **Step 4 — Progressive disclosure (the visibility gate).** _(2026-07-19 · branch `feat/universes`)_
+- [x] **Step 4 — Progressive disclosure (the visibility gate).** _(2026-07-19 · `dc2ff38`, branch `feat/universes`)_
   - [x] Deterministic gate `isMultiverse(registry)` (`scripts/lib/universes.mjs`): true only once
         universe count >= 2 (the implicit default plus one created). Single universe → total silence.
   - [x] SessionStart reminder hook `scripts/session-universe.mjs` (pure core `scripts/lib/universe-reminder.mjs`):
