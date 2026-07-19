@@ -102,7 +102,7 @@ test("source_url round-trips from indexDocument to searchSimilar", () => {
     "https://www.notion.so/abc"
   );
 
-  const results = searchSimilarIn(db, [1, 0, 0], 5);
+  const results = searchSimilarIn(db, [1, 0, 0], 5, { universe: "default" });
 
   assert.equal(results[0].sourceUrl, "https://www.notion.so/abc");
 });
@@ -150,7 +150,7 @@ test("a note without a source_url reads back null (grandfathered / non-mirror)",
     { section: "S", content: "world", chunkIndex: 0, embedding: [1, 0, 0] },
   ]);
 
-  const results = searchSimilarIn(db, [1, 0, 0], 5);
+  const results = searchSimilarIn(db, [1, 0, 0], 5, { universe: "default" });
 
   assert.equal(results[0].sourceUrl, null);
 });
@@ -166,7 +166,7 @@ test("cosineSimilarity: identical query and embedding score exactly 1", () => {
     { section: "S", content: "c", chunkIndex: 0, embedding: [3, 4] },
   ]);
 
-  const [hit] = searchSimilarIn(db, [3, 4], 5);
+  const [hit] = searchSimilarIn(db, [3, 4], 5, { universe: "default" });
 
   assert.ok(Math.abs(hit.score - 1) < 1e-6, `expected ~1, got ${hit.score}`);
 });
@@ -181,7 +181,7 @@ test("cosineSimilarity: asymmetric vectors score the exact cosine (4/5)", () => 
     { section: "S", content: "c", chunkIndex: 0, embedding: [2, 1] },
   ]);
 
-  const [hit] = searchSimilarIn(db, [1, 2], 5);
+  const [hit] = searchSimilarIn(db, [1, 2], 5, { universe: "default" });
 
   assert.ok(Math.abs(hit.score - 0.8) < 1e-6, `expected 0.8, got ${hit.score}`);
 });
@@ -315,7 +315,7 @@ test("removeDeletedDocsIn: deletes docs absent from the existing set, with their
     ["keep.md"]
   );
   // the orphaned chunk is gone too (no result for the deleted doc).
-  assert.equal(searchSimilarIn(db, [1, 0], 5).length, 1);
+  assert.equal(searchSimilarIn(db, [1, 0], 5, { universe: "default" }).length, 1);
 });
 
 test("removeDeletedDocsIn: removes nothing when every doc still exists", () => {
@@ -352,7 +352,7 @@ test("searchSimilarIn: results are ordered by descending score", () => {
   applySchema(db);
   seedRanked(db);
 
-  const results = searchSimilarIn(db, [1, 0], 5);
+  const results = searchSimilarIn(db, [1, 0], 5, { universe: "default" });
 
   assert.deepEqual(
     results.map((r) => r.path),
@@ -365,7 +365,7 @@ test("searchSimilarIn: limit keeps only the top-N hits", () => {
   applySchema(db);
   seedRanked(db);
 
-  const results = searchSimilarIn(db, [1, 0], 2);
+  const results = searchSimilarIn(db, [1, 0], 2, { universe: "default" });
 
   assert.deepEqual(
     results.map((r) => r.path),
@@ -383,7 +383,7 @@ test("searchSimilarIn: typeFilter keeps only matching-type docs", () => {
     { section: "S", content: "c", chunkIndex: 0, embedding: [1, 0] },
   ]);
 
-  const results = searchSimilarIn(db, [1, 0], 5, "person");
+  const results = searchSimilarIn(db, [1, 0], 5, { universe: "default" }, "person");
 
   assert.deepEqual(
     results.map((r) => r.path),
@@ -401,7 +401,7 @@ test("searchSimilarIn: tagFilter keeps only docs carrying the tag", () => {
     { section: "S", content: "c", chunkIndex: 0, embedding: [1, 0] },
   ]);
 
-  const results = searchSimilarIn(db, [1, 0], 5, undefined, "projectX");
+  const results = searchSimilarIn(db, [1, 0], 5, { universe: "default" }, undefined, "projectX");
 
   assert.deepEqual(
     results.map((r) => r.path),
@@ -424,11 +424,98 @@ test("searchSimilarIn: type AND tag filters combine (both clauses required)", ()
     { section: "S", content: "c", chunkIndex: 0, embedding: [1, 0] },
   ]);
 
-  const results = searchSimilarIn(db, [1, 0], 5, "person", "teamA");
+  const results = searchSimilarIn(db, [1, 0], 5, { universe: "default" }, "person", "teamA");
 
   assert.deepEqual(
     results.map((r) => r.path),
     ["match.md"]
+  );
+});
+
+// --- universe scope filter (ADR 0034, the relevance boundary) ----------------
+
+function indexInUniverse(
+  db: Database.Database,
+  path: string,
+  universe: string
+): void {
+  indexDocumentIn(
+    db,
+    path,
+    path,
+    "topic",
+    [],
+    "h",
+    [{ section: "S", content: "c", chunkIndex: 0, embedding: [1, 0] }],
+    null,
+    universe
+  );
+}
+
+test("searchSimilarIn: a foreign-universe doc never appears in default-scoped results", () => {
+  const db = new Database(":memory:");
+  applySchema(db);
+  indexInUniverse(db, "plain.md", "default");
+  indexInUniverse(db, "acme/secret.md", "acme");
+
+  const results = searchSimilarIn(db, [1, 0], 5, { universe: "default" });
+
+  assert.deepEqual(
+    results.map((r) => r.path),
+    ["plain.md"]
+  );
+});
+
+test("searchSimilarIn: the owner's default-universe notes stay visible from any active universe", () => {
+  const db = new Database(":memory:");
+  applySchema(db);
+  indexInUniverse(db, "shared.md", "default");
+  indexInUniverse(db, "blue/note.md", "blue");
+  indexInUniverse(db, "acme/foreign.md", "acme");
+
+  const results = searchSimilarIn(db, [1, 0], 5, { universe: "blue" });
+
+  // Active universe (blue) OR the default cross-cutting universe — never acme.
+  assert.deepEqual(
+    results.map((r) => r.path).sort(),
+    ["blue/note.md", "shared.md"]
+  );
+});
+
+test("searchSimilarIn: allUniverses relaxes the scope and returns every universe", () => {
+  const db = new Database(":memory:");
+  applySchema(db);
+  indexInUniverse(db, "shared.md", "default");
+  indexInUniverse(db, "blue/note.md", "blue");
+  indexInUniverse(db, "acme/foreign.md", "acme");
+
+  const results = searchSimilarIn(db, [1, 0], 5, {
+    universe: "blue",
+    allUniverses: true,
+  });
+
+  assert.deepEqual(
+    results.map((r) => r.path).sort(),
+    ["acme/foreign.md", "blue/note.md", "shared.md"]
+  );
+});
+
+test("searchSimilarIn: scope AND type filter combine (foreign universe excluded even on a type hit)", () => {
+  const db = new Database(":memory:");
+  applySchema(db);
+  // Same type, different universe: only the active-universe one survives.
+  indexDocumentIn(db, "blue/p.md", "P", "person", [], "h", [
+    { section: "S", content: "c", chunkIndex: 0, embedding: [1, 0] },
+  ], null, "blue");
+  indexDocumentIn(db, "acme/p.md", "P", "person", [], "h", [
+    { section: "S", content: "c", chunkIndex: 0, embedding: [1, 0] },
+  ], null, "acme");
+
+  const results = searchSimilarIn(db, [1, 0], 5, { universe: "blue" }, "person");
+
+  assert.deepEqual(
+    results.map((r) => r.path),
+    ["blue/p.md"]
   );
 });
 
@@ -450,6 +537,31 @@ test("documents: applySchema migrates a pre-source_url table out of band", () =>
   applySchema(db);
 
   assert.ok(columnNames(db, "documents").includes("source_url"));
+});
+
+test("documents: applySchema migrates a pre-universe table out of band, grandfathering rows to the default", () => {
+  const db = new Database(":memory:");
+  // A brain indexed before the universe column existed: the CREATE IF NOT EXISTS is
+  // a no-op on the existing table, so the column must be added out of band. A row
+  // written before the migration must grandfather to the default universe (NOT NULL
+  // + DEFAULT), never NULL — otherwise the scope filter would silently drop it.
+  db.exec(`
+    CREATE TABLE documents (
+      path TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      type TEXT NOT NULL,
+      tags TEXT NOT NULL DEFAULT '[]',
+      hash TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    INSERT INTO documents (path, title, type, hash, updated_at)
+    VALUES ('legacy.md', 'Legacy', 'note', 'h', datetime('now'));
+  `);
+
+  applySchema(db);
+
+  assert.ok(columnNames(db, "documents").includes("universe"));
+  assert.equal(universeOf(db, "legacy.md"), "default");
 });
 
 test("applySchema is idempotent: a second run adds no duplicate column", () => {

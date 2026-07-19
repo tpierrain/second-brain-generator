@@ -23,6 +23,7 @@ import { existsSync } from "fs";
 import { resolve } from "path";
 import { createEmbedder } from "./lib/embedder.js";
 import { getStats, searchSimilar } from "./lib/vector-store.js";
+import { DEFAULT_UNIVERSE } from "./lib/universe.js";
 import { VAULT_DIR, SEARCH_DEFAULT_LIMIT } from "./lib/config.js";
 import {
   runHealthCheck,
@@ -54,7 +55,11 @@ const seams: VitalsSeams = {
   // FULL only: embed + search the canary in one go (loads ONNX / hits the API).
   searchCanary: async (token) => {
     const queryEmbedding = await embedder.embedQuery(token);
-    return searchSimilar(queryEmbedding, SEARCH_DEFAULT_LIMIT).length;
+    // Health canary: an engine self-check, universe-agnostic → span all.
+    return searchSimilar(queryEmbedding, SEARCH_DEFAULT_LIMIT, {
+      universe: DEFAULT_UNIVERSE,
+      allUniverses: true,
+    }).length;
   },
   // LIGHT only: readiness WITHOUT running the embedder. The in-process adapter needs
   // no key and its weights re-download on first embed (a loud, self-healing event, not

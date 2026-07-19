@@ -12,6 +12,8 @@ import {
   currentIndexSchemaVersion,
   INDEX_SCHEMA_VERSION,
 } from "./lib/vector-store.js";
+import { readActiveUniverse } from "./lib/active-universe.js";
+import { DEFAULT_UNIVERSE } from "./lib/universe.js";
 import {
   checkIndexFreshness,
   checkSchemaFreshness,
@@ -67,8 +69,9 @@ server.tool(
     type: z.string().optional().describe("Filter by note type (e.g. daily, person, topic, decision, meeting, backlog...)"),
     tags: z.string().optional().describe("Filter by tag (partial match)"),
     limit: z.number().optional().describe(`Max number of results (default: ${SEARCH_DEFAULT_LIMIT})`),
+    allUniverses: z.boolean().optional().describe("Span EVERY universe instead of the active one (rare cross-universe query). Default: false — results stay in the active universe plus the owner's cross-cutting notes."),
   },
-  async ({ query, type, tags, limit }) => {
+  async ({ query, type, tags, limit, allUniverses }) => {
     // Identity guard: if the index was populated by a different embedder than the
     // one configured today, we do NOT return bogus results (vectors of incompatible
     // dimensions). We return the confirm-gate prose, which Claude relays; the
@@ -98,7 +101,10 @@ server.tool(
       }
       throw err;
     }
-    const results = searchSimilar(queryEmbedding, limit ?? SEARCH_DEFAULT_LIMIT, type, tags);
+    // The active universe is injected SERVER-SIDE (ADR 0034): read from persisted
+    // state, never taken from the LLM, so the scope cannot be forgotten or spoofed.
+    const scope = { universe: readActiveUniverse(), allUniverses: allUniverses ?? false };
+    const results = searchSimilar(queryEmbedding, limit ?? SEARCH_DEFAULT_LIMIT, scope, type, tags);
 
     if (results.length === 0) {
       return { content: [{ type: "text", text: "No results found in the vault." }] };
@@ -266,7 +272,8 @@ server.tool(
       // index is queryable, and retrieval returns the seeded note. Never reindexes.
       searchCanary: async (token) => {
         const queryEmbedding = await embedder.embedQuery(token);
-        return searchSimilar(queryEmbedding, 8).length;
+        // Health canary: an engine self-check, universe-agnostic → span all.
+        return searchSimilar(queryEmbedding, 8, { universe: DEFAULT_UNIVERSE, allUniverses: true }).length;
       },
       // The dedicated health-check note must still be on disk; if a user deleted it,
       // the canary is "unknown" (we cannot run it), never a false "broken".

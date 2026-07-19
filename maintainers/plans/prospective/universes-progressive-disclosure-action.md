@@ -43,7 +43,7 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
 
 ## Tracking
 
-- [x] **Step 1 — Data model: the always-on, invisible `universe`.** _(2026-07-19 · branch `feat/universes`)_
+- [x] **Step 1 — Data model: the always-on, invisible `universe`.** _(2026-07-19 · `e05322e`, branch `feat/universes`)_
   - [x] Add `universe TEXT NOT NULL DEFAULT '<default>'` to the `documents` table; bump
         `INDEX_SCHEMA_VERSION` 1 → 2 (fresh brains born at 2; deployed brains reindex once on upgrade).
   - [x] `frontmatter-parser` extracts `universe` (absent → the default constant); expose it on
@@ -51,13 +51,17 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
   - [x] Indexer threads `universe` into `indexDocument*`; the engine stamps the default when absent.
   - [x] Decide + name the **default universe constant** (one place); note it never renders for a
         single-universe user. → `rag/src/lib/universe.ts` `DEFAULT_UNIVERSE = "default"`.
-- [ ] **Step 2 — Deterministic default scope (the relevance boundary).**
-  - [ ] `searchSimilarIn` filters `WHERE d.universe = ?` **OR** `d.universe = <default>` (owner's
-        cross-cutting notes always visible); `universe` becomes a **required internal argument**.
-  - [ ] MCP `search`: the active universe is **injected server-side from persisted state**, not taken
-        from the caller; add an explicit `allUniverses` (relax filter) for the rare cross-universe query.
-  - [ ] Test: a foreign-universe doc **never** appears in default-scoped results; the override returns
-        it. Run **mutation testing** on the filter (assert the guard is killed-by-test).
+- [x] **Step 2 — Deterministic default scope (the relevance boundary).** _(2026-07-19 · branch `feat/universes`)_
+  - [x] `searchSimilarIn` filters `WHERE d.universe = ?` **OR** `d.universe = <default>` (owner's
+        cross-cutting notes always visible); `universe` becomes a **required internal argument**
+        (a `SearchScope { universe, allUniverses? }` object).
+  - [x] MCP `search`: the active universe is **injected server-side from persisted state**
+        (`active-universe.ts` reader, CACHE_DIR), not taken from the caller; explicit `allUniverses`
+        tool param relaxes the filter for the rare cross-universe query.
+  - [x] Test: a foreign-universe doc **never** appears in default-scoped results; the override returns
+        it. **Mutation** on the scope filter: guard killed-by-test (zero survivors on the filter and the
+        universe migration; `universe.ts` 100%; remaining survivors are pre-existing documented
+        equivalents `closeDb`/`getDb`).
 - [ ] **Step 3 — Active-universe state + the `/switch` skill.**
   - [ ] Persisted state (e.g. `.vault-rag/active-universe`) + a small **deterministic** script
         (`set-active-universe.mjs`) to read/write it; a `universes.json` registry (list of created

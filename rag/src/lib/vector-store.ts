@@ -308,13 +308,26 @@ export interface SearchResult {
   sourceUrl?: string | null;
 }
 
+/**
+ * The soft retrieval scope (ADR 0034). `universe` is the active one; results are
+ * scoped to it OR the default universe (the owner's cross-cutting notes stay
+ * visible everywhere). `allUniverses` relaxes the scope entirely for the rare
+ * cross-universe query. This is a REQUIRED argument on the search path so the MCP
+ * server cannot forget to inject it (a relevance boundary, never a security one).
+ */
+export interface SearchScope {
+  universe: string;
+  allUniverses?: boolean;
+}
+
 export function searchSimilar(
   queryEmbedding: number[],
   limit: number,
+  scope: SearchScope,
   typeFilter?: string,
   tagFilter?: string
 ): SearchResult[] {
-  return searchSimilarIn(getDb(), queryEmbedding, limit, typeFilter, tagFilter);
+  return searchSimilarIn(getDb(), queryEmbedding, limit, scope, typeFilter, tagFilter);
 }
 
 /** DB-injectable core of {@link searchSimilar} — testable in-memory. */
@@ -322,6 +335,7 @@ export function searchSimilarIn(
   d: Database.Database,
   queryEmbedding: number[],
   limit: number,
+  scope: SearchScope,
   typeFilter?: string,
   tagFilter?: string
 ): SearchResult[] {
@@ -333,6 +347,13 @@ export function searchSimilarIn(
   `;
   const conditions: string[] = [];
   const params: unknown[] = [];
+
+  // Universe scope: active OR default, unless the caller explicitly spans all.
+  // The default universe is always ORed in so cross-cutting notes never disappear.
+  if (!scope.allUniverses) {
+    conditions.push("(d.universe = ? OR d.universe = ?)");
+    params.push(scope.universe, DEFAULT_UNIVERSE);
+  }
 
   if (typeFilter) {
     conditions.push("d.type = ?");
