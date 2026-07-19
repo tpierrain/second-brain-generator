@@ -160,6 +160,16 @@ The RAG (`rag/`) splits each Markdown file into **chunks** (one per `#`/`##`/`##
 
 **⚠️ Fail-loud — never a disguised out-of-vault answer.** If the `mcp__vault-rag__*` tools are **unavailable, missing, or return an error** (MCP server not loaded, missing Gemini key, empty index…), you must **SAY IT LOUDLY** — "⚠️ RAG unavailable: I can't query the vault" — and **REFUSE to fabricate an answer** from the Internet or your general knowledge. A second brain that answers beside the vault *while appearing to work* is worse than a brain that frankly says it's down. This applies **in particular to the demo question** (the user's first contact): no plausible but out-of-vault answer. Instead, indicate how to fix it (key in `.env`, restart Claude Code, `/mcp`).
 
+### Universes — a soft retrieval scope (advanced, opt-in)
+
+**Ignore this whole section if you have a single universe** (the default): `search_vault` behaves exactly as above and you never see the word "universe". It only matters once a **second universe exists** (created via `/switch`).
+
+A **universe** is a *soft* retrieval scope over the one shared vault: successive employers, clients or spheres kept as **separate default corpora** inside the same brain. While a universe is active, `search_vault` returns **that universe's notes plus your cross-cutting (default) notes**, and nothing from the others — so a question about your current context isn't diluted by an old one.
+
+- **The engine scopes the search, not you.** The active universe is read from persisted state (`.vault-rag/active-universe`) and injected **server-side**; you never pass it. To deliberately search **across every universe**, set the `search_vault` tool's `allUniverses` parameter — surface this only when the user explicitly asks for "all universes" / "every context".
+- **Relevance, not security.** It is a relevance boundary, never an isolation wall: a `grep`, Obsidian, or `get_document` by path can still cross it, and for a private brain that is fine. **Never** describe it as confidentiality.
+- **Switching / creating** goes through the **`/switch`** skill; new notes then file under `vault/<universe>/` (see *Universes — where a note files* under Note format). Re-home a whole external sphere into its own universe with **`/import --universe <name>`**.
+
 ### Local mirrors — live internal zones mirrored into the vault (optional)
 
 A **local mirror** is a zone of an internal tool (Notion today) you declared once; the

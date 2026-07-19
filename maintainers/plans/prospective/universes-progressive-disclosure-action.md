@@ -112,17 +112,26 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
   - [x] Test: importing with `--universe` stamps every note and leaves other frontmatter intact
         (+ triangulated: never-clobber, no-frontmatter, attachment-not-stamped, no-flag-unchanged,
         collision separated by the prefix; `runImport` end-to-end wiring covered).
-- [ ] **Step 7 — Docs behind the gate.**
-  - [ ] Mention universes in the engine-owned note-format / `CLAUDE.engine.md` **as an advanced, opt-in
-        section** (never in the sacred layer, never implying it is required).
-  - [ ] `.env.example` / SETUP note if any config surfaces (likely none).
+- [x] **Step 7 — Docs behind the gate.** _(2026-07-19 · branch `feat/universes`)_
+  - [x] Universes documented in the engine-owned `CLAUDE.engine.md` (+ `templates/fr/CLAUDE.engine.md`)
+        as **advanced, opt-in** sections, each opening with "skip this if you have a single universe":
+        the *filing layout* under Note format (Step 5) and the *concept + retrieval scope* under Routing
+        (soft scope, engine-injected active universe, `allUniverses` override, relevance-not-security,
+        pointers to `/switch` and `/import --universe`). Never in the sacred layer; propagation to
+        deployed brains is Gate 3.
+  - [x] No config surfaces: universes use `.vault-rag/` state files, **no env var** → nothing to add to
+        `.env.example`; kept out of SETUP prominence on purpose (progressive disclosure).
 
 ## Verification
 
-- [ ] Full JS + RAG suites green (`node --test` + `npm test`); CI matrix green (Windows included).
+- [x] Full JS + RAG suites green locally (`node --test` scripts suite 723 pass 0 fail; RAG `npm test`
+      399 pass; manifest integrity 11). _(2026-07-19)_
+- [ ] CI matrix green (Windows included) — **pending push / PR** (local macOS green is not the arbiter,
+      cross-platform CI is; not yet run).
 - [ ] Manual: a fresh single-universe brain is byte-for-byte "today" (no universe folder, no frontmatter
       key, no reminder). Creating a second universe surfaces `/switch`, the reminder, and scopes search.
-- [ ] Mutation score on the scope filter (Step 2) confirms the guard is covered.
+- [x] Mutation score on the scope filter (Step 2) confirms the guard is covered (killed-by-test, zero
+      survivors on the filter + universe migration; `universe.ts` 100%). _(2026-07-19 · Step 2)_
 
 ## Sequencing
 
