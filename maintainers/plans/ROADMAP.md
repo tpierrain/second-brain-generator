@@ -58,13 +58,16 @@ safe because **nothing forces** the fleet's upgrade in the interim.
         engine layer is not propagated to deployed brains.
   - [ ] Field-verify a real fresh two-layer install (EN + FR) at Gate 3 generate time.
   - [x] **Canonical plan:** `prospective/engine-managed-file-merge-strategy.md` → §"Sequencing decision".
-- [ ] **Gate 2 — 🌌 Universes: soft, progressively-disclosed retrieval scope (depends on Gate 1). NEXT TO EXECUTE.**
-  - [ ] `universe` column + engine-injected default filter + `/switch` + progressive-disclosure gate
+- [x] **Gate 2 — 🌌 Universes: soft, progressively-disclosed retrieval scope (depends on Gate 1).** _(2026-07-19 · PR #38; CI matrix 7/7 incl. Windows)_
+  - [x] `universe` column + engine-injected default filter + `/switch` + progressive-disclosure gate
         (visible only at count >= 2) + `--universe` import stamp. Bucket-1 change → lands **before** the
         migration *import*.
-  - [ ] **Decision:** `../decisions/0034-progressive-disclosure-of-universes.md`.
-  - [ ] **Canonical plan:** `prospective/universes-progressive-disclosure-action.md`.
-- [ ] **Gate 3 — 🧠 Migration generate (depends on Gate 1 + Gate 2).**
+  - [x] **Decision:** `../decisions/0034-progressive-disclosure-of-universes.md`.
+  - [x] **Canonical plan:** `prospective/universes-progressive-disclosure-action.md`.
+  - [ ] Field-verify a fresh single-universe install is born "today" (no universe folder, no
+        frontmatter key, no reminder) and that creating a 2nd universe surfaces `/switch` + the
+        reminder + scoped search — at Gate 3 generate time.
+- [ ] **Gate 3 — 🧠 Migration generate (depends on Gate 1 + Gate 2). NEXT TO EXECUTE.**
   - [ ] Track D: generate brain → `/import --universe` ~405 notes → layer private capabilities.
   - [ ] **Canonical plan:** `prospective/second-brain-migration-and-engine-upstream-action.md` → Track D.
 - [ ] **Gate 4 — 🔴 Fleet re-layering + big-jump upgrade experience (deferred until after Gate 3).**
@@ -88,8 +91,8 @@ safe because **nothing forces** the fleet's upgrade in the interim.
 | Plan (canonical) | What it delivers | Gate | Status |
 | --- | --- | --- | --- |
 | `prospective/engine-managed-file-merge-strategy.md` | Propagate engine improvements into user-editable provided files (constitution + shipped skills) without clobbering edits. | 1 & 4 | 🔭 Prospective / analysis; sequencing decided. |
-| `prospective/universes-progressive-disclosure-action.md` | A soft, progressively-disclosed per-universe retrieval scope over one shared vault/index (ADR 0034). | 2 | 🔭 Prospective: design agreed, not built. **Next to execute.** |
-| `prospective/second-brain-migration-and-engine-upstream-action.md` | Migrate the pre-existing personal brain (~405 notes) + upstream the generic delta. | 3 | In progress: Tracks A/B/C DONE (PR #29/#30/#32); **Track D after Gate 2**; F post-migration. |
+| `prospective/universes-progressive-disclosure-action.md` | A soft, progressively-disclosed per-universe retrieval scope over one shared vault/index (ADR 0034). | 2 | ✅ Shipped (PR #38, 2026-07-19). Field-verify folds into Gate 3. |
+| `prospective/second-brain-migration-and-engine-upstream-action.md` | Migrate the pre-existing personal brain (~405 notes) + upstream the generic delta. | 3 | In progress: Tracks A/B/C DONE (PR #29/#30/#32); **Track D now unblocked (Gate 2 shipped)**; F post-migration. |
 
 > Other in-flight plans on their own branches (e.g. wiki-health axis 1, marketing page) are **not
 > part of this fleet-upgrade ordering** and are tracked by their own plans + memory pointers; they
