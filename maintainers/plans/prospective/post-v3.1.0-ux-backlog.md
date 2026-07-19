@@ -4,7 +4,8 @@
 
 # Backlog — post-v3.1.0 UX ideas
 
-> **STATUS: 💡 BACKLOG** (created 2026-06-17, slimmed 2026-06-23). Captured ideas, **not committed
+> **STATUS: 💡 BACKLOG** (created 2026-06-17, slimmed 2026-06-23, extended 2026-07-19 with two
+> universes follow-ups). Captured ideas, **not committed
 > work**. Promote one to a real action plan (`*-action.md`, full Tracking section) when it's picked up.
 > **Discipline TDD** (skill `tdd-discipline`), deterministic-first (ADR 0009), Mac/Win/Linux parity
 > (ADR 0015).
@@ -75,3 +76,47 @@ one friendly report, with **opt-in fixes** (never silent writes).
 > Links: [[prefer-deterministic-adr-0009]], the `import` UX plan
 > (`import-ux-folder-picker-and-index-notify-action.md`), the ABI-skew plan
 > (`node-abi-skew-install-runtime-action.md`).
+
+## 💡 Idea — `/switch` should flag the native connectors' single-account limit
+
+Universes model successive **employers / clients / spheres** (ADR 0034). Switching universe usually
+means switching the **account** you operate under, but the **native MCP connectors** (Slack, Notion,
+Google, mail…) are each bound to **one account** and have **no multi-account** notion. So right after a
+`/switch`, those connectors still point at the **previous** account until the user disconnects and
+reconnects them to the new one: a silent mismatch (the RAG is re-scoped correctly, the live connectors
+are not). Surfaced by Thomas during the universes field-verify (2026-07-19).
+
+- [ ] **Behaviour:** past the disclosure gate (count >= 2), when `/switch` changes the active universe
+  **between two created universes** (not the trivial default toggle), append a one-line, non-nagging
+  reminder, e.g. *"Native connectors are single-account; if this universe uses different accounts
+  (Slack, Notion, Google…), disconnect/reconnect them to match."* Emitted by the **deterministic**
+  switch CLI / skill (like the 1→2 onboarding line), never invented by the LLM (ADR 0009).
+- [ ] **The trap (why we can't automate it):** native connector server names are **per-user UUIDs**,
+  not pre-authorizable nor introspectable, so we **cannot** tell which connector points at which
+  account. The reminder stays **generic advice**, not per-connector automation. Cf.
+  [[brain-permission-posture-readonly]].
+- [ ] **Relevance, not enforcement:** the RAG universe boundary is unaffected; this only warns the
+  human about the **live** side. Keep it once-per-switch, quiet, and only past the gate.
+
+> Links: ADR 0034 (universes), [[brain-permission-posture-readonly]] (UUID connectors, single-account).
+
+## 💡 Idea — make `/local-mirror` universe-aware (parity with `/import --universe`)
+
+`/import` gained `--universe` (ADR 0034 Step 6): imported notes are filed under `vault/<universe>/` and
+stamped `universe:` in frontmatter. **`/local-mirror`** also lands content **in the vault** (it
+replicates a Notion zone as Markdown), so mirrored notes are **indexed like any vault note** — yet
+`local-mirror/src` has **zero** universe-awareness today, so every mirrored note is indexed as
+`default` regardless of the active universe. Asymmetry found during the universes field-verify
+(2026-07-19): import is universe-aware, the mirror is not.
+
+- [ ] **Behaviour:** stamp mirrored notes with the **active** universe (read from `.vault-rag/`, as the
+  engine does) or an explicit declared target; file them under `vault/<universe>/…` for a created
+  universe, root for the default. Reuse the pure `stamp-universe.mjs` already used by import;
+  **additive**, never clobber an existing `universe:` key.
+- [ ] **Not a regression:** mirrors always produced `default` notes; this is an **enhancement**, out of
+  scope of the shipped universes plan (which covered `/import` only). Safe to defer.
+- [ ] **Deterministic + tested:** pure stamping seam, injected fs, cross-platform (POSIX paths at the
+  source, cf. the Windows `vaultRagDir` fix). Promote to an action plan before coding.
+
+> Links: ADR 0034 (universes), the universes plan
+> (`universes-progressive-disclosure-action.md` → Step 6, import stamping).
