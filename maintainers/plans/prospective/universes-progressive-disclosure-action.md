@@ -91,7 +91,7 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
   - [x] One-time 1 → 2 onboarding: `createAndSwitch` returns a deterministic `openedGate` flag (true
         only when the FIRST universe is created); `runSwitchCli` appends the onboarding line **only**
         then, and the `/switch` skill relays it verbatim (the LLM never counts universes, ADR 0009).
-- [x] **Step 5 — File layout per created universe (organization + future one-shot delete).** _(2026-07-19 · branch `feat/universes`)_
+- [x] **Step 5 — File layout per created universe (organization + future one-shot delete).** _(2026-07-19 · `9fcb9eb`, branch `feat/universes`)_
   - [x] Capture routes a new note's file to `vault/<active>/...` for a created universe, or the **root**
         for the default; type-folders stay nested inside. Documented as a gated note-format rule in the
         engine constitution (`CLAUDE.engine.md` + `templates/fr/CLAUDE.engine.md`): capture is
