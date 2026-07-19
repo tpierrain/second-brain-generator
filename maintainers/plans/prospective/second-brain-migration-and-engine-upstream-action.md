@@ -196,10 +196,12 @@ names/IDs, org/account emails, product-team names, and any private-project refer
 > (EN in English, FR in French, no em-dash). The 564 harness tests stay green (incl. the
 > constitution-mirror-citations parity test).
 >
-> **Discovered drift (out of Track C scope, follow-up):** the FR overlay is still missing the EN base's
-> §4 **"Local mirrors"** routing section (the `mcp__local-mirror__*` tool table + routing rule) — a
-> localization gap for `fr` brains, unrelated to the source-brain merge. Track separately: a FR↔EN
-> constitution parity pass.
+> **Discovered drift (out of Track C scope, follow-up): RESOLVED 2026-07-19.** The note flagged the FR
+> overlay as missing the EN base's §4 "Local mirrors" routing section (the `mcp__local-mirror__*` tool
+> table + routing rule). The two-layer restructure (PR #37, 2026-07-18) closed it: the detailed routing
+> now lives in the engine layer, and both `CLAUDE.engine.md` (EN) and `templates/fr/CLAUDE.engine.md`
+> (FR) carry a structurally 1:1 body (25 headings each, incl. "Local mirrors" + the local-mirror
+> citation pattern). Verified read-only 2026-07-19; no parity pass needed.
 
 ---
 
