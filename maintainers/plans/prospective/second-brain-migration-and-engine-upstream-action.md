@@ -205,8 +205,8 @@ names/IDs, org/account emails, product-team names, and any private-project refer
 
 ## Track D — Corpus migration (personal brain)
 
-> **Cross-plan order:** this is Gate 2 of [`../ROADMAP.md`](../ROADMAP.md) — it depends on Gate 1
-> (green) landing first (see the prerequisite below).
+> **Cross-plan order:** this is Gate 3 of [`../ROADMAP.md`](../ROADMAP.md) — it depends on Gate 1
+> (green) **and** Gate 2 (universes) landing first (see the prerequisites below).
 
 - [ ] Generate a fresh brain from the launcher (after Track A + generic bits of B/C have landed
       upstream), choosing the embedder consciously (privacy trade-off).
@@ -215,8 +215,11 @@ names/IDs, org/account emails, product-team names, and any private-project refer
         improvements keep flowing to it. See the "Sequencing decision" in
         `engine-managed-file-merge-strategy.md`. Skipping it would make this brand-new brain a future
         monolithic-legacy case.
-- [ ] From the **new** brain, run `/import` pointing at the source vault → 405 notes + attachments
-      (demo skipped, no overwrite).
+  - [ ] **Prerequisite (engine): universes** (ADR 0034) must land too, so the brain is born
+        universe-aware and `/import --universe` can stamp the notes at import time. Canonical plan:
+        `universes-progressive-disclosure-action.md` (ROADMAP Gate 2).
+- [ ] From the **new** brain, run `/import --universe <name>` pointing at the source vault → 405 notes +
+      attachments, **stamped into their universe** (demo skipped, no overwrite).
 - [ ] Reindex; verify with a canary query (`node scripts/verify-rag.mjs` → exit 0).
 - [ ] Layer the **private** skills (Track B) and the **merged** constitution (Track C) into the new
       brain (these are the parts that never go through the launcher).
