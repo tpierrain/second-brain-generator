@@ -57,6 +57,10 @@ export const CACHE_DIR = resolvePath(
   resolve(__dirname, "../../.cache")
 );
 export const DB_PATH = resolve(CACHE_DIR, "vault.db");
+// Universes state dir (ADR 0034): the committed registry + the per-machine active
+// pointer. Anchored on the brain root (NOT CACHE_DIR), env-independent, so the
+// engine and the brain-side scripts resolve the exact same directory by construction.
+export const VAULT_RAG_DIR = resolve(projectRoot, ".vault-rag");
 export const GEMINI_API_KEY = process.env.GOOGLE_GEMINI_API_KEY ?? "";
 
 // Picks the Gemini key to use, PURE (testable): if a non-empty key is already

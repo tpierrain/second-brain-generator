@@ -58,6 +58,10 @@ local-mirror/dist/
 .local-mirror/*.sync.lock
 # Transient per-brain health-check verdict (ADR 0028) — regenerated each session.
 engine-health.json
+# Universes (ADR 0034): the active-universe pointer is per-machine session state
+# (never commit it). Its sibling .vault-rag/universes.json registry IS committed on
+# purpose (structural: which universes exist) — only the pointer is transient.
+.vault-rag/active-universe
 
 # ── Mutation testing (dev-only, maintainers/mutation) ───────────────
 # Stryker working dir + generated reports. The scores live in the plan, not git.

@@ -1,16 +1,17 @@
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
-import { CACHE_DIR } from "./config.js";
+import { VAULT_RAG_DIR } from "./config.js";
 import { DEFAULT_UNIVERSE } from "./universe.js";
 
 /**
  * The active universe (ADR 0034) is a per-machine session pointer: a plain-text
- * file holding a single universe name. It lives in CACHE_DIR (per-machine,
- * gitignored) because "which context am I working in on THIS machine right now"
- * is session state, not shared brain structure (the universes registry is). A
- * missing file means the single-universe default → today's behaviour, untouched.
+ * file holding a single universe name. It lives in <brain>/.vault-rag/ (the same
+ * dir the brain-side `/switch` writer uses) so the engine and the writer agree on
+ * the path by construction. The file itself is gitignored (per-machine session
+ * state: "which context am I in on THIS machine"), while the sibling registry is
+ * committed. A missing file means the single-universe default → today's behaviour.
  */
-export const ACTIVE_UNIVERSE_PATH = resolve(CACHE_DIR, "active-universe");
+export const ACTIVE_UNIVERSE_PATH = resolve(VAULT_RAG_DIR, "active-universe");
 
 /** Injected fs for {@link readActiveUniverse} — real fs by default, faked in tests. */
 export interface ActiveUniverseDeps {
@@ -31,7 +32,7 @@ export function readActiveUniverseWith(
   return raw || DEFAULT_UNIVERSE;
 }
 
-/** Reads the active universe from the real state file (CACHE_DIR/active-universe). */
+/** Reads the active universe from the real state file (.vault-rag/active-universe). */
 export function readActiveUniverse(): string {
   return readActiveUniverseWith({
     existsSync,

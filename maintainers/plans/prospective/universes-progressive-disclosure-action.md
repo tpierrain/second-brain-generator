@@ -51,7 +51,7 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
   - [x] Indexer threads `universe` into `indexDocument*`; the engine stamps the default when absent.
   - [x] Decide + name the **default universe constant** (one place); note it never renders for a
         single-universe user. → `rag/src/lib/universe.ts` `DEFAULT_UNIVERSE = "default"`.
-- [x] **Step 2 — Deterministic default scope (the relevance boundary).** _(2026-07-19 · branch `feat/universes`)_
+- [x] **Step 2 — Deterministic default scope (the relevance boundary).** _(2026-07-19 · `f289a92`, branch `feat/universes`)_
   - [x] `searchSimilarIn` filters `WHERE d.universe = ?` **OR** `d.universe = <default>` (owner's
         cross-cutting notes always visible); `universe` becomes a **required internal argument**
         (a `SearchScope { universe, allUniverses? }` object).
@@ -62,15 +62,25 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
         it. **Mutation** on the scope filter: guard killed-by-test (zero survivors on the filter and the
         universe migration; `universe.ts` 100%; remaining survivors are pre-existing documented
         equivalents `closeDb`/`getDb`).
-- [ ] **Step 3 — Active-universe state + the `/switch` skill.**
-  - [ ] Persisted state (e.g. `.vault-rag/active-universe`) + a small **deterministic** script
-        (`set-active-universe.mjs`) to read/write it; a `universes.json` registry (list of created
-        universes).
-  - [ ] `/switch` skill (thin conversational driver): `/switch <name>` fast-path; no-arg menu = remind
-        current, list available, **➕ create new** (create-and-switch, git `switch -c`), **✖️ cancel**.
-        Create = register a name + switch (cheap: no separate store).
-  - [ ] Natural language ("create a universe X") routes to the **same** deterministic script (one
-        canonical surface, no diverging path).
+- [x] **Step 3 — Active-universe state + the `/switch` skill.** _(2026-07-19 · `f5cc236`, branch `feat/universes`)_
+  - [x] Persisted state at brain-root `.vault-rag/`: `active-universe` (per-machine, gitignored) +
+        `universes.json` (committed registry). Deterministic core `scripts/set-active-universe.mjs` +
+        `scripts/lib/universes.mjs` (read/write pointer + registry, name normalization to a safe kebab
+        slug, guarded switch + create-and-switch). Engine reader `active-universe.ts` now anchored on
+        the same `.vault-rag/` (config `VAULT_RAG_DIR`), env-independent.
+  - [x] `/switch` skill (`.claude/skills/switch/SKILL.md`, thin driver): `/switch <name>` fast-path;
+        no-arg menu = remind current, list available, **➕ create new** (create-and-switch), **✖️
+        cancel**. Create = register a name + switch (no separate store). Reserved `default`, no reindex.
+  - [x] Natural language ("create a universe X") routes to the **same** deterministic script via
+        `parseSwitchArgs`/`runSwitchCli` (one canonical surface). Manifest self-carries the new engine
+        files (skill in `merge`, `set-active-universe.mjs` in `replace`; `scripts/lib/**` + `rag/src/**`
+        already covered).
+
+> ⏭️ **Deferred to Gate 4 (fleet), by design (ADR 0034 §Consequences).** The manifest
+> `indexSchemaVersion` stays `1` here and the `engineVersion` vector is unbumped: bumping the manifest
+> schema is what triggers the one-shot upgrade reindex across the fleet, and that retirement of the
+> "v3.2.x → current = no reindex" simplification is a **coordinated** Gate-4 action (see the
+> fleet-upgrade plan). The engine **code** constant is already `2` (fresh brains are born at 2).
 - [ ] **Step 4 — Progressive disclosure (the visibility gate).**
   - [ ] Deterministic gate: surface anything **only when universe count >= 2**. Single universe → total
         silence (no menu prompt, no reminder).
