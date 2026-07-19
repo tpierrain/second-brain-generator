@@ -177,8 +177,8 @@ never patch it inside a deployed brain** (a local patch is clobbered by the mani
 - [x] **Audited `/file-back` (2026-07-19) — NOT bitten by this regression.** `file-back-note.mjs` +
   `filed-note.mjs` only **write** a conformant note (path derived from the type taxonomy); they use
   neither `buildResolver` nor a zone `startsWith`, so the resolver/zone universe blind spot doesn't
-  touch them. Its universe **placement** (writing under `vault/<universe>/…`) is a separate concern —
-  the import-stamping item above (universes plan Step 6), not this linter fix.
+  touch them. Its universe **placement** (writing under `vault/<universe>/…`) is a separate concern,
+  now tracked as **Follow-up 3 below** (found in the field 2026-07-20), not this linter fix.
 - [ ] **Not part of this regression:** the frontmatter findings the linter reports (~163: missing
   `updated`/`tags`) are **universe-independent** and genuinely actionable — don't discount them once the
   false positives are removed. That triage is **brain-side content work**, not launcher work.
@@ -188,3 +188,79 @@ never patch it inside a deployed brain** (a local patch is clobbered by the mani
 > [[cross-platform-ci-is-the-arbiter]] (POSIX-at-the-source), [[validate-shipped-not-test-instance]]
 > (fix the engine source, not the deployed brain), the axis-1 wiki-health plan
 > (`wiki-health-axis1-mechanisms-action.md`).
+
+## 🧹 Make `/lint` stop crying wolf on normal work-notes and raw dumps (2 engine follow-ups)
+
+> **Origin (2026-07-19, field-verify of v3.6.1 on a real single-universe vault ~410 notes).** With the
+> universe-aware fix live, the report is trustworthy — but it still flags two categories that are
+> **structural noise, not rot**. Two engine improvements were logged from the field (deferred here on
+> purpose: **no code yet**, owner picks the approach when picked up). The reflex is the same as the
+> regression above: **fix the generic engine source so every brain benefits**, never hand-patch or
+> hard-code one brain's personal taxonomy ([[validate-shipped-not-test-instance]]).
+
+### Follow-up 1 — a note nobody links to is not always an orphan: exclude the engine's own work-zones
+
+**WHAT:** `/lint` flags a note as an orphan when no other note links to it, but several **work-zone**
+folders are legitimately unlinked by design (nobody links back to a meeting write-up or a 1-1 prep).
+On the field vault ~110 of 178 reported orphans were exactly this false positive. The orphan-exclude
+default (`daily/`, `raw-sources/`, `inbox/`, `actions-log.md`) predates those zones.
+
+- [ ] **Extend `DEFAULT_ORPHAN_EXCLUDE`** (`scripts/lib/wiki-lint.mjs`) to the folders **the engine's
+      own shipped skills write** and that are never linked to: `meetings/`, `briefings/` (sync-sources),
+      `prep-1-1/` (prepare-1-1), `coaching/` (coach). These are generic — every brain has them.
+  - [ ] Keep it **universe-prefix-insensitive** by reusing the existing `isUnderZone` helper (already
+        in place from v3.6.1) — no new path logic.
+  - [ ] **Do NOT bake in brain-specific folders** (e.g. `prep-day/`, `rapport-etonnement/`): those stay
+        per-brain, added through `options.orphanExclude` (a brain-side lint config is a separate item).
+  - [ ] Fixes a latent **inconsistency** en passant: `meetings/` is already a `/consolidate` capture
+        zone (`DEFAULT_CAPTURE_ZONES`) but was missing from the lint orphan-exclude.
+- [ ] **Decision (deferred — owner to pick when built):** path-prefix list (above, smallest change) **vs**
+      a cleaner **type-based** exemption (exclude any note whose `type` is a capture/work type —
+      meeting/briefing/prep/coaching/daily — symmetric to `entityTypes`). Default recommendation: the
+      path-prefix list, consistent with the current design; the type-based refactor is a nice-to-have.
+- [ ] **TDD** on `wiki-lint.mjs` (baby-steps, fail-first); harness only, no reindex; carry via a patch
+      release tag (ADR 0017).
+
+### Follow-up 2 — a raw dump is not a curated node: don't demand full frontmatter on raw-capture zones
+
+**WHAT:** every note is expected to carry frontmatter (`type/created/updated/tags`), but imported **raw
+transcripts** (`raw-sources/transcripts/*`) arrive without it — 43 of them showed as frontmatter
+violations on the field vault. A raw dump is not a curated wiki node; holding it to the full taxonomy is
+the same category error as calling it an orphan.
+
+- [ ] **Exempt raw-capture zones from the required-frontmatter rule** in `lintVault`
+      (`scripts/lib/wiki-lint.mjs`) — parallel to the orphan exemption, reusing `isUnderZone`. Kills the
+      false frontmatter findings **without inventing any dates**.
+- [ ] **Decision (deferred — owner to pick when built):** lint-side exemption (above, recommended, zero
+      fabricated metadata) **vs** stamping minimal frontmatter at **import** time (importer fabricates
+      `created`) **vs** both (exempt in lint + have `sync-sources` write frontmatter for *new*
+      transcripts so future ones are clean). Default recommendation: the lint-side exemption.
+- [ ] Keep the genuinely-actionable frontmatter findings intact (living curated notes still expected to
+      conform) — this only silences the **raw** zones, cf. the "Not part of this regression" note above.
+- [ ] **TDD** on `wiki-lint.mjs`; harness only, no reindex; same patch-release path.
+
+### Follow-up 3 — the file-back builder is not universe-aware (files new notes at the vault root)
+
+**WHAT (found in the field 2026-07-20, during a `/consolidate` write).** `file-back-note.mjs` +
+`filed-note.mjs` (the deterministic builder that Track B and `/consolidate` reuse to write **new** notes)
+derive the path straight from the type taxonomy (`vault/people/x.md`) with **no notion of the active
+universe** and **no `universe:` frontmatter key**. On a universe brain a filed-back person lands at the
+**vault root**, not under `<universe>/…` — so it is off-scope for that universe's retrieval and needs a
+manual placement (the field brain worked around it with a direct `Write` under the universe, and logged
+the gap). This is **distinct** from import stamping (Step 6, done — that stamps *imported* notes, via
+`stamp-universe.mjs`); here it's the *file-back* write path.
+
+- [ ] **Make `renderFiledNote` / `filedNotePath` universe-aware:** prefix the path with the **active
+      universe** (`vault/<universe>/<folder>/…`) and stamp the `universe:` key, when a universe is active
+      — reusing the same active-universe source the reader anchors on (registry / `.vault-rag/`, cf. the
+      universes plan). A default/root brain (no universe) keeps today's behaviour exactly.
+- [ ] **Decision (deferred):** does the builder **read** the active universe itself, or does the caller
+      (`file-back-note.mjs` CLI / the skill) pass it into the spec? Lean: pass it in (keep the pure core
+      I/O-free; the thin CLI resolves the active universe), so `filed-note.mjs` stays a pure builder.
+- [ ] **TDD** on `filed-note.mjs` (pure core, already 15 tests) + the CLI; harness only, no reindex.
+- [ ] Corrects the audit note above (the file-back universe **placement** was flagged as "a separate
+      concern" — this is that concern, now a tracked item, not the import-stamping one).
+
+> Links: the axis-1 wiki-health plan (`wiki-health-axis1-mechanisms-action.md`, Tracks A/C own these
+> pure cores), ADR 0009 (deterministic rung-1 cores), ADR 0034 (universes),
+> [[validate-shipped-not-test-instance]].
