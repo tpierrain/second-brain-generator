@@ -177,8 +177,8 @@ never patch it inside a deployed brain** (a local patch is clobbered by the mani
 - [x] **Audited `/file-back` (2026-07-19) — NOT bitten by this regression.** `file-back-note.mjs` +
   `filed-note.mjs` only **write** a conformant note (path derived from the type taxonomy); they use
   neither `buildResolver` nor a zone `startsWith`, so the resolver/zone universe blind spot doesn't
-  touch them. Its universe **placement** (writing under `vault/<universe>/…`) is a separate concern —
-  the import-stamping item above (universes plan Step 6), not this linter fix.
+  touch them. Its universe **placement** (writing under `vault/<universe>/…`) is a separate concern,
+  now tracked as **Follow-up 3 below** (found in the field 2026-07-20), not this linter fix.
 - [ ] **Not part of this regression:** the frontmatter findings the linter reports (~163: missing
   `updated`/`tags`) are **universe-independent** and genuinely actionable — don't discount them once the
   false positives are removed. That triage is **brain-side content work**, not launcher work.
@@ -239,5 +239,28 @@ the same category error as calling it an orphan.
       conform) — this only silences the **raw** zones, cf. the "Not part of this regression" note above.
 - [ ] **TDD** on `wiki-lint.mjs`; harness only, no reindex; same patch-release path.
 
+### Follow-up 3 — the file-back builder is not universe-aware (files new notes at the vault root)
+
+**WHAT (found in the field 2026-07-20, during a `/consolidate` write).** `file-back-note.mjs` +
+`filed-note.mjs` (the deterministic builder that Track B and `/consolidate` reuse to write **new** notes)
+derive the path straight from the type taxonomy (`vault/people/x.md`) with **no notion of the active
+universe** and **no `universe:` frontmatter key**. On a universe brain a filed-back person lands at the
+**vault root**, not under `<universe>/…` — so it is off-scope for that universe's retrieval and needs a
+manual placement (the field brain worked around it with a direct `Write` under the universe, and logged
+the gap). This is **distinct** from import stamping (Step 6, done — that stamps *imported* notes, via
+`stamp-universe.mjs`); here it's the *file-back* write path.
+
+- [ ] **Make `renderFiledNote` / `filedNotePath` universe-aware:** prefix the path with the **active
+      universe** (`vault/<universe>/<folder>/…`) and stamp the `universe:` key, when a universe is active
+      — reusing the same active-universe source the reader anchors on (registry / `.vault-rag/`, cf. the
+      universes plan). A default/root brain (no universe) keeps today's behaviour exactly.
+- [ ] **Decision (deferred):** does the builder **read** the active universe itself, or does the caller
+      (`file-back-note.mjs` CLI / the skill) pass it into the spec? Lean: pass it in (keep the pure core
+      I/O-free; the thin CLI resolves the active universe), so `filed-note.mjs` stays a pure builder.
+- [ ] **TDD** on `filed-note.mjs` (pure core, already 15 tests) + the CLI; harness only, no reindex.
+- [ ] Corrects the audit note above (the file-back universe **placement** was flagged as "a separate
+      concern" — this is that concern, now a tracked item, not the import-stamping one).
+
 > Links: the axis-1 wiki-health plan (`wiki-health-axis1-mechanisms-action.md`, Tracks A/C own these
-> pure cores), ADR 0009 (deterministic rung-1 cores), [[validate-shipped-not-test-instance]].
+> pure cores), ADR 0009 (deterministic rung-1 cores), ADR 0034 (universes),
+> [[validate-shipped-not-test-instance]].
