@@ -11,6 +11,7 @@ import { execFileSync } from "child_process";
 import { DB_PATH } from "./config.js";
 import { loadNativeWithRebuild, buildRebuildInvocation } from "./native-deps.js";
 import type { EmbedderIdentity } from "./embedder.js";
+import { DEFAULT_UNIVERSE } from "./universe.js";
 
 const nodeRequire = createRequire(import.meta.url);
 
@@ -53,8 +54,13 @@ let db: Database.Database | null = null;
  * detects its index stale and offers a reindex — reusing the embedder-swap gate.
  * An index stamped before this existed (null) is grandfathered as schema v1
  * (compatible) → no reindex prompt for existing brains.
+ *
+ * v2 (ADR 0034): `documents` gained the `universe` soft-scope column. A freshly
+ * generated brain is born at 2; a deployed brain reindexes once on its next engine
+ * upgrade so every row is stamped with its real universe (the out-of-band ALTER
+ * grandfathers old rows to the default until that re-encode runs).
  */
-export const INDEX_SCHEMA_VERSION = 1;
+export const INDEX_SCHEMA_VERSION = 2;
 
 /** Creates the schema (idempotent) on a given DB — testable in-memory. */
 export function applySchema(database: Database.Database): void {
@@ -66,7 +72,8 @@ export function applySchema(database: Database.Database): void {
       tags TEXT NOT NULL DEFAULT '[]',
       hash TEXT NOT NULL,
       updated_at TEXT NOT NULL,
-      source_url TEXT
+      source_url TEXT,
+      universe TEXT NOT NULL DEFAULT '${DEFAULT_UNIVERSE}'
     );
     CREATE TABLE IF NOT EXISTS chunks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,6 +102,14 @@ export function applySchema(database: Database.Database): void {
   // a brain indexed before this column existed grandfathers its rows to null.
   if (!hasColumn(database, "documents", "source_url")) {
     database.exec(`ALTER TABLE documents ADD COLUMN source_url TEXT`);
+  }
+  // Same out-of-band treatment for documents.universe (ADR 0034 soft scope): a brain
+  // indexed before this column existed grandfathers every row to the default universe
+  // (NOT NULL + DEFAULT). Full re-encode restamps them for real (schema bump forces it).
+  if (!hasColumn(database, "documents", "universe")) {
+    database.exec(
+      `ALTER TABLE documents ADD COLUMN universe TEXT NOT NULL DEFAULT '${DEFAULT_UNIVERSE}'`
+    );
   }
 }
 
@@ -217,9 +232,10 @@ export function indexDocument(
     chunkIndex: number;
     embedding: number[];
   }>,
-  sourceUrl: string | null = null
+  sourceUrl: string | null = null,
+  universe: string = DEFAULT_UNIVERSE
 ): void {
-  indexDocumentIn(getDb(), path, title, type, tags, hash, chunks, sourceUrl);
+  indexDocumentIn(getDb(), path, title, type, tags, hash, chunks, sourceUrl, universe);
 }
 
 /** DB-injectable core of {@link indexDocument} — testable in-memory. */
@@ -236,21 +252,23 @@ export function indexDocumentIn(
     chunkIndex: number;
     embedding: number[];
   }>,
-  sourceUrl: string | null = null
+  sourceUrl: string | null = null,
+  universe: string = DEFAULT_UNIVERSE
 ): void {
   const insertChunkStmt = d.prepare(
     "INSERT INTO chunks (doc_path, section, content, chunk_index, embedding) VALUES (?, ?, ?, ?, ?)"
   );
   const upsertDocStmt = d.prepare(
-    `INSERT INTO documents (path, title, type, tags, hash, updated_at, source_url)
-     VALUES (?, ?, ?, ?, ?, datetime('now'), ?)
+    `INSERT INTO documents (path, title, type, tags, hash, updated_at, source_url, universe)
+     VALUES (?, ?, ?, ?, ?, datetime('now'), ?, ?)
      ON CONFLICT(path) DO UPDATE SET
        title = excluded.title,
        type = excluded.type,
        tags = excluded.tags,
        hash = excluded.hash,
        updated_at = excluded.updated_at,
-       source_url = excluded.source_url`
+       source_url = excluded.source_url,
+       universe = excluded.universe`
   );
 
   const tx = d.transaction(() => {
@@ -258,7 +276,7 @@ export function indexDocumentIn(
     // chunks.doc_path → documents.path is enforced (better-sqlite3 enables
     // PRAGMA foreign_keys=ON by default). For a brand-new doc, inserting the
     // chunks first violated the constraint → FOREIGN KEY constraint failed.
-    upsertDocStmt.run(path, title, type, JSON.stringify(tags), hash, sourceUrl);
+    upsertDocStmt.run(path, title, type, JSON.stringify(tags), hash, sourceUrl, universe);
     d.prepare("DELETE FROM chunks WHERE doc_path = ?").run(path);
     for (const c of chunks) {
       const buf = Buffer.from(new Float32Array(c.embedding).buffer);

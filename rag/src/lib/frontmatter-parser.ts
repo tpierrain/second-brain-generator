@@ -1,5 +1,6 @@
 import matter from "gray-matter";
 import { load as yamlLoad } from "js-yaml";
+import { DEFAULT_UNIVERSE } from "./universe.js";
 
 // gray-matter 4.x defaults to js-yaml 3's `safeLoad`, removed in js-yaml 4. We force
 // the patched js-yaml >=4.2.0 (GHSA-h67p-54hq-rp68: quadratic-complexity DoS in merge
@@ -17,6 +18,8 @@ export interface ParsedDocument {
   title: string;
   /** Clickable source link for mirror notes (Notion); null for plain notes. */
   sourceUrl: string | null;
+  /** Soft retrieval scope (ADR 0034); the default universe when unset. */
+  universe: string;
 }
 
 const TYPE_BY_PREFIX: [string, string][] = [
@@ -68,5 +71,9 @@ export function parseDocument(raw: string, relativePath: string): ParsedDocument
   const title = extractTitle(content, relativePath, frontmatter);
   const sourceUrl =
     typeof frontmatter.source_url === "string" ? frontmatter.source_url : null;
-  return { frontmatter, content, type, tags, title, sourceUrl };
+  const universe =
+    typeof frontmatter.universe === "string" && frontmatter.universe.trim()
+      ? frontmatter.universe.trim()
+      : DEFAULT_UNIVERSE;
+  return { frontmatter, content, type, tags, title, sourceUrl, universe };
 }

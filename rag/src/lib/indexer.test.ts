@@ -10,6 +10,7 @@ function doc(path: string, nChunks: number): PreparedDoc {
     type: "topic",
     tags: [],
     hash: `hash-${path}`,
+    universe: "default",
     chunks: Array.from({ length: nChunks }, (_, i) => ({
       section: `s${i}`,
       content: `${path}#${i}`,

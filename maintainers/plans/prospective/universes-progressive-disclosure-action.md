@@ -43,14 +43,14 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
 
 ## Tracking
 
-- [ ] **Step 1 — Data model: the always-on, invisible `universe`.**
-  - [ ] Add `universe TEXT NOT NULL DEFAULT '<default>'` to the `documents` table; bump
+- [x] **Step 1 — Data model: the always-on, invisible `universe`.** _(2026-07-19 · branch `feat/universes`)_
+  - [x] Add `universe TEXT NOT NULL DEFAULT '<default>'` to the `documents` table; bump
         `INDEX_SCHEMA_VERSION` 1 → 2 (fresh brains born at 2; deployed brains reindex once on upgrade).
-  - [ ] `frontmatter-parser` extracts `universe` (absent → the default constant); expose it on
+  - [x] `frontmatter-parser` extracts `universe` (absent → the default constant); expose it on
         `ParsedDocument`.
-  - [ ] Indexer threads `universe` into `indexDocument*`; the engine stamps the default when absent.
-  - [ ] Decide + name the **default universe constant** (one place); note it never renders for a
-        single-universe user.
+  - [x] Indexer threads `universe` into `indexDocument*`; the engine stamps the default when absent.
+  - [x] Decide + name the **default universe constant** (one place); note it never renders for a
+        single-universe user. → `rag/src/lib/universe.ts` `DEFAULT_UNIVERSE = "default"`.
 - [ ] **Step 2 — Deterministic default scope (the relevance boundary).**
   - [ ] `searchSimilarIn` filters `WHERE d.universe = ?` **OR** `d.universe = <default>` (owner's
         cross-cutting notes always visible); `universe` becomes a **required internal argument**.

@@ -81,6 +81,13 @@ test("documents: applySchema provides a source_url column (clickable Notion link
   assert.ok(columnNames(db, "documents").includes("source_url"));
 });
 
+test("documents: applySchema provides a universe column (soft retrieval scope, ADR 0034)", () => {
+  const db = new Database(":memory:");
+  applySchema(db);
+
+  assert.ok(columnNames(db, "documents").includes("universe"));
+});
+
 test("source_url round-trips from indexDocument to searchSimilar", () => {
   const db = new Database(":memory:");
   applySchema(db);
@@ -98,6 +105,42 @@ test("source_url round-trips from indexDocument to searchSimilar", () => {
   const results = searchSimilarIn(db, [1, 0, 0], 5);
 
   assert.equal(results[0].sourceUrl, "https://www.notion.so/abc");
+});
+
+function universeOf(db: Database.Database, path: string): string {
+  return (
+    db.prepare("SELECT universe FROM documents WHERE path = ?").get(path) as {
+      universe: string;
+    }
+  ).universe;
+}
+
+test("universe round-trips from indexDocumentIn to the documents table", () => {
+  const db = new Database(":memory:");
+  applySchema(db);
+  indexDocumentIn(
+    db,
+    "acme/topics/x.md",
+    "X",
+    "topic",
+    [],
+    "h1",
+    [{ section: "S", content: "c", chunkIndex: 0, embedding: [1, 0, 0] }],
+    null,
+    "acme"
+  );
+
+  assert.equal(universeOf(db, "acme/topics/x.md"), "acme");
+});
+
+test("a note indexed without an explicit universe lands in the default universe", () => {
+  const db = new Database(":memory:");
+  applySchema(db);
+  indexDocumentIn(db, "topics/plain.md", "Plain", "topic", [], "h2", [
+    { section: "S", content: "c", chunkIndex: 0, embedding: [1, 0, 0] },
+  ]);
+
+  assert.equal(universeOf(db, "topics/plain.md"), "default");
 });
 
 test("a note without a source_url reads back null (grandfathered / non-mirror)", () => {

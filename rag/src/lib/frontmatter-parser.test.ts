@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseDocument } from "./frontmatter-parser.js";
+import { DEFAULT_UNIVERSE } from "./universe.js";
 
 test("prefers the frontmatter title over the filename fallback", () => {
   // Local-mirror pages are named by Notion pageId (a UUID) and carry the real title
@@ -119,6 +120,33 @@ test("yields an empty tag list when tags is absent or not an array", () => {
     parseDocument("---\ntags: not-a-list\n---\n", "topics/x.md").tags,
     []
   );
+});
+
+// --- universe (ADR 0034) ----------------------------------------------------
+
+test("falls back to the default universe when the frontmatter has none", () => {
+  const parsed = parseDocument("---\ntitle: T\n---\n", "topics/x.md");
+  assert.equal(parsed.universe, DEFAULT_UNIVERSE);
+});
+
+test("reads an explicit non-default universe from the frontmatter", () => {
+  const parsed = parseDocument("---\nuniverse: acme\n---\n", "topics/x.md");
+  assert.equal(parsed.universe, "acme");
+});
+
+test("ignores a non-string universe value (falls back to the default)", () => {
+  const parsed = parseDocument("---\nuniverse: [not, a, string]\n---\n", "topics/x.md");
+  assert.equal(parsed.universe, DEFAULT_UNIVERSE);
+});
+
+test("a blank universe does not win (falls back to the default)", () => {
+  const parsed = parseDocument("---\nuniverse: '   '\n---\n", "topics/x.md");
+  assert.equal(parsed.universe, DEFAULT_UNIVERSE);
+});
+
+test("trims surrounding whitespace from an explicit universe", () => {
+  const parsed = parseDocument("---\nuniverse: '  acme  '\n---\n", "topics/x.md");
+  assert.equal(parsed.universe, "acme");
 });
 
 // --- passthrough ------------------------------------------------------------
