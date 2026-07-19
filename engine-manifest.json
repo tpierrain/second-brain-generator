@@ -27,6 +27,7 @@
       "scripts/session-health.mjs",
       "scripts/session-obsidian-hint.mjs",
       "scripts/session-wiki-health.mjs",
+      "scripts/session-universe.mjs",
       "scripts/session-actions-log.mjs",
       "scripts/health-probe-run.mjs",
       "scripts/lint-vault.mjs",

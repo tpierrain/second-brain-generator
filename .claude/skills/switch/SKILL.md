@@ -73,11 +73,12 @@ Run:
 ```bash
 node scripts/set-active-universe.mjs create "<name>"
 ```
-- **exit 0, "created and switched to '<slug>'"** → this is the moment a brain may cross from one to
-  two universes. Relay the confirmation and, **only if this is now the second universe**, give the
-  one-time framing: *"You now have two universes. Searches stay in the active one plus your
-  cross-cutting notes; say 'search all universes' to span them. New notes you capture while this
-  universe is active will file under `vault/<slug>/`."*
+- **exit 0** → **relay the core's message verbatim** (in the user's language). When this create is the
+  one that crosses the brain from one to two universes, the core **already appends** the one-time
+  onboarding line ("You now have two universes. Searches stay in the active one plus your cross-cutting
+  notes; say 'search all universes' to span them. New notes will file under `vault/<slug>/`."). You do
+  **not** decide when to show it and **never count universes yourself** (ADR 0009): the deterministic
+  core (`openedGate`) owns that call, you only surface what it prints.
 - **exit 1** → relay the reason as-is (`reserved` = `default` is not creatable; `empty` = the name
   had no usable characters), and ask for another name.
 

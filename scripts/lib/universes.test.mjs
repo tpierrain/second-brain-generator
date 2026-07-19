@@ -13,6 +13,7 @@ import {
   parseSwitchArgs,
   vaultRagDir,
   runSwitchCli,
+  isMultiverse,
   DEFAULT_UNIVERSE,
 } from "./universes.mjs";
 
@@ -130,23 +131,36 @@ test("switchToUniverse refuses an unknown universe and does not touch the pointe
 
 // --- create-and-switch (git switch -c style) ---------------------------------
 
-test("createAndSwitch registers a new universe and switches to it", () => {
+test("createAndSwitch registers a new universe and switches to it (the FIRST one opens the gate)", () => {
   const io = fakeFs();
 
   const res = createAndSwitch(io, "/brain/.vault-rag", "Blue Team");
 
-  assert.deepEqual(res, { ok: true, name: "blue-team", created: true });
+  // The very first created universe crosses the brain from 1 to 2 universes →
+  // openedGate: true is the deterministic 1→2 onboarding signal.
+  assert.deepEqual(res, { ok: true, name: "blue-team", created: true, openedGate: true });
   assert.deepEqual(readRegistry(io, "/brain/.vault-rag"), ["blue-team"]);
   assert.equal(readActiveUniverse(io, "/brain/.vault-rag"), "blue-team");
 });
 
-test("createAndSwitch on an existing universe just switches (created: false)", () => {
+test("createAndSwitch of a SECOND universe creates but does NOT re-open the gate", () => {
+  const io = fakeFs();
+  writeRegistry(io, "/brain/.vault-rag", ["acme"]); // gate already open
+
+  const res = createAndSwitch(io, "/brain/.vault-rag", "Blue");
+
+  // created:true but openedGate:false — the discriminator that keeps openedGate
+  // from collapsing into an alias of `created`.
+  assert.deepEqual(res, { ok: true, name: "blue", created: true, openedGate: false });
+});
+
+test("createAndSwitch on an existing universe just switches (created: false, no gate crossing)", () => {
   const io = fakeFs();
   writeRegistry(io, "/brain/.vault-rag", ["acme"]);
 
   const res = createAndSwitch(io, "/brain/.vault-rag", "acme");
 
-  assert.deepEqual(res, { ok: true, name: "acme", created: false });
+  assert.deepEqual(res, { ok: true, name: "acme", created: false, openedGate: false });
   assert.deepEqual(readRegistry(io, "/brain/.vault-rag"), ["acme"]);
 });
 
@@ -200,14 +214,29 @@ test("vaultRagDir joins the .vault-rag state dir onto the brain root", () => {
 
 const DIR = "/brain/.vault-rag";
 
-test("runSwitchCli create: registers, switches, exits 0", () => {
+test("runSwitchCli create: registers, switches, exits 0, and gives the one-time 1→2 onboarding", () => {
   const io = fakeFs();
 
   const res = runSwitchCli(io, DIR, ["create", "Acme"]);
 
   assert.equal(res.code, 0);
   assert.match(res.message, /created and switched to 'acme'/);
+  // The FIRST created universe opens the gate → the CLI surfaces the onboarding
+  // line deterministically (the skill relays it; the LLM never counts universes).
+  assert.match(res.message, /two universes/i);
+  assert.match(res.message, /all universes/i);
   assert.equal(readActiveUniverse(io, DIR), "acme");
+});
+
+test("runSwitchCli create of a SECOND universe: no onboarding line (gate already open)", () => {
+  const io = fakeFs();
+  writeRegistry(io, DIR, ["acme"]);
+
+  const res = runSwitchCli(io, DIR, ["create", "Blue"]);
+
+  assert.equal(res.code, 0);
+  assert.match(res.message, /created and switched to 'blue'/);
+  assert.doesNotMatch(res.message, /two universes/i);
 });
 
 test("runSwitchCli switch to an unknown universe exits 1 and lists the available ones", () => {
@@ -239,4 +268,18 @@ test("runSwitchCli list marks the active universe among all", () => {
   assert.equal(res.code, 0);
   assert.match(res.message, /\* acme/);
   assert.match(res.message, / {2}default/);
+});
+
+// ── isMultiverse: the progressive-disclosure gate (ADR 0034 Step 4) ──────────
+test("isMultiverse is false for a single-universe brain (empty registry: only default)", () => {
+  assert.equal(isMultiverse([]), false);
+});
+
+test("isMultiverse turns true the moment a first universe is created (default + 1 = 2)", () => {
+  // On the boundary: exactly two universes → the gate opens (distinguishes >= from >).
+  assert.equal(isMultiverse(["acme"]), true);
+});
+
+test("isMultiverse stays true past the boundary (three universes)", () => {
+  assert.equal(isMultiverse(["acme", "blue"]), true);
 });

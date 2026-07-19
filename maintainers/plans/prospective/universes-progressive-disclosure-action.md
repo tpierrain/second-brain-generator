@@ -81,13 +81,16 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
 > schema is what triggers the one-shot upgrade reindex across the fleet, and that retirement of the
 > "v3.2.x → current = no reindex" simplification is a **coordinated** Gate-4 action (see the
 > fleet-upgrade plan). The engine **code** constant is already `2` (fresh brains are born at 2).
-- [ ] **Step 4 — Progressive disclosure (the visibility gate).**
-  - [ ] Deterministic gate: surface anything **only when universe count >= 2**. Single universe → total
-        silence (no menu prompt, no reminder).
-  - [ ] SessionStart reminder hook (chat-surfaced, statusline is invisible in Desktop): announces the
-        active universe **only past the gate**. Wire after the existing SessionStart hooks.
-  - [ ] One-time inline onboarding when crossing count 1 → 2 ("you now have 2 universes; searches stay
-        in the active one; say 'all universes' to span them").
+- [x] **Step 4 — Progressive disclosure (the visibility gate).** _(2026-07-19 · branch `feat/universes`)_
+  - [x] Deterministic gate `isMultiverse(registry)` (`scripts/lib/universes.mjs`): true only once
+        universe count >= 2 (the implicit default plus one created). Single universe → total silence.
+  - [x] SessionStart reminder hook `scripts/session-universe.mjs` (pure core `scripts/lib/universe-reminder.mjs`):
+        rides `additionalContext` (the only Desktop-visible channel = chat) + `systemMessage` (CLI),
+        announces the active universe **only past the gate**, fail-open. Wired in the settings template
+        after `session-self-heal` (asserted by test).
+  - [x] One-time 1 → 2 onboarding: `createAndSwitch` returns a deterministic `openedGate` flag (true
+        only when the FIRST universe is created); `runSwitchCli` appends the onboarding line **only**
+        then, and the `/switch` skill relays it verbatim (the LLM never counts universes, ADR 0009).
 - [ ] **Step 5 — File layout per created universe (organization + future one-shot delete).**
   - [ ] Capture routes a new note's file to `vault/<active>/...` for a created universe, or the **root**
         for the default; keep the type-folders nested inside.

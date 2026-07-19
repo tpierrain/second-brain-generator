@@ -48,6 +48,16 @@ export function listAllUniverses(registry) {
   return [DEFAULT_UNIVERSE, ...[...registry].sort()];
 }
 
+/**
+ * The progressive-disclosure gate (ADR 0034): true only once at least TWO
+ * universes exist (the implicit default plus one created), i.e. the registry
+ * holds at least one entry. Below the gate the whole feature stays invisible —
+ * a single-universe brain behaves exactly as today. Pure.
+ */
+export function isMultiverse(registry) {
+  return listAllUniverses(registry).length >= 2;
+}
+
 // The brain root, resolved from this module's location: scripts/lib → scripts →
 // brain. Both the engine (rag/) and these scripts anchor the .vault-rag state dir
 // on the brain root (not on CACHE_DIR), so it stays env-independent and stable.
@@ -98,12 +108,17 @@ export function runSwitchCli(io, dir, argv) {
   if (intent.action === "create") {
     const res = createAndSwitch(io, dir, intent.name);
     if (!res.ok) return { code: 1, message: `cannot create universe (${res.reason})` };
-    return {
-      code: 0,
-      message: res.created
-        ? `created and switched to '${res.name}'`
-        : `switched to '${res.name}'`,
-    };
+    const head = res.created
+      ? `created and switched to '${res.name}'`
+      : `switched to '${res.name}'`;
+    // Deterministic 1→2 onboarding: emitted ONLY when this create opened the gate,
+    // so the skill just relays it (the LLM never has to count universes).
+    const onboarding = res.openedGate
+      ? `\nYou now have two universes. Searches stay in the active one plus your ` +
+        `cross-cutting (default) notes; say "search all universes" to span them. ` +
+        `New notes you capture here will file under vault/${res.name}/.`
+      : "";
+    return { code: 0, message: head + onboarding };
   }
 
   // switch (fast path / explicit)
@@ -197,7 +212,10 @@ export function createAndSwitch(io, dir, rawName) {
   if (name === DEFAULT_UNIVERSE) return { ok: false, reason: "reserved" };
   const registry = readRegistry(io, dir);
   const created = !registry.includes(name);
+  // The gate opens the moment the FIRST universe is created (brain crosses 1 → 2):
+  // the deterministic signal the /switch skill keys its one-time onboarding on.
+  const openedGate = created && registry.length === 0;
   if (created) writeRegistry(io, dir, addToRegistry(registry, name));
   writeActiveUniverse(io, dir, name);
-  return { ok: true, name, created };
+  return { ok: true, name, created, openedGate };
 }
