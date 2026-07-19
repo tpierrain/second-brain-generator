@@ -71,6 +71,28 @@ Toutes les notes du vault sont en **Markdown**, compatibles Obsidian.
 
 > 🔧 **À adapter** : ajoute/retire des dossiers selon tes usages (ex: `prep-1-1/`, `initiatives/`, `coaching/`...).
 
+### Univers — où se range une note (avancé, optionnel)
+
+**Ignore toute cette section si tu n'as qu'un seul univers** (celui par défaut) : les notes se rangent
+exactement comme ci-dessus, à la racine du vault, sans clé `universe:`, et rien ne change. Elle ne
+s'applique qu'une fois qu'un **deuxième univers existe** (créé via `/switch`). Voir le concept d'univers
+dans la section Routage plus bas.
+
+Quand un **univers non par défaut est actif**, une note nouvellement capturée se range sous le
+sous-arbre de cet univers, avec les mêmes dossiers de type imbriqués dedans, et porte une clé
+`universe:` additive dans son frontmatter :
+
+| Univers actif | Où se range la note | Frontmatter |
+|---|---|---|
+| `default` (tes notes transverses) | `vault/<type>/…` (la racine, comme toujours) | pas de clé `universe:` |
+| un univers créé, ex. `acme` | `vault/acme/<type>/…` (ex. `vault/acme/daily/2026-04-16.md`) | `universe: acme` |
+
+- L'univers actif est ce qu'affiche `node scripts/set-active-universe.mjs current` : **utilise cette
+  valeur, n'invente jamais de segment**. La skill `/switch` est le seul moyen d'en changer.
+- Garder chaque univers comme un **sous-arbre autonome** est délibéré : un futur « oublie cet univers »
+  en un coup se résume alors à `rm -rf vault/<univers>/`, plus la suppression de ses lignes et une
+  réindexation.
+
 ### Structure minimale d'une note
 
 ```markdown
@@ -140,6 +162,16 @@ Le RAG (`rag/`) découpe chaque fichier Markdown en **chunks** (un par section `
 - **« Quelle version du moteur ai-je ? »** → la réponse est le **TAG** du moteur : la ligne **« Version »** de `vault_stats` (= le `source.ref` figé du cerveau, la même valeur que la status-line). Les numéros `rag X.Y.Z` / schéma d'index de la ligne **« internal build »** de `vault_stats` sont de la **mécanique interne**, *pas* la version — ne jamais les présenter comme « la version » (ADR 0017).
 
 **⚠️ Échec bruyant — jamais de réponse hors-vault déguisée.** Si les outils `mcp__vault-rag__*` sont **indisponibles, absents ou renvoient une erreur** (serveur MCP non chargé, clé Gemini manquante, index vide…), tu dois le **DIRE FORT** — « ⚠️ RAG indisponible : je ne peux pas interroger le vault » — et **REFUSER de fabriquer une réponse** depuis Internet ou tes connaissances générales. Un second cerveau qui répond à côté du vault *en ayant l'air de marcher* est pire qu'un cerveau qui dit franchement qu'il est en panne. Cela vaut **en particulier pour la question de démo** (premier contact de l'utilisateur) : pas de réponse plausible mais hors-vault. Indique plutôt comment réparer (clé dans `.env`, redémarrage de Claude Code, `/mcp`).
+
+### Univers — un périmètre de recherche souple (avancé, optionnel)
+
+**Ignore toute cette section si tu n'as qu'un seul univers** (celui par défaut) : `search_vault` se comporte exactement comme ci-dessus et tu ne vois jamais le mot « univers ». Ça ne compte qu'une fois qu'un **deuxième univers existe** (créé via `/switch`).
+
+Un **univers** est un périmètre de recherche *souple* au-dessus du vault unique et partagé : des employeurs successifs, des clients ou des sphères gardés comme **corpus par défaut distincts** dans le même cerveau. Tant qu'un univers est actif, `search_vault` renvoie **les notes de cet univers plus tes notes transverses (par défaut)**, et rien des autres : une question sur ton contexte actuel n'est pas diluée par un ancien.
+
+- **C'est le moteur qui cadre la recherche, pas toi.** L'univers actif est lu depuis l'état persistant (`.vault-rag/active-universe`) et injecté **côté serveur** ; tu ne le passes jamais. Pour chercher délibérément **dans tous les univers**, active le paramètre `allUniverses` de l'outil `search_vault` : ne le propose que si la personne demande explicitement « tous les univers » / « tous les contextes ».
+- **Pertinence, pas sécurité.** C'est une frontière de pertinence, jamais un mur d'isolation : un `grep`, Obsidian ou `get_document` par chemin peut toujours la traverser, et pour un cerveau privé c'est très bien. Ne la présente **jamais** comme de la confidentialité.
+- **Basculer / créer** passe par la skill **`/switch`** ; les nouvelles notes se rangent alors sous `vault/<univers>/` (voir *Univers — où se range une note* dans Format des notes). Rapatrie toute une sphère externe dans son propre univers avec **`/import --universe <nom>`**.
 
 ### Miroirs locaux — zones internes vivantes répliquées dans le vault (optionnel)
 

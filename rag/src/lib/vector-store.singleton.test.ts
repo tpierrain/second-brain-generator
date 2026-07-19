@@ -44,7 +44,7 @@ test("singleton: index → hash, search, list, stats, remove via getDb()", () =>
 
   assert.equal(vs.getDocumentHash("doc.md"), "hh");
 
-  const hits = vs.searchSimilar([1, 0], 5);
+  const hits = vs.searchSimilar([1, 0], 5, { universe: "default" });
   assert.equal(hits[0].path, "doc.md");
   assert.equal(hits[0].sourceUrl, "https://x");
 

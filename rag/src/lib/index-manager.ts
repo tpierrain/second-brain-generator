@@ -83,7 +83,8 @@ export interface ReindexStorePorts {
       chunkIndex: number;
       embedding: number[];
     }>,
-    sourceUrl: string | null
+    sourceUrl: string | null,
+    universe: string
   ) => void;
 }
 
@@ -189,6 +190,7 @@ async function runReindex(
         tags: parsed.tags,
         hash,
         sourceUrl: parsed.sourceUrl,
+        universe: parsed.universe,
         chunks: chunks.map((c) => ({
           section: c.section,
           content: c.content,
@@ -230,7 +232,8 @@ async function runReindex(
             chunkIndex: c.chunkIndex,
             embedding: embeddings[i],
           })),
-          doc.sourceUrl ?? null
+          doc.sourceUrl ?? null,
+          doc.universe
         ),
     },
     reporter,

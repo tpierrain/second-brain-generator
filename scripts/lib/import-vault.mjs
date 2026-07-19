@@ -2,10 +2,12 @@
 // import-vault.mjs — pure core for the `import` skill (ADR 0019).
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { existsSync, statSync, readFileSync, mkdirSync, copyFileSync } from "node:fs";
+import { existsSync, statSync, readFileSync, writeFileSync, mkdirSync, copyFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { listFilesRelPosix } from "./fs-walk.mjs";
 import { isExampleNote } from "./example-notes.mjs";
+import { normalizeUniverseName, DEFAULT_UNIVERSE } from "./universes.mjs";
+import { stampUniverse } from "./stamp-universe.mjs";
 
 // Resolves `source` to its vault dir: a brain root resolves to <source>/vault;
 // a dir that is already a vault is used as-is.
@@ -15,7 +17,7 @@ function resolveSourceVault(source) {
   return source;
 }
 
-export function planImport({ source, dest }) {
+export function planImport({ source, dest, universe }) {
   if (!source || !existsSync(source)) {
     throw new Error(`import: source not found — no such folder: ${source}`);
   }
@@ -24,6 +26,10 @@ export function planImport({ source, dest }) {
   if (sourceVault === destVault || source === dest) {
     throw new Error("import: source and destination are the same brain — cannot import a brain into itself");
   }
+  // A non-default universe scopes the whole import under its own subtree (ADR 0034
+  // Step 6). "" means the default (root routing, no stamping — today's behaviour).
+  const norm = normalizeUniverseName(universe);
+  const uni = norm && norm !== DEFAULT_UNIVERSE ? norm : "";
 
   const notes = [];
   const collisions = [];
@@ -37,8 +43,9 @@ export function planImport({ source, dest }) {
       continue;
     }
     // Everything else — notes AND attachments — is an import candidate, unless it
-    // would clobber an existing file in the destination vault.
-    if (existsSync(join(destVault, relpath))) {
+    // would clobber an existing file at its TARGET path (which the universe prefixes).
+    const targetRel = uni ? `${uni}/${relpath}` : relpath;
+    if (existsSync(join(destVault, targetRel))) {
       collisions.push(relpath);
       continue;
     }
@@ -47,7 +54,7 @@ export function planImport({ source, dest }) {
   if (notes.length + collisions.length + skippedExamples.length === 0) {
     throw new Error(`import: nothing to import — no notes found under ${sourceVault} (is this the right folder?)`);
   }
-  return { sourceVault, notes, collisions, skippedExamples };
+  return { sourceVault, notes, collisions, skippedExamples, universe: uni };
 }
 
 // Human summary of a plan (counts + where it read from). Pure → unit-tested; the
@@ -74,11 +81,19 @@ export function formatApplyResult(result) {
 // off the plan produced by planImport.
 export function applyImport(plan, { dest }) {
   const destVault = join(dest, "vault");
+  const uni = plan.universe || "";
   const copied = [];
   for (const relpath of plan.notes) {
-    const target = join(destVault, relpath);
+    const source = join(plan.sourceVault, relpath);
+    const target = uni ? join(destVault, uni, relpath) : join(destVault, relpath);
     mkdirSync(dirname(target), { recursive: true });
-    copyFileSync(join(plan.sourceVault, relpath), target);
+    if (uni && relpath.endsWith(".md")) {
+      // Stamp the note's frontmatter with the universe (additive), then write it —
+      // attachments and un-scoped imports are copied byte-for-byte, untouched.
+      writeFileSync(target, stampUniverse(readFileSync(source, "utf8"), uni));
+    } else {
+      copyFileSync(source, target);
+    }
     copied.push(relpath);
   }
   // Collisions are never overwritten — they are reported, untouched.

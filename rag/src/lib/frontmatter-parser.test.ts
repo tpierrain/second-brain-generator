@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseDocument } from "./frontmatter-parser.js";
+import { DEFAULT_UNIVERSE } from "./universe.js";
 
 test("prefers the frontmatter title over the filename fallback", () => {
   // Local-mirror pages are named by Notion pageId (a UUID) and carry the real title
@@ -61,6 +62,26 @@ test("an explicit frontmatter type overrides the folder prefix", () => {
   assert.equal(parsed.type, "custom");
 });
 
+test("strips the leading universe segment before matching the type folder (ADR 0034)", () => {
+  // A created universe's notes live under vault/<universe>/<type>/… . The universe
+  // segment must NOT defeat folder-based type detection: acme/daily/… is a daily.
+  const parsed = parseDocument("---\nuniverse: acme\n---\n", "acme/daily/2026-07-10.md");
+  assert.equal(parsed.type, "daily");
+});
+
+test("a universe note with no nested type folder is still \"other\" (strip reveals no type)", () => {
+  const parsed = parseDocument("---\nuniverse: acme\n---\n", "acme/loose-note.md");
+  assert.equal(parsed.type, "other");
+});
+
+test("the strip only fires on the DECLARED universe segment, not any leading folder", () => {
+  // universe "acme" does not prefix "people/", so nothing is stripped and the real
+  // type folder is honoured. Guards against a mutant that strips the first segment
+  // unconditionally (which would turn this person note into "other").
+  const parsed = parseDocument("---\nuniverse: acme\n---\n", "people/alice.md");
+  assert.equal(parsed.type, "person");
+});
+
 test("falls back to type \"other\" for an unknown folder", () => {
   const parsed = parseDocument("body", "unknown-folder/x.md");
   assert.equal(parsed.type, "other");
@@ -119,6 +140,33 @@ test("yields an empty tag list when tags is absent or not an array", () => {
     parseDocument("---\ntags: not-a-list\n---\n", "topics/x.md").tags,
     []
   );
+});
+
+// --- universe (ADR 0034) ----------------------------------------------------
+
+test("falls back to the default universe when the frontmatter has none", () => {
+  const parsed = parseDocument("---\ntitle: T\n---\n", "topics/x.md");
+  assert.equal(parsed.universe, DEFAULT_UNIVERSE);
+});
+
+test("reads an explicit non-default universe from the frontmatter", () => {
+  const parsed = parseDocument("---\nuniverse: acme\n---\n", "topics/x.md");
+  assert.equal(parsed.universe, "acme");
+});
+
+test("ignores a non-string universe value (falls back to the default)", () => {
+  const parsed = parseDocument("---\nuniverse: [not, a, string]\n---\n", "topics/x.md");
+  assert.equal(parsed.universe, DEFAULT_UNIVERSE);
+});
+
+test("a blank universe does not win (falls back to the default)", () => {
+  const parsed = parseDocument("---\nuniverse: '   '\n---\n", "topics/x.md");
+  assert.equal(parsed.universe, DEFAULT_UNIVERSE);
+});
+
+test("trims surrounding whitespace from an explicit universe", () => {
+  const parsed = parseDocument("---\nuniverse: '  acme  '\n---\n", "topics/x.md");
+  assert.equal(parsed.universe, "acme");
 });
 
 // --- passthrough ------------------------------------------------------------

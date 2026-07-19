@@ -15,6 +15,8 @@ export interface PreparedDoc {
   chunks: PreparedChunk[];
   /** Clickable source link for mirror notes (Notion); null/absent for plain notes. */
   sourceUrl?: string | null;
+  /** Soft retrieval scope (ADR 0034); the default universe when unset. */
+  universe: string;
 }
 
 /** Injected dependencies — decouple the orchestration from the API and SQLite. */

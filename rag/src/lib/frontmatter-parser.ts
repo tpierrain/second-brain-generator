@@ -1,5 +1,6 @@
 import matter from "gray-matter";
 import { load as yamlLoad } from "js-yaml";
+import { DEFAULT_UNIVERSE } from "./universe.js";
 
 // gray-matter 4.x defaults to js-yaml 3's `safeLoad`, removed in js-yaml 4. We force
 // the patched js-yaml >=4.2.0 (GHSA-h67p-54hq-rp68: quadratic-complexity DoS in merge
@@ -17,6 +18,8 @@ export interface ParsedDocument {
   title: string;
   /** Clickable source link for mirror notes (Notion); null for plain notes. */
   sourceUrl: string | null;
+  /** Soft retrieval scope (ADR 0034); the default universe when unset. */
+  universe: string;
 }
 
 const TYPE_BY_PREFIX: [string, string][] = [
@@ -37,10 +40,21 @@ const TYPE_BY_PREFIX: [string, string][] = [
   ["articles/", "article"],
 ];
 
-function detectType(relativePath: string, fm: Record<string, unknown>): string {
+function detectType(
+  relativePath: string,
+  fm: Record<string, unknown>,
+  universe: string
+): string {
   if (typeof fm.type === "string") return fm.type;
+  // A created universe's notes live under vault/<universe>/<type>/… . Strip that
+  // leading universe segment (only when it is the note's DECLARED non-default
+  // universe) so folder-based type detection still sees the nested type (ADR 0034).
+  const path =
+    universe !== DEFAULT_UNIVERSE && relativePath.startsWith(`${universe}/`)
+      ? relativePath.slice(universe.length + 1)
+      : relativePath;
   for (const [prefix, type] of TYPE_BY_PREFIX) {
-    if (relativePath.startsWith(prefix)) return type;
+    if (path.startsWith(prefix)) return type;
   }
   return "other";
 }
@@ -61,12 +75,16 @@ function extractTitle(
 
 export function parseDocument(raw: string, relativePath: string): ParsedDocument {
   const { data: frontmatter, content } = matter(raw, GRAY_MATTER_OPTIONS);
-  const type = detectType(relativePath, frontmatter);
+  const universe =
+    typeof frontmatter.universe === "string" && frontmatter.universe.trim()
+      ? frontmatter.universe.trim()
+      : DEFAULT_UNIVERSE;
+  const type = detectType(relativePath, frontmatter, universe);
   const tags = Array.isArray(frontmatter.tags)
     ? frontmatter.tags.map(String)
     : [];
   const title = extractTitle(content, relativePath, frontmatter);
   const sourceUrl =
     typeof frontmatter.source_url === "string" ? frontmatter.source_url : null;
-  return { frontmatter, content, type, tags, title, sourceUrl };
+  return { frontmatter, content, type, tags, title, sourceUrl, universe };
 }

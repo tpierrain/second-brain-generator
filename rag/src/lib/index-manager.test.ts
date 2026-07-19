@@ -34,6 +34,7 @@ function doc(path: string, nChunks: number): PreparedDoc {
     type: "topic",
     tags: [],
     hash: `hash-${path}`,
+    universe: "default",
     chunks: Array.from({ length: nChunks }, (_, i) => ({
       section: `s${i}`,
       content: `${path}#${i}`,
@@ -160,6 +161,7 @@ type IndexedDoc = {
   hash: string;
   chunks: Array<{ section: string; content: string; chunkIndex: number; embedding: number[] }>;
   sourceUrl: string | null;
+  universe: string;
 };
 
 function fakePorts(overrides: Partial<ReindexStorePorts> = {}) {
@@ -182,9 +184,9 @@ function fakePorts(overrides: Partial<ReindexStorePorts> = {}) {
     stampIndexIdentity: (id) => {
       calls.stamped.push(id);
     },
-    indexDocument: (relativePath, title, type, tags, hash, chunks, sourceUrl) => {
+    indexDocument: (relativePath, title, type, tags, hash, chunks, sourceUrl, universe) => {
       calls.indexed.push(relativePath);
-      calls.docs.push({ relativePath, title, type, tags, hash, chunks, sourceUrl });
+      calls.docs.push({ relativePath, title, type, tags, hash, chunks, sourceUrl, universe });
     },
   };
   return { ports: { ...base, ...overrides }, calls };
@@ -252,6 +254,32 @@ test("reindex materialises a mirror doc's source_url onto the indexed document",
   await reindex(false, { lock, embedder, reporter: memReporter(), ports });
 
   assert.equal(calls.docs[0].sourceUrl, "https://notion.so/page");
+});
+
+test("reindex materialises a note's frontmatter universe onto the indexed document", async () => {
+  const { lock } = unlockedLock();
+  const { embedder } = spyEmbedder();
+  const { ports, calls } = fakePorts({
+    scan: async () => [{ absolutePath: "/v/x.md", relativePath: "acme/topics/x.md" }],
+    readFile: async () => "---\nuniverse: acme\n---\n# X\n\nbody.",
+  });
+
+  await reindex(false, { lock, embedder, reporter: memReporter(), ports });
+
+  assert.equal(calls.docs[0].universe, "acme");
+});
+
+test("reindex of a note with no universe passes the default universe to indexDocument", async () => {
+  const { lock } = unlockedLock();
+  const { embedder } = spyEmbedder();
+  const { ports, calls } = fakePorts({
+    scan: async () => [{ absolutePath: "/v/a.md", relativePath: "topics/a.md" }],
+    readFile: async () => "# A\n\nplain body, no frontmatter.",
+  });
+
+  await reindex(false, { lock, embedder, reporter: memReporter(), ports });
+
+  assert.equal(calls.docs[0].universe, "default");
 });
 
 test("reindex without a source_url passes null (never undefined) to indexDocument", async () => {
