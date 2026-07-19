@@ -170,6 +170,19 @@ The infra, the storage, the concurrency, the guardrails: that's **its** job — 
 > updates quietly in the background if it finds something new — a bit like a web page that displays
 > instantly then refreshes on its own. The details are in [under the hood](#under-the-hood).
 
+## 🌌 One brain, several universes (optional)
+
+Life comes in chapters: a past employer then a new one, several clients, your work sphere and your
+personal one. Your second brain can hold all of them in one place while still knowing which is which.
+Each of these worlds is called a **universe**. When you're working inside one, your brain answers from
+*that* universe's notes (plus the handful you keep as **cross-cutting**, valid everywhere, like your own
+methods, habits or preferences), so a question about your current job doesn't drag in years of
+unrelated history. You stay in charge: a plain *"switch to my Acme universe"* changes the scope, and a
+rare *"search across all my universes"* looks everywhere at once. Best of all, it stays **invisible
+until you actually need it**: as long as you have a single universe, nothing shows up (no new folder, no
+extra step, no reminder), and your brain behaves exactly as it does today. Universes only surface the
+day you create a second one.
+
 ## Not sure what to ask it? Start here
 
 A few opening lines to get going — just talk to it the way you'd brief an assistant. Bonus: each one
@@ -471,6 +484,13 @@ The hands-on steps (and how to run it yourself, if you're technical) are in
 **It's safe by construction:** it copies your notes (and their attachments, with subfolders preserved)
 **only** — never the old engine — and it **never overwrites** an existing note (a name collision is
 *skipped* and reported). Demo notes don't travel.
+
+> 🌌 **Landing your old notes in a universe (optional).** If you organise your brain into
+> [universes](#one-brain-several-universes-optional), you can tell the import which one your old notes
+> belong to, for instance *"import my old notes from `<path>` into my Acme universe"*. They all arrive
+> **stamped into that universe**, so switching to it later brings them back cleanly, without mixing them
+> into the rest. Say nothing about universes and everything imports the normal way, into your default
+> scope, exactly as before.
 
 > ⚠️ **The one footgun, said plainly:** point it at your **old brain folder** — don't try to copy the
 > *whole* folder by hand into the new one (that's what used to clobber the new engine). The import

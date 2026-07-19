@@ -78,22 +78,35 @@ node scripts/import-brain.mjs "<source>" --apply
 ```
 It copies the planned files into `vault/`, preserving subfolders, **never overwriting** a collision.
 
-### Optional — import INTO a universe (`--universe <name>`, advanced)
+### Import INTO a universe: ask once on a whole-brain migration (`--universe <name>`)
 
-If the user wants the imported notes to land in a **specific universe** (ADR 0034 — e.g. re-homing a
-*previous employer's* notes as their own retrieval scope, distinct from the owner's cross-cutting
-notes), pass `--universe <name>` on **both** the plan and the apply commands:
+Re-homing a **whole previous brain** (a distinct sphere: a *past employer's* notes, a client, a bounded
+context) is the textbook case for a **universe** (ADR 0034). So, before showing the plan, **proactively
+ask one light question**:
+
+> *"Do these notes belong to a **universe** of their own (for instance a past employer or a client, kept
+> as a separate retrieval scope), or to your general / default notes?"*
+
+- **A separate sphere → pass `--universe <name>`** on **both** the plan and the apply commands.
+- **General / default → no flag** (today's behaviour). Don't ask this on a small ad-hoc import of a few
+  loose notes: only when a whole brain / a clearly distinct sphere is in play (keep the feature
+  invisible-until-needed).
+
 ```bash
 node scripts/import-brain.mjs "<source>" --universe "<name>"          # plan
 node scripts/import-brain.mjs "<source>" --universe "<name>" --apply  # apply
 ```
-The core then **routes** every imported file under `vault/<name>/…` (self-contained subtree) and
-**stamps** each note's frontmatter with `universe: <name>` (additive: an existing `universe:` key is
-never clobbered). The name is normalized to a safe slug; attachments travel byte-for-byte.
 
-> 🧭 **Only offer this if it fits.** Most imports go to the default (no flag) — a single-universe
-> brain never needs it. Surface it when the user is clearly bringing in a **separate sphere** they
-> want scoped on its own. Importing into a universe does **not** auto-`/switch` to it.
+With a universe, the core:
+- **routes** every imported file under `vault/<name>/…` (self-contained subtree) and **stamps** each
+  note's frontmatter with `universe: <name>` (additive: an existing `universe:` key is never clobbered;
+  attachments travel byte-for-byte, never stamped). The name is normalized to a safe slug.
+- **registers** `<name>` in the brain's universe registry, so it becomes a real, **`/switch`-able**
+  scope right away and the brain crosses into multi-universe mode (the progressive-disclosure reminder +
+  `/switch` onboarding start to surface).
+
+> 🧭 **It does NOT auto-`/switch` to the imported universe.** After the import, tell the user they can
+> **`/switch <name>`** to work inside it (their default / cross-cutting notes stay visible there too).
 
 ### Step 4 — Reindex (so the imported notes are searchable)
 The new notes must be indexed before the RAG can find them. Incremental indexing is enough — we only

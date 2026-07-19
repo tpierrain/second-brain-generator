@@ -6,8 +6,18 @@ import { existsSync, statSync, readFileSync, writeFileSync, mkdirSync, copyFileS
 import { join, dirname } from "node:path";
 import { listFilesRelPosix } from "./fs-walk.mjs";
 import { isExampleNote } from "./example-notes.mjs";
-import { normalizeUniverseName, DEFAULT_UNIVERSE } from "./universes.mjs";
+import {
+  normalizeUniverseName,
+  DEFAULT_UNIVERSE,
+  vaultRagDir,
+  readRegistry,
+  writeRegistry,
+  addToRegistry,
+} from "./universes.mjs";
 import { stampUniverse } from "./stamp-universe.mjs";
+
+// Real-fs io for the registry helpers (they take an injected fs, ADR 0009).
+const registryIo = { existsSync, readFileSync, mkdirSync, writeFileSync };
 
 // Resolves `source` to its vault dir: a brain root resolves to <source>/vault;
 // a dir that is already a vault is used as-is.
@@ -95,6 +105,13 @@ export function applyImport(plan, { dest }) {
       copyFileSync(source, target);
     }
     copied.push(relpath);
+  }
+  // A universe-scoped import must REGISTER the universe, else the notes are
+  // stamped but the universe stays orphan: `/switch` refuses an unknown name and
+  // the progressive-disclosure gate never flips. Registering makes it switchable.
+  if (uni) {
+    const dir = vaultRagDir(dest);
+    writeRegistry(registryIo, dir, addToRegistry(readRegistry(registryIo, dir), uni));
   }
   // Collisions are never overwritten — they are reported, untouched.
   return { copied, skipped: [...plan.collisions] };
