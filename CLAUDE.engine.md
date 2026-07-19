@@ -71,6 +71,25 @@ All vault notes are in **Markdown**, Obsidian-compatible.
 
 > 🔧 **To adapt**: add/remove folders to fit your usage (e.g.: `prep-1-1/`, `initiatives/`, `coaching/`...).
 
+### Universes — where a note files (advanced, opt-in)
+
+**Skip this whole section if you have a single universe** (the default): notes file exactly as above,
+at the vault root, with no `universe:` key, and nothing changes. It only applies once a **second
+universe exists** (created via `/switch`). See the universes concept in Routing below.
+
+When a **non-default universe is active**, a newly captured note files under that universe's own
+subtree, with the same type-folders nested inside, and carries an additive `universe:` frontmatter key:
+
+| Active universe | Where the note files | Frontmatter |
+|---|---|---|
+| `default` (your cross-cutting notes) | `vault/<type>/…` (the root, as always) | no `universe:` key |
+| a created universe, e.g. `acme` | `vault/acme/<type>/…` (e.g. `vault/acme/daily/2026-04-16.md`) | `universe: acme` |
+
+- The active universe is whatever `node scripts/set-active-universe.mjs current` prints: **use that
+  value, never invent a segment**. The `/switch` skill is the only way to change it.
+- Keeping each universe a **self-contained subtree** is deliberate: a future one-shot "forget this
+  universe" is then just `rm -rf vault/<universe>/` plus dropping its rows and reindexing.
+
 ### Minimal structure of a note
 
 ```markdown

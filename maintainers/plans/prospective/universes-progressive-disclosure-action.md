@@ -91,13 +91,18 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
   - [x] One-time 1 → 2 onboarding: `createAndSwitch` returns a deterministic `openedGate` flag (true
         only when the FIRST universe is created); `runSwitchCli` appends the onboarding line **only**
         then, and the `/switch` skill relays it verbatim (the LLM never counts universes, ADR 0009).
-- [ ] **Step 5 — File layout per created universe (organization + future one-shot delete).**
-  - [ ] Capture routes a new note's file to `vault/<active>/...` for a created universe, or the **root**
-        for the default; keep the type-folders nested inside.
-  - [ ] `detectType` (folder → type) **strips a leading universe segment** before matching (`inqom/daily/`
-        → `daily`).
-  - [ ] Confirm a future "delete a universe" is `rm -rf vault/<u>/` + `DELETE ... WHERE universe=?` +
-        reindex (do **not** build the command now; just keep the layout that makes it trivial).
+- [x] **Step 5 — File layout per created universe (organization + future one-shot delete).** _(2026-07-19 · branch `feat/universes`)_
+  - [x] Capture routes a new note's file to `vault/<active>/...` for a created universe, or the **root**
+        for the default; type-folders stay nested inside. Documented as a gated note-format rule in the
+        engine constitution (`CLAUDE.engine.md` + `templates/fr/CLAUDE.engine.md`): capture is
+        agent-driven here (like all filing), keyed on `set-active-universe.mjs current`; no capture
+        script to invent. Reaches fresh brains now; deployed brains at Gate 3 (engine-layer propagation).
+  - [x] `detectType` (folder → type) **strips a leading universe segment** before matching
+        (`acme/daily/` → `daily`), guarded so it fires only on the note's DECLARED non-default universe
+        (`rag/src/lib/frontmatter-parser.ts`; triangulated: no-nested-type → `other`, wrong-segment not
+        stripped).
+  - [x] Confirmed a future "delete a universe" stays `rm -rf vault/<u>/` + `DELETE ... WHERE universe=?`
+        + reindex (self-contained subtree by construction; NOT built now, only recorded in the doc).
 - [ ] **Step 6 — Import stamping (feeds the migration gate).**
   - [ ] `/import` (`import-vault`) gains `--universe <name>`: stamp the imported notes' frontmatter
         (additive, never clobbering existing keys) and route their files under `vault/<name>/`.

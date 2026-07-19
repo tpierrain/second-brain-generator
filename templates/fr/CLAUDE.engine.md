@@ -71,6 +71,28 @@ Toutes les notes du vault sont en **Markdown**, compatibles Obsidian.
 
 > 🔧 **À adapter** : ajoute/retire des dossiers selon tes usages (ex: `prep-1-1/`, `initiatives/`, `coaching/`...).
 
+### Univers — où se range une note (avancé, optionnel)
+
+**Ignore toute cette section si tu n'as qu'un seul univers** (celui par défaut) : les notes se rangent
+exactement comme ci-dessus, à la racine du vault, sans clé `universe:`, et rien ne change. Elle ne
+s'applique qu'une fois qu'un **deuxième univers existe** (créé via `/switch`). Voir le concept d'univers
+dans la section Routage plus bas.
+
+Quand un **univers non par défaut est actif**, une note nouvellement capturée se range sous le
+sous-arbre de cet univers, avec les mêmes dossiers de type imbriqués dedans, et porte une clé
+`universe:` additive dans son frontmatter :
+
+| Univers actif | Où se range la note | Frontmatter |
+|---|---|---|
+| `default` (tes notes transverses) | `vault/<type>/…` (la racine, comme toujours) | pas de clé `universe:` |
+| un univers créé, ex. `acme` | `vault/acme/<type>/…` (ex. `vault/acme/daily/2026-04-16.md`) | `universe: acme` |
+
+- L'univers actif est ce qu'affiche `node scripts/set-active-universe.mjs current` : **utilise cette
+  valeur, n'invente jamais de segment**. La skill `/switch` est le seul moyen d'en changer.
+- Garder chaque univers comme un **sous-arbre autonome** est délibéré : un futur « oublie cet univers »
+  en un coup se résume alors à `rm -rf vault/<univers>/`, plus la suppression de ses lignes et une
+  réindexation.
+
 ### Structure minimale d'une note
 
 ```markdown

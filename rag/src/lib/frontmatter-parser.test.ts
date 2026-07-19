@@ -62,6 +62,26 @@ test("an explicit frontmatter type overrides the folder prefix", () => {
   assert.equal(parsed.type, "custom");
 });
 
+test("strips the leading universe segment before matching the type folder (ADR 0034)", () => {
+  // A created universe's notes live under vault/<universe>/<type>/… . The universe
+  // segment must NOT defeat folder-based type detection: acme/daily/… is a daily.
+  const parsed = parseDocument("---\nuniverse: acme\n---\n", "acme/daily/2026-07-10.md");
+  assert.equal(parsed.type, "daily");
+});
+
+test("a universe note with no nested type folder is still \"other\" (strip reveals no type)", () => {
+  const parsed = parseDocument("---\nuniverse: acme\n---\n", "acme/loose-note.md");
+  assert.equal(parsed.type, "other");
+});
+
+test("the strip only fires on the DECLARED universe segment, not any leading folder", () => {
+  // universe "acme" does not prefix "people/", so nothing is stripped and the real
+  // type folder is honoured. Guards against a mutant that strips the first segment
+  // unconditionally (which would turn this person note into "other").
+  const parsed = parseDocument("---\nuniverse: acme\n---\n", "people/alice.md");
+  assert.equal(parsed.type, "person");
+});
+
 test("falls back to type \"other\" for an unknown folder", () => {
   const parsed = parseDocument("body", "unknown-folder/x.md");
   assert.equal(parsed.type, "other");
