@@ -126,8 +126,10 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
 
 - [x] Full JS + RAG suites green locally (`node --test` scripts suite 723 pass 0 fail; RAG `npm test`
       399 pass; manifest integrity 11). _(2026-07-19)_
-- [ ] CI matrix green (Windows included) — **pending push / PR** (local macOS green is not the arbiter,
-      cross-platform CI is; not yet run).
+- [x] CI matrix green (Windows included). _(2026-07-19 · run `29684812996`, `16c18fd`)_ The Windows
+      matrix caught a real POSIX/backslash gap in `vaultRagDir` (macOS local was green but is not the
+      arbiter); normalized at the source with `toPosix` and re-ran the full matrix (7/7 pass, Node
+      22/24/26 on macOS + Windows, plus installer e2e).
 - [ ] Manual: a fresh single-universe brain is byte-for-byte "today" (no universe folder, no frontmatter
       key, no reminder). Creating a second universe surfaces `/switch`, the reminder, and scopes search.
 - [x] Mutation score on the scope filter (Step 2) confirms the guard is covered (killed-by-test, zero
