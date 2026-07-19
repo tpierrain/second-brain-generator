@@ -62,7 +62,7 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
         it. **Mutation** on the scope filter: guard killed-by-test (zero survivors on the filter and the
         universe migration; `universe.ts` 100%; remaining survivors are pre-existing documented
         equivalents `closeDb`/`getDb`).
-- [x] **Step 3 — Active-universe state + the `/switch` skill.** _(2026-07-19 · `f5cc236`, branch `feat/universes`)_
+- [x] **Step 3 — Active-universe state + the `/switch` skill.** _(2026-07-19 · `27aa642`, branch `feat/universes`)_
   - [x] Persisted state at brain-root `.vault-rag/`: `active-universe` (per-machine, gitignored) +
         `universes.json` (committed registry). Deterministic core `scripts/set-active-universe.mjs` +
         `scripts/lib/universes.mjs` (read/write pointer + registry, name normalization to a safe kebab
