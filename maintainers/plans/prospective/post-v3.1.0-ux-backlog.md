@@ -4,8 +4,8 @@
 
 # Backlog — post-v3.1.0 UX ideas
 
-> **STATUS: 💡 BACKLOG** (created 2026-06-17, slimmed 2026-06-23, extended 2026-07-19 with two
-> universes follow-ups). Captured ideas, **not committed
+> **STATUS: 💡 BACKLOG** (created 2026-06-17, slimmed 2026-06-23, extended 2026-07-19 with three
+> universes follow-ups — the third a regression). Captured ideas, **not committed
 > work**. Promote one to a real action plan (`*-action.md`, full Tracking section) when it's picked up.
 > **Discipline TDD** (skill `tdd-discipline`), deterministic-first (ADR 0009), Mac/Win/Linux parity
 > (ADR 0015).
@@ -120,3 +120,71 @@ replicates a Notion zone as Markdown), so mirrored notes are **indexed like any 
 
 > Links: ADR 0034 (universes), the universes plan
 > (`universes-progressive-disclosure-action.md` → Step 6, import stamping).
+
+## 🐛 Regression — universes broke `/lint` (make the wiki-health linter universe-aware)
+
+> 🎯 **PICKED UP 2026-07-19 — THIS IS THE NEXT ACTION after the `/clear`.** Fix TDD on
+> `scripts/lib/wiki-lint.mjs` (baby-steps, fail-first; tests exist at `wiki-lint.test.mjs`) → `harness:`
+> PR → merge `main` → **cut release `v3.6.1`** with a "The One…" codename (mandatory: `update-engine`
+> resolves the **latest tag**, not `main` (ADR 0017), so a deployed brain on `v3.6.0` sees nothing
+> without a new tag) → the deployed brain then `/update-engine` + full Claude restart → clean `/lint`.
+> Patch bump, **no reindex** (harness only, `indexSchemaVersion` unchanged). Scope now covers a **3rd
+> false-positive type** found in the field: same-note section anchors `[[#heading]]` (no target file) are
+> flagged as dangling too — fix in the same resolver pass.
+
+Introducing universes (`vault/<universe>/`, ADR 0034) **broke the `/lint` wiki-health scanner**: it
+predates universes and resolves everything **relative to the vault root**, never the universe root. On a
+real single-universe vault (~410 notes filed under `vault/<universe>/`), the report is massively
+inflated by **false positives** — surfaced during the universes field-verify (2026-07-19). Two bugs,
+**one root cause** (the scanner ignores the leading `<universe>/` path segment), both in engine-owned
+`scripts/lib/wiki-lint.mjs`, so a fix reaches every brain via `update-engine`. **Fix it in the launcher,
+never patch it inside a deployed brain** (a local patch is clobbered by the manifest `replace` bucket).
+
+- [x] **Bug 1 — resolver blind to universe-relative links** (`buildResolver`, `wiki-lint.mjs:39-52`).
+  It registered only 3 keys per note: the full vault-relative path (`<universe>/people/x.md`), its
+  extensionless form, and the bare basename (`x`). A wikilink written **universe-relative** (`[[people/x]]`,
+  the natural spelling inside a universe) matched **none** → reported "dangling". **Obsidian resolves by
+  path suffix**, so these links actually work in Obsidian; the scanner was simply stricter than the
+  universe layer added after it. Measured impact: **~628 reported dead links → ~47 real** (~581 false
+  positives). _(2026-07-19 — `buildResolver` now registers every path suffix, with/without `.md`; the
+  old `basename` helper folded in as the shortest suffix.)_
+- [x] **Bug 2 — orphan exclusions blind to the universe prefix** (`wiki-lint.mjs:58` + `:119`).
+  `DEFAULT_ORPHAN_EXCLUDE = ["daily/", "raw-sources/", "inbox/", …]` was matched with
+  `n.path.startsWith(prefix)`, but paths now start with `<universe>/daily/…` → the exclusions matched
+  **nothing**, so raw-capture zones wrongly counted as orphans. Combined with Bug 1 (unresolved inbound
+  links), almost every note looked orphaned: **~407/410 reported → ~172 real**. _(2026-07-19 — new
+  exported `isUnderZone(path, prefix)` matches a zone at the vault root OR a universe root, one segment
+  deep only; triangulated against a naive `includes`.)_
+- [x] **Bug 3 — same-note anchors `[[#heading]]` reported as dangling** (found in the field). Extraction
+  yielded an empty target for a pure anchor → resolved to null → false dangling. _(2026-07-19 —
+  `extractWikiLinks` now drops empty targets; Obsidian resolves `[[#heading]]` within the note.)_
+- [x] **Fix (TDD on `wiki-lint.mjs`, already test-covered):** resolution is now **universe-aware** —
+  link targets resolve by **path suffix** (Obsidian-style) so a universe-relative spelling resolves, and
+  the orphan exclusions are **insensitive to the leading `<universe>/` segment**. POSIX-path discipline
+  kept at the source (cf. the Windows `toPosix` fix). Both counters fixed at once; the report is
+  trustworthy again. _(2026-07-19 · branch `fix/lint-universe-aware`; wiki-lint 27 tests, consolidation
+  18 tests, full suite 732 green; proven end-to-end on a universe fixture through `lint-vault.mjs`.)_
+- [x] **Audited `/consolidate` (2026-07-19) — CONFIRMED bitten, doubly.** `consolidation-candidates.mjs`
+  imports the SAME `buildResolver` (L14, used L51/L62) → a universe-relative `[[people/x]]` that IS filed
+  won't resolve → **false "new-page candidate"** (risk: creating duplicate person pages that already
+  exist). AND `isCapture` (L26) matches capture zones with `path.startsWith("daily/"|"meetings/"|…)` (L18),
+  which never matches `<universe>/daily/…` → **capture zones missed entirely**. Net: `/consolidate` is
+  unreliable on a universe vault (report lies in both directions). **Good news:** `buildResolver` is
+  **shared**, so fixing it once cures the resolver-blindness in BOTH `/lint` and `/consolidate`; the
+  `startsWith`-prefix zone checks (wiki-lint orphan-exclude L119 + this `isCapture` L26) need the same
+  universe-prefix-insensitive treatment. **Do NOT run `/consolidate` on a deployed universe brain until
+  v3.6.1 ships.**
+- [x] **Audited `/file-back` (2026-07-19) — NOT bitten by this regression.** `file-back-note.mjs` +
+  `filed-note.mjs` only **write** a conformant note (path derived from the type taxonomy); they use
+  neither `buildResolver` nor a zone `startsWith`, so the resolver/zone universe blind spot doesn't
+  touch them. Its universe **placement** (writing under `vault/<universe>/…`) is a separate concern —
+  the import-stamping item above (universes plan Step 6), not this linter fix.
+- [ ] **Not part of this regression:** the frontmatter findings the linter reports (~163: missing
+  `updated`/`tags`) are **universe-independent** and genuinely actionable — don't discount them once the
+  false positives are removed. That triage is **brain-side content work**, not launcher work.
+
+> Why it matters (the reflex "the tool lies at scale"): the answer is **not** to hand-patch hundreds of
+> links, but to make the linter universe-aware so the report stops lying. Links: ADR 0034 (universes),
+> [[cross-platform-ci-is-the-arbiter]] (POSIX-at-the-source), [[validate-shipped-not-test-instance]]
+> (fix the engine source, not the deployed brain), the axis-1 wiki-health plan
+> (`wiki-health-axis1-mechanisms-action.md`).

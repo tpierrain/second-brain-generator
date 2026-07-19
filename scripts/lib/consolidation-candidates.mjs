@@ -11,7 +11,7 @@
 // capture, so the candidate drops off on its own.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { extractWikiLinks, buildResolver } from "./wiki-lint.mjs";
+import { extractWikiLinks, buildResolver, isUnderZone } from "./wiki-lint.mjs";
 
 // Path prefixes whose notes are raw captures — the inputs consolidation promotes
 // FROM (meeting notes, daily logs, transcripts, inbox dumps).
@@ -22,8 +22,11 @@ const DEFAULT_CAPTURE_ZONES = ["meetings/", "daily/", "raw-sources/", "inbox/"];
 // mark for refresh). Mirrors the stale rule's entity set in wiki-lint.
 const DEFAULT_ENTITY_TYPES = ["person", "topic", "company", "project", "concept"];
 
+// A capture lives in a capture zone, insensitively to a leading `<universe>/`
+// segment (ADR 0034) — shared with wiki-lint's orphan exclusions, which had the
+// same universe blind spot. So `acme/meetings/x.md` is recognised like `meetings/x.md`.
 function isCapture(path, captureZones) {
-  return captureZones.some((prefix) => path.startsWith(prefix));
+  return captureZones.some((prefix) => isUnderZone(path, prefix));
 }
 
 // Record `source` under `key` in a group map (key → path → source), deduping by

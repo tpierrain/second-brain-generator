@@ -21,34 +21,55 @@ function stripCode(body) {
 // `[[Target|alias]]` and `[[Target#heading]]` forms resolve to the bare target.
 // Links inside code (fenced blocks or inline spans) are ignored — Obsidian doesn't
 // linkify code, so a `[[link]]` example there is syntax documentation, not a link.
+// A pure same-note anchor (`[[#heading]]`) has no target file — Obsidian resolves
+// it within the current note, so it is dropped rather than reported as dangling.
 export function extractWikiLinks(body) {
-  return [...stripCode(body).matchAll(/\[\[([^\]]+)\]\]/g)].map((m) =>
-    m[1].split(/[|#]/)[0].trim(),
-  );
+  return [...stripCode(body).matchAll(/\[\[([^\]]+)\]\]/g)]
+    .map((m) => m[1].split(/[|#]/)[0].trim())
+    .filter((target) => target !== "");
 }
 
-// A note's basename (filename without extension) — the short Obsidian link form.
-function basename(path) {
-  return path.split("/").pop().replace(/\.md$/, "");
+// Every trailing path suffix of a note path, longest first: `a/b/c.md` →
+// ["a/b/c.md", "b/c.md", "c.md"]. Obsidian resolves a `[[link]]` by matching the
+// shortest path suffix that identifies a note, so a universe-relative spelling
+// (`[[people/alice]]` inside `<universe>/people/alice.md`, ADR 0034) resolves the
+// same as the full vault-relative path. The bare basename is the shortest suffix.
+function pathSuffixes(path) {
+  const segments = path.split("/");
+  return segments.map((_, i) => segments.slice(i).join("/"));
 }
 
 // Build a resolver mapping every accepted link spelling to a note's canonical
-// path. Obsidian resolves a `[[Target]]` by basename, and a `[[folder/note]]` (or
-// `[[folder/note.md]]`) by path. Path spellings are registered even when a
-// basename collides, so the longer form always disambiguates.
+// path. Obsidian resolves a `[[Target]]` by basename, a `[[folder/note]]` (or
+// `[[folder/note.md]]`) by path, and a universe-relative `[[people/note]]` by
+// path suffix. Every suffix (with and without `.md`) is registered; a shorter
+// suffix keeps the first note that claims it, so the longer form disambiguates.
 export function buildResolver(notes) {
   const byKey = new Map();
   const register = (key, path) => {
     if (!byKey.has(key)) byKey.set(key, path);
   };
   for (const note of notes) {
-    const noExt = note.path.replace(/\.md$/, "");
-    register(note.path, note.path); // folder/note.md
-    register(noExt, note.path); //     folder/note
-    register(basename(note.path), note.path); // note
+    for (const suffix of pathSuffixes(note.path)) {
+      register(suffix, note.path); //           folder/note.md, note.md
+      register(suffix.replace(/\.md$/, ""), note.path); // folder/note, note
+    }
   }
   // Resolve a raw link target to a canonical note path, or null if it points nowhere.
   return (target) => byKey.get(target) ?? byKey.get(target.replace(/\.md$/, "")) ?? null;
+}
+
+// Whether `path` falls under a zone `prefix` (`daily/`, `actions-log.md`),
+// insensitively to a leading `<universe>/` segment (ADR 0034). A zone lives at
+// the vault root OR at a universe root, so both `daily/x.md` and `acme/daily/x.md`
+// match `daily/`. Only the first segment is optional — universes are one level
+// deep, so a `foo/daily/` nested elsewhere is intentionally not a zone. Shared
+// with the consolidation gesture (isCapture), which has the same universe blind
+// spot. POSIX paths at the source (cf. the Windows toPosix fix).
+export function isUnderZone(path, prefix) {
+  if (path.startsWith(prefix)) return true;
+  const firstSlash = path.indexOf("/");
+  return firstSlash !== -1 && path.slice(firstSlash + 1).startsWith(prefix);
 }
 
 // Raw-capture zones: notes here are legitimately unlinked (a daily log, an inbox
@@ -116,7 +137,7 @@ export function lintVault(notes, options = {}) {
   }
   const orphans = notes
     .filter((n) => !inbound.has(n.path))
-    .filter((n) => !orphanExclude.some((prefix) => n.path.startsWith(prefix)))
+    .filter((n) => !orphanExclude.some((prefix) => isUnderZone(n.path, prefix)))
     .map((n) => n.path);
 
   const staleEntityPages = [];

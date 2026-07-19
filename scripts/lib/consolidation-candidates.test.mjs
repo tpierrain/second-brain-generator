@@ -241,6 +241,41 @@ test("consolidationCandidates — a capture's unresolved mention is a new-page c
   });
 });
 
+// ── universe-aware (ADR 0034): paths gain a leading <universe>/ segment ────────
+
+test("consolidationCandidates — a capture under <universe>/meetings/… still drives candidates, universe-relative links resolve", () => {
+  // Regression: `isCapture` (startsWith zone) and the shared resolver both ignored
+  // the leading `<universe>/` segment, so a universe capture was missed AND its
+  // universe-relative `[[people/x]]` to an existing older page was a false new-page.
+  const notes = [
+    {
+      path: "acme/meetings/2026-07-15-revue.md",
+      frontmatter: { type: "meeting", updated: "2026-07-15" },
+      body: "Reparlé de [[people/marie-dupont]] et de [[Some Missing Concept]].",
+    },
+    {
+      path: "acme/people/marie-dupont.md",
+      frontmatter: { type: "person", updated: "2026-04-01" },
+      body: "Head of Platform.",
+    },
+  ];
+  assert.deepEqual(consolidationCandidates(notes), {
+    newPages: [
+      {
+        target: "Some Missing Concept",
+        sources: [{ path: "acme/meetings/2026-07-15-revue.md", updated: "2026-07-15" }],
+      },
+    ],
+    refreshes: [
+      {
+        page: "acme/people/marie-dupont.md",
+        updated: "2026-04-01",
+        sources: [{ path: "acme/meetings/2026-07-15-revue.md", updated: "2026-07-15" }],
+      },
+    ],
+  });
+});
+
 // ── hasCandidates: the binary signal the CLI turns into an exit code ───────────
 
 test("hasCandidates — an empty report is false (nothing to consolidate)", () => {

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { extractWikiLinks, lintVault, hasFindings, reportLines } from "./wiki-lint.mjs";
+import { extractWikiLinks, lintVault, hasFindings, reportLines, isUnderZone } from "./wiki-lint.mjs";
 
 const CLEAN = { danglingLinks: [], orphans: [], staleEntityPages: [], frontmatterViolations: [] };
 
@@ -30,6 +30,13 @@ test("extractWikiLinks — resolves the target, dropping |alias and #heading", (
   );
 });
 
+test("extractWikiLinks — drops a same-note anchor [[#heading]] (no target file), keeps real links", () => {
+  assert.deepEqual(
+    extractWikiLinks("jump to [[#Section]] then see [[Foo]]"),
+    ["Foo"],
+  );
+});
+
 test("extractWikiLinks — ignores [[links]] inside an inline `code` span (Obsidian doesn't linkify code)", () => {
   assert.deepEqual(
     extractWikiLinks("a real [[Foo]] but `[[Bar]]` is just syntax"),
@@ -40,6 +47,21 @@ test("extractWikiLinks — ignores [[links]] inside an inline `code` span (Obsid
 test("extractWikiLinks — ignores [[links]] inside a fenced ``` code block, keeps links after it", () => {
   const body = "before [[Keep]]\n```\nexample: [[InCode]]\n```\nafter [[AlsoKeep]]";
   assert.deepEqual(extractWikiLinks(body), ["Keep", "AlsoKeep"]);
+});
+
+// ── isUnderZone: a zone prefix, insensitive to a leading <universe>/ segment ───
+
+test("isUnderZone — matches at the vault root and at a universe root, but not one level deeper", () => {
+  assert.equal(isUnderZone("daily/x.md", "daily/"), true); //        vault root
+  assert.equal(isUnderZone("acme/daily/x.md", "daily/"), true); //   universe root
+  assert.equal(isUnderZone("acme/foo/daily/x.md", "daily/"), false); // nested deeper → not a zone
+  assert.equal(isUnderZone("acme/notes/mydaily.md", "daily/"), false); // substring, not a segment
+});
+
+test("isUnderZone — a file-basename zone matches at both roots (actions-log.md)", () => {
+  assert.equal(isUnderZone("actions-log.md", "actions-log.md"), true);
+  assert.equal(isUnderZone("acme/actions-log.md", "actions-log.md"), true);
+  assert.equal(isUnderZone("acme/logs/actions-log.md", "actions-log.md"), false);
 });
 
 // ── dangling links: a [[link]] whose target basename matches no note ──────────
@@ -68,6 +90,17 @@ test("lintVault — resolves path-form links [[folder/note]] and [[folder/note.m
   assert.deepEqual(report.orphans, ["notes/x.md"]); // topics/rag has an inbound link now
 });
 
+test("lintVault — resolves a universe-relative link [[people/alice]] to <universe>/people/alice.md", () => {
+  // Inside a universe (ADR 0034) notes live under `<universe>/…` and are linked
+  // universe-relative; Obsidian resolves those by path suffix, so the linter must too.
+  const report = lintVault([
+    { path: "acme/people/alice.md", frontmatter: {}, body: "" },
+    { path: "acme/daily/2026-07-19.md", frontmatter: {}, body: "met [[people/alice]]" },
+  ]);
+  assert.deepEqual(report.danglingLinks, []);
+  assert.ok(!report.orphans.includes("acme/people/alice.md")); // it now has an inbound link
+});
+
 // ── orphans: a note nobody links to ───────────────────────────────────────────
 
 test("lintVault — flags the note with zero inbound links, not the linked ones", () => {
@@ -87,6 +120,18 @@ test("lintVault — raw-capture zones (daily/, raw-sources/, inbox/) are never o
     { path: "topic.md", frontmatter: {}, body: "" },
   ]);
   assert.deepEqual(report.orphans, ["topic.md"]);
+});
+
+test("lintVault — raw-capture zones stay excluded under a universe prefix (<universe>/daily/…)", () => {
+  // ADR 0034: paths gain a leading `<universe>/` segment. The orphan exclusions
+  // must match through it, else every raw capture wrongly counts as an orphan.
+  const report = lintVault([
+    { path: "acme/daily/2026-07-19.md", frontmatter: {}, body: "" },
+    { path: "acme/inbox/scratch.md", frontmatter: {}, body: "" },
+    { path: "acme/actions-log.md", frontmatter: { type: "log" }, body: "" },
+    { path: "acme/topic.md", frontmatter: {}, body: "" },
+  ]);
+  assert.deepEqual(report.orphans, ["acme/topic.md"]);
 });
 
 test("lintVault — the append-only ledger (actions-log.md) is a raw zone, never an orphan", () => {
