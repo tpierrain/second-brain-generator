@@ -52,11 +52,11 @@ safe because **nothing forces** the fleet's upgrade in the interim.
         (`scripts/lib/engine-apply-plan.mjs`); thin sacred `CLAUDE.md` `@import`s it _(EN + FR)_.
         **Refinement:** the engine layer is **structure-only, NOT yet in `replace`** — propagation
         must first be made locale-aware (a FR brain would be re-anglicized on upgrade), so it moves
-        to Gate 3. Fresh installs are born two-layer; deployed monolithic brains stay untouched.
+        to Gate 4. Fresh installs are born two-layer; deployed monolithic brains stay untouched.
   - [x] Do-no-harm QA: locked by test — the shipped plan touches NEITHER `CLAUDE.md` NOR
         `CLAUDE.engine.md` (no clobber, no reindex, no behaviour change). Trivially safe while the
         engine layer is not propagated to deployed brains.
-  - [ ] Field-verify a real fresh two-layer install (EN + FR) at Gate 2 generate time.
+  - [ ] Field-verify a real fresh two-layer install (EN + FR) at Gate 3 generate time.
   - [x] **Canonical plan:** `prospective/engine-managed-file-merge-strategy.md` → §"Sequencing decision".
 - [ ] **Gate 2 — 🌌 Universes: soft, progressively-disclosed retrieval scope (depends on Gate 1). NEXT TO EXECUTE.**
   - [ ] `universe` column + engine-injected default filter + `/switch` + progressive-disclosure gate

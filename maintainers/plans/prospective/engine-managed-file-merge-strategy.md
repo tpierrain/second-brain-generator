@@ -88,7 +88,7 @@ bump). Until then, the current install-if-absent / sacred behavior is the correc
 
 ## Sequencing decision (2026-07-18) — after the personal-brain migration; broaden to the fleet's upgrade experience
 
-> **Cross-plan order:** this section is Gate 1 (green) and Gate 3 (fleet re-layering) of
+> **Cross-plan order:** this section is Gate 1 (green) and Gate 4 (fleet re-layering) of
 > [`../ROADMAP.md`](../ROADMAP.md), the ordering authority. This plan owns the *how*; the ROADMAP owns
 > the *order relative to the migration*.
 
@@ -108,12 +108,12 @@ release (the pre-layering, monolithic-constitution line, ~v3.2.x).
       **Refinement vs the original sketch — `CLAUDE.engine.md` is NOT put in `replace` yet.** Putting it in
       `replace` would refresh it verbatim from the (English) repo on every upgrade → a **French** brain would
       be **re-anglicized**. So green ships the *structure* only (fresh installs born two-layer, legacy-safe);
-      the actual **propagation** of the engine layer to brains is folded into Gate 3, which must first make it
+      the actual **propagation** of the engine layer to brains is folded into Gate 4, which must first make it
       **locale-aware**. The shipped apply-plan therefore touches neither `CLAUDE.md` nor `CLAUDE.engine.md`.
   - [x] **Green-time "do-no-harm" QA:** _(2026-07-18 · f998259)_ locked by a test on the shipped manifest —
         the plan touches NEITHER `CLAUDE.md` NOR `CLAUDE.engine.md` (no clobber, no reindex, no behaviour
         change). Trivially safe while the engine layer is not yet propagated to deployed brains.
-  - [ ] Field-verify a real fresh two-layer install (EN + FR) when Gate 2 generates the personal brain.
+  - [ ] Field-verify a real fresh two-layer install (EN + FR) when Gate 3 generates the personal brain.
 - [ ] **The heavy re-layering QA is safely deferred to AFTER the migration.** The deployed fleet is safe in the
       interim, for the reasons in "Why this is non-blocking": sacred `CLAUDE.md`, `constitutionTemplate` frozen
       at `1.0.0`, a stale constitution cannot break the engine. Nothing forces their upgrade.
