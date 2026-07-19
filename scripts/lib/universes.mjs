@@ -11,6 +11,12 @@
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// Normalize a path to POSIX separators at the source: join()/resolve() emit
+// backslashes on Windows, so the .vault-rag state path stays stable and platform
+// independent (fs treats either separator alike). Cf. installer toPosix /
+// document-scanner / lint-vault.
+const toPosix = (p) => p.split("\\").join("/");
+
 // THE default universe. Kept in lock-step with the engine's DEFAULT_UNIVERSE
 // (rag/src/lib/universe.ts): a note with no explicit universe belongs here, it
 // lives at the vault root, and it never renders for a single-universe user.
@@ -67,7 +73,7 @@ export function defaultBrainRoot() {
 
 /** The state directory holding the registry + active pointer, at the brain root. */
 export function vaultRagDir(brainRoot = defaultBrainRoot()) {
-  return join(brainRoot, ".vault-rag");
+  return toPosix(join(brainRoot, ".vault-rag"));
 }
 
 /**
