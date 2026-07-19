@@ -103,7 +103,7 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
         stripped).
   - [x] Confirmed a future "delete a universe" stays `rm -rf vault/<u>/` + `DELETE ... WHERE universe=?`
         + reindex (self-contained subtree by construction; NOT built now, only recorded in the doc).
-- [x] **Step 6 — Import stamping (feeds the migration gate).** _(2026-07-19 · branch `feat/universes`)_
+- [x] **Step 6 — Import stamping (feeds the migration gate).** _(2026-07-19 · `68be0ad`, branch `feat/universes`)_
   - [x] `/import` gains `--universe <name>` (`parseArgs` handles the space + `=` forms, never mistakes
         the value for the source): `planImport`/`applyImport` route every imported file under
         `vault/<name>/` (normalized slug; a same-named ROOT note is no longer a collision) and stamp
