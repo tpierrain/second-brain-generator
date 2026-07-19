@@ -112,7 +112,7 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
   - [x] Test: importing with `--universe` stamps every note and leaves other frontmatter intact
         (+ triangulated: never-clobber, no-frontmatter, attachment-not-stamped, no-flag-unchanged,
         collision separated by the prefix; `runImport` end-to-end wiring covered).
-- [x] **Step 7 — Docs behind the gate.** _(2026-07-19 · branch `feat/universes`)_
+- [x] **Step 7 — Docs behind the gate.** _(2026-07-19 · `95a5d2a`, branch `feat/universes`)_
   - [x] Universes documented in the engine-owned `CLAUDE.engine.md` (+ `templates/fr/CLAUDE.engine.md`)
         as **advanced, opt-in** sections, each opening with "skip this if you have a single universe":
         the *filing layout* under Note format (Step 5) and the *concept + retrieval scope* under Routing
