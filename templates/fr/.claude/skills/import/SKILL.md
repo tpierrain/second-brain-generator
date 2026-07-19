@@ -81,6 +81,39 @@ node scripts/import-brain.mjs "<source>" --apply
 Copie les fichiers planifiés dans `vault/`, en préservant les sous-dossiers, **sans jamais écraser**
 une collision.
 
+### Importer DANS un univers : poser la question une fois lors d'une migration de cerveau entier (`--universe <nom>`)
+
+Rapatrier un **cerveau entier précédent** (une sphère distincte : les notes d'un *employeur précédent*,
+un client, un contexte borné) est le cas d'école d'un **univers** (ADR 0034). Donc, avant de montrer le
+plan, **pose proactivement une question légère** :
+
+> *« Ces notes appartiennent-elles à un **univers** qui leur est propre (par exemple un employeur
+> précédent ou un client, gardé comme périmètre de recherche séparé), ou à tes notes générales / par
+> défaut ? »*
+
+- **Une sphère séparée → passe `--universe <nom>`** sur **les deux** commandes (plan ET apply).
+- **Général / par défaut → aucun flag** (le comportement d'aujourd'hui). Ne pose pas la question pour un
+  petit import ponctuel de quelques notes éparses : seulement quand un cerveau entier, ou une sphère
+  clairement distincte, est en jeu (garder la fonctionnalité invisible-tant-qu'on-n'en-a-pas-besoin).
+
+```bash
+node scripts/import-brain.mjs "<source>" --universe "<nom>"          # plan
+node scripts/import-brain.mjs "<source>" --universe "<nom>" --apply  # apply
+```
+
+Avec un univers, le cœur :
+- **route** chaque fichier importé sous `vault/<nom>/…` (sous-arbre autonome) et **estampille** le
+  frontmatter de chaque note avec `universe: <nom>` (additif : une clé `universe:` existante n'est jamais
+  écrasée ; les pièces jointes voyagent à l'octet près, jamais estampillées). Le nom est normalisé en
+  slug sûr.
+- **enregistre** `<nom>` dans le registre des univers du cerveau : il devient aussitôt un périmètre réel,
+  **commutable via `/switch`**, et le cerveau bascule en mode multi-univers (le rappel de divulgation
+  progressive + l'onboarding `/switch` commencent à apparaître).
+
+> 🧭 **Il ne fait PAS de `/switch` automatique vers l'univers importé.** Après l'import, indique qu'on
+> peut **`/switch <nom>`** pour travailler dedans (les notes par défaut / transverses y restent visibles
+> aussi).
+
 ### Étape 4 — Réindexer (pour que les notes importées soient cherchables)
 Les nouvelles notes doivent être indexées avant que le RAG ne les trouve. Une indexation incrémentale
 suffit — on n'a fait qu'**ajouter** des fichiers :

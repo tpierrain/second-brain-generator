@@ -4,6 +4,10 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { planImport, applyImport, formatPlan, formatApplyResult } from "./import-vault.mjs";
+import { readRegistry, registryPath, vaultRagDir } from "./universes.mjs";
+
+// A real-fs io for the registry helpers (they take an injected fs).
+const realIo = { existsSync, readFileSync, mkdirSync, writeFileSync };
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function tmp(prefix) {
@@ -224,6 +228,35 @@ test("import --universe stamps every .md note and routes files under vault/<univ
     // Nothing at the root — the universe scopes the whole import.
     assert.equal(existsSync(join(destVault, "daily", "2026-04-16.md")), false);
     assert.deepEqual(result.copied.sort(), ["daily/2026-04-16.md", "photo.png"]);
+  });
+});
+
+test("import --universe registers the universe in the registry (so it becomes switchable)", () => {
+  withBrains(({ source, dest, srcVault }) => {
+    writeFileSync(join(srcVault, "note.md"), "# N\n");
+    const plan = planImport({ source, dest, universe: "Acme Corp" });
+    applyImport(plan, { dest });
+    assert.deepEqual(readRegistry(realIo, vaultRagDir(dest)), ["acme-corp"]);
+  });
+});
+
+test("import WITHOUT a universe leaves the registry untouched (no orphan entry, gate stays shut)", () => {
+  withBrains(({ source, dest, srcVault }) => {
+    writeFileSync(join(srcVault, "note.md"), "# N\n");
+    applyImport(planImport({ source, dest }), { dest });
+    assert.deepEqual(readRegistry(realIo, vaultRagDir(dest)), []);
+    // No universe → the registry file is never even created (the gate stays shut).
+    assert.equal(existsSync(registryPath(vaultRagDir(dest))), false);
+  });
+});
+
+test("import --universe is idempotent and accretes: re-importing dedups, a second universe coexists (sorted)", () => {
+  withBrains(({ source, dest, srcVault }) => {
+    writeFileSync(join(srcVault, "n.md"), "# N\n");
+    applyImport(planImport({ source, dest, universe: "Zeta" }), { dest }); // register "zeta"
+    applyImport(planImport({ source, dest, universe: "Zeta" }), { dest }); // re-import → no duplicate
+    applyImport(planImport({ source, dest, universe: "Acme" }), { dest }); // a different one accretes
+    assert.deepEqual(readRegistry(realIo, vaultRagDir(dest)), ["acme", "zeta"]);
   });
 });
 
