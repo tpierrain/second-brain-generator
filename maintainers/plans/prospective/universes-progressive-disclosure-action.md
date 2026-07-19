@@ -10,6 +10,11 @@
 Read it first: it carries the *why* (threat model, progressive disclosure, the implicit-default
 principle, alternatives rejected). This plan is the *how*.
 
+> **Status (2026-07-19 · `410c694`, branch `docs/universes-progressive-disclosure`):** design agreed and
+> committed (this plan + ADR 0034 + ROADMAP Gate 2). **Implementation not started** — resume at the first
+> unchecked `- [ ]` (Step 1, data model). Land on a fresh code branch (TDD), keep it generic (no
+> `inqom`/`shodo` literals).
+
 ## What we are building (the capability)
 
 A single private brain can hold several **universes** (e.g. successive employers, clients, spheres).
