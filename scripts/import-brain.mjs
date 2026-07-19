@@ -30,13 +30,28 @@ function isMain() {
 
 export function parseArgs(argv) {
   const apply = argv.includes("--apply");
-  const source = argv.find((a) => !a.startsWith("--"));
-  return { source, apply };
+  let universe = "";
+  const positionals = [];
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--apply") continue;
+    if (a === "--universe") {
+      universe = argv[++i] ?? ""; // the next token is the name, not the source
+      continue;
+    }
+    if (a.startsWith("--universe=")) {
+      universe = a.slice("--universe=".length);
+      continue;
+    }
+    if (a.startsWith("--")) continue; // unknown flags are ignored
+    positionals.push(a);
+  }
+  return { source: positionals[0], apply, universe };
 }
 
-export function runImport({ source, dest, apply }) {
-  if (!source) throw new Error("import: missing source — usage: import-brain.mjs <source> [--apply]");
-  const plan = planImport({ source, dest });
+export function runImport({ source, dest, apply, universe }) {
+  if (!source) throw new Error("import: missing source — usage: import-brain.mjs <source> [--universe <name>] [--apply]");
+  const plan = planImport({ source, dest, universe });
   if (!apply) return formatPlan(plan);
   const result = applyImport(plan, { dest });
   return `${formatPlan(plan)}\n\n${formatApplyResult(result)}`;
@@ -45,8 +60,8 @@ export function runImport({ source, dest, apply }) {
 if (isMain()) {
   const dest = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   try {
-    const { source, apply } = parseArgs(process.argv.slice(2));
-    process.stdout.write(runImport({ source, dest, apply }) + "\n");
+    const { source, apply, universe } = parseArgs(process.argv.slice(2));
+    process.stdout.write(runImport({ source, dest, apply, universe }) + "\n");
     process.exit(0);
   } catch (e) {
     process.stderr.write(`\n❌ import failed — nothing was changed past this point.\n${e?.message ?? e}\n`);

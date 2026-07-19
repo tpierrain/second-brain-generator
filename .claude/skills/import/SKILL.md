@@ -78,6 +78,23 @@ node scripts/import-brain.mjs "<source>" --apply
 ```
 It copies the planned files into `vault/`, preserving subfolders, **never overwriting** a collision.
 
+### Optional — import INTO a universe (`--universe <name>`, advanced)
+
+If the user wants the imported notes to land in a **specific universe** (ADR 0034 — e.g. re-homing a
+*previous employer's* notes as their own retrieval scope, distinct from the owner's cross-cutting
+notes), pass `--universe <name>` on **both** the plan and the apply commands:
+```bash
+node scripts/import-brain.mjs "<source>" --universe "<name>"          # plan
+node scripts/import-brain.mjs "<source>" --universe "<name>" --apply  # apply
+```
+The core then **routes** every imported file under `vault/<name>/…` (self-contained subtree) and
+**stamps** each note's frontmatter with `universe: <name>` (additive: an existing `universe:` key is
+never clobbered). The name is normalized to a safe slug; attachments travel byte-for-byte.
+
+> 🧭 **Only offer this if it fits.** Most imports go to the default (no flag) — a single-universe
+> brain never needs it. Surface it when the user is clearly bringing in a **separate sphere** they
+> want scoped on its own. Importing into a universe does **not** auto-`/switch` to it.
+
 ### Step 4 — Reindex (so the imported notes are searchable)
 The new notes must be indexed before the RAG can find them. Incremental indexing is enough — we only
 **added** files:

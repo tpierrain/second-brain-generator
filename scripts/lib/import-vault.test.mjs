@@ -196,3 +196,62 @@ test("planImport — a dir that is already a vault is used as-is", () => {
     rmSync(srcVault, { recursive: true });
   }
 });
+
+// ── 1e. universe-scoped import (ADR 0034 Step 6) ─────────────────────────────
+test("import --universe stamps every .md note and routes files under vault/<universe>/", () => {
+  withBrains(({ source, dest, srcVault, destVault }) => {
+    mkdirSync(join(srcVault, "daily"));
+    writeFileSync(join(srcVault, "daily", "2026-04-16.md"), "---\ntype: daily\ntags: [x]\n---\n\n# Day\n");
+    writeFileSync(join(srcVault, "photo.png"), "PNGBYTES");
+
+    const plan = planImport({ source, dest, universe: "Acme Corp" });
+    assert.equal(plan.universe, "acme-corp"); // normalized to a safe slug
+    const result = applyImport(plan, { dest });
+
+    // The note lands under the universe subtree, stamped, other frontmatter intact.
+    const noteAt = join(destVault, "acme-corp", "daily", "2026-04-16.md");
+    assert.equal(existsSync(noteAt), true);
+    const noteText = readFileSync(noteAt, "utf8");
+    assert.match(noteText, /universe: acme-corp/);
+    assert.match(noteText, /type: daily/);
+    assert.match(noteText, /tags: \[x\]/);
+
+    // The attachment travels under the same subtree, byte-for-byte (never stamped).
+    const photoAt = join(destVault, "acme-corp", "photo.png");
+    assert.equal(existsSync(photoAt), true);
+    assert.equal(readFileSync(photoAt, "utf8"), "PNGBYTES");
+
+    // Nothing at the root — the universe scopes the whole import.
+    assert.equal(existsSync(join(destVault, "daily", "2026-04-16.md")), false);
+    assert.deepEqual(result.copied.sort(), ["daily/2026-04-16.md", "photo.png"]);
+  });
+});
+
+test("import --universe: a same-named ROOT note is NOT a collision (the universe prefix separates them)", () => {
+  withBrains(({ source, dest, srcVault, destVault }) => {
+    writeFileSync(join(srcVault, "idea.md"), "# Idea (source)\n");
+    // A note with the same relpath exists at the ROOT of dest, but the import is
+    // universe-scoped → target is vault/acme/idea.md, so there is no clash.
+    writeFileSync(join(destVault, "idea.md"), "# Idea (root, mine)\n");
+
+    const plan = planImport({ source, dest, universe: "acme" });
+    assert.deepEqual(plan.collisions, []);
+    const result = applyImport(plan, { dest });
+
+    assert.deepEqual(result.copied, ["idea.md"]);
+    assert.equal(existsSync(join(destVault, "acme", "idea.md")), true);
+    // The root note is left untouched.
+    assert.equal(readFileSync(join(destVault, "idea.md"), "utf8"), "# Idea (root, mine)\n");
+  });
+});
+
+test("import without --universe is unchanged: root routing, no stamping", () => {
+  withBrains(({ source, dest, destVault }) => {
+    writeFileSync(join(source, "vault", "note.md"), "---\ntype: topic\n---\n\n# N\n");
+    const plan = planImport({ source, dest });
+    assert.equal(plan.universe, "");
+    applyImport(plan, { dest });
+    const text = readFileSync(join(destVault, "note.md"), "utf8");
+    assert.doesNotMatch(text, /universe:/);
+  });
+});

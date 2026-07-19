@@ -103,10 +103,15 @@ import so the regenerated brain is born universe-aware and the 405 notes are sta
         stripped).
   - [x] Confirmed a future "delete a universe" stays `rm -rf vault/<u>/` + `DELETE ... WHERE universe=?`
         + reindex (self-contained subtree by construction; NOT built now, only recorded in the doc).
-- [ ] **Step 6 — Import stamping (feeds the migration gate).**
-  - [ ] `/import` (`import-vault`) gains `--universe <name>`: stamp the imported notes' frontmatter
-        (additive, never clobbering existing keys) and route their files under `vault/<name>/`.
-  - [ ] Test: importing with `--universe` stamps every note and leaves other frontmatter intact.
+- [x] **Step 6 — Import stamping (feeds the migration gate).** _(2026-07-19 · branch `feat/universes`)_
+  - [x] `/import` gains `--universe <name>` (`parseArgs` handles the space + `=` forms, never mistakes
+        the value for the source): `planImport`/`applyImport` route every imported file under
+        `vault/<name>/` (normalized slug; a same-named ROOT note is no longer a collision) and stamp
+        each `.md` note's frontmatter via the pure `stamp-universe.mjs` (additive, never clobbering an
+        existing `universe:` key). Attachments travel byte-for-byte. Skill documents it as advanced/opt-in.
+  - [x] Test: importing with `--universe` stamps every note and leaves other frontmatter intact
+        (+ triangulated: never-clobber, no-frontmatter, attachment-not-stamped, no-flag-unchanged,
+        collision separated by the prefix; `runImport` end-to-end wiring covered).
 - [ ] **Step 7 — Docs behind the gate.**
   - [ ] Mention universes in the engine-owned note-format / `CLAUDE.engine.md` **as an advanced, opt-in
         section** (never in the sacred layer, never implying it is required).
