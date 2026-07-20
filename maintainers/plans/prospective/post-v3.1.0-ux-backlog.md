@@ -100,7 +100,7 @@ are not). Surfaced by Thomas during the universes field-verify (2026-07-19).
 
 > Links: ADR 0034 (universes), [[brain-permission-posture-readonly]] (UUID connectors, single-account).
 
-## 💡 Idea — make `/local-mirror` universe-aware (parity with `/import --universe`)
+## 🔭 Action plan — make `/local-mirror` universe-aware (parity with `/import --universe`)
 
 `/import` gained `--universe` (ADR 0034 Step 6): imported notes are filed under `vault/<universe>/` and
 stamped `universe:` in frontmatter. **`/local-mirror`** also lands content **in the vault** (it
@@ -109,17 +109,54 @@ replicates a Notion zone as Markdown), so mirrored notes are **indexed like any 
 `default` regardless of the active universe. Asymmetry found during the universes field-verify
 (2026-07-19): import is universe-aware, the mirror is not.
 
-- [ ] **Behaviour:** stamp mirrored notes with the **active** universe (read from `.vault-rag/`, as the
-  engine does) or an explicit declared target; file them under `vault/<universe>/…` for a created
-  universe, root for the default. Reuse the pure `stamp-universe.mjs` already used by import;
-  **additive**, never clobber an existing `universe:` key.
-- [ ] **Not a regression:** mirrors always produced `default` notes; this is an **enhancement**, out of
-  scope of the shipped universes plan (which covered `/import` only). Safe to defer.
-- [ ] **Deterministic + tested:** pure stamping seam, injected fs, cross-platform (POSIX paths at the
-  source, cf. the Windows `vaultRagDir` fix). Promote to an action plan before coding.
+> 🎯 **PICKED UP 2026-07-20 — bundled into the same release as PR #43** (the `/lint` + file-back
+> follow-ups). Release codename chosen: **"The One Where /lint Quiets Down and Filing Finds Its
+> Universe"**. This closes the **write-path universe trilogy**: `/import` ✅ · file-back ✅ (#43) ·
+> **`/local-mirror` ← this**. Release is **NOT cut yet** (Thomas's call). Do this on its **own branch
+> + PR** (`feat/local-mirror-universe-aware`, off `main` once #43 has merged), then Thomas cuts the
+> release covering both.
 
-> Links: ADR 0034 (universes), the universes plan
-> (`universes-progressive-disclosure-action.md` → Step 6, import stamping).
+### Frozen design decision (owner-approved reasoning, 2026-07-20)
+
+A mirror is a **durable, background-synced source that belongs to ONE universe** — so we do **NOT**
+read the volatile active pointer at *sync* time (a background tick firing while you `/switch`ed would
+scatter one mirror's notes across universes). Instead we **freeze the universe into the mirror's config
+at `setup_source` time**, resolved from the then-active universe — exactly mirroring how `/import
+--universe` stamps at import time. The default universe (`"default"`) means **no universe → root
+behaviour unchanged** (backward-compatible: mirrors declared before this feature carry no `universe`).
+
+### Tracking (TDD, outside-in via the Builder — the suite's style; `local-mirror/` is a TS package, `npm test`)
+
+- [ ] **Step 1 — sync write path (acceptance, `sync-writes-vault.test.ts`).** A mirror whose config
+      carries `universe: 'acme'` writes under `acme/mirrors/<name>/<id>.md` and stamps `universe: acme`
+      in frontmatter; a rootless mirror is unchanged. Drive:
+  - [ ] `types.ts` → `LocalMirrorConfig.universe?: string`; `LocalMirrorFrontmatter.universe?: string`.
+  - [ ] `lib/markdown.ts` → `toLocalMirrorMarkdown(mirror, item, body, universe?)` stamps `universe`
+        LAST when truthy (matches `stamp-universe.mjs`'s append-last convention).
+  - [ ] `domain/local-mirror.ts` `syncLocked` → prefix `vaultPath` with `${config.universe}/` when set,
+        pass `config.universe` to `toLocalMirrorMarkdown`. State stores the actual path → delete/reconcile
+        stay consistent by construction.
+  - [ ] `test/builder.ts` → `aNotionLocalMirror({ universe })` includes the key only when provided.
+- [ ] **Step 2 — freeze at setup (acceptance, `setup-source.test.ts`).** `setupSource` with active
+      universe `'acme'` declares a config carrying `universe: 'acme'`; with `'default'` → no `universe`.
+  - [ ] `LocalMirrorDeps` gains `activeUniverse: () => string` (used ONLY by setupSource, not the hot
+        sync path); `configFromRequest(req, universe)` sets `universe` only when truthy and `!== 'default'`.
+  - [ ] `test/builder.ts` → `withActiveUniverse(name)`, default `() => 'default'` so existing tests pass.
+  - [ ] Define a local `DEFAULT_UNIVERSE = 'default'` const in the TS package (lock-step comment with
+        `scripts/lib/universes.mjs` / `rag/src/lib/universe.ts` — cannot import across package + language).
+- [ ] **Step 3 — real adapter + server wiring.** A reader for `<projectRoot>/.vault-rag/active-universe`
+      (trim, fallback `'default'`; POSIX, cf. the Windows `vaultRagDir` fix) wired into `buildDeps()`
+      (`server.ts`), anchored on `projectRoot` (already the brain root in `lib/config.ts`). Unit-test it.
+- [ ] **Full suite green** (`npm test`, baseline was 205) + **repo-wide** `node --test` for the launcher.
+      Cross-platform reflex: POSIX paths at the source (Windows CI is the arbiter).
+- [ ] **Known limitation to note in the PR (do NOT over-engineer a fix):** a mirror declared BEFORE a
+      universe existed keeps writing at root; if you later activate a universe, only genuinely-changed
+      items would move, so a transition could momentarily leave a root copy + a universe copy. Acceptable
+      (universes + mirror is a brand-new combo; fresh mirrors are declared inside their universe). Log it.
+
+> Links: ADR 0034 (universes), the universes plan (`universes-progressive-disclosure-action.md` → Step 6,
+> import stamping), FU3 in this file (the sibling file-back universe fix, PR #43),
+> [[validate-shipped-not-test-instance]].
 
 ## 🐛 Regression — universes broke `/lint` (make the wiki-health linter universe-aware)
 
