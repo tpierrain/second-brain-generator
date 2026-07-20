@@ -19,6 +19,7 @@ import { dirname, join } from "node:path";
 
 import { renderFiledNote } from "./lib/filed-note.mjs";
 import { isEntrypoint } from "./lib/entrypoint.mjs";
+import { readActiveUniverse, vaultRagDir } from "./lib/universes.mjs";
 
 // Vault paths are displayed, compared and written in POSIX form so behaviour is
 // identical across platforms — on Windows join() yields backslashes, which would
@@ -30,6 +31,11 @@ const toPosix = (p) => p.split("\\").join("/");
 export const realFileBackDeps = {
   cwd: () => process.cwd(),
   today: () => new Date().toISOString().slice(0, 10),
+  // The active universe (ADR 0034): a filed-back answer lands in the universe you
+  // are working in, so it stays on-scope for that universe's retrieval. Read from
+  // the brain's .vault-rag pointer, anchored on cwd like the vault write path. A
+  // default/single-universe brain reads back "default" → note stays at the root.
+  universe: () => readActiveUniverse({ existsSync, readFileSync }, vaultRagDir(process.cwd())),
   readInput: () => readFileSync(0, "utf8"),
   exists: (p) => existsSync(p),
   writeFile: (p, content) => {
@@ -53,7 +59,7 @@ export function runFileBack(argv, deps = realFileBackDeps) {
 
   let note;
   try {
-    note = renderFiledNote({ ...spec, today: deps.today() });
+    note = renderFiledNote({ ...spec, today: deps.today(), universe: deps.universe() });
   } catch (err) {
     deps.error(`✗ ${err.message}`);
     return 1;
