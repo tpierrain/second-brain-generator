@@ -24,6 +24,7 @@ import type {
 import { toLocalMirrorMarkdown } from '../lib/markdown.js';
 import { contentHash } from '../lib/content-hash.js';
 import { extractPageId } from '../lib/notion-url.js';
+import { DEFAULT_UNIVERSE } from '../lib/universe.js';
 import { pagesToDelete } from './reconcile.js';
 
 /**
@@ -52,6 +53,12 @@ export interface LocalMirrorDeps {
   connectorFor: ConnectorFactory;
   /** Single-flight lock per source, across processes (auto-refresh study, S2 item 1). */
   syncLock: ISyncLock;
+  /**
+   * The currently-active universe (ADR 0034), read ONLY by `setupSource` to FREEZE a mirror's
+   * universe at declaration time — never on the hot sync path, so a background tick firing while
+   * the user `/switch`es can't scatter one mirror's notes across universes.
+   */
+  activeUniverse: () => string;
 }
 
 /** The Domain Service — the concrete API port. Pure orchestration, no transport. */
@@ -77,7 +84,8 @@ export class LocalMirror implements ILocalMirror {
    * name (`tokenEnv`) is stored (§11).
    */
   async setupSource(req: SetupRequest): Promise<SetupResult> {
-    const config = configFromRequest(req);
+    // Freeze the active universe into the config NOW (ADR 0034) — never re-read at sync time.
+    const config = configFromRequest(req, this.deps.activeUniverse());
     const connector = this.deps.connectorFor(config);
 
     let items;
@@ -487,8 +495,12 @@ export function rootPageIdOf(config: LocalMirrorConfig, previous: PersistedState
   return previous?.rootPageId ?? extractPageId(config.connector.config.root_page_url);
 }
 
-/** Assembles a declared config from the onboarding request — the token's env-var name only (§11). */
-export function configFromRequest(req: SetupRequest): LocalMirrorConfig {
+/**
+ * Assembles a declared config from the onboarding request — the token's env-var name only (§11).
+ * The active `universe` is stamped only when it is a real, non-default scope (ADR 0034): the
+ * default universe carries NO key, so a single-universe brain declares mirrors exactly as before.
+ */
+export function configFromRequest(req: SetupRequest, universe: string = DEFAULT_UNIVERSE): LocalMirrorConfig {
   return {
     name: req.name,
     title: req.title,
@@ -498,6 +510,7 @@ export function configFromRequest(req: SetupRequest): LocalMirrorConfig {
       config: { root_page_url: req.rootPageUrl, token_env: req.tokenEnv },
     },
     target_dir: `mirrors/${req.name}`,
+    ...(universe && universe !== DEFAULT_UNIVERSE ? { universe } : {}),
   };
 }
 

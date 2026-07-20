@@ -36,6 +36,37 @@ test('setting up a connectable source declares it and runs a first sync', async 
   assert.ok(harness.vaultFiles().has('mirrors/team-a/page-1.md'));
 });
 
+// Universe-awareness (ADR 0034): a mirror belongs to ONE universe, FROZEN at setup time from the
+// then-active universe (never re-read at sync time, so a background tick firing mid-`/switch` can't
+// scatter a mirror's notes). The default universe → no key → root behaviour, unchanged.
+test('setup freezes the active universe into the config and lands the first sync there', async () => {
+  const harness = aLocalMirror()
+    .withActiveUniverse('acme')
+    .withConnectablePages(aNotionPage({ id: 'page-1' }));
+  const gss = harness.build();
+
+  await gss.setupSource(aSetupRequest());
+
+  const declared = await harness.declaredSources();
+  assert.equal(declared[0].universe, 'acme', 'the active universe is frozen into the config');
+  assert.ok(
+    harness.vaultFiles().has('acme/mirrors/team-a/page-1.md'),
+    'the first sync lands the note under the frozen universe root',
+  );
+});
+
+test('setup under the default universe declares no universe key (backward-compatible)', async () => {
+  const harness = aLocalMirror() // active universe left at its default
+    .withConnectablePages(aNotionPage({ id: 'page-1' }));
+  const gss = harness.build();
+
+  await gss.setupSource(aSetupRequest());
+
+  const declared = await harness.declaredSources();
+  assert.equal('universe' in declared[0], false, 'the default universe carries no key');
+  assert.ok(harness.vaultFiles().has('mirrors/team-a/page-1.md'), 'and the note stays at the root');
+});
+
 test('setting up a zone whose root is not connected returns a clear message and declares nothing', async () => {
   const harness = aLocalMirror(); // no pages → scoped search returns 0
   const gss = harness.build();

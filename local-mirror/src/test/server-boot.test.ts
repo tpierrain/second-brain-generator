@@ -39,6 +39,9 @@ test('buildDeps wires each driven adapter to its concrete implementation', () =>
   assert.ok(deps.vaultWriter instanceof FsVaultWriter);
   assert.ok(deps.clock instanceof SystemClock);
   assert.equal(deps.connectorFor, notionConnectorFactory);
+  // Universe reader wired (ADR 0034): no pointer file in the test env → the default universe.
+  assert.equal(typeof deps.activeUniverse, 'function');
+  assert.equal(deps.activeUniverse(), 'default');
 });
 
 test('buildApi assembles the Domain Service from the (defaulted) real deps', () => {
