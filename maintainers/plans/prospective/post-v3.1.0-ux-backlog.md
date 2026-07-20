@@ -135,32 +135,37 @@ behaviour unchanged** (backward-compatible: mirrors declared before this feature
 
 ### Tracking (TDD, outside-in via the Builder — the suite's style; `local-mirror/` is a TS package, `npm test`)
 
-- [ ] **Step 1 — sync write path (acceptance, `sync-writes-vault.test.ts`).** A mirror whose config
+- [x] **Step 1 — sync write path (acceptance, `sync-writes-vault.test.ts`).** A mirror whose config
       carries `universe: 'acme'` writes under `acme/mirrors/<name>/<id>.md` and stamps `universe: acme`
-      in frontmatter; a rootless mirror is unchanged. Drive:
-  - [ ] `types.ts` → `LocalMirrorConfig.universe?: string`; `LocalMirrorFrontmatter.universe?: string`.
-  - [ ] `lib/markdown.ts` → `toLocalMirrorMarkdown(mirror, item, body, universe?)` stamps `universe`
-        LAST when truthy (matches `stamp-universe.mjs`'s append-last convention).
-  - [ ] `domain/local-mirror.ts` `syncLocked` → prefix `vaultPath` with `${config.universe}/` when set,
-        pass `config.universe` to `toLocalMirrorMarkdown`. State stores the actual path → delete/reconcile
-        stay consistent by construction.
-  - [ ] `test/builder.ts` → `aNotionLocalMirror({ universe })` includes the key only when provided.
-- [ ] **Step 2 — freeze at setup (acceptance, `setup-source.test.ts`).** `setupSource` with active
-      universe `'acme'` declares a config carrying `universe: 'acme'`; with `'default'` → no `universe`.
-  - [ ] `LocalMirrorDeps` gains `activeUniverse: () => string` (used ONLY by setupSource, not the hot
-        sync path); `configFromRequest(req, universe)` sets `universe` only when truthy and `!== 'default'`.
-  - [ ] `test/builder.ts` → `withActiveUniverse(name)`, default `() => 'default'` so existing tests pass.
-  - [ ] Define a local `DEFAULT_UNIVERSE = 'default'` const in the TS package (lock-step comment with
+      in frontmatter; a rootless mirror is unchanged. _(2026-07-20 · `4e7ce6a`)_ Drove:
+  - [x] `types.ts` → `LocalMirrorConfig.universe?: string`; `LocalMirrorFrontmatter.universe?: string`.
+  - [x] `lib/markdown.ts` → `toLocalMirrorMarkdown(mirror, item, body, universe?)` stamps `universe`
+        LAST when truthy (matches `stamp-universe.mjs`'s append-last convention; asserted by raw order).
+  - [x] `domain/local-mirror.ts` → extracted a pure `vaultPathFor(config, id)` that prefixes with
+        `${config.universe}/` when set; state stores the actual path → delete/reconcile stay consistent.
+  - [x] `test/builder.ts` → `aNotionLocalMirror({ universe })` includes the key only when provided.
+        Triangulated by the rootless twin (root path, no `universe` key).
+- [x] **Step 2 — freeze at setup (acceptance, `setup-source.test.ts`).** `setupSource` with active
+      universe `'acme'` declares a config carrying `universe: 'acme'` AND lands the first sync there; with
+      `'default'` → no `universe`, note at root. _(2026-07-20 · `266aea8`)_
+  - [x] `LocalMirrorDeps` gains `activeUniverse: () => string` (read ONLY by setupSource, never the hot
+        sync path); `configFromRequest(req, universe)` stamps `universe` only when truthy and `!== 'default'`.
+  - [x] `test/builder.ts` → `withActiveUniverse(name)`, default `'default'` so existing tests pass.
+  - [x] Defined a local `DEFAULT_UNIVERSE = 'default'` const in `lib/universe.ts` (lock-step comment with
         `scripts/lib/universes.mjs` / `rag/src/lib/universe.ts` — cannot import across package + language).
-- [ ] **Step 3 — real adapter + server wiring.** A reader for `<projectRoot>/.vault-rag/active-universe`
-      (trim, fallback `'default'`; POSIX, cf. the Windows `vaultRagDir` fix) wired into `buildDeps()`
-      (`server.ts`), anchored on `projectRoot` (already the brain root in `lib/config.ts`). Unit-test it.
-- [ ] **Full suite green** (`npm test`, baseline was 205) + **repo-wide** `node --test` for the launcher.
-      Cross-platform reflex: POSIX paths at the source (Windows CI is the arbiter).
-- [ ] **Known limitation to note in the PR (do NOT over-engineer a fix):** a mirror declared BEFORE a
-      universe existed keeps writing at root; if you later activate a universe, only genuinely-changed
-      items would move, so a transition could momentarily leave a root copy + a universe copy. Acceptable
-      (universes + mirror is a brand-new combo; fresh mirrors are declared inside their universe). Log it.
+- [x] **Step 3 — real adapter + server wiring.** `adapters/fs-active-universe.ts`: pure
+      `resolveActiveUniverse` (trim, blank/whitespace/absent → `'default'`) split from the file read, any
+      read error degrades to the default; wired into `buildDeps()` via `ACTIVE_UNIVERSE_PATH`
+      (`<brainRoot>/.vault-rag/active-universe`, in `lib/config.ts`). Unit-tested + buildDeps wiring
+      asserted through the real composition root. _(2026-07-20 · `266aea8`)_
+- [x] **Full suite green** (`npm test` → **213**, baseline 205) + **repo-wide** `node --test` for the
+      launcher (**740 pass / 0 fail / 1 todo**) + `tsc --noEmit` clean + `tsc` build clean. POSIX paths at
+      the source (vault paths built with literal `/`; the pointer is read with native `resolve`, not stored).
+      _(2026-07-20 — local green; Windows CI is the final arbiter on the PR.)_
+- [x] **Known limitation noted in the PR (no over-engineered fix):** a mirror declared BEFORE a universe
+      existed keeps writing at root; if you later activate a universe, only genuinely-changed items would
+      move, so a transition could momentarily leave a root copy + a universe copy. Acceptable (universes +
+      mirror is a brand-new combo; fresh mirrors are declared inside their universe). _(2026-07-20 — in PR body.)_
 
 > Links: ADR 0034 (universes), the universes plan (`universes-progressive-disclosure-action.md` → Step 6,
 > import stamping), FU3 in this file (the sibling file-back universe fix, PR #43),
