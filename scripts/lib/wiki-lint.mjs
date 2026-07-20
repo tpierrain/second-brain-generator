@@ -72,11 +72,23 @@ export function isUnderZone(path, prefix) {
   return firstSlash !== -1 && path.slice(firstSlash + 1).startsWith(prefix);
 }
 
-// Raw-capture zones: notes here are legitimately unlinked (a daily log, an inbox
-// dump, the append-only activity ledger), so they are excluded from the orphan rule
-// by default. `actions-log.md` is a grep-able ledger, not a wiki node — nobody links
-// TO it, so flagging it orphan is a permanent false positive.
-const DEFAULT_ORPHAN_EXCLUDE = ["daily/", "raw-sources/", "inbox/", "actions-log.md"];
+// Zones whose notes are legitimately unlinked by design, so they are excluded
+// from the orphan rule by default. Two families:
+//   - raw captures: a daily log, an inbox dump, imported raw sources, and the
+//     append-only activity ledger (`actions-log.md` is a grep-able ledger, not a
+//     wiki node — nobody links TO it, so flagging it orphan is a permanent lie).
+//   - engine work-zones: folders the shipped skills write, that nobody links back
+//     to (a meeting write-up, a sync-sources briefing, a 1-1 prep, a coaching note).
+// Brain-specific work folders (e.g. `prep-day/`) stay per-brain via options.orphanExclude.
+const RAW_CAPTURE_ZONES = ["daily/", "raw-sources/", "inbox/", "actions-log.md"];
+const ENGINE_WORK_ZONES = ["meetings/", "briefings/", "prep-1-1/", "coaching/"];
+const DEFAULT_ORPHAN_EXCLUDE = [...RAW_CAPTURE_ZONES, ...ENGINE_WORK_ZONES];
+
+// A raw dump is not a curated wiki node: an imported transcript, an inbox scratch,
+// the append-only ledger arrive without the taxonomy frontmatter and shouldn't be
+// held to it. Only the RAW zones are exempt — curated work-zones (meetings/ etc.)
+// are written by skills WITH frontmatter, so a missing key there is genuine rot.
+const DEFAULT_FRONTMATTER_EXEMPT = RAW_CAPTURE_ZONES;
 
 // Frontmatter `type` values that make a note a curated "entity page" (subject to
 // the stale rule). Configurable via options.entityTypes.
@@ -105,11 +117,14 @@ function daysBetween(laterIso, earlierIso) {
 //   orphanExclude — path prefixes whose notes are never flagged as orphans.
 //   entityTypes  — frontmatter `type` values treated as entity pages.
 //   staleDays    — how many days behind its freshest reference makes an entity stale.
+//   frontmatterExempt — path prefixes (raw-capture zones) exempt from the required-
+//                       frontmatter rule (a raw dump is not a curated node).
 export function lintVault(notes, options = {}) {
   const orphanExclude = options.orphanExclude ?? DEFAULT_ORPHAN_EXCLUDE;
   const entityTypes = options.entityTypes ?? DEFAULT_ENTITY_TYPES;
   const staleDays = options.staleDays ?? DEFAULT_STALE_DAYS;
   const requiredFrontmatter = options.requiredFrontmatter ?? DEFAULT_REQUIRED_FRONTMATTER;
+  const frontmatterExempt = options.frontmatterExempt ?? DEFAULT_FRONTMATTER_EXEMPT;
 
   const resolve = buildResolver(notes);
   const danglingLinks = [];
@@ -151,6 +166,7 @@ export function lintVault(notes, options = {}) {
   }
   const frontmatterViolations = [];
   for (const note of notes) {
+    if (frontmatterExempt.some((prefix) => isUnderZone(note.path, prefix))) continue;
     const missing = requiredFrontmatter.filter((key) => !isPresent(note.frontmatter[key]));
     if (missing.length > 0) frontmatterViolations.push({ path: note.path, missing });
   }
