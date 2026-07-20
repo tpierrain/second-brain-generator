@@ -112,9 +112,17 @@ replicates a Notion zone as Markdown), so mirrored notes are **indexed like any 
 > 🎯 **PICKED UP 2026-07-20 — bundled into the same release as PR #43** (the `/lint` + file-back
 > follow-ups). Release codename chosen: **"The One Where /lint Quiets Down and Filing Finds Its
 > Universe"**. This closes the **write-path universe trilogy**: `/import` ✅ · file-back ✅ (#43) ·
-> **`/local-mirror` ← this**. Release is **NOT cut yet** (Thomas's call). Do this on its **own branch
-> + PR** (`feat/local-mirror-universe-aware`, off `main` once #43 has merged), then Thomas cuts the
-> release covering both.
+> **`/local-mirror` ← this**. Release is **NOT cut yet** (Thomas's call).
+>
+> **Branching (decided 2026-07-20, supersedes the earlier "own branch off main once #43 merged").**
+> Build this on the **SAME branch as #43** (`fix/lint-followups-work-zones-and-file-back-universe`);
+> #43 grows into THE release-PR covering the whole trilogy close, merged **once** at release time.
+> Rationale: a fresh install copies the launcher's **`main` HEAD** (`installer.mjs` git-ls-files copy),
+> so merging #43 to `main` first would expose it to every new install **before** the joint release —
+> exactly what we must avoid. One branch, one merge, nothing on `main` before the release. The
+> `local-mirror/` package touches no file of #43, so its commits stay cleanly separable in history.
+> (`update-engine` reaches deployed brains only via the latest tag, ADR 0017, so THEY are unaffected
+> until the release is cut — the exposure is fresh-installs-only, hence this decision.)
 
 ### Frozen design decision (owner-approved reasoning, 2026-07-20)
 
