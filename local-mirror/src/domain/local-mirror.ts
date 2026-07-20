@@ -182,10 +182,10 @@ export class LocalMirror implements ILocalMirror {
     let allOk = true;
 
     for (const item of items) {
-      const vaultPath = `${config.target_dir}/${item.id}.md`;
+      const vaultPath = vaultPathFor(config, item.id);
       const tracked = previous?.items[item.id];
       try {
-        const markdown = toLocalMirrorMarkdown(config.name, item, await connector.fetchContent(item));
+        const markdown = toLocalMirrorMarkdown(config.name, item, await connector.fetchContent(item), config.universe);
         const hash = contentHash(markdown);
         if (tracked && tracked.contentHash === hash) {
           nextItems[item.id] = tracked;
@@ -470,6 +470,16 @@ export function toSourceState(
     lastSyncStatus: persisted?.lastSyncStatus ?? 'never',
     itemCount: persisted ? Object.keys(persisted.items).length : 0,
   };
+}
+
+/**
+ * Vault-relative path of a mirrored note. A universe-scoped mirror lands under its universe root
+ * (`<universe>/<target_dir>/<id>.md`, ADR 0034) so retrieval scope travels with the file, exactly
+ * as `/import --universe` files notes; a rootless mirror keeps the historical root path unchanged.
+ */
+export function vaultPathFor(config: LocalMirrorConfig, id: string): string {
+  const prefix = config.universe ? `${config.universe}/` : '';
+  return `${prefix}${config.target_dir}/${id}.md`;
 }
 
 /** The source's stable Notion root page id — from prior state, else extracted from the URL. */

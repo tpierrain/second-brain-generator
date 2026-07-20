@@ -207,6 +207,8 @@ export function aNotionLocalMirror(
       },
     },
     target_dir: overrides.target_dir ?? `mirrors/${name}`,
+    // The universe key travels only when the test declares one — a rootless mirror carries none.
+    ...(overrides.universe ? { universe: overrides.universe } : {}),
   };
 }
 
