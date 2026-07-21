@@ -1,7 +1,8 @@
 <!-- ════════════════════════════════════════════════════════════════════════ -->
-<!-- STATUS: 🔭 PROSPECTIVE — agreed design, not yet built. Canonical plan for   -->
-<!-- the "universes" capability. Ordering: this is the FIRST gate to EXECUTE in  -->
-<!-- ../ROADMAP.md (it must land before the migration import).                    -->
+<!-- STATUS: ✅ SHIPPED. The "universes" capability (ADR 0034) landed in v3.6.0   -->
+<!-- (PR #38, 2026-07-19), with the write-path trilogy + /switch connectors flag  -->
+<!-- following in v3.6.1 / v3.6.2 (2026-07-21). Archived; the residual field-      -->
+<!-- verify folds into ROADMAP Gate 3. Kept for its design record + checkboxes.   -->
 <!-- ════════════════════════════════════════════════════════════════════════ -->
 
 # 🌌 Universes — a soft, progressively-disclosed retrieval scope
@@ -10,10 +11,11 @@
 Read it first: it carries the *why* (threat model, progressive disclosure, the implicit-default
 principle, alternatives rejected). This plan is the *how*.
 
-> **Status (2026-07-19 · `410c694`, branch `docs/universes-progressive-disclosure`):** design agreed and
-> committed (this plan + ADR 0034 + ROADMAP Gate 2). **Implementation not started** — resume at the first
-> unchecked `- [ ]` (Step 1, data model). Land on a fresh code branch (TDD), keep it generic (no
-> `inqom`/`shodo` literals).
+> **Status: ✅ SHIPPED.** The capability was built and released across **v3.6.0** (PR #38, core +
+> progressive disclosure, 2026-07-19), **v3.6.1** (universe-aware `/lint`), and **v3.6.2** (write-path
+> trilogy: import + file-back + local-mirror, plus the `/switch` single-account-connectors flag,
+> 2026-07-21). Kept generic (no `inqom`/`shodo` literals) as designed. The one remaining `- [ ]` is a
+> manual byte-for-byte single-universe field-verify, tracked as ROADMAP Gate 3.
 
 ## What we are building (the capability)
 

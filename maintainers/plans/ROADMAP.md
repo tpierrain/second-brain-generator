@@ -63,7 +63,7 @@ safe because **nothing forces** the fleet's upgrade in the interim.
         (visible only at count >= 2) + `--universe` import stamp. Bucket-1 change → lands **before** the
         migration *import*.
   - [x] **Decision:** `../decisions/0034-progressive-disclosure-of-universes.md`.
-  - [x] **Canonical plan:** `prospective/universes-progressive-disclosure-action.md`.
+  - [x] **Canonical plan:** `archived/universes-progressive-disclosure-action.md`.
   - [ ] Field-verify a fresh single-universe install is born "today" (no universe folder, no
         frontmatter key, no reminder) and that creating a 2nd universe surfaces `/switch` + the
         reminder + scoped search — at Gate 3 generate time.
@@ -91,7 +91,7 @@ safe because **nothing forces** the fleet's upgrade in the interim.
 | Plan (canonical) | What it delivers | Gate | Status |
 | --- | --- | --- | --- |
 | `prospective/engine-managed-file-merge-strategy.md` | Propagate engine improvements into user-editable provided files (constitution + shipped skills) without clobbering edits. | 1 & 4 | 🔭 Prospective / analysis; sequencing decided. |
-| `prospective/universes-progressive-disclosure-action.md` | A soft, progressively-disclosed per-universe retrieval scope over one shared vault/index (ADR 0034). | 2 | ✅ Shipped (PR #38, 2026-07-19). Field-verify folds into Gate 3. |
+| `archived/universes-progressive-disclosure-action.md` | A soft, progressively-disclosed per-universe retrieval scope over one shared vault/index (ADR 0034). | 2 | ✅ Shipped (PR #38 in v3.6.0, then write-path trilogy + `/switch` flag in v3.6.2, 2026-07-21). Plan archived; field-verify folds into Gate 3. |
 | `prospective/second-brain-migration-and-engine-upstream-action.md` | Migrate the pre-existing personal brain (~405 notes) + upstream the generic delta. | 3 | In progress: Tracks A/B/C DONE (PR #29/#30/#32); **Track D now unblocked (Gate 2 shipped)**; F post-migration. |
 
 > Other in-flight plans on their own branches (e.g. wiki-health axis 1, marketing page) are **not
