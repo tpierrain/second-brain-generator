@@ -168,8 +168,9 @@ adapter** you pick at install — without breaking your notes or skills.
 ## Battle-tested — and packed with engineering 🔧 &nbsp;<sub>*for the technically curious*</sub>
 
 **Under the surface it's full of real software engineering and battle-tested robustness patterns** —
-self-healing, deterministic, fail-loud — built to keep *working*, not merely to *seem* to. The rest of
-this page is the deep-dive — skip it freely; everything above is all you need to *use* it.
+self-healing, deterministic, fail-loud — built to keep *working*, not merely to *seem* to. Below is a
+**taster**; skip it freely (everything above is all you need to *use* it). The full depth lives in
+**[What makes it different](EN-QUOI-C-EST-DIFFERENT.md)**.
 
 ---
 
@@ -232,8 +233,8 @@ tested and fail-loud**. The through-line — **fail loudly rather than pretend**
 **F · Proven engineering.**
 - **TDD baby-steps**, **green-only commits** (never commit red); **outside-in diamond TDD** for the harness.
 - **Eval-set** — retrieval quality is *measured*, not asserted (see below).
-- **ADR-governed** — 31 architectural decisions, each with an explicit `Scope:` and a `Crux`.
-- **Mutation testing** (Stryker) — a reliability score for the test suite itself, **already underway** *(results not published yet)*.
+- **ADR-governed** — 34 architectural decisions, each with an explicit `Scope:` and a `Crux`.
+- **Mutation testing** (Stryker) — a reliability score for the test suite itself: **90–97%** across the three engine packages (rag 90.4%, local-mirror 95.6%, harness 97.3%).
 
 ---
 
@@ -242,8 +243,10 @@ tested and fail-loud**. The through-line — **fail loudly rather than pretend**
 - **Retrieval quality**: the local **"Gemma inside"** embedder scores **90%** on the project's
   [eval-set](maintainers/eval-set.md) — equal to Ollama, above the Gemini baseline (80%) — measured on
   real notes, not English leaderboards.
-- **Test-suite strength**: a **mutation-testing** run (Stryker) is **already underway** — *this section
-  will carry the score as soon as the results are published.*
+- **Test-suite strength**: a **mutation-testing** run (Stryker) scores **90–97%** across the three engine
+  packages — rag **90.4%**, local-mirror **95.6%**, harness scripts **97.3%** — i.e. the share of
+  injected faults the tests actually catch (line coverage can't tell you that). *(pinned to v3.6.2; detail
+  in [`maintainers/mutation/RESULTS.md`](maintainers/mutation/RESULTS.md))*
 
 ---
 
@@ -257,22 +260,6 @@ interchangeable adapters**. That's
 what makes "pick your privacy at install" **safe** — you swap the adapter, your notes and skills don't
 move. *([ADR 0006](maintainers/decisions/0006-rag-mcp-is-stable-contract.md) ·
 [ADR 0007](maintainers/decisions/0007-three-embedder-adapters-privacy-scale.md))*
-
----
-
-## Engineering & SRE principles, at a glance
-
-- **Grounded, with proof** — every answer comes *from your vault*, with sources; a synthetic canary + a fail-loud `verify-rag` (exit `0`/`1`) **prove** it. *(ADR 0006 / 0028)*
-- **Fail loud, never pretend** — when something is wrong it **says so**, rather than answering wrong.
-- **Determinism over guesswork** — a ladder from pure functions and binary exit-code tools to real event triggers; the **LLM only where judgment is the point**. *(ADR 0009)*
-- **Self-healing, desired-state** — an **idempotent reconciler** converges to the intended state (the Kubernetes / GitOps / Terraform pattern). *(ADR 0026)*
-- **Always catches up** — whatever happened, it re-indexes the delta, auto-saves and auto-commits; nothing to replay by hand.
-- **Never overwrites you** — a structural **write-allowlist**; your notes, keys, constitution and skills are **never touched**. *(ADR 0012 / 0014 / 0025)*
-- **No hidden, driftable state** — short-lived hooks re-derive what they need on each run.
-- **Stale-while-revalidate** — an instant answer first, freshness reconciled **in parallel**.
-- **Incremental & on-device** — only the delta is re-embedded, locally (*EmbeddingGemma* / ONNX).
-- **Hexagonal, open, zero lock-in** — a stable **local MCP port** + swappable adapters; open **protocol** + open **format** + Apache-2.0. *(ADR 0006 / 0007)*
-- **Test-driven, green-only** — TDD baby-steps, **outside-in diamond TDD**, never commit red; quality **measured** by an eval-set; mutation testing **in progress**.
 
 ---
 

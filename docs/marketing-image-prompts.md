@@ -4,7 +4,8 @@
 > [`docs/img/`](img/) under the **exact filename** given (`board-*.png`). `MARKETING.md` already
 > references those slots, so the page picks them up with no further edit. Two boards
 > (`board-flow`, `board-hexagon`) also ship as **SVG fallbacks** that render today — generate the
-> illustrated versions only if you want the consistent hand-drawn look across all six.
+> illustrated versions only if you want the consistent hand-drawn look across all eight (six in-page
+> boards + the standalone `board-hero` social card + the `board-mesh` B2B-vision board).
 >
 > **Shared house style (paste into every prompt).** *Clean modern infographic / explainer-board
 > illustration in the spirit of ByteByteGo & Alex Xu diagrams. Flat vector look, soft rounded
@@ -101,8 +102,8 @@ stack / pyramid of labelled bands, each with a small icon, from foundation to to
   never overwrites your notes · self-upgradable engine"*.
 - **"Hexagonal architecture"** — *stable local MCP port · swappable adapters · open format, open license, zero
   lock-in"*.
-- **"Proven engineering"** — *TDD baby-steps · green-only commits · eval-set 90% · 31 ADRs · mutation
-  testing (coming)"*.
+- **"Proven engineering"** — *TDD baby-steps · green-only commits · eval-set 90% · 34 ADRs · mutation
+  score 90–97%"*.
 A side ribbon reads **"Fail loudly rather than pretend."** Sturdy, trustworthy, engineering-grade
 infographic. ByteByteGo style, exact legible labels.
 
@@ -120,3 +121,44 @@ infographic. ByteByteGo style, exact legible labels.
   in Markdown, in your git repo"**.
 A center divider with a **"VS"** badge. Make the right side clearly the richer, trustworthy option.
 ByteByteGo comparison-board style, crisp exact text.
+
+---
+
+## `board-hero.png` — the launch / social lead card (standalone announcement image)
+
+> **Purpose.** The single **lead image** for the wide-communication push — the one you post at the top
+> of a LinkedIn / X / Medium announcement, where it must stand alone with no surrounding page. Not wired
+> into `MARKETING.md` by default (it is a social asset); optionally drop it at the very top in place of
+> the mascot. Keep it **uncluttered** — one glance must land the promise.
+
+**Prompt:** A premium, uncluttered hero card, **16:9**, for a product announcement. Centerpiece: a calm,
+friendly person leaning back **relaxed** in a chair, and beside them a warm glowing **brain** connected by
+tidy lines to a small cluster of familiar tool icons (Slack, Drive, mail, calendar, a notes folder). A
+soft **green padlock** sits on the brain with a subtle boundary line reading **"stays on your machine"**.
+Big bold headline top-left: **"All your work, remembered."** Sub-line under it: **"Always up-to-date,
+always sourced."** A violet ribbon along the bottom reads the catchphrase **"Just ask. Sit down and
+relax."** Optionally a tiny friendly mascot glyph in a corner. Convey *calm, effortless, private
+recall* — the opposite of information overload. Flat vector, ByteByteGo / Alex Xu explainer aesthetic,
+violet #7C4DFF + indigo #4F46E5 accents, light background, crisp perfectly-spelled labels, no clutter,
+no watermark.
+
+---
+
+## `board-mesh.png` — "A mesh of personal brains makes the whole team effective" (the B2B vision)
+
+> **Purpose.** Fills the reserved **ACT 2** slot in `MARKETING.md` (the deferred B2B / connected-teams
+> vision). The thesis to land: **each person keeps their own private, owned brain — and the mesh of
+> them makes the collective sharp**, without pooling everyone's data into one vendor silo. Keep it
+> generic: **roles only, never real company / client / exec names.**
+
+**Prompt:** A board titled **"A team is a mesh of second brains"**. Arrange **four** rounded person-cards
+in a loose ring, each with a brain glyph, a tiny git icon and its **own green padlock**, labelled by
+**role only**: **"Sales"**, **"Customer Success"**, **"Product"**, **"Engineering"**. Under each, a small
+caption **"their own notes · their own brain · private"**. Between the cards, draw **thin violet
+connection lines** forming a mesh, each line labelled with a lightweight verb like **"asks"**, **"shares
+context"**, **"stays in sync"** — but **no central database in the middle** (the point is peer-to-peer,
+not a pooled silo). Top caption: **"Everyone keeps their own private brain."** Bottom caption in violet:
+**"The mesh makes the whole team effective — without pooling your data."** A small side note reads
+**"each brain stays owned & local — no shared vendor vault."** Flat vector, ByteByteGo / Alex Xu style,
+violet #7C4DFF + indigo #4F46E5, green padlocks for "private", light background, crisp exact legible
+labels, no clutter, no watermark.
