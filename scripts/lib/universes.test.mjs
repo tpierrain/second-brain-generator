@@ -14,6 +14,7 @@ import {
   vaultRagDir,
   runSwitchCli,
   isMultiverse,
+  nativeConnectorsReminder,
   DEFAULT_UNIVERSE,
 } from "./universes.mjs";
 
@@ -251,6 +252,31 @@ test("runSwitchCli switch to an unknown universe exits 1 and lists the available
   assert.equal(readActiveUniverse(io, DIR), DEFAULT_UNIVERSE);
 });
 
+test("runSwitchCli switch between two named universes appends the connectors reminder", () => {
+  const io = fakeFs();
+  writeRegistry(io, DIR, ["acme", "blue"]);
+  writeActiveUniverse(io, DIR, "acme");
+
+  const res = runSwitchCli(io, DIR, ["blue"]);
+
+  assert.equal(res.code, 0);
+  assert.match(res.message, /switched to 'blue'/);
+  assert.match(res.message, /single-account/i);
+  assert.equal(readActiveUniverse(io, DIR), "blue");
+});
+
+test("runSwitchCli switch back to the default scope does NOT append the reminder", () => {
+  const io = fakeFs();
+  writeRegistry(io, DIR, ["acme"]);
+  writeActiveUniverse(io, DIR, "acme");
+
+  const res = runSwitchCli(io, DIR, ["default"]);
+
+  assert.equal(res.code, 0);
+  assert.match(res.message, /switched to 'default'/);
+  assert.doesNotMatch(res.message, /single-account/i);
+});
+
 test("runSwitchCli current prints the active universe (exit 0)", () => {
   const io = fakeFs();
   writeActiveUniverse(io, DIR, "acme");
@@ -282,4 +308,31 @@ test("isMultiverse turns true the moment a first universe is created (default + 
 
 test("isMultiverse stays true past the boundary (three universes)", () => {
   assert.equal(isMultiverse(["acme", "blue"]), true);
+});
+
+// ── nativeConnectorsReminder: single-account connectors don't follow a switch ──
+test("nativeConnectorsReminder warns when switching between two named universes", () => {
+  const msg = nativeConnectorsReminder({ from: "acme", to: "blue" });
+  assert.match(msg, /single-account/i);
+  // Names the target so the user knows which universe's accounts to line up.
+  assert.match(msg, /'blue'/);
+});
+
+test("nativeConnectorsReminder stays silent when switching back to the default scope", () => {
+  // Default is the cross-cutting scope, tied to no specific employer/client account:
+  // the trivial toggle needs no warning.
+  assert.equal(nativeConnectorsReminder({ from: "acme", to: DEFAULT_UNIVERSE }), "");
+});
+
+test("nativeConnectorsReminder stays silent on a no-op switch (same universe)", () => {
+  // Re-selecting the current universe changes no account context.
+  assert.equal(nativeConnectorsReminder({ from: "acme", to: "acme" }), "");
+});
+
+test("nativeConnectorsReminder warns when leaving the default scope for a named universe", () => {
+  // default → named IS an account-context change (entering a specific sphere), so
+  // this is NOT the excluded trivial toggle: it warns and names the target.
+  const msg = nativeConnectorsReminder({ from: DEFAULT_UNIVERSE, to: "acme" });
+  assert.match(msg, /single-account/i);
+  assert.match(msg, /'acme'/);
 });
