@@ -35,6 +35,50 @@ talk).
 
 ---
 
+## What Kenjaku has become — altitude synthesis _(2026-07-21)_
+
+> Captured to regain perspective on the product before writing launch copy. This is the **positioning
+> spine**: the arc (R0) and the differentiators (R6, P2) all serve this picture. Reuse, don't re-derive.
+
+**Where it started (Feb 2026).** A *survival* need: a Karpathy-style LLM Wiki, hand-built with Claude, to
+stop being behind on information at a client. *Answer my questions right away, from my own sources.* A
+personal hack, single-machine, single-user.
+
+**What it has become — three thresholds it crossed:**
+
+1. **From a personal hack → a PRODUCT.** No longer *your* rig: a **generator** — one paste and anyone
+   gets *their own* brain, tailored to their line of work, that **self-upgrades** (the engine evolves
+   without ever touching the notes). Reusable launcher ↔ owned brain, link severed by construction
+   (ADR 0001/0002/0012/0014). *You share the recipe, never your brain.*
+2. **From a prompt+notes recipe → DETERMINISTIC, SRE-grade infrastructure.** Everything that fails
+   *silently* in a DIY LLM-wiki (nothing saved, search invents, session not rooted, node broken) is
+   hardened: determinism ladder (ADR 0009), hooks on real events, **fail-loud** everywhere,
+   **self-healing / desired-state** (idempotent reconciler at SessionStart, ADR 0026), **Windows parity
+   as a release gate**, grounding *proven* by canary, **34 ADRs**, eval 90%, mutation 90–97%. A personal
+   LLM-wiki has none of this.
+3. **From a wiki → a PLATFORM.** Not just "search notes" anymore: a base with capabilities — `coach`,
+   `import`, **universes** (retrieval scopes, ADR 0034), `local-mirror` (Notion zone → local RAG),
+   `prepare-1-1`, `sync-sources` (read-only fan-out), `update-engine`, `switch`, cross-machine sync. Plus
+   a **B2B vision** in sight (the mesh of brains wired to each service's golden sources).
+
+**What did NOT move (the soul).** Through all three mutations the Feb-2026 core is intact: **answer-first**
+(answer from what you know, amend in the background), **grounded & honest** (never invent, prove the
+source), **owned & open** (Markdown, your git repo, Apache-2.0, zero lock-in), **private** (local RAG by
+default, 3 embedders), **affordance** (*just ask, sit down and relax*).
+
+**The Karpathy question is already settled (ADR 0033).** The lineage is officially decided: **Kenjaku
+*descends* from Karpathy's LLM Wiki** (prior art, credited), independent implementation, different domain.
+Retained positioning = **"LLM Wiki + RAG + connectors."** So it is **not** "Kenjaku *vs* Karpathy" — it is
+**"Kenjaku = Karpathy's LLM Wiki, *plus* à-la-carte RAG + connectors + determinism + product packaging."**
+An owned evolution, not an opposition. (This resolves the "middle column" framing for the R6 comparative.)
+
+**In one sentence.** *Kenjaku started as a personal LLM-wiki to survive information overload, and became
+an **installable open-source product** that gives everyone their own second brain: same soul (answer now,
+sourced, owned, effortless), grown into **deterministic SRE-grade infrastructure** and an extensible
+**platform**, with a collective aim (a mesh of brains wired to the company's sources of truth).*
+
+---
+
 ## Review feedback (Thomas) — pending triage
 
 > Captured verbatim-in-substance during Thomas's read-through. **Not yet actioned** — we prioritize
@@ -76,7 +120,7 @@ talk).
   `docs/img/board-hexagon.svg` (and the Nano-Banana prompt for the hexagon board) labels the center
   "MCP API port"; make it read **local** MCP there too.
 
-- [ ] **R3 — Don't call it "The Hive" — it's plain hexagonal architecture.** *The Hive* is a **modular
+- [x] **R3 — Don't call it "The Hive" — it's plain hexagonal architecture.** _(2026-07-21 · working tree — applied in `MARKETING.md`, the image prompts, and this plan's catalog map)_ *The Hive* is a **modular
   monolith** that can be **split into microservices at any time**; that's not what we have. Here there
   are already **two distinct MCP servers**: the **RAG** server (always on — search, indexing, etc.) and,
   **only if the user enables it**, the **local-mirror** server (the Notion-zone mirroring capability).
@@ -391,10 +435,11 @@ Each item = **pattern · one-line guarantee · prior-art (where it applies) · f
   engine, notes never touched (ADR 0012/0014/0025) · no hidden driftable state (`run-node`, `auto-push`).
 - **D · Experience-first performance** — stale-while-revalidate · incremental reindex · on-device
   embeddings (EmbeddingGemma, ONNX).
-- **E · Architecture (The Hive / hexagonal)** — stable MCP API port + swappable SPI adapters
-  (ADR 0006/0007) · open protocol + open format + Apache-2.0 → zero lock-in.
+- **E · Architecture (hexagonal — ports & adapters)** — stable **local** MCP API port + swappable SPI
+  adapters (ADR 0006/0007) · open protocol + open format + Apache-2.0 → zero lock-in.
 - **F · Battle-tested engineering** — TDD baby-steps, green-only commits · outside-in diamond TDD ·
-  eval-set (in-process **90%**) · 31 ADRs (`Scope:` + `Crux`) · **[coming]** mutation testing (Stryker).
+  eval-set (in-process **90%**) · **34 ADRs** (`Scope:` + `Crux`) · mutation testing **in place**
+  (Stryker — rag 90.4% / local-mirror 95.6% / harness 97.3%, pinned v3.6.2).
 
 ---
 
