@@ -77,7 +77,11 @@ one friendly report, with **opt-in fixes** (never silent writes).
 > (`import-ux-folder-picker-and-index-notify-action.md`), the ABI-skew plan
 > (`node-abi-skew-install-runtime-action.md`).
 
-## 💡 Idea — `/switch` should flag the native connectors' single-account limit
+## 🚩 `/switch` flags the native connectors' single-account limit — ✅ SHIPPED
+
+> ✅ **Shipped 2026-07-21 (commit `4e43e70`), in PR #43.** Pure `nativeConnectorsReminder({from,to})`
+> in `scripts/lib/universes.mjs` + wired into `runSwitchCli`'s fast path; `/switch` skill relays the
+> core message verbatim. 7 tests added (pure rule + CLI integration), suite green.
 
 Universes model successive **employers / clients / spheres** (ADR 0034). Switching universe usually
 means switching the **account** you operate under, but the **native MCP connectors** (Slack, Notion,
@@ -86,17 +90,21 @@ Google, mail…) are each bound to **one account** and have **no multi-account**
 reconnects them to the new one: a silent mismatch (the RAG is re-scoped correctly, the live connectors
 are not). Surfaced by Thomas during the universes field-verify (2026-07-19).
 
-- [ ] **Behaviour:** past the disclosure gate (count >= 2), when `/switch` changes the active universe
-  **between two created universes** (not the trivial default toggle), append a one-line, non-nagging
-  reminder, e.g. *"Native connectors are single-account; if this universe uses different accounts
-  (Slack, Notion, Google…), disconnect/reconnect them to match."* Emitted by the **deterministic**
-  switch CLI / skill (like the 1→2 onboarding line), never invented by the LLM (ADR 0009).
-- [ ] **The trap (why we can't automate it):** native connector server names are **per-user UUIDs**,
+- [x] **Behaviour:** the deterministic switch core appends a one-line, non-nagging reminder when a
+  `/switch` **changes** the active universe and **lands in a named universe** (excludes the trivial
+  return to the cross-cutting `default`, and a no-op switch). *Refined from the original "between two
+  created universes": `default → named` also warns, because entering a named sphere IS an account
+  change; only landing back on `default` (no specific employer account) is silent.* Emitted by the
+  **deterministic** switch CLI (like the 1→2 onboarding line), never invented by the LLM (ADR 0009).
+- [x] **The trap (why we can't automate it):** native connector server names are **per-user UUIDs**,
   not pre-authorizable nor introspectable, so we **cannot** tell which connector points at which
   account. The reminder stays **generic advice**, not per-connector automation. Cf.
   [[brain-permission-posture-readonly]].
-- [ ] **Relevance, not enforcement:** the RAG universe boundary is unaffected; this only warns the
-  human about the **live** side. Keep it once-per-switch, quiet, and only past the gate.
+- [x] **Relevance, not enforcement:** the RAG universe boundary is unaffected; this only warns the
+  human about the **live** side. Kept once-per-switch, quiet, and only when landing in a named universe.
+- [ ] **Deliberately NOT covered (note for a future pass):** `create`-and-switch into a named universe
+  does not emit the connectors reminder (it has its own 1→2 onboarding line). Add it there too if the
+  field shows the mismatch bites on create as well.
 
 > Links: ADR 0034 (universes), [[brain-permission-posture-readonly]] (UUID connectors, single-account).
 
