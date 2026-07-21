@@ -330,6 +330,8 @@ pass. **R-STYLE applies throughout** (short, punchy, scannable — boards/tables
   - [ ] 1c · Board C — generator → *prompt ready; awaiting `board-generator.png`*
   - [ ] 1e · Board E — reliability stack → *prompt ready; awaiting `board-reliability.png`*
   - [ ] 1f · Board F — vs bare LLM → *prompt ready; awaiting `board-vs-llm.png`*
+  - [ ] 1g · Board G — **hero / social lead card** → *prompt added 2026-07-21; awaiting `board-hero.png` render*
+  - [ ] 1h · Board H — **B2B mesh** (fills the ACT 2 slot) → *prompt added 2026-07-21; awaiting `board-mesh.png` render*
 - [x] **Step 2 — Write `MARKETING.md`** _(2026-06-24)_ — root, English, text-complete without images
   - [x] 2a · Hero (Kenjaku) + elevator pitch (one-liner / 30s / 2-min)
   - [x] 2b · "What it is / what it is NOT" (honest scope, from EN-QUOI §7)
@@ -337,7 +339,7 @@ pass. **R-STYLE applies throughout** (short, punchy, scannable — boards/tables
   - [x] 2d · **Qualities & engineering catalog** (+ a "Under the hood" hexagon section)
   - [x] 2e · Personas (Head of Eng / PM / consultant) — one line each
   - [x] 2f · Footer: links (README / EN-QUOI / SETUP / ADRs / Medium) + author + Apache-2.0
-  - [x] 2g · **Placeholder** "Reliability, measured" (eval-set 90% now; mutation score *coming*)
+  - [x] 2g · "Reliability, measured" — eval-set 90% + **mutation score filled** (rag 90.4% / local-mirror 95.6% / harness 97.3%, pinned v3.6.2) _(2026-07-21 · `5ca344d`)_
 - [ ] **Step 3 — Link & verify**
   - [x] 3a · Link to `MARKETING.md` from `README.md` hero nav _(2026-06-24)_
   - [x] 3b · Verified referenced files exist + EN-QUOI anchors (incl. §9 double-hyphen slug) _(2026-06-24)_
@@ -347,8 +349,17 @@ pass. **R-STYLE applies throughout** (short, punchy, scannable — boards/tables
 - [ ] **Step 5 — Market watch** *(deferred — separate pass, on Thomas's go)*
   - [ ] 5a · Competitive scan (Notion AI, Mem, Reflect, Tana, Khoj, AnythingLLM, NotebookLM, Glean…) → refresh EN-QUOI §9 with dated evidence
   - [ ] 5b · Embedder/RAG watch → fold in [`etude-rag-local-criteres-et-veille.md`](etude-rag-local-criteres-et-veille.md)
-- [ ] **Step 6 — Mutation-testing reliability section** *(deferred — after Stryker Step 3)*
-  - [ ] 6a · Fill 2g with the measured mutation score + what it proves
+- [x] **Step 6 — Mutation-testing reliability section** _(2026-07-21 · `5ca344d`)_
+  - [x] 6a · Fill 2g with the measured mutation score + what it proves (90–97% across the 3 engine packages)
+
+> **Session 2026-07-21 (`5ca344d`, branch rebased onto `main` first — was 115 commits behind):** three
+> cheap prep passes toward the wide-public relaunch. (1) Facts refreshed: "31 ADRs" → **34**, mutation
+> testing "underway/not published" → **real scores** (Step 6). (2) Trimmed the technical half: dropped the
+> duplicated "Engineering & SRE principles, at a glance" summary, turned the hinge into a taster + link to
+> EN-QUOI (the gated A-F deep-dive stays). (3) Added the two missing image prompts: `board-hero` (social
+> lead card) + `board-mesh` (B2B vision, roles only). **Remaining = visual production** (render the 8
+> boards to premium PNG — Thomas's manual step, prompts ready) **then P-MERGE** (promote the arc to
+> `README.md` = the actual launch).
 
 ---
 
