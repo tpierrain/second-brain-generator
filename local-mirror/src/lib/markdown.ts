@@ -29,13 +29,20 @@ export interface LocalMirrorFrontmatter {
   source_url: string;
   /** Notion last_edited_time — feeds the watermark. */
   last_edited_time: string;
+  /** Retrieval universe (ADR 0034), stamped LAST and only when the mirror is universe-scoped. */
+  universe?: string;
 }
 
-/** Assemble one note: produced body + mandatory citation frontmatter (PRD §6). */
+/**
+ * Assemble one note: produced body + mandatory citation frontmatter (PRD §6). When `universe`
+ * is truthy it is stamped LAST (matching `stamp-universe.mjs`'s append-last convention, so the
+ * mirror's frontmatter reads like an imported note's).
+ */
 export function toLocalMirrorMarkdown(
   mirror: string,
   item: SourceItem,
   body: string,
+  universe?: string,
 ): string {
   const frontmatter: LocalMirrorFrontmatter = {
     mirror: mirror,
@@ -44,6 +51,7 @@ export function toLocalMirrorMarkdown(
     source_url: item.url,
     last_edited_time: item.lastEditedTime,
   };
+  if (universe) frontmatter.universe = universe;
   return matter.stringify(body, frontmatter, YAML_ENGINE);
 }
 

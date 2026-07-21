@@ -40,10 +40,18 @@ class LocalMirrorBuilder {
   private readonly clock = new MutableClock(new Date('2026-06-17T00:00:00.000Z'));
   /** Stable reference so tests can inspect what `setup_source` declared. */
   private readonly configs = new InMemoryConfigStore(this.declared, () => this.unreadableConfig);
+  /** The active universe a `setup_source` will FREEZE into the config (default: the default universe). */
+  private activeUniverse = 'default';
 
   /** Declare local mirrors, as if already written to the config file. */
   withDeclaredSources(...configs: LocalMirrorConfig[]): this {
     this.declared.push(...configs);
+    return this;
+  }
+
+  /** Set the active universe that a `setup_source` will freeze into the new mirror's config. */
+  withActiveUniverse(name: string): this {
+    this.activeUniverse = name;
     return this;
   }
 
@@ -161,6 +169,7 @@ class LocalMirrorBuilder {
       clock: this.clock,
       connectorFor: () => new StubConnector(() => this.pages, () => this.enumerationError),
       syncLock: new FakeSyncLock(this.lockedByOthers),
+      activeUniverse: () => this.activeUniverse,
     });
   }
 }
@@ -207,6 +216,8 @@ export function aNotionLocalMirror(
       },
     },
     target_dir: overrides.target_dir ?? `mirrors/${name}`,
+    // The universe key travels only when the test declares one — a rootless mirror carries none.
+    ...(overrides.universe ? { universe: overrides.universe } : {}),
   };
 }
 

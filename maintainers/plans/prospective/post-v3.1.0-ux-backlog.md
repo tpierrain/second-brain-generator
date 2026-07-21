@@ -77,7 +77,11 @@ one friendly report, with **opt-in fixes** (never silent writes).
 > (`import-ux-folder-picker-and-index-notify-action.md`), the ABI-skew plan
 > (`node-abi-skew-install-runtime-action.md`).
 
-## 💡 Idea — `/switch` should flag the native connectors' single-account limit
+## 🚩 `/switch` flags the native connectors' single-account limit — ✅ SHIPPED
+
+> ✅ **Shipped 2026-07-21 (commit `4e43e70`), in PR #43.** Pure `nativeConnectorsReminder({from,to})`
+> in `scripts/lib/universes.mjs` + wired into `runSwitchCli`'s fast path; `/switch` skill relays the
+> core message verbatim. 7 tests added (pure rule + CLI integration), suite green.
 
 Universes model successive **employers / clients / spheres** (ADR 0034). Switching universe usually
 means switching the **account** you operate under, but the **native MCP connectors** (Slack, Notion,
@@ -86,21 +90,25 @@ Google, mail…) are each bound to **one account** and have **no multi-account**
 reconnects them to the new one: a silent mismatch (the RAG is re-scoped correctly, the live connectors
 are not). Surfaced by Thomas during the universes field-verify (2026-07-19).
 
-- [ ] **Behaviour:** past the disclosure gate (count >= 2), when `/switch` changes the active universe
-  **between two created universes** (not the trivial default toggle), append a one-line, non-nagging
-  reminder, e.g. *"Native connectors are single-account; if this universe uses different accounts
-  (Slack, Notion, Google…), disconnect/reconnect them to match."* Emitted by the **deterministic**
-  switch CLI / skill (like the 1→2 onboarding line), never invented by the LLM (ADR 0009).
-- [ ] **The trap (why we can't automate it):** native connector server names are **per-user UUIDs**,
+- [x] **Behaviour:** the deterministic switch core appends a one-line, non-nagging reminder when a
+  `/switch` **changes** the active universe and **lands in a named universe** (excludes the trivial
+  return to the cross-cutting `default`, and a no-op switch). *Refined from the original "between two
+  created universes": `default → named` also warns, because entering a named sphere IS an account
+  change; only landing back on `default` (no specific employer account) is silent.* Emitted by the
+  **deterministic** switch CLI (like the 1→2 onboarding line), never invented by the LLM (ADR 0009).
+- [x] **The trap (why we can't automate it):** native connector server names are **per-user UUIDs**,
   not pre-authorizable nor introspectable, so we **cannot** tell which connector points at which
   account. The reminder stays **generic advice**, not per-connector automation. Cf.
   [[brain-permission-posture-readonly]].
-- [ ] **Relevance, not enforcement:** the RAG universe boundary is unaffected; this only warns the
-  human about the **live** side. Keep it once-per-switch, quiet, and only past the gate.
+- [x] **Relevance, not enforcement:** the RAG universe boundary is unaffected; this only warns the
+  human about the **live** side. Kept once-per-switch, quiet, and only when landing in a named universe.
+- [ ] **Deliberately NOT covered (note for a future pass):** `create`-and-switch into a named universe
+  does not emit the connectors reminder (it has its own 1→2 onboarding line). Add it there too if the
+  field shows the mismatch bites on create as well.
 
 > Links: ADR 0034 (universes), [[brain-permission-posture-readonly]] (UUID connectors, single-account).
 
-## 💡 Idea — make `/local-mirror` universe-aware (parity with `/import --universe`)
+## 🔭 Action plan — make `/local-mirror` universe-aware (parity with `/import --universe`)
 
 `/import` gained `--universe` (ADR 0034 Step 6): imported notes are filed under `vault/<universe>/` and
 stamped `universe:` in frontmatter. **`/local-mirror`** also lands content **in the vault** (it
@@ -109,17 +117,67 @@ replicates a Notion zone as Markdown), so mirrored notes are **indexed like any 
 `default` regardless of the active universe. Asymmetry found during the universes field-verify
 (2026-07-19): import is universe-aware, the mirror is not.
 
-- [ ] **Behaviour:** stamp mirrored notes with the **active** universe (read from `.vault-rag/`, as the
-  engine does) or an explicit declared target; file them under `vault/<universe>/…` for a created
-  universe, root for the default. Reuse the pure `stamp-universe.mjs` already used by import;
-  **additive**, never clobber an existing `universe:` key.
-- [ ] **Not a regression:** mirrors always produced `default` notes; this is an **enhancement**, out of
-  scope of the shipped universes plan (which covered `/import` only). Safe to defer.
-- [ ] **Deterministic + tested:** pure stamping seam, injected fs, cross-platform (POSIX paths at the
-  source, cf. the Windows `vaultRagDir` fix). Promote to an action plan before coding.
+> 🎯 **PICKED UP 2026-07-20 — bundled into the same release as PR #43** (the `/lint` + file-back
+> follow-ups). Release codename chosen: **"The One Where /lint Quiets Down and Filing Finds Its
+> Universe"**. This closes the **write-path universe trilogy**: `/import` ✅ · file-back ✅ (#43) ·
+> **`/local-mirror` ← this**. Release is **NOT cut yet** (Thomas's call).
+>
+> **Branching (decided 2026-07-20, supersedes the earlier "own branch off main once #43 merged").**
+> Build this on the **SAME branch as #43** (`fix/lint-followups-work-zones-and-file-back-universe`);
+> #43 grows into THE release-PR covering the whole trilogy close, merged **once** at release time.
+> Rationale: a fresh install copies the launcher's **`main` HEAD** (`installer.mjs` git-ls-files copy),
+> so merging #43 to `main` first would expose it to every new install **before** the joint release —
+> exactly what we must avoid. One branch, one merge, nothing on `main` before the release. The
+> `local-mirror/` package touches no file of #43, so its commits stay cleanly separable in history.
+> (`update-engine` reaches deployed brains only via the latest tag, ADR 0017, so THEY are unaffected
+> until the release is cut — the exposure is fresh-installs-only, hence this decision.)
 
-> Links: ADR 0034 (universes), the universes plan
-> (`universes-progressive-disclosure-action.md` → Step 6, import stamping).
+### Frozen design decision (owner-approved reasoning, 2026-07-20)
+
+A mirror is a **durable, background-synced source that belongs to ONE universe** — so we do **NOT**
+read the volatile active pointer at *sync* time (a background tick firing while you `/switch`ed would
+scatter one mirror's notes across universes). Instead we **freeze the universe into the mirror's config
+at `setup_source` time**, resolved from the then-active universe — exactly mirroring how `/import
+--universe` stamps at import time. The default universe (`"default"`) means **no universe → root
+behaviour unchanged** (backward-compatible: mirrors declared before this feature carry no `universe`).
+
+### Tracking (TDD, outside-in via the Builder — the suite's style; `local-mirror/` is a TS package, `npm test`)
+
+- [x] **Step 1 — sync write path (acceptance, `sync-writes-vault.test.ts`).** A mirror whose config
+      carries `universe: 'acme'` writes under `acme/mirrors/<name>/<id>.md` and stamps `universe: acme`
+      in frontmatter; a rootless mirror is unchanged. _(2026-07-20 · `4e7ce6a`)_ Drove:
+  - [x] `types.ts` → `LocalMirrorConfig.universe?: string`; `LocalMirrorFrontmatter.universe?: string`.
+  - [x] `lib/markdown.ts` → `toLocalMirrorMarkdown(mirror, item, body, universe?)` stamps `universe`
+        LAST when truthy (matches `stamp-universe.mjs`'s append-last convention; asserted by raw order).
+  - [x] `domain/local-mirror.ts` → extracted a pure `vaultPathFor(config, id)` that prefixes with
+        `${config.universe}/` when set; state stores the actual path → delete/reconcile stay consistent.
+  - [x] `test/builder.ts` → `aNotionLocalMirror({ universe })` includes the key only when provided.
+        Triangulated by the rootless twin (root path, no `universe` key).
+- [x] **Step 2 — freeze at setup (acceptance, `setup-source.test.ts`).** `setupSource` with active
+      universe `'acme'` declares a config carrying `universe: 'acme'` AND lands the first sync there; with
+      `'default'` → no `universe`, note at root. _(2026-07-20 · `266aea8`)_
+  - [x] `LocalMirrorDeps` gains `activeUniverse: () => string` (read ONLY by setupSource, never the hot
+        sync path); `configFromRequest(req, universe)` stamps `universe` only when truthy and `!== 'default'`.
+  - [x] `test/builder.ts` → `withActiveUniverse(name)`, default `'default'` so existing tests pass.
+  - [x] Defined a local `DEFAULT_UNIVERSE = 'default'` const in `lib/universe.ts` (lock-step comment with
+        `scripts/lib/universes.mjs` / `rag/src/lib/universe.ts` — cannot import across package + language).
+- [x] **Step 3 — real adapter + server wiring.** `adapters/fs-active-universe.ts`: pure
+      `resolveActiveUniverse` (trim, blank/whitespace/absent → `'default'`) split from the file read, any
+      read error degrades to the default; wired into `buildDeps()` via `ACTIVE_UNIVERSE_PATH`
+      (`<brainRoot>/.vault-rag/active-universe`, in `lib/config.ts`). Unit-tested + buildDeps wiring
+      asserted through the real composition root. _(2026-07-20 · `266aea8`)_
+- [x] **Full suite green** (`npm test` → **213**, baseline 205) + **repo-wide** `node --test` for the
+      launcher (**740 pass / 0 fail / 1 todo**) + `tsc --noEmit` clean + `tsc` build clean. POSIX paths at
+      the source (vault paths built with literal `/`; the pointer is read with native `resolve`, not stored).
+      _(2026-07-20 — local green; Windows CI is the final arbiter on the PR.)_
+- [x] **Known limitation noted in the PR (no over-engineered fix):** a mirror declared BEFORE a universe
+      existed keeps writing at root; if you later activate a universe, only genuinely-changed items would
+      move, so a transition could momentarily leave a root copy + a universe copy. Acceptable (universes +
+      mirror is a brand-new combo; fresh mirrors are declared inside their universe). _(2026-07-20 — in PR body.)_
+
+> Links: ADR 0034 (universes), the universes plan (`universes-progressive-disclosure-action.md` → Step 6,
+> import stamping), FU3 in this file (the sibling file-back universe fix, PR #43),
+> [[validate-shipped-not-test-instance]].
 
 ## 🐛 Regression — universes broke `/lint` (make the wiki-health linter universe-aware)
 
@@ -189,12 +247,15 @@ never patch it inside a deployed brain** (a local patch is clobbered by the mani
 > (fix the engine source, not the deployed brain), the axis-1 wiki-health plan
 > (`wiki-health-axis1-mechanisms-action.md`).
 
-## 🧹 Make `/lint` stop crying wolf on normal work-notes and raw dumps (2 engine follow-ups)
+## 🧹 Make `/lint` stop crying wolf on normal work-notes and raw dumps (3 engine follow-ups) — ✅ SHIPPED
 
+> **Status: ✅ SHIPPED (2026-07-20).** All three follow-ups built in TDD on a single branch, one PR
+> (harness only, no reindex): FU1+FU2 in `74ee136`, FU3 in `9bb905e`. The recommended defaults were
+> picked (path-prefix / lint-side exemption / caller-passes-universe). Ships in the next patch release.
+>
 > **Origin (2026-07-19, field-verify of v3.6.1 on a real single-universe vault ~410 notes).** With the
-> universe-aware fix live, the report is trustworthy — but it still flags two categories that are
-> **structural noise, not rot**. Two engine improvements were logged from the field (deferred here on
-> purpose: **no code yet**, owner picks the approach when picked up). The reflex is the same as the
+> universe-aware fix live, the report is trustworthy — but it still flagged categories that are
+> **structural noise, not rot**. Improvements logged from the field. The reflex is the same as the
 > regression above: **fix the generic engine source so every brain benefits**, never hand-patch or
 > hard-code one brain's personal taxonomy ([[validate-shipped-not-test-instance]]).
 
@@ -205,20 +266,19 @@ folders are legitimately unlinked by design (nobody links back to a meeting writ
 On the field vault ~110 of 178 reported orphans were exactly this false positive. The orphan-exclude
 default (`daily/`, `raw-sources/`, `inbox/`, `actions-log.md`) predates those zones.
 
-- [ ] **Extend `DEFAULT_ORPHAN_EXCLUDE`** (`scripts/lib/wiki-lint.mjs`) to the folders **the engine's
+- [x] **Extend `DEFAULT_ORPHAN_EXCLUDE`** (`scripts/lib/wiki-lint.mjs`) to the folders **the engine's
       own shipped skills write** and that are never linked to: `meetings/`, `briefings/` (sync-sources),
       `prep-1-1/` (prepare-1-1), `coaching/` (coach). These are generic — every brain has them.
-  - [ ] Keep it **universe-prefix-insensitive** by reusing the existing `isUnderZone` helper (already
+      _(2026-07-20 · 74ee136)_
+  - [x] Keep it **universe-prefix-insensitive** by reusing the existing `isUnderZone` helper (already
         in place from v3.6.1) — no new path logic.
-  - [ ] **Do NOT bake in brain-specific folders** (e.g. `prep-day/`, `rapport-etonnement/`): those stay
+  - [x] **Do NOT bake in brain-specific folders** (e.g. `prep-day/`, `rapport-etonnement/`): those stay
         per-brain, added through `options.orphanExclude` (a brain-side lint config is a separate item).
-  - [ ] Fixes a latent **inconsistency** en passant: `meetings/` is already a `/consolidate` capture
+  - [x] Fixes a latent **inconsistency** en passant: `meetings/` is already a `/consolidate` capture
         zone (`DEFAULT_CAPTURE_ZONES`) but was missing from the lint orphan-exclude.
-- [ ] **Decision (deferred — owner to pick when built):** path-prefix list (above, smallest change) **vs**
-      a cleaner **type-based** exemption (exclude any note whose `type` is a capture/work type —
-      meeting/briefing/prep/coaching/daily — symmetric to `entityTypes`). Default recommendation: the
-      path-prefix list, consistent with the current design; the type-based refactor is a nice-to-have.
-- [ ] **TDD** on `wiki-lint.mjs` (baby-steps, fail-first); harness only, no reindex; carry via a patch
+- [x] **Decision (owner picked):** path-prefix list (smallest change, consistent with the current
+      design). The type-based exemption stays a nice-to-have, not built.
+- [x] **TDD** on `wiki-lint.mjs` (baby-steps, fail-first); harness only, no reindex; carry via a patch
       release tag (ADR 0017).
 
 ### Follow-up 2 — a raw dump is not a curated node: don't demand full frontmatter on raw-capture zones
@@ -228,16 +288,15 @@ transcripts** (`raw-sources/transcripts/*`) arrive without it — 43 of them sho
 violations on the field vault. A raw dump is not a curated wiki node; holding it to the full taxonomy is
 the same category error as calling it an orphan.
 
-- [ ] **Exempt raw-capture zones from the required-frontmatter rule** in `lintVault`
+- [x] **Exempt raw-capture zones from the required-frontmatter rule** in `lintVault`
       (`scripts/lib/wiki-lint.mjs`) — parallel to the orphan exemption, reusing `isUnderZone`. Kills the
-      false frontmatter findings **without inventing any dates**.
-- [ ] **Decision (deferred — owner to pick when built):** lint-side exemption (above, recommended, zero
-      fabricated metadata) **vs** stamping minimal frontmatter at **import** time (importer fabricates
-      `created`) **vs** both (exempt in lint + have `sync-sources` write frontmatter for *new*
-      transcripts so future ones are clean). Default recommendation: the lint-side exemption.
-- [ ] Keep the genuinely-actionable frontmatter findings intact (living curated notes still expected to
-      conform) — this only silences the **raw** zones, cf. the "Not part of this regression" note above.
-- [ ] **TDD** on `wiki-lint.mjs`; harness only, no reindex; same patch-release path.
+      false frontmatter findings **without inventing any dates**. _(2026-07-20 · 74ee136)_
+- [x] **Decision (owner picked):** lint-side exemption (zero fabricated metadata). Import-time stamping
+      not built. Only the RAW zones (`daily/`, `raw-sources/`, `inbox/`, `actions-log.md`) are exempt.
+- [x] Keep the genuinely-actionable frontmatter findings intact (living curated notes still expected to
+      conform) — this only silences the **raw** zones. Curated work-zones (`meetings/` etc.) stay held
+      to the taxonomy (locked by a test asserting a `meetings/` note still surfaces its missing keys).
+- [x] **TDD** on `wiki-lint.mjs`; harness only, no reindex; same patch-release path.
 
 ### Follow-up 3 — the file-back builder is not universe-aware (files new notes at the vault root)
 
@@ -250,16 +309,17 @@ manual placement (the field brain worked around it with a direct `Write` under t
 the gap). This is **distinct** from import stamping (Step 6, done — that stamps *imported* notes, via
 `stamp-universe.mjs`); here it's the *file-back* write path.
 
-- [ ] **Make `renderFiledNote` / `filedNotePath` universe-aware:** prefix the path with the **active
+- [x] **Make `renderFiledNote` / `filedNotePath` universe-aware:** prefix the path with the **active
       universe** (`vault/<universe>/<folder>/…`) and stamp the `universe:` key, when a universe is active
-      — reusing the same active-universe source the reader anchors on (registry / `.vault-rag/`, cf. the
-      universes plan). A default/root brain (no universe) keeps today's behaviour exactly.
-- [ ] **Decision (deferred):** does the builder **read** the active universe itself, or does the caller
-      (`file-back-note.mjs` CLI / the skill) pass it into the spec? Lean: pass it in (keep the pure core
-      I/O-free; the thin CLI resolves the active universe), so `filed-note.mjs` stays a pure builder.
-- [ ] **TDD** on `filed-note.mjs` (pure core, already 15 tests) + the CLI; harness only, no reindex.
-- [ ] Corrects the audit note above (the file-back universe **placement** was flagged as "a separate
-      concern" — this is that concern, now a tracked item, not the import-stamping one).
+      — reusing the same active-universe source the reader anchors on (`readActiveUniverse` on
+      `.vault-rag/`). A default/root brain (no universe) keeps today's behaviour exactly.
+      _(2026-07-20 · 9bb905e)_
+- [x] **Decision (owner picked):** the caller passes it in. The thin CLI (`file-back-note.mjs`) resolves
+      the active universe via `readActiveUniverse` and injects it into the spec, so `filed-note.mjs`
+      stays a pure, I/O-free builder. Active universe wins over any spec-supplied one.
+- [x] **TDD** on `filed-note.mjs` (pure core) + the CLI; harness only, no reindex.
+- [x] Corrects the audit note above (the file-back universe **placement** was flagged as "a separate
+      concern" — this is that concern, now shipped, not the import-stamping one).
 
 > Links: the axis-1 wiki-health plan (`wiki-health-axis1-mechanisms-action.md`, Tracks A/C own these
 > pure cores), ADR 0009 (deterministic rung-1 cores), ADR 0034 (universes),

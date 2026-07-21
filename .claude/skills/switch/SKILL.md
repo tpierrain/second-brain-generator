@@ -48,9 +48,14 @@ Run, from the brain folder:
 ```bash
 node scripts/set-active-universe.mjs "<name>"
 ```
-- **exit 0** → relay the confirmation ("switched to '<name>'") and remind, in one line, that
-  searches now stay in that universe plus your cross-cutting notes (say *"search all universes"* to
-  span them).
+- **exit 0** → **relay the core's message verbatim** (in the user's language), then remind, in one
+  line, that searches now stay in that universe plus your cross-cutting notes (say *"search all
+  universes"* to span them). When the switch lands in a **named** universe (not a return to the
+  cross-cutting `default`), the core **already appends** a one-line reminder that the **native
+  connectors** (Slack, Notion, Google, mail…) are **single-account** and do not follow the switch, so
+  the user reconnects them if this universe uses different accounts. You do **not** decide when to
+  show it and **never reason about it yourself** (ADR 0009): the deterministic core owns that call,
+  you only surface what it prints.
 - **exit 1, "unknown universe"** → the name is not registered. Show the `available:` list the core
   printed, and **offer to create it** (create-and-switch) or pick an existing one. Do not create
   silently.

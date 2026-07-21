@@ -28,6 +28,13 @@ export interface LocalMirrorConfig {
   connector: NotionConnectorConfig;
   /** Dedicated vault subfolder (e.g. `mirrors/team-a`). */
   target_dir: string;
+  /**
+   * Retrieval universe this mirror belongs to (ADR 0034), FROZEN at `setup_source` time from the
+   * then-active universe. When set (and not the default), notes land under `<universe>/<target_dir>/`
+   * and carry a `universe:` frontmatter key. Absent → default universe → root behaviour, unchanged
+   * (backward-compatible: mirrors declared before this feature carry no `universe`).
+   */
+  universe?: string;
 }
 
 export type SyncStatus = 'ok' | 'partial' | 'failed' | 'never';

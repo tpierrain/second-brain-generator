@@ -129,7 +129,12 @@ export function runSwitchCli(io, dir, argv) {
 
   // switch (fast path / explicit)
   const res = switchToUniverse(io, dir, intent.name);
-  if (res.ok) return { code: 0, message: `switched to '${res.name}'` };
+  if (res.ok) {
+    // Landing in a named universe? Deterministically remind that the single-account
+    // native connectors don't follow the switch (empty for the trivial toggles).
+    const reminder = nativeConnectorsReminder({ from: current, to: res.name });
+    return { code: 0, message: `switched to '${res.name}'` + reminder };
+  }
   if (res.reason === "unknown") {
     return {
       code: 1,
@@ -137,6 +142,23 @@ export function runSwitchCli(io, dir, argv) {
     };
   }
   return { code: 1, message: "no universe name given" };
+}
+
+/**
+ * The one-line, non-nagging reminder that native MCP connectors (Slack, Notion,
+ * Google, mail…) are single-account and do NOT follow a universe switch: after
+ * landing in a named universe the connectors still point at the previous account
+ * until the user reconnects them (ADR 0034 — the RAG scope IS re-pointed, the live
+ * connectors are not). Emitted deterministically by the CLI (ADR 0009), never
+ * invented by the LLM. Pure.
+ */
+export function nativeConnectorsReminder({ from, to }) {
+  if (to === from) return "";
+  if (to === DEFAULT_UNIVERSE) return "";
+  return (
+    `\nHeads-up: native connectors (Slack, Notion, Google, mail…) are single-account and ` +
+    `don't follow this switch. If '${to}' uses different accounts, disconnect/reconnect them to match.`
+  );
 }
 
 /** Path of the committed registry of created universes, inside the .vault-rag dir. */

@@ -71,6 +71,27 @@ test("filedNotePath — a dated type without a date throws (fail-loud)", () => {
   );
 });
 
+// ── universe-awareness (ADR 0034): a filed note lands in the active universe ────
+
+test("filedNotePath — an active universe prefixes the path with <universe>/", () => {
+  assert.equal(
+    filedNotePath({ type: "person", title: "Jane Doe", universe: "acme" }),
+    "acme/people/jane-doe.md",
+  );
+});
+
+test("filedNotePath — a dated type under a universe keeps its date, prefixed", () => {
+  assert.equal(
+    filedNotePath({ type: "meeting", title: "Q3 Review", date: "2026-07-17", universe: "acme" }),
+    "acme/meetings/2026-07-17-q3-review.md",
+  );
+});
+
+test("filedNotePath — the default universe (and no universe) stays at the vault root", () => {
+  assert.equal(filedNotePath({ type: "topic", title: "RAG", universe: "default" }), "topics/rag.md");
+  assert.equal(filedNotePath({ type: "topic", title: "RAG" }), "topics/rag.md");
+});
+
 // ── renderFiledNote: a taxonomy-conformant { path, content } by construction ───
 
 test("renderFiledNote — throws when today is missing (created/updated would be blank)", () => {
@@ -123,6 +144,45 @@ tags: [architecture]
 We go modular monolith.
 `,
   });
+});
+
+test("renderFiledNote — under an active universe, prefixes the path and stamps universe:", () => {
+  const note = renderFiledNote({
+    type: "topic",
+    title: "Capacity Management",
+    tags: ["rag"],
+    body: "The distilled answer.",
+    today: "2026-07-17",
+    universe: "acme",
+  });
+  assert.deepEqual(note, {
+    path: "acme/topics/capacity-management.md",
+    content: `---
+type: topic
+created: 2026-07-17
+updated: 2026-07-17
+tags: [rag]
+universe: acme
+---
+
+# Capacity Management
+
+The distilled answer.
+`,
+  });
+});
+
+test("renderFiledNote — the default universe stamps no universe: key (root behaviour unchanged)", () => {
+  const note = renderFiledNote({
+    type: "topic",
+    title: "X",
+    tags: ["a"],
+    body: "b",
+    today: "2026-07-17",
+    universe: "default",
+  });
+  assert.equal(note.path, "topics/x.md");
+  assert.equal(note.content.includes("universe:"), false);
 });
 
 test("renderFiledNote — builds path + conformant frontmatter, body, and woven [[links]]", () => {

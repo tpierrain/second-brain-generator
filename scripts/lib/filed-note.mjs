@@ -9,6 +9,17 @@
 
 // Turn a human title into a filename-safe slug: lowercased, accent-stripped,
 // kebab-case (e.g. "Jane Doe" → "jane-doe").
+import { DEFAULT_UNIVERSE } from "./universes.mjs";
+
+// The active universe carried by a spec, or null when the note belongs to the
+// vault root — no universe, or the implicit default (ADR 0034: a default-universe
+// brain lives at the root and behaves exactly as a single-universe brain). Pure:
+// just the constant, no I/O. Kept as the single gate so the path and the
+// frontmatter agree on what "in a universe" means.
+function activeUniverse(spec) {
+  return spec.universe && spec.universe !== DEFAULT_UNIVERSE ? spec.universe : null;
+}
+
 export function slugify(title) {
   const slug = title
     .normalize("NFD")
@@ -45,7 +56,9 @@ export function filedNotePath(spec) {
     throw new Error(`type "${spec.type}" requires a date (YYYY-MM-DD) for its filename`);
   }
   const stem = DATED.has(spec.type) ? `${spec.date}-${slugify(spec.title)}` : slugify(spec.title);
-  return `${folder}/${stem}.md`;
+  const universe = activeUniverse(spec);
+  const prefix = universe ? `${universe}/` : "";
+  return `${prefix}${folder}/${stem}.md`;
 }
 
 // Build a filed-back note as { path, content }. The content is conformant to the
@@ -60,12 +73,16 @@ export function renderFiledNote(spec) {
   }
   const links = spec.links ?? [];
   const path = filedNotePath(spec);
+  const universe = activeUniverse(spec);
   const frontmatter = [
     "---",
     `type: ${spec.type}`,
     `created: ${spec.today}`,
     `updated: ${spec.today}`,
     `tags: [${spec.tags.join(", ")}]`,
+    // Additive scope key so retrieval travels with the file (ADR 0034), appended
+    // last to match the import stamper (stamp-universe.mjs). Omitted at the root.
+    ...(universe ? [`universe: ${universe}`] : []),
     "---",
   ].join("\n");
   const related =

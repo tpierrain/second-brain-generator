@@ -19,6 +19,7 @@ function fakeDeps(overrides = {}) {
   const deps = {
     cwd: () => "/brain",
     today: () => "2026-07-17",
+    universe: () => overrides.universe ?? "default",
     readInput: () => overrides.input ?? "{}",
     exists: (p) => existing.has(p),
     writeFile: (p, content) => writes.push({ path: p, content }),
@@ -44,6 +45,16 @@ test("runFileBack — writes a conformant note under vault/, logs the path, exit
   assert.match(writes[0].content, /^---\ntype: topic\ncreated: 2026-07-17\nupdated: 2026-07-17\n/);
   assert.match(writes[0].content, /## Related\n\n- \[\[topics\/rag\]\]\n$/);
   assert.deepEqual(logs, ["✓ Filed back: vault/topics/capacity-management.md"]);
+});
+
+test("runFileBack — files the note under the ACTIVE universe, stamping universe:", () => {
+  const spec = JSON.stringify({ type: "person", title: "Jane Doe", tags: ["team"], body: "b" });
+  const { deps, logs, writes } = fakeDeps({ input: spec, universe: "acme" });
+  const code = runFileBack([], deps);
+  assert.equal(code, 0);
+  assert.equal(writes[0].path, "/brain/vault/acme/people/jane-doe.md");
+  assert.match(writes[0].content, /\nuniverse: acme\n/);
+  assert.deepEqual(logs, ["✓ Filed back: vault/acme/people/jane-doe.md"]);
 });
 
 test("runFileBack — refuses to overwrite an existing note, writes nothing, exits 1", () => {

@@ -68,3 +68,13 @@ export const CONFIG_PATH = resolvePath(
   process.env.LOCAL_MIRROR_CONFIG,
   resolve(projectRoot, 'local-mirror.config.json'),
 );
+
+/**
+ * Per-machine active-universe pointer (ADR 0034), written by the `/switch` skill under the
+ * brain's `.vault-rag/` state dir. `setup_source` reads it to freeze a new mirror's universe.
+ * Absent (the single-universe case) → the reader falls back to the default universe.
+ */
+export const ACTIVE_UNIVERSE_PATH = resolvePath(
+  process.env.LOCAL_MIRROR_ACTIVE_UNIVERSE,
+  resolve(projectRoot, '.vault-rag', 'active-universe'),
+);

@@ -203,6 +203,19 @@ names/IDs, org/account emails, product-team names, and any private-project refer
 > (FR) carry a structurally 1:1 body (25 headings each, incl. "Local mirrors" + the local-mirror
 > citation pattern). Verified read-only 2026-07-19; no parity pass needed.
 
+**Track C follow-up (discovered 2026-07-19 during the migration — PENDING Thomas's go on wording).**
+A refinement to the "rephrase, don't copy raw" confidentiality rule surfaced (made first in the personal
+brain, to be upstreamed de-identified). The rule guards against **third-party verbatim leaks**, not
+precision — so for a **precise source whose exact wording carries the meaning** (assessments, figures,
+established terminology, definitions), **keep the exact terms and quote verbatim** rather than paraphrase;
+rephrasing stays mandatory only for (a) **third parties' private messages** (synthesize the substance) and
+(b) **anything meant to leave the repo**. To port into the Confidentiality section of **both** sacred
+templates (`CLAUDE.md.template` EN + `templates/fr/CLAUDE.md.template` FR), framed "private brain", and to
+add to the **Reflex** line: *"in a private brain this governs mainly whether to version something at all,
+not the fidelity of content you've decided to keep."* **Benefits future brains only** — the sacred layer
+is not propagated by `update-engine` (deferred to ROADMAP Gate 4), and the personal brain already carries
+this edit. Proposed EN/FR wording drafted 2026-07-19; apply once approved.
+
 ---
 
 ## Track D — Corpus migration (personal brain)
@@ -210,21 +223,22 @@ names/IDs, org/account emails, product-team names, and any private-project refer
 > **Cross-plan order:** this is Gate 3 of [`../ROADMAP.md`](../ROADMAP.md) — it depends on Gate 1
 > (green) **and** Gate 2 (universes) landing first (see the prerequisites below).
 
-- [ ] Generate a fresh brain from the launcher (after Track A + generic bits of B/C have landed
-      upstream), choosing the embedder consciously (privacy trade-off).
-  - [ ] **Prerequisite (engine):** the *legacy-safe fresh-install constitution layering* ("green") must land
-        in the launcher FIRST, so the regenerated brain is **born two-layer** and future constitution
-        improvements keep flowing to it. See the "Sequencing decision" in
-        `engine-managed-file-merge-strategy.md`. Skipping it would make this brand-new brain a future
-        monolithic-legacy case.
-  - [ ] **Prerequisite (engine): universes** (ADR 0034) must land too, so the brain is born
-        universe-aware and `/import --universe` can stamp the notes at import time. Canonical plan:
-        `universes-progressive-disclosure-action.md` (ROADMAP Gate 2).
-- [ ] From the **new** brain, run `/import --universe <name>` pointing at the source vault → 405 notes +
-      attachments, **stamped into their universe** (demo skipped, no overwrite).
-- [ ] Reindex; verify with a canary query (`node scripts/verify-rag.mjs` → exit 0).
+- [x] Generate a fresh brain from the launcher, choosing the embedder consciously (privacy trade-off).
+      _(2026-07-19 — the user installed a fresh two-layer, universe-aware brain themselves from Claude
+      Desktop; **in-process** embedder chosen, so re-embeds stay free/offline.)_
+  - [x] **Prerequisite (engine):** the *legacy-safe fresh-install constitution layering* ("green") —
+        shipped (ROADMAP Gate 1, PR #37). Brain born two-layer.
+  - [x] **Prerequisite (engine): universes** (ADR 0034) — shipped (ROADMAP Gate 2, PR #38). Brain born
+        universe-aware; `/import --universe` stamps at import time.
+- [x] From the **new** brain, run `/import --universe <name>` pointing at the source vault → ~422 notes +
+      attachments, **stamped into their universe** (demo skipped, no overwrite). _(2026-07-19 — imported;
+      the universe was registered so the notes are `/switch`-able (cf. fix #40); `/switch` + scoped search
+      verified live.)_
+- [ ] Reindex; verify with a canary query (`node scripts/verify-rag.mjs` → exit 0). _(reindex ran in the
+      background via the live watcher; canary still to confirm once the index reaches the full count.)_
 - [ ] Layer the **private** skills (Track B) and the **merged** constitution (Track C) into the new
-      brain (these are the parts that never go through the launcher).
+      brain (these are the parts that never go through the launcher). _(next, AFTER the `/lint` linter
+      fix — see the backlog regression entry, resumed first post-`/clear`.)_
 
 > **Not a fleet fixture.** The source brain is **not** a Kenjaku brain (it only supplies the notes to
 > `/import`), so it is **not** a legacy-upgrade fixture. Re-layering the brains already deployed from an

@@ -134,6 +134,19 @@ test("lintVault — raw-capture zones stay excluded under a universe prefix (<un
   assert.deepEqual(report.orphans, ["acme/topic.md"]);
 });
 
+test("lintVault — the engine's own work-zones (meetings/, briefings/, prep-1-1/, coaching/) are never orphans", () => {
+  // The shipped skills write these and nobody links back to a meeting write-up or
+  // a 1-1 prep — legitimately unlinked by design, so not rot. Universe-insensitive.
+  const report = lintVault([
+    { path: "meetings/2026-07-15-revue.md", frontmatter: {}, body: "" },
+    { path: "briefings/2026-07-18.md", frontmatter: {}, body: "" },
+    { path: "acme/prep-1-1/alice.md", frontmatter: {}, body: "" },
+    { path: "acme/coaching/2026-07-19.md", frontmatter: {}, body: "" },
+    { path: "topic.md", frontmatter: {}, body: "" },
+  ]);
+  assert.deepEqual(report.orphans, ["topic.md"]);
+});
+
 test("lintVault — the append-only ledger (actions-log.md) is a raw zone, never an orphan", () => {
   const report = lintVault([
     { path: "actions-log.md", frontmatter: { type: "log" }, body: "" },
@@ -188,6 +201,22 @@ test("lintVault — an empty string or empty array counts as a missing required 
   ]);
   assert.deepEqual(report.frontmatterViolations, [
     { path: "empties.md", missing: ["updated", "tags"] },
+  ]);
+});
+
+test("lintVault — raw-capture zones are exempt from required frontmatter, curated notes still held", () => {
+  // A raw dump (an imported transcript, an inbox scratch) is not a curated wiki
+  // node — holding it to the full taxonomy is the same category error as calling
+  // it an orphan. But curated work-zones (meetings/ etc.) DO carry frontmatter, so
+  // a missing key there is genuine rot and must still surface. No dates invented.
+  const report = lintVault([
+    { path: "raw-sources/transcripts/2026-07-19.md", frontmatter: {}, body: "" },
+    { path: "acme/inbox/scratch.md", frontmatter: {}, body: "" },
+    { path: "acme/actions-log.md", frontmatter: {}, body: "" },
+    { path: "meetings/2026-07-15-revue.md", frontmatter: { type: "meeting" }, body: "" },
+  ]);
+  assert.deepEqual(report.frontmatterViolations, [
+    { path: "meetings/2026-07-15-revue.md", missing: ["created", "updated", "tags"] },
   ]);
 });
 
