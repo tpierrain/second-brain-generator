@@ -1,5 +1,3 @@
-<img src="docs/img/kenjaku.png" alt="Kenjaku — the Second Brain Generator's mascot" align="right" width="160">
-
 # Kenjaku — Second Brain Generator &nbsp;<img src="docs/img/rag-inside.svg" alt="RAG inside" height="34" valign="middle">
 
 *By Thomas Pierrain (VP Tech at [shodo](https://shodo.io/))*
@@ -9,6 +7,8 @@
 &nbsp;[![Runs on macOS and Windows](https://img.shields.io/badge/runs%20on-macOS%20%C2%B7%20Windows-2979ff?style=flat-square)](#ready-to-try-it)
 &nbsp;[![Engine: self-upgradable since v3.0.0](https://img.shields.io/badge/engine-self--upgradable%20since%20v3.0.0-651fff?style=flat-square&logo=rocket&logoColor=white)](#keeping-your-brain-up-to-date-its-engine)
 &nbsp;[![Mutation tested with Stryker](https://img.shields.io/badge/mutation%20tested-Stryker-e74c24?style=flat-square&logo=stryker&logoColor=white)](https://github.com/tpierrain/second-brain-generator/tree/main/maintainers/mutation)
+
+![Meet Kenjaku, your second brain: sources like Slack, Drive, Gmail and your calendar flow into one private brain that stays on your machine — all your work, remembered, always up-to-date and always sourced. Just ask. Sit down and relax. It's all automated.](docs/img/board-hero.png)
 
 **Ask it like you'd ask a personal assistant — no dev skills required — and pull up any decision or piece of info from your work in seconds, always with the sources.**
 *In Claude Desktop or on the command line, your call.*
