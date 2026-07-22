@@ -168,6 +168,8 @@ The infra, the storage, the concurrency, the guardrails: that's **its** job — 
 - **Zero effort on your part.** You never have to kick off a sync, or even know that git exists: you
   ask your question, that's it.
 
+![How it works, for you: you do one thing, ask in plain words; then it runs hands-off, answer now (searches your vault, replies in seconds with the source), sync in the background (pulls Slack, Drive and mail read-only), amend the answer only if something new turned up, and save, version and back up with an auto-commit to git. You never click save, never refresh, never lose a thing.](docs/img/board-flow.png)
+
 > 💡 For the curious: your answer arrives right away from what your brain already has in memory, and
 > updates quietly in the background if it finds something new — a bit like a web page that displays
 > instantly then refreshes on its own. The details are in [under the hood](#under-the-hood).
