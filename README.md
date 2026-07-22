@@ -68,6 +68,8 @@ A few properties define it:
 - **It cites its sources.** No answers out of thin air: you can always trace back to the original
   note or message, with its date.
 
+![Why you need a second brain and what it is: as work speeds up you plug into more tools (Slack, mail, Drive, meeting transcripts) and fall behind; a second brain gives you one memory across all your tools, answering in plain words from your own sources, always with the date, and keeping itself up to date.](docs/img/board-why-what.png)
+
 > 📂 **An open, human-readable format.** The substrate of your second brain is just a set of
 > **Markdown (`.md`)** files — linked together with `[[wikilink]]` links where it makes sense (a
 > note points to a person, a decision, a topic…). Nothing proprietary, nothing locked in.
