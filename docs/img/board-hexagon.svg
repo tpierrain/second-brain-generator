@@ -60,5 +60,5 @@
   <text class="a-sub" x="765" y="380">provider details stay behind the port —</text>
   <text class="a-sub" x="765" y="396">no vendor leak into the contract</text>
 
-  <text class="caption" x="480" y="424">One stable port your harness trusts · adapters you can change freely (ADR 0006 / 0007)</text>
+  <text class="caption" x="480" y="424">One stable port your harness trusts · adapters you can change freely</text>
 </svg>
