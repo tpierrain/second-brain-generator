@@ -47,6 +47,13 @@ const DEV_ONLY_PREFIXES = [
   // AND its .test.mjs via the prefix.
   "scripts/lib/assert-matcher-lint",
   "rag/scripts/",
+  // Marketing boards (docs/img/board-*.png/svg): ~12MB of README-only art. They
+  // must stay in the launcher repo so GitHub renders the README, but a generated
+  // brain must not carry them — they would live forever in the brain's own git
+  // history and every push/sync. Smaller onboarding screenshots (notion-token,
+  // desktop, obsidian) and the mascot (kenjaku.png) are NOT covered by this prefix
+  // and still ship, to help the brain's SETUP.
+  "docs/img/board-",
   // Localized artefact sources (constitution, skills, demo vault) live under
   // templates/<locale>/. They are NOT bulk-copied: the installer overlays only
   // the chosen locale onto the brain (cf. resolveLocale/chooseLocale).
