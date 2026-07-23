@@ -1,8 +1,10 @@
-<img src="docs/img/kenjaku.png" alt="Kenjaku — the Second Brain Generator's mascot" align="right" width="150">
+<img src="docs/img/kenjaku.png" alt="Kenjaku, your second brain — mascot" align="right" width="150">
 
-# All your work, remembered — always up-to-date, always sourced
+# Kenjaku — your second brain
 
 ### 🧠 Just ask. Sit down and relax. &nbsp;<sub>*— your second brain handles the rest.*</sub>
+
+**All your work, remembered — always up-to-date, always sourced.**
 
 > **One page to *show* what this is.** A visual companion to the [README](README.md) and to
 > [“What makes it different”](EN-QUOI-C-EST-DIFFERENT.md). Skim the boards, steal the pitch, point
@@ -58,10 +60,11 @@ Three everyday scenes:
 > **Whoever you are** — Head of Engineering, PM, Customer Success, sales, consultant, researcher — it
 > keeps *your* thread: your teams and 1-1s, the *why* behind a product decision, a client's whole context.
 
-> **No need to be a geek — or to know how it works underneath.** If you can *chat* with Claude, you can
-> use it. You never manage anything: no *"did it refresh before I asked?"*, no upkeep — freshness,
-> backup and recovery are all handled for you. **Just ask. Sit down and relax.** *(Only the one-time
-> install is technical, and it's guided end-to-end.)*
+> **All-audience by design — that's the whole point.** It was **conceived so non-tech profiles can use
+> it**: use-case-driven, with the busywork turned into **automatic tasks** and **no temporal coupling**
+> to track (never a *"did it refresh before I asked?"*). If you can *chat* with Claude, you can use it —
+> you never manage anything; freshness, backup and recovery are all handled for you. **Just ask. Sit
+> down and relax.** *(Only the one-time install is technical, and it's guided end-to-end.)*
 
 ---
 
@@ -123,6 +126,10 @@ that **begins with a generator**. The generator installs and tailors *your own* 
 line of work; from there it **keeps living** — the engine **self-upgrades**, while your **content** and
 your **skills / competences** grow right alongside it. You share the **generator**, never the brain.
 
+And it's run **as a product, not a hack**: brains **in real use**, with every **engine upgrade tested
+against existing brains before it ships** — the migration path is a **release gate**, so an update never
+reaches your notes until it's proven safe on them.
+
 | | Classic "second brain" tools | This approach |
 |---|---|---|
 | **What's delivered** | A finished product, identical for everyone | A **generator** that produces **your** instance |
@@ -165,12 +172,14 @@ adapter** you pick at install — without breaking your notes or skills.
 <!-- THE HINGE → ACT 3 (for the technically curious). Everything below is the engineering deep-dive. -->
 <!-- ════════════════════════════════════════════════════════════════════════════════════════════ -->
 
-## Battle-tested — and packed with engineering 🔧 &nbsp;<sub>*for the technically curious*</sub>
+## Battle-tested — *because* it has to be effortless 🔧 &nbsp;<sub>*for the technically curious*</sub>
 
-**Under the surface it's full of real software engineering and battle-tested robustness patterns** —
-self-healing, deterministic, fail-loud — built to keep *working*, not merely to *seem* to. Below is a
-**taster**; skip it freely (everything above is all you need to *use* it). The full depth lives in
-**[What makes it different](EN-QUOI-C-EST-DIFFERENT.md)**.
+**You never manage anything — and delivering *that* is exactly what forced the engineering.** For a
+non-tech user to just ask and sit back, everything underneath had to be handled: **deterministic
+wherever possible**, **every temporal-coupling case battle-tested**, **debounced**, **upgrades that stay
+extensible**, a **context window kept tight** to fend off context-rot. None of it is tech flex — it's the
+**price of the affordance**. Below is a **taster**; skip it freely (everything above is all you need to
+*use* it). The full depth lives in **[What makes it different](EN-QUOI-C-EST-DIFFERENT.md)**.
 
 ---
 
@@ -186,6 +195,9 @@ tested and fail-loud**. The through-line — **fail loudly rather than pretend**
 
 **A · Grounded in truth (no hallucination).**
 - **Semantic RAG grounding** — answers come *from your vault*, with the source note and its date.
+- **Every search is *routed* through the vault MCP** — the model can't free-wheel an answer; each query
+  must pass through **deterministic** semantic retrieval, which **bounds hallucination and drift**. The
+  LLM is called only where its *judgment* is genuinely the point — never on a load-bearing lookup.
 - **Synthetic canary** — a made-up fact ("Pélagie de Mollecuisse / Flemmr"), unfindable outside the
   vault and keyword-proof, **proves** the answer is real retrieval, not invention.
 - **Fail-loud verification** — `verify-rag` exits `0` only once the canary answers; otherwise it says so.
@@ -235,6 +247,7 @@ tested and fail-loud**. The through-line — **fail loudly rather than pretend**
 - **Eval-set** — retrieval quality is *measured*, not asserted (see below).
 - **ADR-governed** — 34 architectural decisions, each with an explicit `Scope:` and a `Crux`.
 - **Mutation testing** (Stryker) — a reliability score for the test suite itself: **90–97%** across the three engine packages (rag 90.4%, local-mirror 95.6%, harness 97.3%).
+- **QA'd like a product** — **upgrade & migration paths are a release gate** (Windows parity, the idempotent reconciler, the mutation score) — existing brains are tested *against* before a new engine ships, so an update never breaks a brain in real use.
 
 ---
 

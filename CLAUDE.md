@@ -1,5 +1,5 @@
 <!-- second-brain-generator:installer-stub -->
-# 🧠 Second Brain Generator — self-install notice (for Claude)
+# 🧠 Kenjaku — your second brain (self-install notice, for Claude)
 
 > **This folder is the LAUNCHER (the generator), not a second brain.** This file is a
 > **bootstrap stub**: the installer **creates a separate brain folder** and drops the real
