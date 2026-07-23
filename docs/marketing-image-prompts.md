@@ -1,277 +1,80 @@
-# Image-gen prompts for Kenjaku's `MARKETING.md` boards (Nano Banana 2 / Pro)
+# Kenjaku marketing boards — paste-ready prompts (Nano Banana 2 / Pro)
 
-> **How to use.** Generate each board in Nano Banana 2 / Pro. Drop the render in [`docs/img/`](img/)
-> under the **exact filename** given (`board-*.png`). `MARKETING.md` references those slots, so the
-> page picks them up with no further edit. For the KENJAKU MASCOT, **attach `docs/img/kenjaku.png` as a
-> reference image** so the chibi stays faithful (silver hair, beard, glasses, forehead stitch).
+> **What this is.** One **self-contained** prompt per board: the shared house-style preamble is
+> **inlined into each**, so you copy one block straight into Nano Banana with nothing to prepend. Drop
+> each render in [`docs/img/`](img/) under the exact `board-*.png` filename; `MARKETING.md` and the
+> README reference those slots, so they pick it up with no further edit. **Attach `docs/img/kenjaku.png`
+> as a reference image** every time, so the chibi mascot and the character stay faithful.
 >
-> **The look is now locked** (validated on `board-flow`, `board-deepdive` and `board-why-what`): warm
-> hand-drawn boards, solid-orange section pills + ribbons (white text), the parme **"KENJAKU"** comic
-> wordmark top-right, and the chibi mascot. Keep it identical across the whole set so the series reads
-> as one family.
->
-> **Prefer copy-paste?** [`marketing-image-prompts-standalone.md`](marketing-image-prompts-standalone.md)
-> holds the same boards with the house-style preamble **inlined into each prompt** — one self-contained
-> block per board, nothing to prepend. Keep the two files in sync when you edit a board.
+> **House style (baked into every prompt below).** Hand-drawn / sketch explainer boards in the spirit of
+> ByteByteGo & Alex Xu: warm off-white paper (#F4F1EA), marker-outline shapes with soft pencil shadows,
+> pastel icon tiles, bold condensed black titles, warm-grey secondary text; a single strong accent
+> **orange (#E8590C)** as SOLID-FILLED section pills + full-width bottom ribbons (always **white** text,
+> never black), and as an underline on one or two key words; the parme **"KENJAKU"** comic wordmark in
+> the header; 16:9, presentation-grade, no photorealism, no clutter, no watermark.
 
 ---
 
-## Shared house style — paste (or reference) into EVERY prompt
+## `board-why-what.png` — "Why & What" (act-1 opener)
 
-> **Hand-drawn / sketch explainer board in the spirit of ByteByteGo & Alex Xu diagrams. Warm off-white
-> paper background (#F4F1EA). Marker-outline shapes with subtle pencil shadows; soft pastel icon tiles
-> (lavender, mint, peach, pink). Bold condensed black titles, warm-grey secondary text. A single strong
-> accent orange (#E8590C) used as SOLID-FILLED pills and bars with WHITE text (the top-left section
-> kicker and the full-width bottom ribbon) and as an underlined highlight on one or two key words.
-> 16:9, horizontal, presentation-grade, crisp perfectly-spelled labels, no photorealism, no clutter,
-> no watermark.**
->
-> **Recurring furniture on EVERY board:**
-> 1. **Top-left:** a small square bracket mark, then a **SOLID ORANGE pill** naming the section, its
->    text in **BOLD WHITE uppercase** (white on orange — **never black text on orange**), followed by a
->    **dashed line** running right.
-> 2. **Kenjaku identity — IN THE HEADER of every board.** The brand wordmark is **"KENJAKU"** set in a
->    chunky, rounded **comic-book / pop-art display font** — bold, slightly rounded letterforms with a
->    **thick black outline** and a solid fill, à la a **"BOOM!"** comic sound-effect lettering —
->    **ALL-CAPS**, filled in **solid parme / soft mauve-violet (~#B884D8)**. Next to it a small
->    hand-drawn **brain glyph**, and just beneath it **"your second brain"** in normal warm-grey/black
->    text. Place it **prominent and unmissable** in the header — by **default TOP-RIGHT**, balancing the
->    top-left section pill (on title-led boards whose left column *is* the headline, like `board-flow`,
->    it may instead sit top-left under the pill). Never a tiny hidden corner mark. **Wherever "Kenjaku"
->    appears as a title / wordmark on any board, use this exact treatment** (parme comic caps + black outline).
-> 3. Where noted, a **full-width SOLID ORANGE bottom ribbon** whose one-line takeaway is in **BOLD WHITE
->    text** (white on orange — **NOT black**; this is the single thing renders get wrong most often, so
->    force it every time).
-> 4. The **Kenjaku mascot**, when used: a **cute CHIBI** — small body, big head, simplified friendly
->    cartoon proportions, **NOT a realistic or detailed portrait** — of a calm silver/grey-haired man
->    with a short grey beard, rectangular glasses, gentle closed "happy" eyes and a **single horizontal
->    stitch across his forehead** — adorable, never scary. Attach `kenjaku.png` as reference for the
->    character, but keep the **chibi cartoon** look.
-
-Each board below says **"House style as above"** — don't re-describe it, just add the board-specific
-content. Section-pill text is given per board.
+> Hand-drawn / sketch explainer board in the spirit of ByteByteGo & Alex Xu — warm off-white paper background (#F4F1EA), marker-outline shapes with subtle pencil shadows, soft pastel icon tiles, bold condensed black titles, warm-grey secondary text. 16:9, presentation-grade, crisp perfectly-spelled labels, no photorealism, no clutter, no watermark. **Header:** top-LEFT, a bracket mark then a SOLID ORANGE pill with BOLD WHITE uppercase text **"START HERE · WHY & WHAT"** then a dashed line; top-RIGHT, the Kenjaku identity — a brain glyph + the wordmark **"KENJAKU"** in a chunky rounded comic/pop-art font with a thick black outline, ALL-CAPS, filled solid parme / soft mauve-violet (~#B884D8), with **"your second brain"** beneath. A **clear vertical divider line** runs top-to-bottom down the middle, with a small orange **"so…"** arrow on it pointing right. **Left half — THE WHY (the problem):** a grey sub-pill **"WHY YOU NEED IT"**; four small speech bubbles — **"Wait — you hadn't heard?"**, **"That was decided last week."**, **"Didn't you see Sarah's email?"**, **"It's in the #product Slack…"**; beside them a slightly overwhelmed person at a desk under a little cloud of notification icons (Slack, mail, Drive, calendar, chat). Warm-grey caption: **"The faster things move, the more you plug in — Slack, mail, Drive, meeting transcripts — and the more you fall behind. Staying on top is a second full-time job."** **Right half — THE WHAT (the answer):** a grey sub-pill **"WHAT IT IS"**; several source icons (Slack, Drive, mail, calendar, a notes folder) flow with thin arrows into a warm glowing brain glyph, and one arrow goes out to a small person receiving a tidy answer card with a little **"source-tag"**. Warm-grey caption: **"One memory across all your tools. Ask in plain words; it answers from your own sources — always with the date — and keeps itself up to date."** A cute CHIBI Kenjaku mascot (big head, small body — silver hair, beard, glasses, forehead stitch — not a realistic portrait) giving a reassuring wave. **Bottom, full-width SOLID ORANGE ribbon with BOLD WHITE text (never black):** **"Survive the flood: filter what matters to you, find it again, integrate everything said and done — then just ask."**
 
 ---
 
-## `board-why-what.png` — "Why & What" (act-1 opener) &nbsp;·&nbsp; section pill **"START HERE · WHY & WHAT"**
+## `board-flow.png` — "Just ask. It's all automated." (title-led layout)
 
-**Prompt:** House style as above. **Place the Kenjaku identity header TOP-RIGHT** (balancing the top-left
-section pill): brain glyph + the **"KENJAKU"** parme comic-caps wordmark with black outline +
-**"your second brain"** beneath. **Left half — THE WHY (the problem):** a header sub-pill (grey)
-**"WHY YOU NEED IT"**; four small hand-drawn speech bubbles — **"Wait — you hadn't heard?"**, **"That
-was decided last week."**, **"Didn't you see Sarah's email?"**, **"It's in the #product Slack…"**; beside
-them a slightly overwhelmed person at a desk under a little cloud of notification icons (Slack, mail,
-Drive, calendar, chat). Warm-grey caption: **"The faster things move, the more you plug in — Slack,
-mail, Drive, meeting transcripts — and the more you fall behind. Staying on top is a second full-time
-job."** **Center divider:** a **clear vertical divider line** running top-to-bottom between the two
-halves (it keeps both sides readable), with a small orange **"so…"** arrow sitting on it, pointing
-right. **Right half — THE WHAT (the answer):** a grey sub-pill **"WHAT IT IS"**; a simple diagram where several source icons
-(Slack, Drive, mail, calendar, a notes folder) flow with thin arrows into a warm glowing **brain**
-glyph, and one arrow goes out to a small person receiving a tidy answer card with a little source-tag.
-Warm-grey caption: **"One memory across all your tools. Ask in plain words; it answers from your own
-sources — always with the date — and keeps itself up to date."** A relaxed **Kenjaku mascot** giving a
-reassuring wave — drawn as a **cute chibi** (small body, big head), not a realistic portrait. **Bottom
-orange ribbon (text in BOLD WHITE, not black):** **"Survive the flood: filter what matters to you, find
-it again, integrate everything said and done — then just ask."**
+> Hand-drawn / sketch explainer board in the spirit of ByteByteGo & Alex Xu — warm off-white paper background (#F4F1EA), marker-outline shapes with subtle pencil shadows, soft pastel icon tiles, bold condensed black titles, warm-grey secondary text. 16:9, presentation-grade, crisp perfectly-spelled labels, no photorealism, no clutter, no watermark. **Top-left:** a bracket mark then a SOLID ORANGE pill with BOLD WHITE uppercase text **"HOW IT WORKS, FOR YOU"** then a dashed line. **Left third (top to bottom):** the Kenjaku identity — a brain glyph + the wordmark **"KENJAKU"** in a chunky rounded comic/pop-art font with a thick black outline, ALL-CAPS, filled solid parme / soft mauve-violet (~#B884D8), with **"your second brain"** beneath; a warm-grey one-liner **"Ask in plain words — it answers from your own work, always with the source."**; a huge bold condensed black title on two lines **"Just ask. Sit down and relax."**; right below it a punchy, slightly larger **orange underlined exclamation "It's all automated!"**; then a cute CHIBI Kenjaku mascot (big head, small body — silver hair, beard, glasses, forehead stitch) **leaning back relaxed in a comfy chair**, one hand behind his head, with the caption **"You do ONE thing: ask — in plain words."** and a single arrow labelled **"ask"** pointing right into the automated box. **Center / right (hero element):** a large rounded container with a bold double border and a header banner **"⚙ FULLY AUTOMATED FOR YOU — hands-off"**; inside, four stacked steps (icon + bold title + one-line caption), joined by small downward arrows: magnifying-glass — **"Answer now"** — *"searches your vault, replies in seconds — always with the source"*; refresh — **"Sync in the background"** — *"pulls Slack · Drive · mail — read-only, while you read"*; pencil — **"Amend"** — *"updates the answer only if something new turned up"*; floppy-disk — **"Save · version · back up"** — *"auto-commit to git (+ push if you enabled it) — nothing to save by hand"*. **Bottom, full-width SOLID ORANGE ribbon with BOLD WHITE text (never black):** **"You never click save, never refresh, never lose a thing — freshness, backup & recovery all run themselves."** Attach kenjaku.png as reference for the mascot.
 
 ---
 
-## `board-flow.png` — "Just ask. It's all automated." ✅ *(validated render)* &nbsp;·&nbsp; section pill **"HOW IT WORKS, FOR YOU"**
+## `board-stay-on-top.png` — "It keeps up, so you don't have to" 🧪 (PILOT — new mainstream grammar)
 
-*(SVG fallback still on disk: `board-flow.svg` — violet flat-vector, superseded by this hand-drawn PNG.)*
-
-**Prompt:** House style as above. **Left third (top to bottom):** the Kenjaku identity badge (brain glyph
-+ **"Kenjaku"** / **"your second brain"**); a warm-grey one-liner **"Ask in plain words — it answers
-from your own work, always with the source."**; a huge bold condensed black title on two lines **"Just
-ask. Sit down and relax."**; right below it a punchy, slightly larger **orange underlined exclamation
-"It's all automated!"**; then the **Kenjaku mascot leaning back relaxed in a comfy chair**, one hand
-behind his head, with the caption **"You do ONE thing: ask — in plain words."** and a single arrow
-labelled **"ask"** pointing right into the automated box. **Center / right (hero element):** a large
-rounded container with a bold double border and a header banner **"⚙ FULLY AUTOMATED FOR YOU —
-hands-off"**; inside, four stacked steps (icon + bold title + one-line caption), joined by small
-downward arrows:
-- magnifying-glass — **"Answer now"** — *"searches your vault, replies in seconds — always with the source"*
-- refresh — **"Sync in the background"** — *"pulls Slack · Drive · mail — read-only, while you read"*
-- pencil — **"Amend"** — *"updates the answer only if something new turned up"*
-- floppy-disk — **"Save · version · back up"** — *"auto-commit to git (+ push if you enabled it) — nothing to save by hand"*
-
-**Bottom orange ribbon:** **"You never click save, never refresh, never lose a thing — freshness, backup
-& recovery all run themselves."**
+> Hand-drawn / sketch explainer board in the spirit of ByteByteGo & Alex Xu — warm off-white paper background (#F4F1EA), marker-outline shapes with subtle pencil shadows, soft pastel accents, bold condensed black titles, warm-grey secondary text. 16:9, presentation-grade, crisp perfectly-spelled labels, no photorealism, no clutter, no watermark. **Keep the whole board airy and uncluttered — lots of whitespace, few words. Read it in three tiers, top to bottom.** **Header:** top-LEFT, a bracket mark + a SOLID ORANGE pill with BOLD WHITE uppercase text **"ALWAYS UP TO DATE, FOR YOU"** + a dashed line; top-RIGHT, the Kenjaku identity — a brain glyph + the wordmark **"KENJAKU"** in a chunky rounded comic/pop-art font with a thick black outline, ALL-CAPS, filled solid parme / soft mauve-violet (~#B884D8), with **"your second brain"** beneath. **TIER 1 — HERO (top ~60%, the emotional payoff): a gentle before → after.** On the LEFT, small and muted, a little swirl of overwhelm — a tiny figure under a cloud of tangled notification icons (Slack, mail, calendar, a meeting bubble). A soft **orange sweep arrow** curves rightward. On the RIGHT, calm and larger, a cute CHIBI Kenjaku mascot (big head, small body — silver hair, beard, glasses, forehead stitch) **leaning back relaxed in a comfy chair**, serene; beside him a warm glowing **brain** that quietly pulls the swirl into tidy, orderly stacked cards. Restful, spacious. **One huge bold condensed black headline across the hero, plain words:** **"It keeps up with everything, so you don't have to."** **TIER 2 — PROMISE (one medium warm-grey sub-line under the headline):** **"New decisions, messages, meeting notes: it folds them in on its own. You just ask."** **TIER 3 — "IF YOU'RE CURIOUS" (a thin, clearly-demoted strip along the bottom, small muted grey text, led by a small grey tag "if you're curious:"):** three tiny footnotes, each a small icon + a few human words, NO jargon — eye icon **"it only reads your tools, never touches them"**; refresh icon **"answers now, refreshes itself in the background"**; laptop-with-lock icon **"the advanced search (RAG) runs on your machine — always with the source & date"**. **Bottom, full-width SOLID ORANGE ribbon with BOLD WHITE text (never black):** **"Stay on top of it all — without lifting a finger."** Attach kenjaku.png as reference for the mascot.
 
 ---
 
-## `board-stay-on-top.png` — "It keeps up, so you don't have to" 🧪 *(PILOT — new mainstream grammar)* &nbsp;·&nbsp; section pill **"ALWAYS UP TO DATE, FOR YOU"**
+## `board-vs-llm.png` — "vs a bare LLM"
 
-> **Why this board exists.** Pilot for a **grand-public redesign**: our boards read too much like a
-> feature list, so a non-tech, overloaded reader (manager, PM, consultant) drowns in labels. The fix is
-> not *less content* but a **3-tier reading order** — emotion first, promise second, mechanics demoted
-> to a small "if you're curious" strip. Target feeling: **calm / relief** (chaos → serenity). If this
-> render lands, we propagate the grammar to the whole set (and retire the jargon: "read-only
-> connectors", "canary", "stale-while-revalidate", "ports/adapters", "RAG/embeddings" as bare terms).
-
-**Prompt:** House style as above. **Header:** top-left orange pill **"ALWAYS UP TO DATE, FOR YOU"** +
-dashed line; the Kenjaku identity (brain glyph + **"KENJAKU"** parme comic-caps wordmark + **"your second
-brain"**) top-right. **Keep the whole board airy and uncluttered — lots of whitespace, few words.**
-
-**TIER 1 — HERO (top ~60%, the emotional payoff):** a gentle **before → after**. On the **left**, small
-and muted, a little swirl of overwhelm — a tiny figure under a cloud of notification icons (Slack, mail,
-calendar, a meeting bubble) tangled together. A soft **orange sweep arrow** curves rightward. On the
-**right**, calm and larger, the **Kenjaku chibi mascot leaning back relaxed** in a comfy chair, serene;
-beside him a warm glowing **brain** that quietly pulls the swirl into tidy, orderly order (the mess
-becomes neat stacked cards). Restful, spacious. **One huge bold condensed black headline** across the
-hero, plain words: **"It keeps up with everything, so you don't have to."**
-
-**TIER 2 — PROMISE (one medium warm-grey sub-line under the headline):** **"New decisions, messages,
-meeting notes: it folds them in on its own. You just ask."**
-
-**TIER 3 — "IF YOU'RE CURIOUS" (a thin, clearly-demoted strip along the bottom, small muted grey text,
-led by a little grey tag **"if you're curious:"**):** three tiny footnotes, each a small icon + a few
-human words, NO jargon:
-- eye — **"it only reads your tools, never touches them"**
-- refresh — **"answers now, refreshes itself in the background"**
-- laptop/lock — **"the advanced search (RAG) runs on your machine — always with the source & date"**
-
-**Bottom orange ribbon (BOLD WHITE text, not black):** **"Stay on top of it all — without lifting a finger."**
+> Hand-drawn / sketch explainer board in the spirit of ByteByteGo & Alex Xu — warm off-white paper background (#F4F1EA), marker-outline shapes with subtle pencil shadows, soft pastel icon tiles, bold condensed black titles, warm-grey secondary text. 16:9, presentation-grade, crisp perfectly-spelled labels, no photorealism, no clutter, no watermark. **Header:** top-LEFT, a bracket mark + a SOLID ORANGE pill with BOLD WHITE uppercase text **"VS A BARE LLM"** + a dashed line; top-RIGHT, the Kenjaku identity — a brain glyph + the wordmark **"KENJAKU"** in a chunky rounded comic/pop-art font with a thick black outline, ALL-CAPS, filled solid parme / soft mauve-violet (~#B884D8), with **"your second brain"** beneath. Two columns split by a center divider carrying a small **"VS"** badge. **Left column, greyed / faded, "Bare ChatGPT / Claude":** a chat bubble with a fading-memory icon; bullets **"Only knows what you re-paste"**, **"Forgets after the chat"**, **"Answers from training — may make things up"**, **"One walled conversation"**. **Right column, vibrant, "Your second brain":** a warm brain glyph wired to a notes folder and tool icons (Slack, Drive, mail, calendar); bullets **"Persistent memory, grows with every question"**, **"Cross-cutting across all your tools"**, **"Grounded — cites its sources, with dates"**, **"Yours, in Markdown, in your git repo"**. Make the right side clearly the richer, trustworthy option. **Bottom, full-width SOLID ORANGE ribbon with BOLD WHITE text (never black):** **"Same question — a real, sourced memory instead of a confident guess."** Attach kenjaku.png as reference.
 
 ---
 
-## `board-vs-llm.png` — "vs a bare LLM" &nbsp;·&nbsp; section pill **"VS A BARE LLM"**
+## `board-generator.png` — "A living, personal product"
 
-**Prompt:** House style as above, with the Kenjaku identity badge top-left. A side-by-side comparison,
-two columns split by a center divider carrying a small **"VS"** badge. **Left column, greyed/faded,
-"Bare ChatGPT / Claude":** a chat bubble with a fading/erasing memory icon; bullets **"Only knows what
-you re-paste"**, **"Forgets after the chat"**, **"Answers from training — may make things up"**, **"One
-walled conversation"**. **Right column, vibrant, "Kenjaku, your second brain":** a warm brain glyph
-wired to a folder of notes and tool icons (Slack, Drive, mail, calendar); bullets **"Persistent memory,
-grows with every question"**, **"Cross-cutting across all your tools"**, **"Grounded — cites its sources,
-with dates"**, **"Yours, in Markdown, in your git repo"**. Make the right side clearly the richer,
-trustworthy option. **Bottom orange ribbon:** **"Same question — a real, sourced memory instead of a
-confident guess."**
+> Hand-drawn / sketch explainer board in the spirit of ByteByteGo & Alex Xu — warm off-white paper background (#F4F1EA), marker-outline shapes with subtle pencil shadows, soft pastel icon tiles, bold condensed black titles, warm-grey secondary text. 16:9, presentation-grade, crisp perfectly-spelled labels, no photorealism, no clutter, no watermark. **Header:** top-LEFT, a bracket mark + a SOLID ORANGE pill with BOLD WHITE uppercase text **"A LIVING, PERSONAL PRODUCT"** + a dashed line; top-RIGHT, the Kenjaku identity — a brain glyph + the wordmark **"KENJAKU"** in a chunky rounded comic/pop-art font with a thick black outline, ALL-CAPS, filled solid parme / soft mauve-violet (~#B884D8), with **"your second brain"** beneath. On the left, a sturdy machine / press labelled **"The launcher — read-only, reusable"**. From it, an arrow produces several distinct, independent brain-folder cards on the right, each with a small brain glyph, a tiny git icon and its own padlock, labelled **"Your brain"**, **"Her brain"**, **"His brain"**, note **"your notes · your CLAUDE.md · your git repo"**. A dotted line between launcher and brains labelled **"git init — 0 remotes, no link back"**. Warm-grey caption: **"It begins with a generator that tailors YOUR brain to your work — then keeps living: the engine self-upgrades, your notes & skills grow alongside."** **Bottom, full-width SOLID ORANGE ribbon with BOLD WHITE text (never black):** **"Everyone generates their own. You share the generator, never the brain."** Attach kenjaku.png as reference.
 
 ---
 
-## `board-generator.png` — "A living, personal product" &nbsp;·&nbsp; section pill **"A LIVING, PERSONAL PRODUCT"**
+## `board-privacy.png` — "Privacy, à la carte"
 
-**Prompt:** House style as above, Kenjaku identity badge top-left. On the left, a single sturdy machine /
-press labelled **"The launcher — read-only, reusable"**. From it, an arrow produces several distinct,
-independent brain folders on the right, each a rounded card with a small brain glyph and a tiny git
-icon, labelled **"Your brain"**, **"Her brain"**, **"His brain"**, each with its own little padlock and
-the note **"your notes · your CLAUDE.md constitution · your git repo"**. A dotted line between launcher
-and brains labelled **"git init — 0 remotes, no link back"**. Warm-grey caption: **"It begins with a
-generator that tailors YOUR brain to your work — then keeps living: the engine self-upgrades, your notes
-& skills grow alongside."** **Bottom orange ribbon:** **"Everyone generates their own. You share the
-generator, never the brain."**
+> Hand-drawn / sketch explainer board in the spirit of ByteByteGo & Alex Xu — warm off-white paper background (#F4F1EA), marker-outline shapes with subtle pencil shadows, soft pastel icon tiles, bold condensed black titles, warm-grey secondary text. 16:9, presentation-grade, crisp perfectly-spelled labels, no photorealism, no clutter, no watermark. **Header:** top-LEFT, a bracket mark + a SOLID ORANGE pill with BOLD WHITE uppercase text **"PRIVACY, À LA CARTE"** + a dashed line; top-RIGHT, the Kenjaku identity — a brain glyph + the wordmark **"KENJAKU"** in a chunky rounded comic/pop-art font with a thick black outline, ALL-CAPS, filled solid parme / soft mauve-violet (~#B884D8), with **"your second brain"** beneath. Center: a laptop with a brain glyph on screen and a folder of notes inside. Three labelled lanes fan out, most private (left, green) to least (right, amber): **Lane 1 (green, ⭐ recommended):** **"On your machine"**, chip **"EmbeddingGemma · on-device"**, a closed padlock, caption **"Nothing leaves your computer · free · offline"** — a bold green boundary around the laptop is NOT crossed. **Lane 2 (amber):** **"With an API key"**, chips **"Gemini · OpenAI · Mistral · your company endpoint"**, an arrow crossing the boundary to a cloud, caption **"Your notes' text goes to the provider you pick"**. **Lane 3 (green):** **"Local via Ollama"**, chip **"runs on your machine (separate app)"**, padlock, caption **"Nothing leaves either · advanced setup"**. A callout bubble: **"The embedder is a tiny search model — NOT the AI that answers. Claude still reasons."** **Bottom, full-width SOLID ORANGE ribbon with BOLD WHITE text (never black):** **"You decide who touches your data — swap the engine, your notes & skills never move."** Attach kenjaku.png as reference.
 
 ---
 
-## `board-privacy.png` — "Privacy, à la carte" &nbsp;·&nbsp; section pill **"PRIVACY, À LA CARTE"**
+## `board-deepdive.png` — "What sets it apart" (deep-dive, Kenjaku is the big title)
 
-**Prompt:** House style as above, Kenjaku identity badge top-left. Center: a laptop with a brain glyph
-on screen and a folder of notes inside it. Three labelled lanes fan out, most private (left, green) to
-least (right, amber):
-- **Lane 1 (green, ⭐ recommended):** **"On your machine"** — chip **"EmbeddingGemma · on-device"**, a
-  closed padlock, caption **"Nothing leaves your computer · free · offline"**; a bold green boundary
-  around the laptop is NOT crossed.
-- **Lane 2 (amber):** **"With an API key"** — chips **"Gemini · OpenAI · Mistral · your company
-  endpoint"**, an arrow crossing the boundary to a cloud, caption **"Your notes' text goes to the
-  provider you pick"**.
-- **Lane 3 (green):** **"Local via Ollama"** — chip **"runs on your machine (separate app)"**, padlock,
-  caption **"Nothing leaves either · advanced setup"**.
-
-A callout bubble: **"The embedder is a tiny search model — NOT the AI that answers. Claude still
-reasons."** **Bottom orange ribbon:** **"You decide who touches your data — swap the engine, your notes
-& skills never move."**
+> Hand-drawn / sketch explainer board in the spirit of ByteByteGo & Alex Xu — warm off-white paper background (#F4F1EA), marker-outline shapes with subtle pencil shadows, soft pastel icon tiles, bold condensed black titles, warm-grey secondary text. 16:9, presentation-grade, crisp perfectly-spelled labels, no photorealism, no clutter, no watermark. **Top-left:** a bracket mark + a SOLID ORANGE pill with BOLD WHITE uppercase text **"DEEP DIVE"** + a dashed line; under it a small-caps breadcrumb **"AI MEMORY  >  SECOND BRAIN  >  KENJAKU"** (last word orange). Below, a small orange kicker **"AUGMENT YOURSELF WITH"**, then the huge title **"KENJAKU"** as the brand wordmark — chunky rounded comic/pop-art font with a thick black outline, ALL-CAPS, filled solid parme / soft mauve-violet (~#B884D8) — then a medium sub-title **"your grounded second brain"**; below, the handwritten tagline **"Just ask. Sit down and relax."** with **ask** and **relax** underlined in orange. A small orange call-out bubble: **"🐤 canary proof — a made-up fact only your vault knows; if the answer knows it, the retrieval is real."** Bottom-left, a **"LEGEND / COMPONENTS"** block: four icons — **"Canary-proven grounding"**, **"On-device search (à la carte)"**, **"Read-only connectors"**, **"Determinism-first (LLM only where it helps)"**. **Center panel titled "WHAT SETS IT APART"** with a "···" menu, four numbered items (pastel badge + icon + bold title + one-line caption): **01** shield — **"Grounded — proven, not promised"** — *"from your vault, with source + date; a synthetic canary proves it didn't invent"*; **02** padlock — **"Private by default"** — *"search runs on your machine (EmbeddingGemma); privacy à la carte — 3 engines, you choose"*; **03** folder — **"Yours, forever"** — *"plain Markdown in YOUR git repo · open format · Apache-2.0 · zero lock-in"*; **04** sparkle — **"Effortless — because it's engineered"** — *"non-tech to use; deterministic, self-healing, battle-tested underneath"*. A cute CHIBI Kenjaku mascot (big head, small body — silver hair, beard, glasses, forehead stitch) stands to the right of the panel. **Right column, top:** callout **"OUTER LOOP"**, **"self-heals + self-upgrades"**, sub **"reconcile to desired state · engine updates, your notes never touched"**, wrapped by a curved orange loop arrow. **Right column, middle:** callout **"INNER LOOP"**, **"answer now → verify in the background → amend ONLY if new"**, small label **"(stale-while-revalidate)"**, wrapped by its own orange loop arrow. **Bottom-right:** a window **"PROJECT FILES"** with a monospace tree — `my-brain/` at root; nested one level `CLAUDE.md`, `vault/`, `.mcp.json`, `.claude/`, `scripts/`; inside `.claude/`: `settings.json`, `hooks/`, `skills/`; inside `scripts/`: `verify-rag.mjs`. No parentheses anywhere. Attach kenjaku.png as reference for the mascot.
 
 ---
 
-## `board-deepdive.png` — "What sets it apart" ✅ *(validated render)* &nbsp;·&nbsp; section pill **"DEEP DIVE"**
+## `board-reliability.png` — "The reliability stack"
 
-**Prompt:** House style as above. Breadcrumb under the pill: **"AI MEMORY  >  SECOND BRAIN  >
-KENJAKU"** (last word orange). Small orange kicker **"AUGMENT YOURSELF WITH"**, then a huge bold
-condensed title **"Kenjaku"**, then a medium sub-title **"your grounded second brain"**; below, the
-handwritten tagline **"Just ask. Sit down and relax."** (**ask**/**relax** underlined orange). A small
-orange call-out bubble: **"🐤 canary proof — a made-up fact only your vault knows; if the answer knows
-it, the retrieval is real."** Bottom-left **"LEGEND / COMPONENTS"** block: four icons — **"Canary-proven
-grounding"**, **"On-device search (à la carte)"**, **"Read-only connectors"**, **"Determinism-first (LLM
-only where it helps)"**. **Center panel titled "WHAT SETS IT APART"**, four numbered items (pastel badge
-+ icon + bold title + one-line caption):
-- **01** shield — **"Grounded — proven, not promised"** — *"from your vault, with source + date; a synthetic canary proves it didn't invent"*
-- **02** padlock — **"Private by default"** — *"search runs on your machine (EmbeddingGemma); privacy à la carte — 3 engines, you choose"*
-- **03** folder — **"Yours, forever"** — *"plain Markdown in YOUR git repo · open format · Apache-2.0 · zero lock-in"*
-- **04** sparkle — **"Effortless — because it's engineered"** — *"non-tech to use; deterministic, self-healing, battle-tested underneath"*
-
-A chibi **Kenjaku mascot** stands to the right of the panel. **Right column, top:** callout **"OUTER
-LOOP"**, **"self-heals + self-upgrades"**, sub **"reconcile to desired state · engine updates, your
-notes never touched"**, wrapped by a curved orange loop arrow. **Right column, middle:** callout **"INNER
-LOOP"**, **"answer now → verify in the background → amend ONLY if new"**, small label
-**"(stale-while-revalidate)"**, wrapped by its own orange loop arrow. **Bottom-right:** a window **"PROJECT
-FILES"** with a monospace tree — `my-brain/` at root; nested one level `CLAUDE.md`, `vault/`, `.mcp.json`,
-`.claude/`, `scripts/`; inside `.claude/`: `settings.json`, `hooks/`, `skills/`; inside `scripts/`:
-`verify-rag.mjs`. No parentheses anywhere.
+> Hand-drawn / sketch explainer board in the spirit of ByteByteGo & Alex Xu — warm off-white paper background (#F4F1EA), marker-outline shapes with subtle pencil shadows, soft pastel icon tiles, bold condensed black titles, warm-grey secondary text. 16:9, presentation-grade, crisp perfectly-spelled labels, no photorealism, no clutter, no watermark. **Header:** top-LEFT, a bracket mark + a SOLID ORANGE pill with BOLD WHITE uppercase text **"UNDER THE HOOD · RELIABILITY"** + a dashed line; top-RIGHT, the Kenjaku identity — a brain glyph + the wordmark **"KENJAKU"** in a chunky rounded comic/pop-art font with a thick black outline, ALL-CAPS, filled solid parme / soft mauve-violet (~#B884D8), with **"your second brain"** beneath. A layered stack of labelled bands, each with a small icon, from foundation to top: **"Grounded in truth"** — *"semantic search answers FROM your vault · a synthetic canary proves it (Mollecuisse / Flemmr) · fail-loud verify-rag"*; **"Determinism over guesswork"** — *"pure functions · binary exit-code tools · real event triggers, not timers · locks & debounced reindex"*; **"Self-healing, desired-state"** — *"idempotent reconciler (à la Kubernetes / GitOps / Terraform) · never overwrites your notes · self-upgradable engine"*; **"Hexagonal architecture"** — *"stable local MCP port · swappable adapters · open format, open license, zero lock-in"*; **"Proven engineering"** — *"TDD baby-steps · green-only commits · eval-set 90% · 34 ADRs · mutation score 90–97%"*. A side note reads **"Fail loudly rather than pretend."** **Bottom, full-width SOLID ORANGE ribbon with BOLD WHITE text (never black):** **"Effortless to use — because every load-bearing step is deterministic, tested and fail-loud."** Attach kenjaku.png as reference.
 
 ---
 
-## `board-reliability.png` — "The reliability stack" &nbsp;·&nbsp; section pill **"UNDER THE HOOD · RELIABILITY"**
+## `board-hexagon.png` — "One stable port, swappable adapters"
 
-**Prompt:** House style as above, Kenjaku identity badge top-left. A layered stack of labelled bands,
-each with a small icon, foundation to top:
-- **"Grounded in truth"** — *"semantic search answers FROM your vault · a synthetic canary proves it (Mollecuisse / Flemmr) · fail-loud verify-rag"*
-- **"Determinism over guesswork"** — *"pure functions · binary exit-code tools · real event triggers, not timers · locks & debounced reindex"*
-- **"Self-healing, desired-state"** — *"idempotent reconciler (à la Kubernetes / GitOps / Terraform) · never overwrites your notes · self-upgradable engine"*
-- **"Hexagonal architecture"** — *"stable local MCP port · swappable adapters · open format, open license, zero lock-in"*
-- **"Proven engineering"** — *"TDD baby-steps · green-only commits · eval-set 90% · 34 ADRs · mutation score 90–97%"*
-
-A side note reads **"Fail loudly rather than pretend."** **Bottom orange ribbon:** **"Effortless to use —
-because every load-bearing step is deterministic, tested and fail-loud."**
+> Hand-drawn / sketch explainer board in the spirit of ByteByteGo & Alex Xu — warm off-white paper background (#F4F1EA), marker-outline shapes with subtle pencil shadows, soft pastel icon tiles, bold condensed black titles, warm-grey secondary text. 16:9, presentation-grade, crisp perfectly-spelled labels, no photorealism, no clutter, no watermark. **Header:** top-LEFT, a bracket mark + a SOLID ORANGE pill with BOLD WHITE uppercase text **"UNDER THE HOOD · ARCHITECTURE"** + a dashed line; top-RIGHT, the Kenjaku identity — a brain glyph + the wordmark **"KENJAKU"** in a chunky rounded comic/pop-art font with a thick black outline, ALL-CAPS, filled solid parme / soft mauve-violet (~#B884D8), with **"your second brain"** beneath. Center: a **hexagon** labelled **"API PORT — stable, versioned (local MCP)"** with a monospace list inside: **"search_vault · get_document · list_documents · vault_stats · reindex"**. Above it, a box **"Your harness — skills · CLAUDE.md"** with a downward arrow **"depends only on the stable contract"**. Around the hexagon, three dashed **"swappable"** adapter cards: **"Embedder — pick yours at install"** with chips **"🟢 local EmbeddingGemma · 🟡 API key (Gemini / your endpoint) · 🟢 Ollama"** and note **"swap it → notes & skills untouched"**; **"Vector store — SQLite (local)"**; **"Chunking strategy"** with note **"provider details stay behind the port — no vendor leak"**. **Bottom, full-width SOLID ORANGE ribbon with BOLD WHITE text (never black):** **"One stable port your harness trusts · adapters you change freely (ADR 0006 / 0007)."** Attach kenjaku.png as reference.
 
 ---
 
-## `board-hexagon.png` — "One stable port, swappable adapters" &nbsp;·&nbsp; section pill **"UNDER THE HOOD · ARCHITECTURE"**
+## `board-hero.png` — the launch / social lead card (spacious, uncluttered)
 
-*(SVG fallback still on disk: `board-hexagon.svg` — violet flat-vector, superseded by this hand-drawn PNG.)*
-
-**Prompt:** House style as above, Kenjaku identity badge top-left. Center: a **hexagon** labelled **"API
-PORT — stable, versioned (local MCP)"** with a monospace list inside: **"search_vault · get_document ·
-list_documents · vault_stats · reindex"**. Above it, a box **"Your harness — skills · CLAUDE.md"** with a
-downward arrow **"depends only on the stable contract"**. Around the hexagon, three dashed **"swappable"**
-adapter cards:
-- **"Embedder — pick yours at install"** with chips **"🟢 local EmbeddingGemma · 🟡 API key (Gemini / your endpoint) · 🟢 Ollama"** and note **"swap it → notes & skills untouched"**.
-- **"Vector store — SQLite (local)"**.
-- **"Chunking strategy"** with note **"provider details stay behind the port — no vendor leak"**.
-
-**Bottom orange ribbon:** **"One stable port your harness trusts · adapters you change freely (ADR 0006 / 0007)."**
+> Hand-drawn / sketch explainer board in the spirit of ByteByteGo & Alex Xu — warm off-white paper background (#F4F1EA), marker-outline shapes with subtle pencil shadows, soft pastel accents, bold condensed black titles, warm-grey secondary text. 16:9, presentation-grade, crisp perfectly-spelled labels, no photorealism, no clutter, no watermark. **More spacious and uncluttered than the other boards.** **Header:** top-LEFT, a bracket mark + a SOLID ORANGE pill with BOLD WHITE uppercase text **"MEET KENJAKU"** + a dashed line; top-RIGHT, the Kenjaku identity — a brain glyph + the wordmark **"KENJAKU"** in a chunky rounded comic/pop-art font with a thick black outline, ALL-CAPS, filled solid parme / soft mauve-violet (~#B884D8), with **"your second brain"** beneath. Centerpiece: a cute CHIBI Kenjaku mascot (big head, small body — silver hair, beard, glasses, forehead stitch) **leaning back relaxed** in a chair, beside a warm glowing brain connected by tidy lines to a small cluster of familiar tool icons (Slack, Drive, mail, calendar, a notes folder); a soft **green padlock** on the brain with a subtle boundary line **"stays on your machine"**. Big bold headline **"All your work, remembered."**, sub-line **"Always up-to-date, always sourced."** **No callout label on the character — do NOT write the word "mascot" (or any leader-line label pointing at him) anywhere on the board.** **Bottom, full-width SOLID ORANGE ribbon with BOLD WHITE text (never black):** **"Just ask. Sit down and relax. It's all automated."** Attach kenjaku.png as reference for the mascot.
 
 ---
 
-## `board-hero.png` — the launch / social lead card &nbsp;·&nbsp; section pill **"MEET KENJAKU"**
+## `board-mesh.png` — "A team is a mesh of second brains" (B2B vision — roles only, never real names)
 
-> **Purpose.** The single **lead image** for the wide-communication push (top of a LinkedIn / X / Medium
-> post), standing alone. Keep it **uncluttered** — one glance must land the promise.
-
-**Prompt:** House style as above, but **more spacious and uncluttered** than the other boards. Kenjaku
-identity badge top-left (brain glyph + **"Kenjaku"** / **"your second brain"**). Centerpiece: a calm
-**Kenjaku mascot leaning back relaxed** in a chair, beside a warm glowing **brain** connected by tidy
-lines to a small cluster of familiar tool icons (Slack, Drive, mail, calendar, a notes folder); a soft
-**green padlock** on the brain with a subtle boundary line **"stays on your machine"**. Big bold headline
-**"All your work, remembered."**, sub-line **"Always up-to-date, always sourced."**. **Bottom orange
-ribbon:** the catchphrase **"Just ask. Sit down and relax. It's all automated."** Convey calm,
-effortless, private recall — the opposite of information overload. **No callout label on the character —
-do NOT write the word "mascot" (or any leader-line label pointing at him) anywhere on the board.**
-
----
-
-## `board-mesh.png` — "A team is a mesh of second brains" (B2B vision) &nbsp;·&nbsp; section pill **"THE VISION · CONNECTED TEAMS"**
-
-> **Purpose.** Fills the reserved **ACT 2** slot (deferred B2B vision). Thesis: **each person keeps their
-> own private, owned brain — the mesh of them makes the collective sharp**, without pooling everyone's
-> data into one vendor silo. **Roles only, never real company / client / exec names.**
-
-**Prompt:** House style as above, Kenjaku identity badge top-left. **Four** rounded person-cards in a
-loose ring, each with a brain glyph, a tiny git icon and its **own green padlock**, labelled by **role
-only**: **"Sales"**, **"Customer Success"**, **"Product"**, **"Engineering"**; under each, a small caption
-**"their own notes · their own brain · private"**. Between the cards, **thin orange connection lines**
-forming a mesh, each labelled with a lightweight verb — **"asks"**, **"shares context"**, **"stays in
-sync"** — but **no central database in the middle** (peer-to-peer, not a pooled silo). Top caption:
-**"Everyone keeps their own private brain."** **Bottom orange ribbon:** **"The mesh makes the whole team
-effective — without pooling your data."** A small side note: **"each brain stays owned & local — no
-shared vendor vault."**
+> Hand-drawn / sketch explainer board in the spirit of ByteByteGo & Alex Xu — warm off-white paper background (#F4F1EA), marker-outline shapes with subtle pencil shadows, soft pastel icon tiles, bold condensed black titles, warm-grey secondary text. 16:9, presentation-grade, crisp perfectly-spelled labels, no photorealism, no clutter, no watermark. **Header:** top-LEFT, a bracket mark + a SOLID ORANGE pill with BOLD WHITE uppercase text **"THE VISION · CONNECTED TEAMS"** + a dashed line; top-RIGHT, the Kenjaku identity — a brain glyph + the wordmark **"KENJAKU"** in a chunky rounded comic/pop-art font with a thick black outline, ALL-CAPS, filled solid parme / soft mauve-violet (~#B884D8), with **"your second brain"** beneath. **Four** rounded person-cards in a loose ring, each with a brain glyph, a tiny git icon and its own green padlock, labelled by **role only**: **"Sales"**, **"Customer Success"**, **"Product"**, **"Engineering"**; under each, a small caption **"their own notes · their own brain · private"**. Between the cards, **thin orange connection lines** forming a mesh, each labelled with a lightweight verb — **"asks"**, **"shares context"**, **"stays in sync"** — but **no central database in the middle** (peer-to-peer, not a pooled silo). Top caption: **"Everyone keeps their own private brain."** A small side note: **"each brain stays owned & local — no shared vendor vault."** **Bottom, full-width SOLID ORANGE ribbon with BOLD WHITE text (never black):** **"The mesh makes the whole team effective — without pooling your data."** Attach kenjaku.png as reference.
