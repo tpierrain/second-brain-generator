@@ -469,6 +469,23 @@ pass. **R-STYLE applies throughout** (short, punchy, scannable — boards/tables
   - [x] 8e · **HOW act complete** _(2026-07-24)_ — `board-anatomy.png` + `board-determinism.png` + `board-reliability.png` rendered & wired; **`board-hexagon` kept as the existing clean SVG (no PNG)**. The hexagon PNG render was rejected (mascot face wrongly placed in the header instead of the brain glyph, dense/aride) and Thomas judged the SVG "pas mal" → we keep it. **New durable convention (Thomas): NO specific ADR numbers on marketing boards** — removed "(ADR 0006 / 0007)" from both the `board-hexagon` prompt ribbon *and* `board-hexagon.svg` (it painted the ADR too); numbers were correct (0006 MCP contract / 0007 embedder adapters) but jargon on an image. Keep ADR refs only in linkable prose. The hexagon prompt is left improved (ADR removed, mascot-face forbidden) in case a PNG is ever wanted. Memory: `no-adr-numbers-on-marketing-boards`.
   - [ ] 8f · English-only pre-flight + Typora/GitHub render check on the new section
 
+- [ ] **Step 9 — Render the remaining WHAT-act boards (NEXT STEP, agreed 2026-07-24)** _(branch `docs/marketing-page`)_
+  - Context: the HOW act (Step 8) is done. The **WHAT act** ("what it is, in plain words") still has
+    three prompts un-rendered as PNG, in `docs/marketing-image-prompts.md` under *"The WHAT"*. Prompts
+    are paste-ready (3-tier grand-public grammar, fixed #E8590C ribbon, leak-safe authorized-text lists).
+    **Process discipline (learned this session): NEVER harden a prompt with inline prose guards to fix a
+    glitch — it gets painted onto the board; re-roll instead, or accept the best draft.** No ADR numbers
+    on any board (memory `no-adr-numbers-on-marketing-boards`).
+  - [ ] 9a · `board-flow.png` — "Ask once, it does the rest" (the effortless loop). *NB: a clean
+    `board-flow.svg` already ships; like `board-hexagon`, we may keep the SVG instead of a PNG — decide at
+    render time.*
+  - [ ] 9b · `board-vs-llm.png` — "A real memory, not a confident guess" (vs a bare chatbot).
+  - [ ] 9c · `board-privacy.png` — "Your data, your call" (privacy à la carte). *Its prompt gained the
+    benchmark line this session: sub-line "at no cost to quality" + footnote "benchmarked at 90% … above
+    the cloud baseline".*
+  - [ ] 9d · For each: Thomas renders → drop in `docs/img/` → I verify clean (no leak, ribbon, spelling)
+    → copy in + uncomment the `<img>` slot in `MARKETING.md` → tick here.
+
 ---
 
 ## `MARKETING.md` — outline
