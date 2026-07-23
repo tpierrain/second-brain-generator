@@ -210,15 +210,52 @@ extensible**, a **context window kept tight** to fend off context-rot. None of i
 
 ---
 
+<!-- ════════════════════════════════════════════════════════════════════════════════════════════ -->
+<!-- WHAT (as software). The technical answer to "what IS Kenjaku?" — the anatomy board. It opens    -->
+<!-- act 3 and bridges the personal WHAT (the triptych above) into the HOW (the engineering below).  -->
+<!-- ════════════════════════════════════════════════════════════════════════════════════════════ -->
+
+## What Kenjaku *is*, as software — more than Markdown
+
+This is the **WHAT**, at the software level. Under the effortless surface, your brain is **real software
+wrapped around Claude** — not a folder of Markdown. A **local layer** of MCP servers, JS/TS programs and a
+**two-storey constitution** is what turns Claude into your grounded second brain. Here's what each piece
+is *for*:
+
+<img src="docs/img/board-anatomy.png" alt="Kenjaku is more than Markdown: a local software layer over Claude — a two-storey constitution (your private CLAUDE.md @importing the engine-managed CLAUDE.engine.md), local MCP servers (vault-RAG always on, local-mirror optional), a local RAG engine (on-device EmbeddingGemma embeddings, a SQLite vector store, incremental indexing), JS/TS scripts (installer, verify-rag, update-engine), event-driven hooks (auto-commit, auto-push, reconcile), skills, a settings.json write-allowlist, and your Markdown vault." width="100%">
+
+- **A two-storey constitution** — the rules Claude follows, split in two. `CLAUDE.md` is **yours**
+  (personalized at install, private, **never touched by upgrades**); it `@import`s `CLAUDE.engine.md`, the
+  **engine-managed** machinery (routing, note format, commit conventions) meant to be **refreshed by engine
+  upgrades**. The framework evolves without ever overwriting your part.
+- **Local MCP servers** — `vault-RAG` (always on: semantic search, indexing, the canary check) and, only
+  if you enable it, `local-mirror` (mirror a Notion zone into local Markdown for the RAG). Claude calls
+  them as tools; they run **on your machine**.
+- **The RAG engine** — behind `vault-RAG` sits a real **semantic-search engine** (JS/TS): **on-device
+  embeddings** (*EmbeddingGemma*, ONNX), a **SQLite vector store**, chunking + **incremental indexing**.
+  The MCP server is the *stable port*; the engine is the *swappable adapter* (local embedder, an API key,
+  or Ollama). A **vector database on your machine** — not a text search.
+- **Scripts (JS / TS)** — real programs, not prompts: `installer.mjs` (generates your brain),
+  `verify-rag.mjs` (proves grounding, exit `0`/`1`), `update-engine.mjs` (self-upgrade, notes untouched).
+- **Hooks (event-driven)** — deterministic automation that fires on **real events**, not on the model
+  remembering: **auto-commit** on every edit, **auto-push** on the Stop event, **reconcile** at session
+  start. This is what makes it self-healing and effortless.
+- **Skills** — on-demand capabilities: `coach`, `import`, `switch`, `sync-sources`, `prepare-1-1`, …
+- **Guardrails** — `settings.json` carries a **write-allowlist** + the hooks, so the deterministic
+  machinery can only *add* what's missing and **never overwrites** your notes.
+- **Your vault** — *your* notes, plain **Markdown** + `[[wikilinks]]` (**Obsidian-compatible**), in **your**
+  git repo. That's the data; everything above is the software that keeps it reliable, private and fresh.
+
+---
+
 ## What's in the box — reliability, determinism, robustness
 
 The reason it keeps working instead of merely *seeming* to: every load-bearing step is **deterministic,
 tested and fail-loud**. The through-line — **fail loudly rather than pretend**.
 
-<!-- Illustrated board: drop docs/img/board-reliability.png (prompt in docs/marketing-image-prompts.md), then uncomment:
-<img src="docs/img/board-reliability.png" alt="The reliability stack" width="100%"> -->
-> 🎨 *Illustrated board coming — generate `board-reliability.png` from
-> [`docs/marketing-image-prompts.md`](docs/marketing-image-prompts.md) and drop it in `docs/img/`.*
+<img src="docs/img/board-determinism.png" alt="It doesn't wing it: AI's biggest trap is non-determinism, and Kenjaku frames it — every search is routed through the vault MCP so the model can't free-wheel, triggers fire on real events not on the model remembering, and tools return a binary 0/1 verdict rather than a vibe. Deterministic wherever possible; the LLM only where its judgment genuinely helps." width="100%">
+
+<img src="docs/img/board-reliability.png" alt="The reliability stack, from foundation to top: Grounded in truth (semantic search answers from your vault, a synthetic canary proves it, fail-loud verify-rag); Determinism over guesswork (pure functions, binary exit-code tools, real event triggers not timers, locks, debounced reindex and once-per-turn auto-push); Self-healing desired-state (idempotent reconciler à la Kubernetes/GitOps/Terraform, never overwrites your notes, self-upgradable engine); Hexagonal architecture (stable local MCP port, swappable adapters, open format, open license, zero lock-in); Proven engineering (TDD baby-steps, green-only commits, temporal-coupling-proof, eval-set 90%, embedders benchmarked local ≥ cloud FR, 34 ADRs, mutation 90–97%). The through-line: fail loudly rather than pretend." width="100%">
 
 **A · Grounded in truth (no hallucination).**
 - **Semantic RAG grounding** — answers come *from your vault*, with the source note and its date.
@@ -280,9 +317,10 @@ tested and fail-loud**. The through-line — **fail loudly rather than pretend**
 
 ## Reliability, measured
 
-- **Retrieval quality**: the local **"Gemma inside"** embedder scores **90%** on the project's
-  [eval-set](maintainers/eval-set.md) — equal to Ollama, above the Gemini baseline (80%) — measured on
-  real notes, not English leaderboards.
+- **Retrieval quality, benchmarked across embedders**: we measured the RAG/embedding options against
+  one another on the project's [eval-set](maintainers/eval-set.md) — real French notes, not English
+  leaderboards. The local **"Gemma inside"** embedder scores **90%**, equal to Ollama and **above the
+  Gemini cloud baseline (80%)**: going fully local is **no quality trade-off**.
 - **Test-suite strength**: a **mutation-testing** run (Stryker) scores **90–97%** across the three engine
   packages — rag **90.4%**, local-mirror **95.6%**, harness scripts **97.3%** — i.e. the share of
   injected faults the tests actually catch (line coverage can't tell you that). *(pinned to v3.6.2; detail
