@@ -285,6 +285,41 @@ sourced, owned, effortless), grown into **deterministic SRE-grade infrastructure
   information and the right understanding of things**. This is the conclusion R12's board builds to;
   use it as the closing line of the B2B/connected-teams section.
 
+- [x] **R19 — Promote the affordance to headline strength #1 (design intent, not a footnote).** _(captured
+  2026-07-22 · applied same day, working tree — reworked the "no need to be a geek" note into "All-audience
+  by design" stating use-case-driven / automatic tasks / no temporal coupling as deliberate intent)_ Today "Just ask. Sit down and relax." is the tagline and the affordance lives in a
+  mid-page blockquote. Thomas wants it stated as the **founding design goal**: Kenjaku is **all-audience**
+  by intent — **conceived so non-tech profiles can use it** (use-case-driven, lots of **automatic tasks**,
+  **no temporal coupling**). Make the affordance read as *the* strength, not a reassurance aside. (Sits in
+  act 1; sibling of R15, but R15 stated the *promise* — R19 states it as *deliberate design*.)
+
+- [x] **R20 — The inversion: the non-tech ambition is *why* the heavy engineering exists (the hinge).** ⭐
+  _(captured 2026-07-22 · applied same day, working tree — hinge retitled "Battle-tested — because it has
+  to be effortless" + causal lead: effortless-for-non-tech is what forced determinism / temporal-coupling
+  / debounce / extensible upgrades / tight context window; "price of the affordance")_ The single strongest missing beat. Rewrite the act-2→act-3 **hinge** (MARKETING
+  L168) to make the **causal** argument: it is **precisely because** it had to be **frictionless for
+  non-tech users** that Thomas had to deploy so much engineering & reliability — **determinism wherever
+  possible**, **battle-tested against every temporal-coupling case**, **debounce**, **updates that support
+  extensibility**, **context-window shrinking to avoid context rot**. Frames all of act 3 as *the price of
+  the affordance*, not tech flex — so even a non-tech reader sees why the engineering earns its place.
+
+- [x] **R21 — Determinism-first, LLM only where relevant; every search is routed through the vault MCP.**
+  _(captured 2026-07-22 · applied same day, working tree — new catalog A bullet: search constrained
+  through the vault MCP → bounds hallucination/drift; LLM called only where judgment is the point)_ Sharpen catalog **A/B**: state explicitly that Kenjaku **exploits determinism
+  wherever possible and calls the LLM only where its judgment is actually relevant**, which makes things
+  more robust — e.g. **every search is *constrained* to go through the vault-search MCP**, so the model
+  can't wing it → **bounds hallucination / drift**. Present routing-through-a-deterministic-tool as itself
+  a reliability lever (partly in A's canary + B's ladder today; make the *constraint* mechanism explicit).
+
+- [x] **R22 — Product credibility: real user bases + QA'd migration/upgrade paths.** _(captured 2026-07-22 ·
+  applied same day, working tree — living-product section: "run as a product, not a hack", brains in real
+  use, migration path a release gate; + catalog F bullet "QA'd like a product")_
+  Reinforce that this is **a product, thought of as one** — not a hack: **several brains installed in the
+  wild (user bases)** and **QA on the migration / engine-upgrade paths** (cf. the harness-universe-blindspot
+  hardening + the old-brain migration work). Fold into the "living, personal product" section and/or the
+  "for the technically curious" credibility line. Keep it honest (small but real user base; upgrade paths
+  tested as a release gate — Windows parity, reconciler, mutation score).
+
 ---
 
 ## Prioritization & sequencing (agreed with Thomas — 2026-06-24)
@@ -404,6 +439,21 @@ pass. **R-STYLE applies throughout** (short, punchy, scannable — boards/tables
 > lead card) + `board-mesh` (B2B vision, roles only). **Remaining = visual production** (render the 8
 > boards to premium PNG — Thomas's manual step, prompts ready) **then P-MERGE** (promote the arc to
 > `README.md` = the actual launch).
+
+- [ ] **Step 7 — Mainstream board redesign (grand public)** _(started 2026-07-23, branch `docs/marketing-page`)_
+  - Why: boards still read like a feature list. Target reader = **non-tech, overloaded** (manager/PM/consultant); register = **calm / relief** (chaos → serenity); rule = **1 idea = 1 board**; kill jargon; demote mechanics to a small **"if you're curious:"** strip. Grammar = **3 tiers** (hero emotion → promise → curious strip). North-star line: *"It keeps up with everything, so you don't have to."*
+  - [x] 7a · Defined the 3-tier grammar + jargon kill-list + north-star _(2026-07-23)_
+  - [x] 7b · Collapsed the two prompt files into ONE self-contained `docs/marketing-image-prompts.md` _(`1ba7eeb`)_
+  - [x] 7c · Pilot `board-stay-on-top` prompt: 3-tier, self-filing folders, #E8590C orange, "meeting transcripts", "(fast)" _(validated on render; `265e84b`/`b6d7191`)_
+  - [x] 7d · New `board-clarity` prompt ("know what's expected, of you & others"; **chaos → clarity**; the spoken **"I'll take care of it"** auto-captured onto the right to-do) _(`72a3255`)_
+  - [x] 7e · Fixed scaffolding leak (TIER / SOLID ORANGE tokens painted into renders): dropped the markers + added an anti-leak guard, then swept **all** ribbons to lowercase _(`2535ece`, `1a5feee`)_
+  - [x] 7f · Installer: exclude `docs/img/board-*` from the brain copy so ~12MB of README-only marketing art never enters a generated brain / its git history _(TDD, `5cd2bd0`)_
+  - [x] 7g · Renders on branch: `board-clarity.png` versioned _(`876558f`)_; the leaked `board-stay-on-top.png` removed _(`a0940d6`)_
+  - [ ] 7h · **NEXT: Thomas re-generates the clean `board-stay-on-top.png`** (ribbon fixed) → Claude fetches it from `~/Downloads` into `docs/img/`
+  - [ ] 7i · **Propagate the 3-tier grammar** to the remaining prompts (`why-what`, `flow`, `vs-llm`, `generator`, `privacy`, `mesh`) + kill their jargon
+  - [ ] 7j · Move the tech-only boards (`deepdive`, `reliability`, `hexagon`) out of the grand-public arc into an "under the hood" annex
+  - [ ] 7k · _(optional)_ lowercase the legacy `SOLID ORANGE pill` phrasing too (proven safe today, but latent) if legacy boards get regenerated
+  - [ ] 7l · Wire the finished new-grammar boards into `README.md` / `MARKETING.md` _(deferred until the series is complete)_
 
 ---
 
