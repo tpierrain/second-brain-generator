@@ -100,6 +100,41 @@ downward arrows:
 
 ---
 
+## `board-stay-on-top.png` — "It keeps up, so you don't have to" 🧪 *(PILOT — new mainstream grammar)* &nbsp;·&nbsp; section pill **"ALWAYS UP TO DATE, FOR YOU"**
+
+> **Why this board exists.** Pilot for a **grand-public redesign**: our boards read too much like a
+> feature list, so a non-tech, overloaded reader (manager, PM, consultant) drowns in labels. The fix is
+> not *less content* but a **3-tier reading order** — emotion first, promise second, mechanics demoted
+> to a small "if you're curious" strip. Target feeling: **calm / relief** (chaos → serenity). If this
+> render lands, we propagate the grammar to the whole set (and retire the jargon: "read-only
+> connectors", "canary", "stale-while-revalidate", "ports/adapters", "RAG/embeddings" as bare terms).
+
+**Prompt:** House style as above. **Header:** top-left orange pill **"ALWAYS UP TO DATE, FOR YOU"** +
+dashed line; the Kenjaku identity (brain glyph + **"KENJAKU"** parme comic-caps wordmark + **"your second
+brain"**) top-right. **Keep the whole board airy and uncluttered — lots of whitespace, few words.**
+
+**TIER 1 — HERO (top ~60%, the emotional payoff):** a gentle **before → after**. On the **left**, small
+and muted, a little swirl of overwhelm — a tiny figure under a cloud of notification icons (Slack, mail,
+calendar, a meeting bubble) tangled together. A soft **orange sweep arrow** curves rightward. On the
+**right**, calm and larger, the **Kenjaku chibi mascot leaning back relaxed** in a comfy chair, serene;
+beside him a warm glowing **brain** that quietly pulls the swirl into tidy, orderly order (the mess
+becomes neat stacked cards). Restful, spacious. **One huge bold condensed black headline** across the
+hero, plain words: **"It keeps up with everything, so you don't have to."**
+
+**TIER 2 — PROMISE (one medium warm-grey sub-line under the headline):** **"New decisions, messages,
+meeting notes: it folds them in on its own. You just ask."**
+
+**TIER 3 — "IF YOU'RE CURIOUS" (a thin, clearly-demoted strip along the bottom, small muted grey text,
+led by a little grey tag **"if you're curious:"**):** three tiny footnotes, each a small icon + a few
+human words, NO jargon:
+- eye — **"it only reads your tools, never touches them"**
+- refresh — **"answers now, refreshes itself in the background"**
+- laptop/lock — **"the advanced search (RAG) runs on your machine — always with the source & date"**
+
+**Bottom orange ribbon (BOLD WHITE text, not black):** **"Stay on top of it all — without lifting a finger."**
+
+---
+
 ## `board-vs-llm.png` — "vs a bare LLM" &nbsp;·&nbsp; section pill **"VS A BARE LLM"**
 
 **Prompt:** House style as above, with the Kenjaku identity badge top-left. A side-by-side comparison,
