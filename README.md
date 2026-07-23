@@ -8,7 +8,7 @@
 &nbsp;[![Engine: self-upgradable since v3.0.0](https://img.shields.io/badge/engine-self--upgradable%20since%20v3.0.0-651fff?style=flat-square&logo=rocket&logoColor=white)](#keeping-your-brain-up-to-date-its-engine)
 &nbsp;[![Mutation tested with Stryker](https://img.shields.io/badge/mutation%20tested-Stryker-e74c24?style=flat-square&logo=stryker&logoColor=white)](https://github.com/tpierrain/second-brain-generator/tree/main/maintainers/mutation)
 
-![Meet Kenjaku, your second brain: sources like Slack, Drive, Gmail and your calendar flow into one private brain that stays on your machine — all your work, remembered, always up-to-date and always sourced. Just ask. Sit down and relax. It's all automated.](docs/img/board-hero.png)
+![Meet Kenjaku, your second brain: a relaxed mascot beside a private brain wired to Slack, Drive, Gmail and your calendar that stays on your machine — all your work, remembered, always up-to-date and always sourced. Three pillars: never forget (find anything in seconds from your own sources, never invented), never let anyone down (always know what's on you and by when, no mental load), never drown (plugged into all your tools, filtered to what matters to you). Just ask. Sit down and relax. It's all automated.](docs/img/board-hero.png)
 
 **Ask it like you'd ask a personal assistant — no dev skills required — and pull up any decision or piece of info from your work in seconds, always with the sources.**
 *In Claude Desktop or on the command line, your call.*
@@ -45,6 +45,19 @@ around).
 > ⚠️ This repo is **not** a ready-made brain: it's a **generator** that **produces** a **seed** (a
 > skeleton) for you, which you grow into **one of your own**. We explain why below — and that's
 > exactly what makes it useful.
+
+---
+
+## What it gives you every day — *never forget · never let anyone down · never drown*
+
+Three everyday aches it takes off your plate. The mechanics stay in the small *"if you're curious:"*
+strip on each board — you don't need them to *use* it.
+
+![Never forget: instead of losing track amid scattered notes, your second brain keeps every decision, message and meeting and pulls the exact one back in seconds — always with its source, never invented, never fetched from the web.](docs/img/board-remember.png)
+
+![Never let anyone down: instead of carrying every commitment in your head, your second brain shows at a glance what's on you and what others owe you, and by when — even capturing a spoken 'I'll take care of it' onto the right to-do list. No mental load.](docs/img/board-commitments.png)
+
+![Never drown: plugged into all your sources and everything the rest of the company shares — Slack, mail, Drive, Notion and more — your second brain filters the flood down to what actually concerns you. Read-only; it reads your sources, never changes them.](docs/img/board-connect.png)
 
 ---
 

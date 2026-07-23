@@ -14,6 +14,8 @@
 piece of info from your work in seconds, always with the sources.** *In Claude Desktop or on the
 command line, your call.*
 
+<img src="docs/img/board-hero.png" alt="Meet Kenjaku, your second brain: a relaxed mascot beside a private brain wired to Slack, Drive, Gmail and your calendar that stays on your machine — all your work, remembered, always up to date and always sourced. Three pillars: never forget (find anything in seconds from your own sources, never invented), never let anyone down (always know what's on you and by when, no mental load), never drown (plugged into all your tools, filtered to what matters to you). Just ask. Sit down and relax. It's all automated." width="100%">
+
 ---
 
 ## The pitch
@@ -65,6 +67,31 @@ Three everyday scenes:
 > to track (never a *"did it refresh before I asked?"*). If you can *chat* with Claude, you can use it —
 > you never manage anything; freshness, backup and recovery are all handled for you. **Just ask. Sit
 > down and relax.** *(Only the one-time install is technical, and it's guided end-to-end.)*
+
+---
+
+## Three everyday wins — *never forget · never let anyone down · never drown*
+
+The whole point, in three everyday aches it takes off your plate. No jargon needed — the mechanics live
+in the small *"if you're curious:"* strip on each board.
+
+<img src="docs/img/board-remember.png" alt="Never forget: instead of losing track amid scattered notes, your second brain keeps every decision, message and meeting and pulls the exact one back in seconds — always with its source, never invented, never fetched from the web." width="100%">
+
+> **🧠 Never forget.** Every decision, message and meeting is *kept* — and pulled back the instant you
+> ask, always with its source. It answers from **your own notes**, never invents, never wanders off to
+> the web.
+
+<img src="docs/img/board-commitments.png" alt="Never let anyone down: instead of carrying every commitment in your head, your second brain shows at a glance what's on you and what others owe you, and by when — even capturing a spoken 'I'll take care of it' onto the right to-do list. No mental load." width="100%">
+
+> **✅ Never let anyone down.** Always know what's on **you** — and what **others** owe you, and by when —
+> without carrying it all in your head. A commitment said out loud (*"I'll take care of it"*) lands on the
+> right to-do list on its own. No more being late because you forgot you were on the hook.
+
+<img src="docs/img/board-connect.png" alt="Never drown: plugged into all your sources and everything the rest of the company shares — Slack, mail, Drive, Notion and more — your second brain filters the flood down to what actually concerns you. Read-only; it reads your sources, never changes them." width="100%">
+
+> **🌊 Never drown.** Plug into all your sources — and everything the rest of the company shares (Slack,
+> mail, Drive, Notion & more) — and it **filters the flood** down to what actually concerns you. Read-only:
+> it reads your sources, never changes them.
 
 ---
 
