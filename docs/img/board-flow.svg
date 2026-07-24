@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="312" viewBox="0 0 960 312" role="img" aria-label="How a question flows, the stale-while-revalidate pattern applied to memory. After you ask, TWO things happen IN PARALLEL, at the same time: Phase 1 gives an instant answer from your vault by semantic search with sources, while Phase 2 syncs your external sources (Slack, Drive, mail) in the background to see if anything is new. The two parallel tracks then converge: Phase 3 amends the answer only if something new was found, and Phase 4 persists everything with an automatic git commit.">
+  <title>Ask once — answered instantly while your sources sync in parallel</title>
+  <defs>
+    <marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#57606a"/>
+    </marker>
+  </defs>
+  <style>
+    .bg { fill: #ffffff; }
+    .card { fill: #f6f8fa; stroke: #d0d7de; stroke-width: 1.5; }
+    .card-now { fill: #efeaff; stroke: #7c4dff; stroke-width: 2; }
+    .card-bg { fill: #f0f6ff; stroke: #2979ff; stroke-width: 1.5; stroke-dasharray: 5 4; }
+    .parzone { fill: #faf8ff; stroke: #b39ddb; stroke-width: 1.5; stroke-dasharray: 6 5; }
+    .flow { fill: none; stroke: #57606a; stroke-width: 2; }
+    .emoji { font-size: 28px; text-anchor: middle; }
+    .label { font: 600 14px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #1f2328; text-anchor: middle; }
+    .sub { font: 400 11.5px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #57606a; text-anchor: middle; }
+    .step { font: 700 11px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #6e7781; text-anchor: middle; letter-spacing: 0.6px; }
+    .ask { font: 700 15px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #1f2328; text-anchor: middle; }
+    .parlabel { font: 700 12px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #7c4dff; text-anchor: middle; letter-spacing: 0.4px; }
+    .pattern { font: 700 12px -apple-system, Segoe UI, Helvetica, Arial, sans-serif; fill: #7c4dff; text-anchor: middle; letter-spacing: 0.3px; }
+  </style>
+
+  <rect class="bg" x="0" y="0" width="960" height="312"/>
+
+  <!-- Question -->
+  <text class="emoji" x="60" y="150">🧑</text>
+  <text class="ask" x="60" y="182">You ask</text>
+  <text class="sub" x="60" y="200">in plain words</text>
+
+  <!-- Parallel zone: Phase 1 and Phase 2 happen AT THE SAME TIME -->
+  <rect class="parzone" x="190" y="44" width="246" height="240" rx="18"/>
+  <text class="parlabel" x="313" y="36">⇅ AT THE SAME TIME — in parallel</text>
+
+  <!-- Fork: from the question into BOTH parallel tracks -->
+  <path class="flow" d="M112,156 C158,156 162,102 203,102" marker-end="url(#ah)"/>
+  <path class="flow" d="M112,156 C158,156 162,224 203,224" marker-end="url(#ah)"/>
+
+  <!-- Phase 1 (NOW) -->
+  <rect class="card-now" x="206" y="56" width="220" height="92" rx="14"/>
+  <text class="step" x="316" y="80">PHASE 1 · NOW</text>
+  <text class="emoji" x="316" y="110">⚡</text>
+  <text class="label" x="316" y="129">Instant answer</text>
+  <text class="sub" x="316" y="145">from your vault · with sources</text>
+
+  <!-- Phase 2 (BACKGROUND) -->
+  <rect class="card-bg" x="206" y="180" width="220" height="92" rx="14"/>
+  <text class="step" x="316" y="204">PHASE 2 · BACKGROUND</text>
+  <text class="emoji" x="316" y="234">🔄</text>
+  <text class="label" x="316" y="253">Sync your sources</text>
+  <text class="sub" x="316" y="269">Slack · Drive · mail — while you read</text>
+
+  <!-- Merge: both parallel tracks converge into the amend step -->
+  <path class="flow" d="M426,102 C502,102 496,164 562,164" marker-end="url(#ah)"/>
+  <path class="flow" d="M426,224 C502,224 496,164 562,164" marker-end="url(#ah)"/>
+
+  <!-- Phase 3 -->
+  <rect class="card" x="565" y="118" width="178" height="92" rx="14"/>
+  <text class="step" x="654" y="142">PHASE 3</text>
+  <text class="emoji" x="654" y="168">✏️</text>
+  <text class="label" x="654" y="187">Amend the answer</text>
+  <text class="sub" x="654" y="203">only if something new</text>
+
+  <path class="flow" d="M743,164 L774,164" marker-end="url(#ah)"/>
+
+  <!-- Phase 4 -->
+  <rect class="card" x="778" y="118" width="160" height="92" rx="14"/>
+  <text class="step" x="858" y="142">PHASE 4</text>
+  <text class="emoji" x="858" y="168">💾</text>
+  <text class="label" x="858" y="187">Persist</text>
+  <text class="sub" x="858" y="203">+ auto-commit (git)</text>
+
+  <!-- Pattern footer -->
+  <text class="pattern" x="480" y="302">⟳ stale-while-revalidate — speed first, freshness follows in parallel</text>
+</svg>

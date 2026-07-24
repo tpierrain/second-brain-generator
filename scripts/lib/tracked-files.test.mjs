@@ -124,6 +124,31 @@ test("filterCopyable — excludes node-compat (launcher-only: install-time Node 
   );
 });
 
+test("filterCopyable — excludes the marketing boards (docs/img/board-*), keeps onboarding screenshots & the mascot", () => {
+  // The board-*.png/svg are ~12MB of README-only marketing art. They must ship in
+  // the launcher repo (so GitHub renders the README) but NOT into a generated brain,
+  // where they would sit forever in the brain's own git history and every push/sync.
+  // The smaller onboarding screenshots (notion-token, desktop, obsidian) and the
+  // mascot stay: they can still help the brain's SETUP.
+  assert.deepEqual(
+    filterCopyable([
+      "README.md",
+      "docs/img/board-hero.png",
+      "docs/img/board-clarity.png",
+      "docs/img/board-flow.svg",
+      "docs/img/notion-token-01.png",
+      "docs/img/kenjaku.png",
+      "rag/src/index.ts",
+    ]),
+    [
+      "README.md",
+      "docs/img/notion-token-01.png",
+      "docs/img/kenjaku.png",
+      "rag/src/index.ts",
+    ],
+  );
+});
+
 test("filterCopyable — excludes the eval-set tooling (dev-only: used to choose the launcher's embedder)", () => {
   assert.deepEqual(
     filterCopyable([
