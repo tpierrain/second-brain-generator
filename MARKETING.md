@@ -1,5 +1,3 @@
-<img src="docs/img/kenjaku.png" alt="Kenjaku, your second brain — mascot" align="right" width="150">
-
 # Kenjaku — your second brain
 
 ### 🧠 Just ask. Sit down and relax. &nbsp;<sub>*— your second brain handles the rest.*</sub>
@@ -68,6 +66,8 @@ Three everyday scenes:
 > you never manage anything; freshness, backup and recovery are all handled for you. **Just ask. Sit
 > down and relax.** *(Only the one-time install is technical, and it's guided end-to-end.)*
 
+<img src="docs/img/board-affordance.png" alt="Built for everyone: an ordinary, non-technical person relaxes in a chair and simply asks in plain words, while all the engineering — indexing, syncing, saving, keeping things fresh — runs hidden in a machine room below the floor. No setup, no jargon, no wondering whether it refreshed first. Just ask, sit down and relax; the engineering stays out of your way." width="100%">
+
 ---
 
 ## Three everyday wins — *never forget · never let anyone down · never drown*
@@ -116,6 +116,18 @@ there's genuinely something new. *([details in EN-QUOI §2](EN-QUOI-C-EST-DIFFER
 
 *Honesty is part of the approach — the full owned-up limitations are in
 [EN-QUOI §7](EN-QUOI-C-EST-DIFFERENT.md#7-what-it-is-not-the-owned-up-limitations).*
+
+---
+
+## More than search — an extensible platform of skills
+
+<img src="docs/img/board-skills.png" alt="More than search — an extensible platform of skills: a spotlighted /coach that acts as a sparring partner challenging your thinking, grounded in your own notes; a catalog of ready-made skills (import, sync-sources, prepare-1-1, local-mirror, switch, update-engine), one plain-words line each; and a prominent 'add your own' tile — because skills are just Markdown you can grow. It's a platform, and it grows with you." width="100%">
+
+Kenjaku isn't just a search box: it ships ready-made **skills** — a `/coach` that plays a fierce
+sparring partner to challenge your thinking (grounded in **your own** notes), plus `import`,
+`sync-sources`, `prepare-1-1`, `local-mirror`, `switch` and `update-engine` — and, above all, **you add
+your own just by describing them**. Skills are plain Markdown you can read, tweak and grow. *Not just a
+wiki — a platform.*
 
 ---
 
