@@ -160,7 +160,9 @@ sourced, owned, effortless), grown into **deterministic SRE-grade infrastructure
     capabilities and use-cases (not buzzwords, not job titles). Concreteness in the top half is the
     pass/fail criterion for R5 — accessible to non-techs **without** sliding into hand-wavy marketing.
 
-- [ ] **R6 — Add a comparison vs the "LLM-wiki à la Karpathy".** The comparatives today cover **bare
+- [x] **R6 — Add a comparison vs the "LLM-wiki à la Karpathy".** _(2026-07-24 · working tree — `board-vs-wiki`
+  rendered + new MARKETING section wired, framed per ADR 0033; the differentiator surfaced is the
+  deterministic battle-tested software wrapper, not a feature list)_ The comparatives today cover **bare
   LLM** and **other second brains**; add a third axis: the **Karpathy-style LLM wiki** (the
   LLM-generated/LLM-powered personal wiki idea circulating on social media). README §"How is it
   different from the 'LLM wikis' …" (L127) already nods to it — surface it as an explicit comparison
@@ -386,8 +388,9 @@ pass. **R-STYLE applies throughout** (short, punchy, scannable — boards/tables
 - [ ] **P2 — B2B vision act (DEFERRED — separate pass, on Thomas's go).** R11 (mirroring / degraded
   mode) + R12 (new "connected teams" board + per-person mesh) + R13 (B2B thesis). Heavier: needs a new
   visual asset and careful honest positioning.
-- [ ] **P3 — Needs clarification first: R6.** Confirm what the Karpathy "LLM-wiki" reference points to
-  precisely **before** drafting the third comparative.
+- [x] **P3 — R6 clarification resolved by ADR 0033, comparative shipped.** The Karpathy reference is settled
+  (credited prior art; Kenjaku = superset, never a priority claim). Third comparative `board-vs-wiki`
+  rendered + wired 2026-07-24 (Step 9 · 9e); differentiator reframed to the reliability/affordance wrapper.
 - [ ] **P-MERGE — Promote `MARKETING.md` → new `README.md` (DEFERRED — after P1, deliberate step).**
   Per the north star. Includes: add the install CTA high up, keep/relocate install·engine·privacy
   sections (→ `SETUP.md` + links), fix all in-repo anchors and badges, preserve the `CLAUDE.md`
@@ -468,6 +471,9 @@ pass. **R-STYLE applies throughout** (short, punchy, scannable — boards/tables
   - [x] 8e-reliability · **`board-reliability.png` rendered & integrated** _(2026-07-24)_ — staircase compo, all 5 bands clean. Prompt gained three content additions this session (all grounded): auto-push debounce ("debounced reindex & auto-push once per turn"), **embedders benchmarked (local ≥ cloud, FR)** from the eval-set Step-4 measurement, and **temporal-coupling-proof (edge cases covered)** in Proven engineering (lightened to 6 chips on Thomas's call). A stray duplicated "self-upgradable engine" chip in the final render was masked by Thomas (background rectangle). Copied into `docs/img/`, `<img>` uncommented in `MARKETING.md`. MARKETING prose "Retrieval quality" reframed as a **cross-embedder benchmark** (local 90% ≥ Gemini 80%); the RAG study is NOT linked publicly (it names real people/companies — scrub pending).
   - [x] 8e · **HOW act complete** _(2026-07-24)_ — `board-anatomy.png` + `board-determinism.png` + `board-reliability.png` rendered & wired; **`board-hexagon` kept as the existing clean SVG (no PNG)**. The hexagon PNG render was rejected (mascot face wrongly placed in the header instead of the brain glyph, dense/aride) and Thomas judged the SVG "pas mal" → we keep it. **New durable convention (Thomas): NO specific ADR numbers on marketing boards** — removed "(ADR 0006 / 0007)" from both the `board-hexagon` prompt ribbon *and* `board-hexagon.svg` (it painted the ADR too); numbers were correct (0006 MCP contract / 0007 embedder adapters) but jargon on an image. Keep ADR refs only in linkable prose. The hexagon prompt is left improved (ADR removed, mascot-face forbidden) in case a PNG is ever wanted. Memory: `no-adr-numbers-on-marketing-boards`.
   - [ ] 8f · English-only pre-flight + Typora/GitHub render check on the new section
+    - [x] 8f-i · English-only pre-flight on the act-HOW section — **clean** (only the accepted `à la` /
+      `à la carte` idiom + the `Pélagie de Mollecuisse` canary proper noun; em-dashes OK in an EN artifact) _(2026-07-24)_
+    - [ ] 8f-ii · Typora/GitHub visual render check on the new section (Thomas's eyes — SVG + the 3 PNGs display as intended)
 
 - [ ] **Step 9 — Render the remaining WHAT-act boards (NEXT STEP, agreed 2026-07-24)** _(branch `docs/marketing-page`)_
   - Context: the HOW act (Step 8) is done. The **WHAT act** ("what it is, in plain words") still has
@@ -476,15 +482,59 @@ pass. **R-STYLE applies throughout** (short, punchy, scannable — boards/tables
     **Process discipline (learned this session): NEVER harden a prompt with inline prose guards to fix a
     glitch — it gets painted onto the board; re-roll instead, or accept the best draft.** No ADR numbers
     on any board (memory `no-adr-numbers-on-marketing-boards`).
-  - [ ] 9a · `board-flow.png` — "Ask once, it does the rest" (the effortless loop). *NB: a clean
-    `board-flow.svg` already ships; like `board-hexagon`, we may keep the SVG instead of a PNG — decide at
-    render time.*
-  - [ ] 9b · `board-vs-llm.png` — "A real memory, not a confident guess" (vs a bare chatbot).
-  - [ ] 9c · `board-privacy.png` — "Your data, your call" (privacy à la carte). *Its prompt gained the
-    benchmark line this session: sub-line "at no cost to quality" + footnote "benchmarked at 90% … above
-    the cloud baseline".*
-  - [ ] 9d · For each: Thomas renders → drop in `docs/img/` → I verify clean (no leak, ribbon, spelling)
-    → copy in + uncomment the `<img>` slot in `MARKETING.md` → tick here.
+  - [x] 9a · `board-flow.png` — "Ask once, it does the rest" (the effortless loop). _(2026-07-24 · working
+    tree)_ — rendered clean (empty "…" bubble after a prompt fix: the first render had painted the
+    "a plain-words question" descriptor); **swapped MARKETING's `<img>` from `board-flow.svg` to the PNG**
+    (one visual, PNG). Not committed yet (image lot held per Thomas).
+  - [x] 9b · `board-vs-llm.png` — "A real memory, not a confident guess" (vs a bare chatbot). _(2026-07-24 ·
+    working tree)_ — clean first render (no leak, densest board yet nailed it); copied in + `<img>` activated.
+    Not committed yet.
+  - [x] 9c · `board-privacy.png` — "Search (RAG) privacy — your call" (privacy à la carte). _(2026-07-24 ·
+    working tree)_ — took 3 rolls: (1) leaked "Lane 1/2/3" (fixed prompt: real name labels only, no "Lane"
+    scaffolding); (2) readable but scope not on the board (added a scope caption + light pastel tints);
+    (3) final — **RAG scope now in the pill** ("SEARCH (RAG) PRIVACY — YOUR CALL") + **"Pick 1 of 3 search
+    (RAG) engines" promoted to a prominent bold sub-header**. Clean (EmbeddingGemma ×2 spelled right, no
+    leak). MARKETING prose also gained the scope clarification (choice = the RAG/embedder engine only, 1 of
+    3; the LLM that answers is always Claude). Copied in + `<img>` activated. Not committed yet.
+  - [x] 9e · `board-vs-wiki.png` — "Kenjaku vs Karpathy's plain LLM wiki" (the R6 third comparative).
+    _(2026-07-24 · working tree)_ — faithful to ADR 0033 (credited superset, not opposition). Reframed
+    with Thomas mid-flight: the differentiator is **the deterministic, battle-tested software wrapper**
+    (affordance + reliability), not a RAG/connectors feature-list (those demoted to the curious strip).
+    Title iterated: "grown up" → "how Kenjaku differs" → final **"KENJAKU VS KARPATHY'S PLAIN LLM WIKI"**
+    (Thomas's call; grammar-fixed from "a plain Karpathy's"). Leaks fixed across rolls (pen + mascot were
+    painted as labels; "chibi"→"chijiku" misspell) + one stochastic "it it" doubled word (fixed by re-roll,
+    prompt untouched per `nano-banana-verbose-guards-leak`). **New MARKETING section created** ("vs a plain
+    LLM wiki (à la Karpathy) — kept, and grown up": board + prose + 4-row table + ADR 0033 note), between
+    the bare-LLM and other-second-brains comparatives. Not committed yet.
+  - [x] 9d · For each: Thomas renders → drop in `docs/img/` → I verify clean (no leak, ribbon, spelling)
+    → copy in + uncomment the `<img>` slot in `MARKETING.md` → tick here. _(2026-07-24 — done for the
+    whole WHAT act: flow / vs-llm / privacy / vs-wiki)_
+  - [x] 9f · **Commit the WHAT board lot** _(2026-07-24 · `965829d`)_ — the 4 PNGs (`board-flow` /
+    `board-vs-llm` / `board-privacy` / `board-vs-wiki`) + `MARKETING.md` + `docs/marketing-image-prompts.md`
+    committed on Thomas's go; English pre-flight clean (only the `à la` idiom).
+
+- [ ] **Step 10 — Two new boards: the affordance + the /coach & skills platform (NEXT dev step, agreed 2026-07-24)** _(branch `docs/marketing-page`)_
+  - Why (agreed with Thomas, before a `/clear`): (1) the **affordance** is Kenjaku's *founding design goal*
+    (R19/R20 — "conceived so ANY non-tech person can use it: just ask, sit down and relax"), yet it has **no
+    dedicated board** — the tagline lives only in text. (2) the **platform** dimension (the skills: `/coach`,
+    `import`, `switch`, `sync-sources`, `prepare-1-1`, `local-mirror`, `update-engine`) is **under-visualized**
+    — it's the "wiki → platform" threshold of the altitude synthesis. Same grand-public **3-tier grammar**,
+    fixed **#E8590C** ribbon, leak-safe authorized-text lists, **NO ADR numbers** on any board
+    (`no-adr-numbers-on-marketing-boards`). Process discipline: **never harden a prompt with inline prose
+    guards to fix a glitch — re-roll instead** (`nano-banana-verbose-guards-leak`).
+  - [ ] 10a · `board-affordance` — "Built for everyone / just ask, sit down and relax" (act 1). One idea:
+    Kenjaku is **all-audience by design** (no need to be a geek · use-case-driven · lots of automatic tasks ·
+    no temporal coupling); the heavy engineering stays invisible. A non-tech persona relaxed; ties R19/R20.
+    → write the prompt.
+  - [ ] 10b · `board-coach` — the `/coach` skill: a **fierce sparring partner wired to YOUR vault** (Radical
+    Candor — care personally + challenge directly), for stepping back from your own decisions. Emotionally
+    resonant standout. Keep it **honest: self-coaching only**. → write the prompt.
+  - [ ] 10c · _(maybe)_ `board-skills` — "What's in the box" of platform capabilities: a few Kenjaku skills
+    at a glance (`coach` · `import` · `switch` · `sync-sources` · `prepare-1-1` · `local-mirror` ·
+    `update-engine`), one human line each. **Decide with Thomas** whether this is a separate board or folded
+    into 10b.
+  - [ ] 10d · For each: write prompt → Thomas renders → I verify clean (no leak · ribbon · spelling) → copy
+    in + create/wire the `<img>` slot + a MARKETING section → tick.
 
 ---
 
