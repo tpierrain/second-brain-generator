@@ -522,19 +522,22 @@ pass. **R-STYLE applies throughout** (short, punchy, scannable — boards/tables
     fixed **#E8590C** ribbon, leak-safe authorized-text lists, **NO ADR numbers** on any board
     (`no-adr-numbers-on-marketing-boards`). Process discipline: **never harden a prompt with inline prose
     guards to fix a glitch — re-roll instead** (`nano-banana-verbose-guards-leak`).
-  - [ ] 10a · `board-affordance` — "Built for everyone / just ask, sit down and relax" (act 1). One idea:
-    Kenjaku is **all-audience by design** (no need to be a geek · use-case-driven · lots of automatic tasks ·
-    no temporal coupling); the heavy engineering stays invisible. A non-tech persona relaxed; ties R19/R20.
-    → write the prompt.
-  - [ ] 10b · `board-coach` — the `/coach` skill: a **fierce sparring partner wired to YOUR vault** (Radical
-    Candor — care personally + challenge directly), for stepping back from your own decisions. Emotionally
-    resonant standout. Keep it **honest: self-coaching only**. → write the prompt.
-  - [ ] 10c · _(maybe)_ `board-skills` — "What's in the box" of platform capabilities: a few Kenjaku skills
-    at a glance (`coach` · `import` · `switch` · `sync-sources` · `prepare-1-1` · `local-mirror` ·
-    `update-engine`), one human line each. **Decide with Thomas** whether this is a separate board or folded
-    into 10b.
-  - [ ] 10d · For each: write prompt → Thomas renders → I verify clean (no leak · ribbon · spelling) → copy
-    in + create/wire the `<img>` slot + a MARKETING section → tick.
+  - [x] 10a · `board-affordance` — "Built for everyone / just ask, sit down and relax" (act 1).
+    _(2026-07-24 · `a4f5a1b`)_ — rendered clean first try (non-tech person + mascot relaxed above the
+    floor, hidden engine-room of gears/pipes/server dimmed below = "all the engineering, out of your
+    view"; no leak, spelling OK). Copied into `docs/img/`, `<img>` wired into the **WHAT act** ("What it
+    does for you", after the all-audience promise — Thomas: "ça va avec le What").
+  - [x] 10b · `board-skills` — **"What's in the box"**, extensible platform, **TWO zones** (spotlight
+    `/coach` — sparring partner wired to your vault, self-coaching only — + a catalog of the other six,
+    one human line each; **⭐ headline = Kenjaku is EXTENSIBLE, add your own**). _(2026-07-24 · working
+    tree)_ · `a4f5a1b` — took 2 rolls: (1) dropped `update-engine` (3×2 grid absorbed *Add your own*) + painted the
+    scaffolding labels "SPOTLIGHT"/"CATALOG"; (2) prompt fixed (forced a 2×3 grid of the six skills + a
+    separate full-width *Add your own* strip, forbade painting SPOTLIGHT/CATALOG/ZONE/GROUP) → clean:
+    all 6 skills present, labels gone, slugs spelled right. Also fixed a broken markdown link (`> [ … ]()`
+    the formatter had wrapped the prompt in). Copied into `docs/img/`, `<img>` + a new MARKETING section
+    ("More than search — an extensible platform of skills") wired into the **WHAT act**.
+  - [x] 10c · Both rendered → verified clean → copied in → `<img>` slots + MARKETING sections wired.
+    _(2026-07-24 · `a4f5a1b`)_ — Thomas's gate ("integrate only if no grave error") met for both.
 
 ---
 
