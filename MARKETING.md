@@ -97,7 +97,7 @@ in the small *"if you're curious:"* strip on each board.
 
 ## How a question flows — answer now, verify in the background
 
-<img src="docs/img/board-flow.svg" alt="A question gets an immediate answer from your vault by semantic search (Phase 1), while external sources sync in the background (Phase 2), the answer is amended if something new is found (Phase 3), and everything is persisted with an automatic git commit (Phase 4) — the stale-while-revalidate pattern applied to memory." width="100%">
+<img src="docs/img/board-flow.png" alt="Ask once, it does the rest: you ask, and a self-running loop of four steps does everything else — Answer now (replies in seconds, always with the source), Catch up (syncs your tools in the background, read-only), Amend (only if something new turned up), and Save & back up (auto-commit to git, nothing to do by hand). A fast answer first, then it quietly checks your sources, updates only if something changed, and saves it all. Hands-off." width="100%">
 
 The web's **stale-while-revalidate** pattern, applied to your memory: you get a **fast** answer from
 what's already indexed; freshness catches up **behind the scenes** and only **amends** the answer if
@@ -119,15 +119,12 @@ there's genuinely something new. *([details in EN-QUOI §2](EN-QUOI-C-EST-DIFFER
 
 ---
 
-<!-- P1/R6 note: the three comparatives should read in this order — 1) bare LLM, 2) LLM-wiki à la
-     Karpathy (TO ADD), 3) other second brains. The Karpathy axis (R6) is still P3 (needs scoping). -->
+<!-- R6 comparatives, in order: 1) bare LLM, 2) plain LLM wiki à la Karpathy, 3) other second brains.
+     All three now present (board-vs-wiki added 2026-07-24, framed per ADR 0033 — credited superset). -->
 
 ## vs a bare LLM (ChatGPT / Claude alone)
 
-<!-- Illustrated board: drop docs/img/board-vs-llm.png (prompt in docs/marketing-image-prompts.md), then uncomment:
-<img src="docs/img/board-vs-llm.png" alt="Bare LLM vs your second brain" width="100%"> -->
-> 🎨 *Illustrated board coming — generate `board-vs-llm.png` from
-> [`docs/marketing-image-prompts.md`](docs/marketing-image-prompts.md) and drop it in `docs/img/`.*
+<img src="docs/img/board-vs-llm.png" alt="A real memory, not a confident guess: a bare chatbot only knows what you paste in, forgets after the chat and can make things up; your second brain has a persistent memory that grows with every question, answers from YOUR sources with the date, and stays yours in Markdown in your git repo." width="100%">
 
 | | A bare LLM | Your second brain |
 |---|---|---|
@@ -136,7 +133,24 @@ there's genuinely something new. *([details in EN-QUOI §2](EN-QUOI-C-EST-DIFFER
 | **Scope** | A single walled conversation | **Cross-cutting** across all your tools |
 | **Ownership** | Hosted, ephemeral | **Yours**, in Markdown, in your git repo |
 
-<!-- P3/R6: insert "## vs an LLM-wiki (à la Karpathy)" board + table HERE, between bare-LLM and other second brains. -->
+## vs a plain LLM wiki (à la Karpathy) — kept, and grown up
+
+<img src="docs/img/board-vs-wiki.png" alt="Kenjaku vs Karpathy's plain LLM wiki: an LLM wiki (Andrej Karpathy's credited idea) has an LLM write your sources into an interlinked Markdown wiki you point an agent at. Kenjaku keeps that wiki, and wraps it in a whole layer of deterministic, battle-tested software — so it's wrapped in deterministic battle-tested software, you just ask and it handles everything automatically, and it's reliable: nothing lost, always fresh, sources proven. A superset — the wiki plus an embedding RAG (semantic search) and live connectors — with the reliability a hand-built wiki lacks." width="100%">
+
+Kenjaku **descends from** Andrej Karpathy's **"LLM Wiki"** (credited prior art): an LLM compiles your
+sources into an interlinked Markdown wiki you point an agent at. Kenjaku **keeps that wiki** — and wraps
+it in a **whole layer of deterministic, battle-tested software**, so all you do is **ask**, and it
+**holds up**. The difference isn't a feature list; it's the **reliability wrapper** a hand-built wiki lacks.
+
+| | A plain LLM wiki | Kenjaku |
+|---|---|---|
+| **Core idea** | An LLM-built interlinked Markdown wiki | **The same wiki — kept** |
+| **Search** | Point an agent at the files | **+ embedding RAG** (semantic search) & live connectors |
+| **Freshness & upkeep** | Hand-wired, manual | **Deterministic, self-healing, hands-off** |
+| **Reliability** | DIY, fragile | **Battle-tested · green-only tests · grounding proven** |
+
+> 🧬 *A **credited evolution**, a **superset** — not an opposition, and never a priority claim.
+> ([ADR 0033](maintainers/decisions/0033-descends-from-karpathy-llm-wiki-not-graphify.md))*
 
 ---
 
@@ -171,13 +185,13 @@ Glean…) is situated in [EN-QUOI §9](EN-QUOI-C-EST-DIFFERENT.md#9-for-the-reco
 
 ## Privacy, à la carte — *you* decide who touches your data
 
-<!-- Illustrated board: drop docs/img/board-privacy.png (prompt in docs/marketing-image-prompts.md), then uncomment:
-<img src="docs/img/board-privacy.png" alt="Three embedding options on a privacy spectrum" width="100%"> -->
-> 🎨 *Illustrated board coming — generate `board-privacy.png` from
-> [`docs/marketing-image-prompts.md`](docs/marketing-image-prompts.md) and drop it in `docs/img/`.*
+<img src="docs/img/board-privacy.png" alt="Search (RAG) privacy — your call: this choice is only about the advanced-search (RAG) engine, and you pick 1 of 3 — On your machine (EmbeddingGemma, on-device: nothing leaves your computer, free, offline), With an API key (Gemini / OpenAI / Mistral / your company endpoint: your notes' text goes to the provider you pick), or Local via Ollama (runs on your machine, separate app, advanced setup). The embedder is a tiny search model, not the AI that answers — Claude still reasons. Swap the engine anytime; your notes never move." width="100%">
 
-Most tools **impose** a search engine on you. Here the embedding engine is an **interchangeable
-adapter** you pick at install — without breaking your notes or skills.
+This choice is about **one thing only**: the **advanced-search (RAG) engine** — the *embedder* that
+turns your notes into vectors so they can be searched by meaning. You **pick 1 of 3** implementations
+at install. (The AI that *reasons and answers* is always **Claude** — see the note below.) Most tools
+**impose** that engine on you; here it's an **interchangeable adapter** you choose — without breaking
+your notes or skills.
 
 | Option | Privacy | For whom | Engine |
 |---|---|---|---|
